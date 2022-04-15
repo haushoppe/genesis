@@ -19,3 +19,9 @@ Ethspresso deployed a first testnet contract:
 * TODO: contract, instructions how to deploy, etc...
 
 
+### ⭐️ webgl-2012
+
+Johannes has been in the topic 10 years before, and has pretty much forgotten it all again. Let's see how we make this cube look really glamorous with modern libraries.
+
+* see `prototypes/webgl-2012`
+* hint: start with a real webserver, eg `npx http-server`

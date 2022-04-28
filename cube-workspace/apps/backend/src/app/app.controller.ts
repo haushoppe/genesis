@@ -1,4 +1,5 @@
 import { Controller, Get, Res } from '@nestjs/common';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import * as express from 'express';
 
 import { AppService } from './app.service';
@@ -8,6 +9,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
+  @ApiExcludeEndpoint()
   getStart(@Res() response: express.Response) {
     const html = `<!DOCTYPE html>
 <html>
@@ -29,6 +31,15 @@ export class AppController {
   <p>
     This is an internal API for the Collectors Cube project.
   </p>
+
+  <ul>
+    <li>
+      <a href="/open-api">OpenAPI documentation</a>
+    </li>
+    <li>
+      <a href="/open-api-json">OpenAPI JSON file</a>
+    </li>
+  </ul>
 </html>`;
 
     return response.send(html);

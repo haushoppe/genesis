@@ -1,4 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
+import * as express from 'express';
 
 import { AppService } from './app.service';
 
@@ -7,7 +8,34 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getData() {
-    return this.appService.getData();
+  getStart(@Res() response: express.Response) {
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Cube API</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
+
+  <link rel="icon" href="assets/cube.svg" type="image/x-icon">
+  <link rel="stylesheet" href="assets/style.css" media="screen">
+</head>
+
+<body class="markdown-body">
+  <h1>
+    <img src="assets/cube.svg">
+    Cube API
+  </h1>
+
+  <p>
+    This is an internal API for the Collectors Cube project.
+  </p>
+</html>`;
+
+    return response.send(html);
   }
+
+  // @Get()
+  // getData() {
+  //   return this.appService.getData();
+  // }
 }

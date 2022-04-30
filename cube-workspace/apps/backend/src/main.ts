@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+const Moralis = require('moralis/node');
 
 import { AppModule } from './app/app.module';
 
@@ -18,9 +19,14 @@ async function bootstrap() {
     // .addTag('cats')
     .build();
 
+  await Moralis.start({
+    serverUrl: config.get('manifoldServerUrl'),
+    appId: config.get('manifoldAppId'),
+    masterKey: config.get('manifoldMasterKey')
+  });
+
   const document = SwaggerModule.createDocument(app, openApiConfig);
   SwaggerModule.setup('open-api', app, document);
-
 
   await app.listen(port);
   Logger.log(`🚀 Application is running on: http://localhost:${ port }/`);

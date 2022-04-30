@@ -29,16 +29,16 @@ export class AppController {
   </h1>
 
   <p>
-    This is an internal API for the Collectors Cube project.
+    This is an internal API of the Collectors Cube NFT project.
   </p>
 
   <ul>
     <li>
       <a href="/open-api">OpenAPI documentation</a>
     </li>
-    <li>
+    <!--<li>
       <a href="/open-api-json">OpenAPI JSON file</a>
-    </li>
+    </li>-->
   </ul>
 </html>`;
 

@@ -6,7 +6,21 @@
     "start": "node main.js"
   },
   "engines": {
-    "node": "14.x"
+    "node": "16.x"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@nestjs/common": "^8.0.0",
+    "@nestjs/config": "^2.0.0",
+    "@nestjs/core": "^8.0.0",
+    "@nestjs/platform-express": "^8.0.0",
+    "@nestjs/serve-static": "^2.2.2",
+    "@nestjs/swagger": "^5.2.1",
+    "joi": "^17.6.0",
+    "moralis": "^1.5.11",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.0.0",
+    "swagger-ui-express": "^4.3.0",
+    "tslib": "^2.3.0"
+  }
 }

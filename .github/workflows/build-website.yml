@@ -31,5 +31,5 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-website-build.git --branch=main --dir=cube-workspace/dist/apps/backend --cname=cube-api.haushoppe.art --name="The Buildbot" --email=noreply@haushoppe.art
+        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-website-build.git --branch=main --dir=cube-workspace/dist/apps/backend --name="The Buildbot" --email=noreply@haushoppe.art
 

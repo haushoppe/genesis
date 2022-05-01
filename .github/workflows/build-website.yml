@@ -1,0 +1,35 @@
+name: Build Website
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 16.x
+
+    # This caches all of your node_modules folders throughout your repository,
+    # and busts the cache every time a package-lock.json file changes.
+    # https://dev.to/mpocock1/how-to-cache-nodemodules-in-github-actions-with-yarn-24eh
+    - name: Cache node modules
+      uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
+
+    - run: cd cube-workspace && npm install
+    - run: cd cube-workspace && npm build
+    - name: Deploy website
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-website-build.git --dir=dist/apps/backend --cname=cube-api.haushoppe.art --name="The Buildbot" --email=noreply@haushoppe.art
+

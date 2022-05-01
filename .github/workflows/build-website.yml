@@ -2,7 +2,7 @@ name: Build Cube API
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
 
@@ -31,5 +31,5 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-website-build.git --dir=dist/apps/backend --cname=cube-api.haushoppe.art --name="The Buildbot" --email=noreply@haushoppe.art
+        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-website-build.git --branch=main --dir=dist/apps/backend --cname=cube-api.haushoppe.art --name="The Buildbot" --email=noreply@haushoppe.art
 

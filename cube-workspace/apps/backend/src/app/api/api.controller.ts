@@ -6,6 +6,9 @@ const Moralis = require('moralis/node');
 @Controller()
 export class ApiController {
 
+  /**
+   * Just a test method
+   */
   @Get(['api/test'])
   getTest() {
     return {
@@ -22,31 +25,31 @@ export class ApiController {
   async getNftsForAddress(@Param('address') address: string): Promise<NftCollection> {
 
     const options = { address };
-    const nftsRaw: NftCollection = await Moralis.Web3API.account.getNFTs(options);
+    const nfts: NftCollection = await Moralis.Web3API.account.getNFTs(options);
 
-    console.log(typeof nftsRaw);
+    // remove all unnecessary other properties
+    nfts.result = nfts.result.map(({
+      token_address,
+      token_id,
+      contract_type,
+      token_uri,
+      metadata,
+      synced_at,
+      amount,
+      name,
+      symbol
+    }) => ({
+      token_address,
+      token_id,
+      contract_type,
+      token_uri,
+      metadata: metadata ? JSON.parse(metadata) : undefined,
+      synced_at,
+      amount,
+      name,
+      symbol
+    }));
 
-    // // remove all unnecessary other properties
-    // const nfts = nftsRaw.map(({
-    //   amount,
-    //   contract_type,
-    //   name,
-    //   symbol,
-    //   token_address,
-    //   token_id,
-    //   token_uri,
-    //   metadata
-    // }) => ({
-    //   amount,
-    //   contract_type,
-    //   name,
-    //   symbol,
-    //   token_address,
-    //   token_id,
-    //   token_uri,
-    //   metadata
-    // }));
-
-    return nftsRaw;
+    return nfts;
   }
 }

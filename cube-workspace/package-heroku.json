@@ -1,0 +1,12 @@
+{
+  "name": "cube-api-compiled",
+  "version": "0.0.0",
+  "license": "None",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "engines": {
+    "node": "16.x"
+  },
+  "private": true
+}

@@ -9,6 +9,9 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./cube-workspace
 
     steps:
     - uses: actions/checkout@v2
@@ -25,12 +28,12 @@ jobs:
         path: '**/node_modules'
         key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
 
-    - run: cd cube-workspace && npm install
-    - run: cd cube-workspace && npm run build
-    - run: ls cube-workspace/dist/apps/backend
+    - run: npm install
+    - run: npm run build
+    - run: cp package-heroku.json dist/apps/backend/package.json
     - name: Deploy API to second repo
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-website-build.git --branch=main --dir=cube-workspace/dist/apps/backend --name="The Buildbot" --email=noreply@haushoppe.art
+        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-website-build.git --branch=main --dir=dist/apps/backend --name="The Buildbot" --email=noreply@haushoppe.art
 

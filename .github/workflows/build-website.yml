@@ -26,8 +26,8 @@ jobs:
         key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
 
     - run: cd cube-workspace && npm install
-    - run: cd cube-workspace && npm build
-    - name: Deploy website
+    - run: cd cube-workspace && npm run build
+    - name: Deploy API to second repo
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |

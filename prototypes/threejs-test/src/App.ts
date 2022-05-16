@@ -1,4 +1,5 @@
 import THREE, { AmbientLight, BoxGeometry, CameraHelper, Color, CubeRefractionMapping, CubeTextureLoader, DirectionalLight, DirectionalLightHelper, Mapping, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, PCFSoftShadowMap, PerspectiveCamera, PlaneGeometry, PointLight, Scene, SpotLight, TextureLoader, Vector3, WebGLRenderer } from "three";
+import { config } from "./config";
 import { firstPersonControl, doMovementUpdate, bindPointerLockControls } from "./helper/first-person-control";
 import { PointerLockControls } from "./helper/pointer-lock-controls";
 
@@ -102,15 +103,13 @@ export class App
       const loader = new TextureLoader();
 
       // https://www.youtube.com/watch?v=pUFMoAS-a8w
-      const textures = [
-        this.getPhong(loader, 'images/textures/diece-1.svg'), // x+ (right side)
-        this.getPhong(loader, 'images/textures/diece-2.svg'), // x- (left side)
-        this.getPhong(loader, 'images/textures/diece-3.svg'), // y+ (top side)
-        this.getPhong(loader, 'images/textures/diece-4.svg'), // y- (bottom side)
-        this.getPhong(loader, 'images/textures/diece-5.svg'), // z+ (front side)
-        this.getPhong(loader, 'images/textures/diece-6.svg')  // z- (far side)
-      ];
-
+      // x+ (right side)
+      // x- (left side)
+      // y+ (top side)
+      // y- (bottom side)
+      // z+ (front side)
+      // z- (far side)
+      const textures = config.hardcodedStarsTextures.map(url => this.getPhong(loader, url));
       const geometry = new BoxGeometry(1, 1, 1);
       const cube = new Mesh(geometry, textures);
 

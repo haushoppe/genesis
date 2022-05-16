@@ -1,6 +1,6 @@
 import Axios from  'axios-observable';
 import { forkJoin, retry } from 'rxjs';
-import { config } from "./config";
+import { config } from "../config";
 
 // +encodeURIComponent
 const testImages = [

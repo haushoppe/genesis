@@ -1,4 +1,9 @@
-import THREE, { AmbientLight, BoxGeometry, CubeRefractionMapping, CubeTextureLoader, DirectionalLight, Mapping, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, PerspectiveCamera, PointLight, Scene, SpotLight, TextureLoader, WebGLRenderer } from "three";
+import THREE, { AmbientLight, BoxGeometry, CameraHelper, Color, CubeRefractionMapping, CubeTextureLoader, DirectionalLight, DirectionalLightHelper, Mapping, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, PCFSoftShadowMap, PerspectiveCamera, PlaneGeometry, PointLight, Scene, SpotLight, TextureLoader, Vector3, WebGLRenderer } from "three";
+import { firstPersonControl, doMovementUpdate, bindPointerLockControls } from "./helper/first-person-control";
+import { PointerLockControls } from "./helper/pointer-lock-controls";
+
+const green = new Color(0, 1, 0);
+
 
 export class App
 {
@@ -12,47 +17,55 @@ export class App
      */
     constructor()
     {
-        this.camera = new PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
-        this.camera.position.z = 400;
+        const camera = this.camera = new PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+
+        camera.position.set(0, 0, -4);
+        camera.lookAt(new Vector3(0, 0, 0));
+
+
+
+        // this.camera.position.z = 400;
+
+
+
+        const scene = this.scene = new Scene();
+
+        // scene.add(this.createAmbientLightOld());
+        // const directionalLight = this.createDirectionalLight()
+        // scene.add(directionalLight);
+        // const lighthelper = new DirectionalLightHelper(directionalLight, 1, green);
+        // const camerahelper = new CameraHelper(this.camera);
+        // scene.add(lighthelper);
+        // scene.add(camerahelper);
+
+
+        scene.add(this.createPointLight());
+        scene.add(this.createAmbientLight());
+
+
 
         // this.cube = this.createSimpleCube();
-        this.cube = this.createComplexCube();
+        this.cube = this.createCube();
+        scene.add(this.cube);
 
-        this.scene = new Scene();
 
-        // this.scene.add(this.createAmbientLight());
-        // this.scene.add(this.createSpotLight());
-        this.scene.add(this.createDirectionalLight());
+        scene.add(this.createPlane());
 
-        this.scene.add(this.cube);
 
-        // this light globally illuminates all objects in the scene equally.
-        // this.scene.add(new AmbientLight(0x404040)); // soft white light
+        bindPointerLockControls(this.camera)
 
         this.renderer = this.createRenderer();
         document.body.appendChild(this.renderer.domElement);
 
         window.addEventListener("resize", this.onWindowResize.bind(this), false);
 
-        this.animate();
+        this.loop();
     }
 
+    // globally illuminates all objects in the scene equally
     private createAmbientLight() {
-      // return new AmbientLight(0x404040)); // soft white light
-      return new AmbientLight( 0xffffff, 0.3 );
-    }
-
-    // copied from here: https://github.com/mrdoob/three.js/blob/master/examples/webgl_clipping_advanced.html
-    private createSpotLight() {
-      const light = new SpotLight( 0xffffff, 0.5 );
-      light.angle = Math.PI / 5;
-      light.penumbra = 0.2;
-      light.position.set( 2, 3, 3 );
-      light.castShadow = true;
-      light.shadow.camera.near = 3;
-      light.shadow.camera.far = 10;
-      light.shadow.mapSize.width = 1024;
-      light.shadow.mapSize.height = 1024;
+      let light = new AmbientLight("white", .15);
+      light.position.set(10, 2, 0);
       return light;
     }
 
@@ -73,17 +86,18 @@ export class App
       return light;
     }
 
-    // the well kown wooden box from the cube example
-    private createSimpleCube() {
-      const texture = new TextureLoader().load("images/textures/crate.gif");
-      const geometry = new BoxGeometry(200, 200, 200);
-      const material = new MeshBasicMaterial({ map: texture });
-      return new Mesh(geometry, material);
+    private createPointLight() {
+      const light = new PointLight("white", .8);
+      light.position.set(0, 3, 0);
+      light.castShadow = true;
+      light.shadow.camera.near = 2.1;
+      light.shadow.radius = 8; // soften shadow by setting radius
+      return light;
     }
 
     // Debugging hint: MeshBasicMaterial ignores the light
     // https://r105.threejsfundamentals.org/threejs/lessons/threejs-materials.html
-    private createComplexCube() {
+    private createCube() {
 
       const loader = new TextureLoader();
 
@@ -97,23 +111,55 @@ export class App
         this.getPhong(loader, 'images/textures/diece-6.svg')  // z- (far side)
       ];
 
-      const geometry = new BoxGeometry(200, 200, 200);
-      return new Mesh(geometry, textures);
+      const geometry = new BoxGeometry(1, 1, 1);
+      const cube = new Mesh(geometry, textures);
+
+      cube.position.y = 1;
+      cube.position.x = 0;
+      cube.receiveShadow = true;
+      cube.castShadow = true;
+
+      return cube;
     }
 
     private getPhong(loader: TextureLoader, textureUrl: string) {
       return new MeshPhongMaterial({
         shininess: 100,
-        map: loader.load(textureUrl)
+        map: loader.load(textureUrl),
+        // wireframe: true
       })
     }
 
 
+    private createPlane() {
+      let planeGeometry = new PlaneGeometry(10, 10);
+      let planeMaterial = new MeshPhongMaterial({ color: "white", wireframe: false });
+      let plane = new Mesh(planeGeometry, planeMaterial);
+
+      plane.rotation.x -= Math.PI / 2;
+      plane.scale.x = 3;
+      plane.scale.y = 3;
+      plane.receiveShadow = true;
+
+      return plane;
+    }
+
+
+
     private createRenderer() {
+
       const renderer = new WebGLRenderer({ antialias: true, alpha: true });
+
       renderer.setClearColor(0x000000, 0); // the default
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // ?
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = PCFSoftShadowMap;
+
+
+
       return renderer;
     }
 
@@ -125,14 +171,20 @@ export class App
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    private animate(): void
+    private loop(): void
     {
-        requestAnimationFrame(this.animate.bind(this));
-
-        this.cube.rotation.x += 0.005;
-        this.cube.rotation.y += 0.01;
-
+        requestAnimationFrame(this.loop.bind(this));
+        this.update();
         this.renderer.render(this.scene, this.camera);
+    }
+
+    private update() {
+
+      this.cube.rotation.x += 0.005;
+      this.cube.rotation.y += 0.01;
+
+      firstPersonControl(this.camera);
+      doMovementUpdate(this.camera);
     }
 }
 

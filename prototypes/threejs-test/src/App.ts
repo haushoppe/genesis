@@ -39,22 +39,25 @@ export class App
 
     private createComplexCube() {
 
-      const loader = new CubeTextureLoader();
+      const loader = new TextureLoader();
 
-      const textureCube = loader.load([
-        "images/textures/diece-1.svg",
-        "images/textures/diece-2.svg",
-        "images/textures/diece-3.svg",
-        "images/textures/diece-4.svg",
-        "images/textures/diece-5.svg",
-        "images/textures/diece-6.svg"
-      ]);
+      const textures = [
+        new MeshBasicMaterial({  map: loader.load("images/textures/diece-1.svg") }),
+        new MeshBasicMaterial({  map: loader.load("images/textures/diece-2.svg") }),
+        new MeshBasicMaterial({  map: loader.load("images/textures/diece-3.svg") }),
+        new MeshBasicMaterial({  map: loader.load("images/textures/diece-4.svg") }),
+        new MeshBasicMaterial({  map: loader.load("images/textures/diece-5.svg") }),
+        new MeshBasicMaterial({  map: loader.load("images/textures/diece-6.svg") })
+      ]
 
-      const material = new MeshBasicMaterial({ color: 0xffffff, envMap: textureCube });
+      // MeshStandardMaterial illuminated
+      // MeshBasicMaterial ignores the light
+
+      // const material = new MeshBasicMaterial({ color: 0xffffff, envMap: textureCube });
       // const material = new MeshStandardMaterial({ color: 0xffffff, map: textureCube });
 
       const geometry = new BoxGeometry(200, 200, 200);
-      return new Mesh(geometry, material);
+      return new Mesh(geometry, textures);
     }
 
     private createRenderer() {

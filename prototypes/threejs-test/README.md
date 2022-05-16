@@ -15,7 +15,7 @@ Get up and running with these simple steps:
 
 1. Clone the project
 2. Run `npm install`
-3. Run `npm run dev`
+3. Run `npm start`
 
 
 ## Configuration
@@ -83,7 +83,7 @@ Would output to the folder `css/app.css`
 
 ```shell
 npm install
-npm run dev
+npm start
 ```
 
 ## Production

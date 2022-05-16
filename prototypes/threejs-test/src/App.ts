@@ -1,4 +1,4 @@
-import THREE, { BoxGeometry, CubeRefractionMapping, CubeTextureLoader, Mapping, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, PerspectiveCamera, Scene, TextureLoader, WebGLRenderer } from "three";
+import THREE, { AmbientLight, BoxGeometry, CubeRefractionMapping, CubeTextureLoader, DirectionalLight, Mapping, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, PerspectiveCamera, PointLight, Scene, SpotLight, TextureLoader, WebGLRenderer } from "three";
 
 export class App
 {
@@ -19,7 +19,15 @@ export class App
         this.cube = this.createComplexCube();
 
         this.scene = new Scene();
+
+        // this.scene.add(this.createAmbientLight());
+        // this.scene.add(this.createSpotLight());
+        this.scene.add(this.createDirectionalLight());
+
         this.scene.add(this.cube);
+
+        // this light globally illuminates all objects in the scene equally.
+        // this.scene.add(new AmbientLight(0x404040)); // soft white light
 
         this.renderer = this.createRenderer();
         document.body.appendChild(this.renderer.domElement);
@@ -27,6 +35,42 @@ export class App
         window.addEventListener("resize", this.onWindowResize.bind(this), false);
 
         this.animate();
+    }
+
+    private createAmbientLight() {
+      // return new AmbientLight(0x404040)); // soft white light
+      return new AmbientLight( 0xffffff, 0.3 );
+    }
+
+    // copied from here: https://github.com/mrdoob/three.js/blob/master/examples/webgl_clipping_advanced.html
+    private createSpotLight() {
+      const light = new SpotLight( 0xffffff, 0.5 );
+      light.angle = Math.PI / 5;
+      light.penumbra = 0.2;
+      light.position.set( 2, 3, 3 );
+      light.castShadow = true;
+      light.shadow.camera.near = 3;
+      light.shadow.camera.far = 10;
+      light.shadow.mapSize.width = 1024;
+      light.shadow.mapSize.height = 1024;
+      return light;
+    }
+
+    private createDirectionalLight() {
+      const light = new DirectionalLight( 0xffffff, 0.5 );
+      light.position.set( 0, 2, 0 );
+      light.castShadow = true;
+      light.shadow.camera.near = 1;
+      light.shadow.camera.far = 10;
+
+      light.shadow.camera.right = 1;
+      light.shadow.camera.left = - 1;
+      light.shadow.camera.top	= 1;
+      light.shadow.camera.bottom = - 1;
+
+      light.shadow.mapSize.width = 1024;
+      light.shadow.mapSize.height = 1024;
+      return light;
     }
 
     // the well kown wooden box from the cube example
@@ -37,28 +81,33 @@ export class App
       return new Mesh(geometry, material);
     }
 
+    // Debugging hint: MeshBasicMaterial ignores the light
+    // https://r105.threejsfundamentals.org/threejs/lessons/threejs-materials.html
     private createComplexCube() {
 
       const loader = new TextureLoader();
 
+      // https://www.youtube.com/watch?v=pUFMoAS-a8w
       const textures = [
-        new MeshBasicMaterial({  map: loader.load("images/textures/diece-1.svg") }),
-        new MeshBasicMaterial({  map: loader.load("images/textures/diece-2.svg") }),
-        new MeshBasicMaterial({  map: loader.load("images/textures/diece-3.svg") }),
-        new MeshBasicMaterial({  map: loader.load("images/textures/diece-4.svg") }),
-        new MeshBasicMaterial({  map: loader.load("images/textures/diece-5.svg") }),
-        new MeshBasicMaterial({  map: loader.load("images/textures/diece-6.svg") })
-      ]
-
-      // MeshStandardMaterial illuminated
-      // MeshBasicMaterial ignores the light
-
-      // const material = new MeshBasicMaterial({ color: 0xffffff, envMap: textureCube });
-      // const material = new MeshStandardMaterial({ color: 0xffffff, map: textureCube });
+        this.getPhong(loader, 'images/textures/diece-1.svg'), // x+ (right side)
+        this.getPhong(loader, 'images/textures/diece-2.svg'), // x- (left side)
+        this.getPhong(loader, 'images/textures/diece-3.svg'), // y+ (top side)
+        this.getPhong(loader, 'images/textures/diece-4.svg'), // y- (bottom side)
+        this.getPhong(loader, 'images/textures/diece-5.svg'), // z+ (front side)
+        this.getPhong(loader, 'images/textures/diece-6.svg')  // z- (far side)
+      ];
 
       const geometry = new BoxGeometry(200, 200, 200);
       return new Mesh(geometry, textures);
     }
+
+    private getPhong(loader: TextureLoader, textureUrl: string) {
+      return new MeshPhongMaterial({
+        shininess: 100,
+        map: loader.load(textureUrl)
+      })
+    }
+
 
     private createRenderer() {
       const renderer = new WebGLRenderer({ antialias: true, alpha: true });

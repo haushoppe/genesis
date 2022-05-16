@@ -4,14 +4,14 @@ import { PointerLockControls } from "./pointer-lock-controls";
 
 let controls = {} as any;
 export const player = {
-  height: .5,
-  turnSpeed: .01,
-  speed: 0.1  ,
+  height: 0.8,
+  turnSpeed: .1,
+  speed: .1  ,
   jumpHeight: .2,
   gravity: .01,
   velocity: 0,
 
-  jumps: true
+  jumps: false
 };
 
 // Controls:Listeners

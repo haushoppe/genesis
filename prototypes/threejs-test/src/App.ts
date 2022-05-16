@@ -1,5 +1,4 @@
-import THREE, { BoxGeometry, CubeTextureLoader, Mesh, MeshBasicMaterial, MeshLambertMaterial, PerspectiveCamera, Scene, TextureLoader, WebGLRenderer } from "three";
-import { config } from "./config";
+import THREE, { BoxGeometry, CubeRefractionMapping, CubeTextureLoader, Mapping, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, PerspectiveCamera, Scene, TextureLoader, WebGLRenderer } from "three";
 
 export class App
 {
@@ -40,25 +39,20 @@ export class App
 
     private createComplexCube() {
 
-      // ADD PICTURE:
-      var cubeNormalMap;
-      var cubeBumpMap;
-
-
       const loader = new CubeTextureLoader();
-      // loader.setCrossOrigin('Access-Control-Allow-Origin');
-      loader.setPath(config.httpProxy);
 
       const textureCube = loader.load([
-        encodeURIComponent("https://cloudflare-ipfs.com/ipfs/QmYKabnBxtucct5Vkf81o9ZX6u2sCnZKU94VfGqUwzbZwg"),
-        encodeURIComponent("https://cloudflare-ipfs.com/ipfs/QmaWN5wo72fs9NGbXZnK3He8C8uZyURL6QrSJfwrCVzkEZ"),
-        encodeURIComponent("https://cloudflare-ipfs.com/ipfs/QmPRPBncyL6oxz6uQ4edgBBSBiounmeD3PpwzEZv23HEfk"),
-        encodeURIComponent("https://cloudflare-ipfs.com/ipfs/QmYksSVBoM8YYbJSMVab2mq6mg3sfQ2xaCmAhhc4LgR5Ny"),
-        encodeURIComponent("https://cloudflare-ipfs.com/ipfs/QmciDF297zeVRJSMuBycVSUY1WZuuvQeJBxZXUZp92dx4J"),
-        encodeURIComponent("https://cloudflare-ipfs.com/ipfs/QmacJ5HVz89YXNLXthWC3TqTNTQFyGLYeYMWnzb1UpUEiV")
+        "images/textures/diece-1.svg",
+        "images/textures/diece-2.svg",
+        "images/textures/diece-3.svg",
+        "images/textures/diece-4.svg",
+        "images/textures/diece-5.svg",
+        "images/textures/diece-6.svg"
       ]);
 
       const material = new MeshBasicMaterial({ color: 0xffffff, envMap: textureCube });
+      // const material = new MeshStandardMaterial({ color: 0xffffff, map: textureCube });
+
       const geometry = new BoxGeometry(200, 200, 200);
       return new Mesh(geometry, material);
     }

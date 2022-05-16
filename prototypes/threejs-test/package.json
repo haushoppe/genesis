@@ -16,6 +16,9 @@
     "author": "Grant Bartlett",
     "license": "MIT",
     "dependencies": {
+        "axios": "^0.27.2",
+        "axios-observable": "^1.4.0",
+        "rxjs": "^7.5.5",
         "three": "^0.126.1"
     },
     "devDependencies": {

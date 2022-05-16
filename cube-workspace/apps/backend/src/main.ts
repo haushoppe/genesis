@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 const Moralis = require('moralis/node');
 
@@ -14,7 +15,8 @@ async function bootstrap() {
 
   const openApiConfig = new DocumentBuilder()
     .setTitle('❒ Cube API')
-    .setDescription('The Collectors Cube API (early alpha preview)')
+    // Markdown is also supported!
+    .setDescription('The Collectors Cube API (early alpha preview)<br><br><img src="/assets/cube.svg" width="100" height="100">')
     .setVersion('1.0')
     // .addTag('cats')
     .build();
@@ -27,6 +29,10 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, openApiConfig);
   SwaggerModule.setup('open-api', app, document);
+
+  // https://docs.nestjs.com/security/cors
+  app.enableCors();
+  app.getHttpAdapter().getInstance().disable('x-powered-by');
 
   await app.listen(port);
   Logger.log(`🚀 Application is running on: http://localhost:${ port }/`);

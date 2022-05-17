@@ -1,39 +1,27 @@
-import THREE, {
+import {
   AmbientLight,
   BoxGeometry,
-  CameraHelper,
-  Color,
-  CubeRefractionMapping,
-  CubeTextureLoader,
   DirectionalLight,
-  DirectionalLightHelper,
-  Mapping,
   Mesh,
-  MeshBasicMaterial,
-  MeshLambertMaterial,
   MeshPhongMaterial,
-  MeshStandardMaterial,
   PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
   PointLight,
-  PointLightHelper,
   Scene,
-  SpotLight,
   TextureLoader,
   Vector3,
   WebGLRenderer,
-} from "three";
-import { config } from "./config";
-import {
-  firstPersonControl,
-  doMovementUpdate,
-  bindPointerLockControls,
-  player,
-} from "./helper/first-person-control";
-import { PointerLockControls } from "./helper/pointer-lock-controls";
+} from 'three';
 
-const green = new Color(0, 1, 0);
+import { config } from './config';
+import { bindPointerLockControls, doMovementUpdate, firstPersonControl, player } from './helper/first-person-control';
+
+// TODO: https://www.youtube.com/watch?v=d1sr2oWnxus
+// 12b How to show video on cube three.js
+
+// TODO: https://threejs.org/docs/#manual/en/introduction/How-to-update-things
+// How to update things
 
 export class App {
   private camera: PerspectiveCamera;
@@ -48,10 +36,10 @@ export class App {
     const scene = this.scene = new Scene();
 
     const camera = (this.camera = new PerspectiveCamera(
-      65,
-      window.innerWidth / window.innerHeight,
-      1,
-      1000
+      65, // field of view in vertical degrees
+      window.innerWidth / window.innerHeight, // aspect ration: ratio of image width to height
+      .1, // distance from camera objects starts to appear
+      50 // distance from camerea objects stop apperaring
     ));
 
     camera.position.set(0, player.height, -2.7);
@@ -96,8 +84,10 @@ export class App {
   }
 
   // globally illuminates all objects in the scene equally
+  // see Physically Based Rendering and Lighting
+  // ( https://discoverthreejs.com/book/first-steps/physically-based-rendering/ )
   private createAmbientLight() {
-    let light = new AmbientLight("white", 1.3);
+    let light = new AmbientLight("white", 1);
     light.position.set(10, 2, 0);
     return light;
   }
@@ -121,15 +111,12 @@ export class App {
     return light;
   }
 
-
   private createPointLightFront() {
     const light = new PointLight("white", 1.1);
     light.position.set(0, 1, -7);
     return light;
   }
 
-  // Debugging hint: MeshBasicMaterial ignores the light
-  // https://r105.threejsfundamentals.org/threejs/lessons/threejs-materials.html
   private createCube() {
     const loader = new TextureLoader();
 
@@ -141,7 +128,7 @@ export class App {
     // z+ (front side)
     // z- (far side)
     const textures = config.hardcodedStarsTextures.map((url) =>
-      this.getPhong(loader, url)
+      this.getPhongMaterial(loader, url)
     );
     const geometry = new BoxGeometry(1, 1, 1);
     const cube = new Mesh(geometry, textures);
@@ -154,7 +141,9 @@ export class App {
     return cube;
   }
 
-  private getPhong(loader: TextureLoader, textureUrl: string) {
+  // Debugging hint: MeshBasicMaterial ignores the light
+  // https://r105.threejsfundamentals.org/threejs/lessons/threejs-materials.html
+  private getPhongMaterial(loader: TextureLoader, textureUrl: string) {
     return new MeshPhongMaterial({
       shininess: 100,
       map: loader.load(textureUrl),
@@ -185,9 +174,15 @@ export class App {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // ?
+    // see https://threejs.org/docs/#api/en/renderers/WebGLRenderer.shadowMap.type
     renderer.shadowMap.enabled = true;
+    // filters shadow maps using the Percentage-Closer Filtering (PCF) algorithm
+    // with better soft shadows especially when using low-resolution shadow maps.
+    // see https://threejs.org/docs/#api/en/constants/Renderer
     renderer.shadowMap.type = PCFSoftShadowMap;
+
+    // turn on the physically correct lighting model
+    // renderer.physicallyCorrectLights = true;
 
     return renderer;
   }

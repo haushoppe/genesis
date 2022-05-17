@@ -13,6 +13,7 @@ const testImages = [
 ];
 
 // Three.js has no error handling at all for the Loaders :-(
+// uses (should use https://github.com/zhaosiyang/axios-observable)
 export class Downloader
 {
 

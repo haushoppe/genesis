@@ -201,8 +201,8 @@ export class App {
   }
 
   private update() {
-    this.cube.rotation.x += 0.005;
-    this.cube.rotation.y += 0.01;
+    this.cube.rotation.x += 0.005 / 2;
+    this.cube.rotation.y += 0.01 / 2;
 
     firstPersonControl(this.camera);
     doMovementUpdate(this.camera);

@@ -19,19 +19,10 @@ jobs:
       with:
         node-version: 16.x
 
-    # This caches all of your node_modules folders throughout your repository,
-    # and busts the cache every time a package-lock.json file changes.
-    # https://dev.to/mpocock1/how-to-cache-nodemodules-in-github-actions-with-yarn-24eh
-    - name: Cache node modules
-      uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
-
     - run: npm install
     - run: npm run build
     - run: cp package-heroku.json dist/apps/backend/package.json
-    - name: Deploy API to second repo
+    - name: Deploy API to cube-api-build repo
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |

@@ -1,0 +1,29 @@
+name: Build Three.js Test Cube
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./prototypes/threejs-test
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 16.x
+
+    - run: npm install
+    - run: npm run build
+    - name: Deploy API to cube-threejs-test-build repo
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-threejs-test-build.git --branch=main --name="The Buildbot" --email=noreply@haushoppe.art
+

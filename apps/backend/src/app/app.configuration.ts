@@ -4,16 +4,15 @@ export const configuration = () => {
   return {
     environment: process.env.NODE_ENV,
     port: process.env.PORT,
-    manifoldServerUrl: process.env.MANIFOLD_SERVER_URL,
-    manifoldAppId: process.env.MANIFOLD_APP_ID,
-    manifoldMasterKey: process.env.MANIFOLD_MASTER
+    mongodbRestEndpoint: process.env.MONGODB_REST_ENDPOINT,
+    mongodbApiKey: process.env.MONGODB_API_KEY,
+
   }
 }
 
 export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production'),
   PORT: Joi.number(),
-  MANIFOLD_SERVER_URL: Joi.string().required(),
-  MANIFOLD_APP_ID: Joi.string().required(),
-  MANIFOLD_MASTER_KEY: Joi.string().required()
+  MONGODB_REST_ENDPOINT: Joi.string().required(),
+  MONGODB_API_KEY: Joi.string().required(),
 })

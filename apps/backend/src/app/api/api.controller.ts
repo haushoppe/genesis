@@ -78,7 +78,7 @@ export class ApiController {
       this.restApiConfig
     );
 
-    return response.data;
+    return response.data.document;
   }
 
   /**

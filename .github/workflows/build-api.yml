@@ -19,7 +19,9 @@ jobs:
     - run: npm install
     - run: npm run build
     - run: cp package-api-compiled.json dist/apps/backend/package.json
-    - name: Deploy API with compiled code to `build-api` branch
+    - name: Deploy API to `haushoppe/scales-dashboard-api-build` repo
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/scales-dashboard.git --branch=build-api --dir=dist/apps/backend --no-silent --name="The Buildbot" --email=noreply@haushoppe.art
+        npx angular-cli-ghpages --repo=https://github.com/haushoppe/scales-dashboard-api-build.git --branch=main --dir=dist/apps/backend --name="The Buildbot" --email=noreply@haushoppe.art
 

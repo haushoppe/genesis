@@ -16,13 +16,13 @@ npm install -g nx
 
 ## Howto
 
-Start backend API in dev mode:
+Start backend (API) in dev mode:
 
 ```
 npm run start:backend 
 ```
 
-Start Frontend in dev mode:
+Start Frontend (Angular App) in dev mode:
 
 ```
 npm run start:frontend 

@@ -43,7 +43,7 @@ npm run start:frontend
 
 ### Backend API
 
-* https://scales-dashboard-api.onrender.com/
+* https://scales-dashboard-backend.onrender.com
 * [Nest.js](https://nestjs.com/) (on top of [Express](https://expressjs.com/)) Webserver
 * Automatically build and deployed from `main` branch
 * Free Plan on Render.com

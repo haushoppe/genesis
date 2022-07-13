@@ -2,5 +2,6 @@
   "version": 2,
   "projects": {
     "backend": "apps/backend"
-  }
+  },
+  "$schema": "./node_modules/nx/schemas/workspace-schema.json"
 }

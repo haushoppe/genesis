@@ -1,5 +1,5 @@
 {
-  "root": "apps/backend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/backend/src",
   "projectType": "application",
   "targets": {
@@ -11,20 +11,21 @@
         "main": "apps/backend/src/main.ts",
         "tsConfig": "apps/backend/tsconfig.app.json",
         "assets": ["apps/backend/src/assets"],
-        "tsPlugins": [{
-          "name": "@nestjs/swagger/plugin",
-          "options": {
-            "introspectComments": true
+        "tsPlugins": [
+          {
+            "name": "@nestjs/swagger/plugin",
+            "options": {
+              "introspectComments": true
+            }
           }
-        }]
+        ]
       },
       "configurations": {
         "production": {
           "optimization": true,
           "extractLicenses": true,
           "inspect": false,
-          "fileReplacements": [
-          ]
+          "fileReplacements": []
         }
       }
     },

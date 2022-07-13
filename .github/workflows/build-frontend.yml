@@ -1,0 +1,25 @@
+name: Build & deploy Frontend
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 16.x
+
+    - run: npm install
+    - run: npm run build:frontend:production
+    - name: Deploy Frontend to `haushoppe/scales-dashboard-frontend-build` repo
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        npx angular-cli-ghpages --cname=scales-dashboard.theangelswing.art --repo=https://github.com/haushoppe/scales-dashboard-frontend-build.git --branch=main --dir=dist/apps/frontend --name="The Buildbot" --email=noreply@haushoppe.art

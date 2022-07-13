@@ -9,11 +9,12 @@
 
     "start:backend": "nx serve --project=backend",
     "build:backend": "nx build --project=backend",
-    "build:backend:production": "nx build --project=backend --configuration=production && cp package-api-compiled.json dist/apps/backend/package.json",
+    "build:backend:production": "nx build --project=backend --configuration=production && cp package-backend-compiled.json dist/apps/backend/package.json",
     "test:backend": "nx test --project=backend",
 
     "start:frontend": "nx serve --project=frontend",
     "build:frontend": "nx build --project=frontend",
+    "build:frontend:production": "nx build --project=frontend --configuration=production",
     "test:frontend": "nx test --project=frontend",
 
     "postinstall": "ngcc --properties es2020 browser module main"

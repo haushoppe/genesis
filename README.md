@@ -22,4 +22,27 @@ Start default project for testing (app `backend`):
 npm start
 ```
 
+## Infrastructure
+
+
+### Crawler
+
+* Some custom python script?
+
+
+### Database
+
+* https://data.mongodb-api.com/app/data-wkgaq/endpoint/data/v1/action/
+* [MongoDB Atlas](https://www.mongodb.com/cloud)
+
+### Backend API
+
+* https://scales-dashboard-api.onrender.com/
+* [Nest.js](https://nestjs.com/) (on top of [Express](https://expressjs.com/)) Webserver
+* Automatically build and deployed from `main` branch
+* Free Plan on Render.com
+
+Web services on the free plan are automatically spun down after 15 minutes of inactivity. When a new request for a free service comes in, Render spins it up again so it can process the request. This can cause a response delay of up to 30 seconds for the first request that comes in after a period of inactivity. More info [here](https://render.com/docs/free#free-web-services).
+
+### Frontend
 

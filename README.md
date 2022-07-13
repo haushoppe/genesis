@@ -16,10 +16,16 @@ npm install -g nx
 
 ## Howto
 
-Start default project for testing (app `backend`):
+Start backend API in dev mode:
 
 ```
-npm start
+npm run start:backend 
+```
+
+Start Frontend in dev mode:
+
+```
+npm run start:frontend 
 ```
 
 ## Infrastructure

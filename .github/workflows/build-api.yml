@@ -17,8 +17,8 @@ jobs:
         node-version: 16.x
 
     - run: npm install
-    - run: npm run build
-    - run: cp package-api-compiled.json dist/apps/backend/package.json
+    - run: npm run build:backend:production
+    # - run: cp package-api-compiled.json dist/apps/backend/package.json
     - name: Deploy API to `haushoppe/scales-dashboard-api-build` repo
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}

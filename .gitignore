@@ -40,3 +40,5 @@ Thumbs.db
 
 # Config file with sensitive information
 .env
+
+.angular

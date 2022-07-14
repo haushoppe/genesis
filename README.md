@@ -58,5 +58,5 @@ Web services on the free plan are automatically spun down after 15 minutes of in
 
 ### Frontend
 
-* http://scales-dashboard.theangelswing.art/
+* https://scales-dashboard.theangelswing.art/
 * [Angular](https://angular.io/) app in a [Nx](https://nx.dev/) workspace

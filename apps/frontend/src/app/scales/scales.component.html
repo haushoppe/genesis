@@ -1,6 +1,14 @@
 <h1>Scales</h1>
 
-<p class="lead mt-4 mb-4 text-justify">
-  All the scales!
-</p>
+<hr>
 
+<div *ngFor="let group of groupedScales$ | async">
+
+  <h3>{{ group[0].parent_painting }}</h3>
+
+  <img
+    *ngFor="let scale of group"
+    [src]="scale.image_thumbnail_url"
+    [alt]="scale.name"
+    [title]="scale.name">
+</div>

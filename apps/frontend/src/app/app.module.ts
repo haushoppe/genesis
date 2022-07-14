@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
+import { HttpClientModule } from '@angular/common/http';
 
 import { AppComponent } from './app.component';
 import { FooterComponent } from './footer/footer.component';
@@ -17,6 +18,7 @@ import { StartComponent } from './start/start.component';
       { path: 'scales', component: ScalesComponent }
     ],
     { initialNavigation: 'enabledBlocking' }),
+    HttpClientModule,
     HeaderComponent,
     FooterComponent
   ],

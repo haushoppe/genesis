@@ -1,11 +1,9 @@
 import { Controller, Get, Param, Response, StreamableFile } from '@nestjs/common';
-import { Response as Res } from 'express';
-import { ApiParam, ApiProperty } from '@nestjs/swagger';
-import axios from 'axios';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-// const { MongoClient } = require("mongodb");
 import { ConfigService } from '@nestjs/config';
-
+import { ApiParam } from '@nestjs/swagger';
+import axios from 'axios';
+import { Response as Res } from 'express';
+import { Logger } from '@nestjs/common';
 
 
 @Controller()
@@ -23,31 +21,6 @@ export class ApiController {
 
   constructor(private config: ConfigService) { }
 
-  // /**
-  //  * Getting the scales (via MongoClient -- does not work)
-  //  */
-  //  @Get(['api/test1'])
-  // async getTest1() {
-
-  //   const uri = "mongodb+srv://kay:myRealPassword@cluster0.mongodb.net/test?w=majority"; // ???!
-  //   const client = new MongoClient(uri);
-  //     try {
-  //       await client.connect();
-  //       const database = client.db('scales');
-  //       const scales = database.collection('scales');
-
-  //       const query = { _id: 1 };
-  //       const scale = await scales.findOne(query);
-  //       console.log(scale);
-
-  //     } catch(ex) {
-  //       console.dir(ex)
-
-  //     } finally {
-  //       await client.close();
-  //     }
-  // }
-
   /**
    * Test: Returns the single NFT with the given ID
    */
@@ -59,7 +32,7 @@ export class ApiController {
   @Get(['api/getSingle/:id'])
   async getSingle(@Param('id') id: string) {
 
-    console.log("ID", id)
+    Logger.verbose("Serving api/getSingle/" + id);
 
     const response = await axios.post(
       // https://www.mongodb.com/docs/manual/reference/method/db.collection.findOne/
@@ -87,6 +60,8 @@ export class ApiController {
   @Get(['api/getAll'])
   async getAll() {
 
+    Logger.verbose("Serving api/getAll/");
+
     const response = await axios.post(
       // https://www.mongodb.com/docs/manual/reference/method/db.collection.find/
       this.mongodbRestEndpoint + 'find',
@@ -113,6 +88,8 @@ export class ApiController {
     example: 'https://cloudflare-ipfs.com/ipfs/QmYKabnBxtucct5Vkf81o9ZX6u2sCnZKU94VfGqUwzbZwg'
   })
   async getProxy(@Param('url') url: string, @Response({ passthrough: true }) res: Res): Promise<StreamableFile> {
+
+    Logger.verbose("Serving api/proxy/" + url);
 
     const response = await axios.get(url, { responseType: 'arraybuffer' });
     const buffer = Buffer.from(response.data, 'binary')

@@ -13,7 +13,7 @@
           "error",
           {
             "type": "attribute",
-            "prefix": "cubeWorkspace",
+            "prefix": "app",
             "style": "camelCase"
           }
         ],
@@ -21,7 +21,7 @@
           "error",
           {
             "type": "element",
-            "prefix": "cube-workspace",
+            "prefix": "app",
             "style": "kebab-case"
           }
         ]

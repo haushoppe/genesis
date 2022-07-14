@@ -28,6 +28,12 @@ Start Frontend (Angular App) in dev mode:
 npm run start:frontend 
 ```
 
+Start all
+
+```
+npm run start
+```
+
 ## Infrastructure
 
 
@@ -44,7 +50,7 @@ npm run start:frontend
 ### Backend API
 
 * https://scales-dashboard-backend.onrender.com
-* [Nest.js](https://nestjs.com/) (on top of [Express](https://expressjs.com/)) Webserver
+* [Nest.js](https://nestjs.com/) (on top of [Express](https://expressjs.com/)) Webserver in a [Nx](https://nx.dev/) workspace
 * Automatically build and deployed from `main` branch
 * Free Plan on Render.com
 
@@ -52,3 +58,5 @@ Web services on the free plan are automatically spun down after 15 minutes of in
 
 ### Frontend
 
+* http://scales-dashboard.theangelswing.art/
+* [Angular](https://angular.io/) app in a [Nx](https://nx.dev/) workspace

@@ -1,14 +1,46 @@
-<h1>Scales</h1>
+<ng-container *ngIf="groupedgroupedScales$ | async as groupedgroupedScales; else loading">
 
-<hr>
+  <h1 class="mt-4">Scales</h1>
 
-<div *ngFor="let group of groupedScales$ | async">
+  <div class="break-out-container text-start">
+    <div class="container">
 
-  <h3>{{ group[0].parent_painting }}</h3>
+      <div *ngFor="let groupedGroup of groupedgroupedScales" class="mb-4">
 
-  <img
-    *ngFor="let scale of group"
-    [src]="scale.image_thumbnail_url"
-    [alt]="scale.name"
-    [title]="scale.name">
-</div>
+        <h4>{{ groupedGroup[0][0].parent_painting }}</h4>
+
+        <div *ngFor="let group of groupedGroup" class="clearfix">
+
+          <div class="scale" *ngFor="let scale of group"
+            [ngClass]="{ 'owned-by-us': scale.owned_by_us }">
+
+            <span class="owned-tag"></span>
+            <span class="tag">{{ scale.row + scale.column }}</span>
+
+
+            <img
+              [src]="scale.image_thumbnail_url || scale.image"
+              [alt]="scale.row + scale.column"
+              [title]="scale.row + scale.column"
+              width="128"
+              height="128">
+
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</ng-container>
+
+<ng-template #loading>
+
+  <app-loading-indicator></app-loading-indicator>
+
+  <div class="mb-5">&nbsp;</div>
+
+</ng-template>

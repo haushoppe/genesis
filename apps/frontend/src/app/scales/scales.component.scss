@@ -1,0 +1,43 @@
+.scale {
+
+  display: block;
+  float: left;
+  width: 128px;
+  height: 128px;
+  border: 1px solid black;
+
+  // img {
+  //   display: block;
+  //   float: left;
+  //   display: block;
+  // }
+
+  .tag {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .owned-tag {
+    display: none;
+  }
+}
+
+.owned-by-us {
+  border-color: green;
+
+  .tag {
+    background-color: rgba(0, 128, 0, 0.7);
+  }
+
+  .owned-tag {
+    position: absolute;
+    display: block;
+    background-color: rgba(0, 128, 0, 0.4);
+    width: 128px;
+    height: 128px;
+  }
+
+}
+

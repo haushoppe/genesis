@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, retry } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { mapScale, RawScale, Scale, groupScalesByParentPainting, toArrayOfArray } from './scale';
+import { mapScale, RawScale, Scale, groupScalesByParentPaintingAndRow, toArrayOfArrayOfArray } from './scale';
 
 
 @Injectable({
@@ -22,10 +22,10 @@ export class BackendService {
     );
   }
 
-  getAllGroupedScales(): Observable<Scale[][]> {
+  getAllGroupedScales(): Observable<Scale[][][]> {
     return this.getAllScales().pipe(
-      map(groupScalesByParentPainting),
-      map(toArrayOfArray)
+      map(groupScalesByParentPaintingAndRow),
+      map(toArrayOfArrayOfArray)
     );
   }
 }

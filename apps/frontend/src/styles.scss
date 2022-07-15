@@ -22,3 +22,11 @@ body {
 .text-justify {
   text-align: justify;
 }
+
+// see http://www.simon-li.com/design-and-code/an-elegant-way-to-break-the-bootstrap-container/
+.break-out-container {
+  width: 100vw;
+  position: relative;
+  left: calc(-1 * (100vw - 100%) / 2);
+}
+

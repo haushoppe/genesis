@@ -2,26 +2,20 @@ import os
 import sys
 import json
 import time
+import pymongo
 import logging
-import datetime
 
 from web3 import Web3
 from dateutil import parser
-
-from opensea_utils import get_new_events, get_all_events, EVENT_TYPE_TRANSFER
-
-import pymongo
+from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
-from dotenv import load_dotenv
+from config import DAO_MEMBERS
+from opensea_utils import get_new_events, get_all_events, EVENT_TYPE_TRANSFER
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S', stream=sys.stdout)
 
-
-DAO_MEMBERS = [
-    # Add lowercased wallet addresses here
-]
 
 def load_metadata(path):
     metadata = dict()

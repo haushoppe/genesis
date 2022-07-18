@@ -5,15 +5,12 @@ import logging
 import datetime
 
 from web3 import Web3
-
 from dotenv import load_dotenv
+
+from config import DAO_MEMBERS
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S', stream=sys.stdout)
 
-
-DAO_MEMBERS = [
-    # Add lowercased wallet addresses here
-]
 
 def load_metadata(path):
     metadata = dict()

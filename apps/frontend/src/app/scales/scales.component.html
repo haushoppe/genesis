@@ -7,7 +7,7 @@
 
       <div *ngFor="let groupedGroup of groupedgroupedScales" class="mb-4">
 
-        <h4>{{ groupedGroup[0][0].parent_painting }}</h4>
+        <h4>{{ groupedGroup[0][0].painting }}</h4>
 
         <div *ngFor="let group of groupedGroup" class="clearfix">
 
@@ -15,13 +15,13 @@
             [ngClass]="{ 'owned-by-us': scale.owned_by_us }">
 
             <span class="owned-tag"></span>
-            <span class="tag">{{ scale.row + scale.column }}</span>
+            <span class="tag">{{ scale.position.name }}</span>
 
 
             <img
-              [src]="scale.image_thumbnail_url || scale.image"
-              [alt]="scale.row + scale.column"
-              [title]="scale.row + scale.column"
+              [src]="scale.image_thumbnail_url || scale.image_url"
+              [alt]="scale.token_id + ': ' + scale.name"
+              [title]="scale.token_id + ': ' + scale.name"
               width="128"
               height="128">
 

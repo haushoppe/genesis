@@ -1,72 +1,36 @@
 export interface RawScale {
-  "_id": string,
-  "name": string,
-  "image": string,
-  "tokenId": number,
-  "attributes": [
-    {
-      "trait_type": string,
-      "value": string
-    }
-  ],
-  "Parent Painting Row Amount": string,
-  "Parent Painting Column Amount": string,
-  "Row": string,
-  "Column": string,
-  "Artist Name": string,
-  "Collection Name": string,
-  "id": string,
-  "painting": string,
-  "owner": string,
-  "owned_by_us": boolean,
-  "last_updated": string,
-  "last_updated_block": number,
-  "last_updated_tx": string,
-  "owner_username": string,
-  "image_thumbnail_url": string
+  _id: string,
+  token_id: number,
+  name: string,
+  image_url: string,
+  image_thumbnail_url: string,
+  contract_address: string,
+  painting: string,
+  position: {
+    name: string,
+    row: number,
+    col: number,
+    row_count: number,
+    col_count: number,
+    index: number
+  },
+  owner: {
+    address: string,
+    owner_id: string
+  },
+  last_updated: {
+    timestamp: string
+  }
 }
 
-export interface Scale {
-  _id: string,
-  name: string,
-  image: string,
-  token_id: number,
-  parent_painting: string
-  parent_painting_row_amount: number,
-  parent_painting_column_amount: number,
-  row: string,
-  column: number,
-  id: string,
-  painting: string,
-  owner: string,
-  owned_by_us: boolean,
-  last_updated: string,
-  last_updated_block: number,
-  last_updated_tx: string,
-  owner_username: string,
-  image_thumbnail_url: string
+export interface Scale extends RawScale {
+  owned_by_us: boolean
 }
 
 export function mapScale(s: RawScale): Scale {
   return {
-    _id: s._id,
-    name: s.name,
-    image: s.image,
-    token_id: s.tokenId,
-    parent_painting: s.attributes.find(x => x.trait_type === 'Parent Painting')?.value || 'unknown',
-    parent_painting_row_amount: +s["Parent Painting Row Amount"],
-    parent_painting_column_amount: +s["Parent Painting Column Amount"],
-    row: s.Row,
-    column: +s.Column,
-    id: s.id,
-    painting: s.painting,
-    owner: s.owner,
-    owned_by_us: s.owned_by_us,
-    last_updated: s.last_updated,
-    last_updated_block: s.last_updated_block,
-    last_updated_tx: s.last_updated_tx,
-    owner_username: s.owner_username,
-    image_thumbnail_url: s.image_thumbnail_url
+    ...s,
+    owned_by_us: false
   }
 }
 
@@ -85,7 +49,7 @@ export function groupScalesByParentPaintingAndRow(scales: Scale[]): GroupedGroup
   const groupedByParent: GroupedScales = scales.reduce(
     (acc: GroupedScales, item: Scale) => ({
       ...acc,
-      [item.parent_painting]: [...(acc[item.parent_painting] ?? []), item],
+      [item.painting]: [...(acc[item.painting] ?? []), item],
     }),
     {},
   );
@@ -107,7 +71,7 @@ export function groupScalesByRow(scales: Scale[]): GroupedScales {
   return scales.reduce(
     (acc: GroupedScales, item: Scale) => ({
       ...acc,
-      [item.row]: [...(acc[item.row] ?? []), item],
+      [item.position.row]: [...(acc[item.position.row] ?? []), item],
     }),
     {},
   );
@@ -136,7 +100,7 @@ export function toArrayOfArray(groupedScales: GroupedScales): Scale[][] {
     .sort((a, b) => a.localeCompare(b))
     .forEach((key) => {
       const group = groupedScales[key];
-      const sortedByColumn = group.sort((a, b) => a.column - b.column);
+      const sortedByColumn = group.sort((a, b) => a.position.col - b.position.col);
       result.push(sortedByColumn);
     }
   );

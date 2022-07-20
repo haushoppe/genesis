@@ -25,14 +25,14 @@ export class ApiController {
    * Test: Returns the single NFT with the given ID
    */
    @ApiParam({
-    name: 'id',
+    name: 'token_id',
     description: 'The ID of the NFT',
     example: '333'
   })
-  @Get(['api/getSingle/:id'])
-  async getSingle(@Param('id') id: string) {
+  @Get(['api/getSingle/:token_id'])
+  async getSingle(@Param('token_id') token_id: string) {
 
-    Logger.verbose("Serving api/getSingle/" + id);
+    Logger.verbose("Serving api/getSingle/" + token_id);
 
     const response = await axios.post(
       // https://www.mongodb.com/docs/manual/reference/method/db.collection.findOne/
@@ -42,7 +42,7 @@ export class ApiController {
         database: 'scales',
         dataSource: 'mongodb-eth-1',
         filter: {
-          id: id
+          token_id: +token_id,
         },
         projection: {
           // '_id': 1

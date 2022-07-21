@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-import math
+import time
 import pymongo
 import logging
 import requests
@@ -11,8 +11,6 @@ from dotenv import load_dotenv
 
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-
-from config import DAO_MEMBERS
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S', stream=sys.stdout)
 
@@ -120,8 +118,7 @@ if __name__ == '__main__':
     INFURA_URL = os.getenv('INFURA_URL')
     OPENSEA_API_KEY = os.getenv('OPENSEA_API_KEY')
     METADATA_PATH = os.getenv('METADATA_PATH')
-    PARSE_FROM_START = True if os.getenv('PARSE_FROM_START') == "true" else False
-    CHECK_INTERVAL = int(os.getenv('CHECK_INTERVAL'))
+    RESCAN_INTERVAL = int(os.getenv('RESCAN_INTERVAL'))
 
     try:
         db_client = MongoClient(f"mongodb+srv://{MONGODB_USER}:{MONGODB_PASS}@{MONGODB_HOST}/?retryWrites=true&w=majority", server_api=ServerApi('1'))
@@ -129,24 +126,27 @@ if __name__ == '__main__':
         print(f"Error connecting to MongoDB: {e}")
         sys.exit(1)
 
-    url = f"https://api.opensea.io/api/v1/assets?order_direction=desc&asset_contract_address={CONTRACT_ADDRESS}&limit=10&include_orders=false"
+    while True:
+        url = f"https://api.opensea.io/api/v1/assets?order_direction=desc&asset_contract_address={CONTRACT_ADDRESS}&limit=10&include_orders=false"
 
-    headers = {
-        "Accept": "application/json",
-        "X-API-KEY": OPENSEA_API_KEY
-    }
+        headers = {
+            "Accept": "application/json",
+            "X-API-KEY": OPENSEA_API_KEY
+        }
 
-    response = requests.get(url, headers=headers)
-    data = response.json()
-
-    logging.info(f"Got {len(data['assets'])} assets")
-    for asset in data['assets']:
-        check_update_asset(db_client, asset, METADATA_PATH)
-
-    while data['next']:
-        url = f"https://api.opensea.io/api/v1/assets?order_direction=desc&asset_contract_address={CONTRACT_ADDRESS}&limit=50&include_orders=false&cursor={data['next']}"
         response = requests.get(url, headers=headers)
         data = response.json()
-        logging.info(f"Got {len(data['assets'])} more assets")
+
+        logging.info(f"Got {len(data['assets'])} assets")
         for asset in data['assets']:
             check_update_asset(db_client, asset, METADATA_PATH)
+
+        while data['next']:
+            url = f"https://api.opensea.io/api/v1/assets?order_direction=desc&asset_contract_address={CONTRACT_ADDRESS}&limit=50&include_orders=false&cursor={data['next']}"
+            response = requests.get(url, headers=headers)
+            data = response.json()
+            logging.info(f"Got {len(data['assets'])} more assets")
+            for asset in data['assets']:
+                check_update_asset(db_client, asset, METADATA_PATH)
+
+        time.sleep(RESCAN_INTERVAL)

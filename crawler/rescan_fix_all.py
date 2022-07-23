@@ -8,35 +8,12 @@ import requests
 import datetime
 
 from dotenv import load_dotenv
-
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
+from scales_utils import get_owner_id
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S', stream=sys.stdout)
-
-
-def get_owner_id(address, owner_db):
-    """
-    Look up wallet in list and return ID of owner. Create if not found.
-
-    Params:
-        address (str): Address of wallet to look up
-        owner_db (pymongo.collection): Collection of owners
-
-    Returns:
-        str: ID of owner
-    """
-    owner = owner_db.find_one({"wallets": address.lower()})
-    if owner:
-        owner_id = owner['_id']
-    else:
-        owner_entry = {
-            "wallets": [address.lower()]
-        }
-        res = owner_db.insert_one(owner_entry)
-        owner_id = res.inserted_id
-
-    return owner_id
 
 
 def initialize_new_entry(asset, metadata_path, owner_db):

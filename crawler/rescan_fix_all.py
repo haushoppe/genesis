@@ -114,16 +114,19 @@ if __name__ == '__main__':
         response = requests.get(url, headers=headers)
         data = response.json()
 
-        logging.info(f"Got {len(data['assets'])} assets")
-        for asset in data['assets']:
-            check_update_asset(db_client, asset, METADATA_PATH)
-
-        while data['next']:
-            url = f"https://api.opensea.io/api/v1/assets?order_direction=desc&asset_contract_address={CONTRACT_ADDRESS}&limit=50&include_orders=false&cursor={data['next']}"
-            response = requests.get(url, headers=headers)
-            data = response.json()
-            logging.info(f"Got {len(data['assets'])} more assets")
+        if "assets" in data:
+            logging.info(f"Got {len(data['assets'])} assets")
             for asset in data['assets']:
                 check_update_asset(db_client, asset, METADATA_PATH)
+
+        if "next" in data:
+            while data['next']:
+                url = f"https://api.opensea.io/api/v1/assets?order_direction=desc&asset_contract_address={CONTRACT_ADDRESS}&limit=50&include_orders=false&cursor={data['next']}"
+                response = requests.get(url, headers=headers)
+                data = response.json()
+                if "assets" in data:
+                    logging.info(f"Got {len(data['assets'])} more assets")
+                    for asset in data['assets']:
+                        check_update_asset(db_client, asset, METADATA_PATH)
 
         time.sleep(RESCAN_INTERVAL)

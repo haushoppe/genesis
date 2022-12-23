@@ -16,9 +16,18 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 // Ownable: Privileged accounts will be able to create more supply.
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// import "@openzeppelin/contracts/utils/Strings.sol";
+// String operations.
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+// not used??
+// Provides counters that can only be incremented, decremented or reset.
 // import "@openzeppelin/contracts/utils/Counters.sol";
-// import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+// Elliptic Curve Digital Signature Algorithm (ECDSA) operations.
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+// not used??
+// A standardized way to retrieve royalty payment information
 // import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 /**
@@ -38,13 +47,12 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     uint256 public price = 0.1 ether;
     uint256 public maxSupply = 200;
 
-    // TODO: REMOVE
     // Used to validate authorized mint addresses
-    // address private signerAddress = 0x0000000000000000000000000000000000000000;
+    // address(0) enables/disables minting via allowlist
+    address private signerAddress = 0x0000000000000000000000000000000000000000;
 
-    // TODO: REMOVE
     // Used to track number of mints per wallet
-    // mapping (address => uint256) public totalMintsPerAddress;
+    mapping (address => uint256) public totalMintsPerAddress;
 
     // Lending overview
     mapping (address => uint256) public totalLoanedPerAddress;
@@ -112,11 +120,9 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     /**
      * @notice Allow contract owner to update the authorized signer address
      */
-    // TODO: REMOVE
-    // function setSignerAddress(address _signerAddress) external onlyOwner {
-    //     require(_signerAddress != address(0));
-    //     signerAddress = _signerAddress;
-    // }
+    function setSignerAddress(address _signerAddress) external onlyOwner {
+        signerAddress = _signerAddress;
+    }
 
     function pause() public onlyOwner {
         _pause();
@@ -140,29 +146,56 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
         require(tokenOwnersOnLoan[tokenId] == address(0), "Cannot transfer token on loan");
     }
 
-    // TODO: REMOVE
-    // function verifyAddressSigner(bytes32 messageHash, bytes memory signature) private view returns (bool) {
-    //     return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
-    // }
+    function verifyAddressSigner(bytes32 messageHash, bytes memory signature) private view returns (bool) {
+        return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
+    }
 
-    // TODO: REMOVE
-    // function hashMessage(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
-    //     return keccak256(abi.encode(sender, maximumAllowedMints));
-    // }
+    function hashMessage(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
+        return keccak256(abi.encode(sender, maximumAllowedMints));
+    }
 
     /**
-     * @notice Mint tokens, batch mint possible
+     * @notice Mint tokens, batch mint possible - use this function if minting via allowlist is disabled
      */
     function mint(
         uint256 mintNumber
     ) external payable virtual nonReentrant {
         require(isSaleActive, "Mint is disabled");
+        require(signerAddress == address(0), "Minting via allowlist is enabled. Please use the function mintAllowlist!");
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
 
-        // TODO: REMOVE
-        // totalMintsPerAddress[msg.sender] += mintNumber;
+        totalMintsPerAddress[msg.sender] += mintNumber;
+        _safeMint(msg.sender, mintNumber);
+
+        if (currentSupply + mintNumber >= maxSupply) {
+            isSaleActive = false;
+        }
+    }
+
+    /**
+     * @notice Allow for minting of tokens up to the maximum allowed for a given address.
+     * The address of the sender and the number of mints allowed are hashed and signed
+     * with the server's private key and verified here to prove allowlist status.
+     */
+    function mintAllowlist(
+        bytes32 messageHash,
+        bytes calldata signature,
+        uint256 mintNumber,
+        uint256 maximumAllowedMints
+    ) external payable virtual nonReentrant {
+        require(isSaleActive, "Mint is disabled");
+        require(signerAddress != address(0), "Minting via allowlist is disabled. Please use the function mint!");
+
+        require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Maximum allowed mints exceeded");
+        require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+        require(verifyAddressSigner(messageHash, signature), "Signature validation failed");
+
+        uint256 currentSupply = totalSupply();
+        require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
+
+        totalMintsPerAddress[msg.sender] += mintNumber;
         _safeMint(msg.sender, mintNumber);
 
         if (currentSupply + mintNumber >= maxSupply) {
@@ -177,9 +210,7 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
         require((totalSupply() + receivers.length * mintNumber) <= maxSupply, "Max supply exceeded");
 
         for (uint256 i = 0; i < receivers.length; i++) {
-            // TODO: REMOVE
-            // this line is missing in the MA contract!
-            // totalMintsPerAddress[receivers[i]] += 1;
+            totalMintsPerAddress[receivers[i]] += mintNumber;
             _safeMint(receivers[i], 1);
         }
     }

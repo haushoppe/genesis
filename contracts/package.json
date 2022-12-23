@@ -1,12 +1,15 @@
 {
   "name": "contracts",
   "version": "1.0.0",
-  "description": "Solidity Dependencies",
+  "description": "Solidity Contracts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "remixd": "remixd -s $(pwd) -u https://remix.ethereum.org/"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.0",
     "erc721a": "^4.2.3"
+  },
+  "devDependencies": {
+    "@remix-project/remixd": "^0.6.9"
   }
 }

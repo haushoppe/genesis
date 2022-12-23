@@ -6,13 +6,15 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+// not used??
+// import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+// not used??
+// import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 /**
  * @title Artist token contract
- * @author Ethspresso (https://twitter.com/ethspresso)
+ * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of artist tokens.
  */
 contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
@@ -23,13 +25,12 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     using Strings for uint256;
 
     string private _baseTokenURI;
-    // Price is not used and not checked in mint function
     uint256 public price = 0 ether;
-    uint256 public maxSupply;
-    uint256 public maxMintPerAddress = 1;
+    uint256 public maxSupply = 10000;
 
     // Used to validate authorized mint addresses
-    address private signerAddress = 0x5eEEFC29B93D14697d93bD115F0191aB161bD098;
+    // address(0) enables/disables minting via allowlist
+    address private signerAddress = 0x0000000000000000000000000000000000000000;
 
     // Used to track number of mints per wallet
     mapping (address => uint256) public totalMintsPerAddress;
@@ -46,8 +47,11 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     /**
      * @notice Construct a contract instance with predefined name and symbol
      */
-    constructor() ERC721A("Artist Token", "ARTIST") {}
+    constructor() ERC721A("Cube Artist Token", "ARTIST") {}
 
+    /**
+     * @dev Used by ERC721A.tokenURI to return the full Uniform Resource Identifier (URI) for a token.
+     */
     function _baseURI() internal view virtual override returns (string memory) {
         return _baseTokenURI;
     }
@@ -98,7 +102,6 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
      * @notice Allow contract owner to update the authorized signer address
      */
     function setSignerAddress(address _signerAddress) external onlyOwner {
-        require(_signerAddress != address(0));
         signerAddress = _signerAddress;
     }
 
@@ -133,31 +136,62 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Mint tokens, one at a time
+     * @notice Mint tokens, batch mint possible - use this function if minting via allowlist is disabled
      */
-    function mint() external payable virtual nonReentrant {
+    function mint(
+        uint256 mintNumber
+    ) external payable virtual nonReentrant {
         require(isSaleActive, "Mint is disabled");
-        require(totalMintsPerAddress[msg.sender] + 1 <= maxMintPerAddress, "Already minted maximum number of tokens");
+        require(signerAddress == address(0), "Minting via allowlist is enabled. Please use the function mintAllowlist!");
 
         uint256 currentSupply = totalSupply();
-        require(currentSupply + 1 <= maxSupply, "Max supply exceeded");
+        require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
 
-        totalMintsPerAddress[msg.sender] += 1;
-        _safeMint(msg.sender, 1);
+        totalMintsPerAddress[msg.sender] += mintNumber;
+        _safeMint(msg.sender, mintNumber);
 
-        if (currentSupply + 1 >= maxSupply) {
+        if (currentSupply + mintNumber >= maxSupply) {
+            isSaleActive = false;
+        }
+    }
+
+    /**
+     * @notice Allow for minting of tokens up to the maximum allowed for a given address.
+     * The address of the sender and the number of mints allowed are hashed and signed
+     * with the server's private key and verified here to prove allowlist status.
+     */
+    function mintAllowlist(
+        bytes32 messageHash,
+        bytes calldata signature,
+        uint256 mintNumber,
+        uint256 maximumAllowedMints
+    ) external payable virtual nonReentrant {
+        require(isSaleActive, "Mint is disabled");
+        require(signerAddress != address(0), "Minting via allowlist is disabled. Please use the function mint!");
+
+        require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Maximum allowed mints exceeded");
+        require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+        require(verifyAddressSigner(messageHash, signature), "Signature validation failed");
+
+        uint256 currentSupply = totalSupply();
+        require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
+
+        totalMintsPerAddress[msg.sender] += mintNumber;
+        _safeMint(msg.sender, mintNumber);
+
+        if (currentSupply + mintNumber >= maxSupply) {
             isSaleActive = false;
         }
     }
     
     /**
-     * @notice Allow owner to send 1 token for free to each of multiple addresses
+     * @notice Allow owner to send `mintNumber` tokens without cost to multiple addresses
      */
-    function gift(address[] calldata receivers) external onlyOwner {
-        require((totalSupply() + receivers.length) <= maxSupply, "Max supply exceeded");
+    function gift(address[] calldata receivers, uint256 mintNumber) external onlyOwner {
+        require((totalSupply() + receivers.length * mintNumber) <= maxSupply, "Max supply exceeded");
 
         for (uint256 i = 0; i < receivers.length; i++) {
-            totalMintsPerAddress[receivers[i]] += 1;
+            totalMintsPerAddress[receivers[i]] += mintNumber;
             _safeMint(receivers[i], 1);
         }
     }
@@ -265,7 +299,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * Get all the token ids owned by a given address
+     * Returns all the token ids owned by a given address
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         require(owner != address(0), "Balance query for the zero address");

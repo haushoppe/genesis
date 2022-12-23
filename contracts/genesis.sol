@@ -1,21 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
+// Non-Fungible Token Standard, including the Metadata extension.
+// Optimized for lower gas during batch mints.
+// Token IDs are minted in sequential order (e.g. 0, 1, 2, 3, ...)
 import "erc721a/contracts/ERC721A.sol";
+
+// Makes nonReentrant modifier available, to make sure there are no nested (reentrant) calls to functions.
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+// Privileged accounts will be able to pause the functionality marked as whenNotPaused. Useful for emergency response.
 import "@openzeppelin/contracts/security/Pausable.sol";
+
+// Mintable: Simple mechanism with a single account authorized for all privileged actions.
+// Ownable: Privileged accounts will be able to create more supply.
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+
+// import "@openzeppelin/contracts/utils/Strings.sol";
+// import "@openzeppelin/contracts/utils/Counters.sol";
+// import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+// import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 /**
- * @title Artist token contract
- * @author Ethspresso (https://twitter.com/ethspresso)
- * @notice This contract handles minting and loaning of artist tokens.
+ * @title Genesis contract
+ * @author Johannes from HAUS HOPPE
+ * @notice This contract handles minting and loaning of genesis tokens.
+ * @custom:previous-contributions This code is largely derived from the work of Ethspresso, who used the publicly available code from the Meta Angels project as a foundation.
  */
-contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
+contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
 
@@ -23,16 +35,16 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     using Strings for uint256;
 
     string private _baseTokenURI;
-    // Price is not used and not checked in mint function
-    uint256 public price = 0 ether;
-    uint256 public maxSupply;
-    uint256 public maxMintPerAddress = 1;
+    uint256 public price = 0.1 ether;
+    uint256 public maxSupply = 200;
 
+    // TODO: REMOVE
     // Used to validate authorized mint addresses
-    address private signerAddress = 0x5eEEFC29B93D14697d93bD115F0191aB161bD098;
+    // address private signerAddress = 0x0000000000000000000000000000000000000000;
 
+    // TODO: REMOVE
     // Used to track number of mints per wallet
-    mapping (address => uint256) public totalMintsPerAddress;
+    // mapping (address => uint256) public totalMintsPerAddress;
 
     // Lending overview
     mapping (address => uint256) public totalLoanedPerAddress;
@@ -46,8 +58,11 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     /**
      * @notice Construct a contract instance with predefined name and symbol
      */
-    constructor() ERC721A("Artist Token", "ARTIST") {}
+    constructor() ERC721A("Genesis by HAUS HOPPE", "GENESIS") {}
 
+    /**
+     * @dev Used by ERC721A.tokenURI to return the full Uniform Resource Identifier (URI) for a token.
+     */
     function _baseURI() internal view virtual override returns (string memory) {
         return _baseTokenURI;
     }
@@ -97,10 +112,11 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     /**
      * @notice Allow contract owner to update the authorized signer address
      */
-    function setSignerAddress(address _signerAddress) external onlyOwner {
-        require(_signerAddress != address(0));
-        signerAddress = _signerAddress;
-    }
+    // TODO: REMOVE
+    // function setSignerAddress(address _signerAddress) external onlyOwner {
+    //     require(_signerAddress != address(0));
+    //     signerAddress = _signerAddress;
+    // }
 
     function pause() public onlyOwner {
         _pause();
@@ -124,41 +140,46 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         require(tokenOwnersOnLoan[tokenId] == address(0), "Cannot transfer token on loan");
     }
 
-    function verifyAddressSigner(bytes32 messageHash, bytes memory signature) private view returns (bool) {
-        return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
-    }
+    // TODO: REMOVE
+    // function verifyAddressSigner(bytes32 messageHash, bytes memory signature) private view returns (bool) {
+    //     return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
+    // }
 
-    function hashMessage(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
-        return keccak256(abi.encode(sender, maximumAllowedMints));
-    }
+    // TODO: REMOVE
+    // function hashMessage(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
+    //     return keccak256(abi.encode(sender, maximumAllowedMints));
+    // }
 
     /**
-     * @notice Mint tokens, one at a time
+     * @notice Mint tokens, batch mint possible
      */
-    function mint() external payable virtual nonReentrant {
+    function mint(
+        uint256 mintNumber
+    ) external payable virtual nonReentrant {
         require(isSaleActive, "Mint is disabled");
-        require(totalMintsPerAddress[msg.sender] + 1 <= maxMintPerAddress, "Already minted maximum number of tokens");
 
         uint256 currentSupply = totalSupply();
-        require(currentSupply + 1 <= maxSupply, "Max supply exceeded");
+        require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
 
-        totalMintsPerAddress[msg.sender] += 1;
-        _safeMint(msg.sender, 1);
+        // TODO: REMOVE
+        // totalMintsPerAddress[msg.sender] += mintNumber;
+        _safeMint(msg.sender, mintNumber);
 
-        if (currentSupply + 1 >= maxSupply) {
+        if (currentSupply + mintNumber >= maxSupply) {
             isSaleActive = false;
         }
     }
     
     /**
-     * @notice Allow owner to send 1 token for free to each of multiple addresses
+     * @notice Allow owner to send `mintNumber` tokens without cost to multiple addresses
      */
-    function gift(address[] calldata receivers) external onlyOwner {
-        require((totalSupply() + receivers.length) <= maxSupply, "Max supply exceeded");
+    function gift(address[] calldata receivers, uint256 mintNumber) external onlyOwner {
+        require((totalSupply() + receivers.length * mintNumber) <= maxSupply, "Max supply exceeded");
 
         for (uint256 i = 0; i < receivers.length; i++) {
+            // TODO: REMOVE
             // this line is missing in the MA contract!
-            totalMintsPerAddress[receivers[i]] += 1;
+            // totalMintsPerAddress[receivers[i]] += 1;
             _safeMint(receivers[i], 1);
         }
     }
@@ -266,7 +287,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * Get all the token ids owned by a given address
+     * Returns all the token ids owned by a given address
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         require(owner != address(0), "Balance query for the zero address");

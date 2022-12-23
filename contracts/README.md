@@ -1,20 +1,15 @@
-# Solidity contracts
+# Some solidity contracts
 
 ## Dependencies
 
- * ERC721A contract
- * OpenZeppelin interfaces and utilities
+ * ERC721A contract v4 (https://www.npmjs.com/package/erc721a)
+ * OpenZeppelin interfaces and utilities (https://www.npmjs.com/package/@openzeppelin/contracts)
 
+Install both via:
 ```
-npm install @openzeppelin/contracts
-npm install --save-dev erc721a
+npm install
 ```
 
-## rotatingcube.sol
-
-The main ERC721A contract for this project. Has the following methods, more to come:
- * setBaseURI (onlyOwner)
- * mint
 
 ## IDE for contract development
 

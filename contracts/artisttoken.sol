@@ -15,11 +15,12 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 /**
  * @title Artist token contract
  * @author Ethspresso and Johannes
- * @notice This contract handles minting and loaning of artist tokens.
+ * @notice This contract handles minting and loaning of artist tokens. It allows artists to agree to our terms and conditions on-chain.
  */
 contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
+    event Agreement(address indexed _from, bool _value);
 
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -39,6 +40,10 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     mapping (address => uint256) public totalLoanedPerAddress;
     mapping (uint256 => address) public tokenOwnersOnLoan;
     uint256 private currentLoanIndex = 0;
+
+    // Agreements to our terms and conditions
+    // Please review them here: https://cube.haushoppe.art/toc
+    mapping (address => bool) public agreements;
 
     // State variables
     bool public isSaleActive = false;
@@ -127,6 +132,27 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         require(tokenOwnersOnLoan[tokenId] == address(0), "Cannot transfer token on loan");
     }
 
+    /**
+     * An empty balance also means that the former owner no longer gives his consent.
+     */
+    function _afterTokenTransfers(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 quantity
+    ) internal override(ERC721A) {
+        super._afterTokenTransfers(from, to, tokenId, quantity);
+
+        // also called while minting, so we have to check for the zero address, too
+        if (from != address(0) && 
+            balanceOf(from) == 0 && 
+            agreements[from] == true) {
+
+            delete agreements[from];
+            emit Agreement(from, false);
+        }
+    }
+
     function verifyAddressSigner(bytes32 messageHash, bytes memory signature) private view returns (bool) {
         return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
     }
@@ -137,6 +163,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
 
     /**
      * @notice Mint tokens, batch mint possible - use this function if minting via allowlist is disabled
+     * Minting also means you agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
      */
     function mint(
         uint256 mintNumber
@@ -153,12 +180,19 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         if (currentSupply + mintNumber >= maxSupply) {
             isSaleActive = false;
         }
+
+        // minting also means the minter agrees to our TOC
+        if (agreements[msg.sender] == false) {
+            agreements[msg.sender] = true;
+            emit Agreement(msg.sender, true);
+        }
     }
 
     /**
      * @notice Allow for minting of tokens up to the maximum allowed for a given address.
      * The address of the sender and the number of mints allowed are hashed and signed
      * with the server's private key and verified here to prove allowlist status.
+     * Minting also means you agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
      */
     function mintAllowlist(
         bytes32 messageHash,
@@ -181,6 +215,12 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
 
         if (currentSupply + mintNumber >= maxSupply) {
             isSaleActive = false;
+        }
+        
+        // minting also means the minter agrees to our TOC
+        if (agreements[msg.sender] == false) {
+            agreements[msg.sender] = true;
+            emit Agreement(msg.sender, true);
         }
     }
     
@@ -324,4 +364,35 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     function withdraw() external onlyOwner {
         payable(owner()).transfer(address(this).balance);
     }
+
+
+    /**
+     * @notice Call this function to agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
+     */
+    function iAgreeToTheTermsAndConditions() external {
+        require(agreements[msg.sender] == false, "You already agreed to our terms and conditions!");
+        require(balanceOf(msg.sender) > 0, "You can only agree to our terms and conditions if you hold a token!");
+
+        agreements[msg.sender] = true;
+        emit Agreement(msg.sender, true);
+    }
+
+    /**
+     * @notice Call this function to revoke your agreement to our terms and conditions.
+     */
+    function iDoNotAgreeToTheTermsAndConditions() external {
+        require(agreements[msg.sender] == true, "You have no agreement that could be revoked. ");
+
+        delete agreements[msg.sender];
+        emit Agreement(msg.sender, false);
+    }
+
+    // Otherwise: Contract code size is 24742 bytes and exceeds 24576 bytes
+    // /**
+    //  * Returns the agreement status of an address
+    //  */
+    // function agreementsStatus(address addr) public view returns (bool) {
+    //     require(addr != address(0), "Query for the zero address");
+    //     return agreements[addr];
+    // }
 }

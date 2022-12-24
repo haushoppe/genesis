@@ -16,6 +16,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * @title Artist token contract
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of artist tokens. It allows artists to agree to our terms and conditions on-chain.
+ * Visit https://cube.haushoppe.art for more information
  */
 contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     event Loan(address indexed _from, address indexed to, uint _value);
@@ -52,7 +53,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     /**
      * @notice Construct a contract instance with predefined name and symbol
      */
-    constructor() ERC721A("Cube Artist Token", "ARTIST") {}
+    constructor() ERC721A("Artist Token for Collectors Cube", "ARTIST") {}
 
     /**
      * @dev Used by ERC721A.tokenURI to return the full Uniform Resource Identifier (URI) for a token.
@@ -388,6 +389,9 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         payable(owner()).transfer(address(this).balance);
     }
 
+    // ******************** //
+    // Terms and Conditions //
+    // ******************** //
 
     /**
      * @notice Call this function to agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
@@ -413,7 +417,6 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         emit Agreement(msg.sender, false);
     }
 
-    // Otherwise: Contract code size is 24742 bytes and exceeds 24576 bytes
     /**
      * Returns the agreement status of an address
      */

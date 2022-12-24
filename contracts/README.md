@@ -41,4 +41,4 @@ python3 --version
 
 ### Change the compiler version
 
-Left side bar: Solidity Compiler > Compiler > 0.811
+Left side bar: Solidity Compiler > Compiler > 0.811 or higher

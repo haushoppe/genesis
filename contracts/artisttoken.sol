@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-// not used??
-// import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+// REMOVED because of contract code size
+// import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
 
@@ -23,16 +23,18 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
     event Agreement(address indexed _from, bool _value);
 
-    using ECDSA for bytes32;
-    using Strings for uint256;
+    // REMOVED because of contract code size
+    // using ECDSA for bytes32;
+    // using Strings for uint256;
 
     string private _baseTokenURI;
     uint256 public price = 0 ether;
     uint256 public maxSupply = 10000;
 
+    // REMOVED because of contract code size
     // Used to validate authorized mint addresses
     // zero address enables/disables minting via allowlist
-    address private signerAddress = 0x0000000000000000000000000000000000000000;
+    // address private signerAddress = 0x0000000000000000000000000000000000000000;
 
     // Used to track number of mints per wallet
     mapping (address => uint256) public totalMintsPerAddress;
@@ -98,12 +100,13 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
         isSaleActive = status;
     }
 
-    /**
-     * @notice Allow contract owner to update the authorized signer address
-     */
-    function setSignerAddress(address _signerAddress) external onlyOwner {
-        signerAddress = _signerAddress;
-    }
+    // REMOVED because of contract code size
+    // /**
+    //  * @notice Allow contract owner to update the authorized signer address
+    //  */
+    // function setSignerAddress(address _signerAddress) external onlyOwner {
+    //     signerAddress = _signerAddress;
+    // }
 
     function pause() public onlyOwner {
         _pause();
@@ -149,25 +152,30 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
         }
     }
 
-    function verifyAddressSigner(bytes32 messageHash, bytes memory signature) private view returns (bool) {
-        return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
-    }
+    // REMOVED because of contract code size
+    // function verifyAddressSigner(bytes32 messageHash, bytes memory signature) private view returns (bool) {
+    //     return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
+    // }
 
-    function hashMessage(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
-        return keccak256(abi.encode(sender, maximumAllowedMints));
-    }
+    // REMOVED because of contract code size
+    // function hashMessage(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
+    //     return keccak256(abi.encode(sender, maximumAllowedMints));
+    // }
+
 
     /**
-     * @notice Mint tokens, batch mint possible - use this function if minting via allowlist is disabled
-     * Minting also means you agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
+     * @notice Mint tokens, batch mint possible
+     * Minting also means you agree to our terms and conditions.
      */
     function mint(
         uint256 mintNumber
     ) external payable virtual nonReentrant {
         // Minting is disabled
         require(isSaleActive, "Mint disabled");
+
+        // REMOVED because of contract code size
         // Minting via allowlist is enabled. Please use the function mintAllowlist!
-        require(signerAddress == address(0), "Use mintAllowlist");
+        // require(signerAddress == address(0), "Use mintAllowlist");
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
@@ -191,45 +199,46 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
         }
     }
 
-    /**
-     * @notice Allow for minting of tokens up to the maximum allowed for a given address.
-     * The address of the sender and the number of mints allowed are hashed and signed
-     * with the server's private key and verified here to prove allowlist status.
-     * Minting also means you agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
-     */
-    function mintAllowlist(
-        bytes32 messageHash,
-        bytes calldata signature,
-        uint256 mintNumber,
-        uint256 maximumAllowedMints
-    ) external payable virtual nonReentrant {
-        // Minting is disabled
-        require(isSaleActive, "Mint disabled");
-        // Minting via allowlist is disabled. Please use the function mint!
-        require(signerAddress != address(0), "Use mint");
-        // Maximum allowed mints exceeded"
-        require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Max mints exceeded");
-        require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
-        // Signature validation failed
-        require(verifyAddressSigner(messageHash, signature), "Validation failed");
+    // REMOVED because of contract code size
+    // /**
+    //  * @notice Allow for minting of tokens up to the maximum allowed for a given address.
+    //  * The address of the sender and the number of mints allowed are hashed and signed
+    //  * with the server's private key and verified here to prove allowlist status.
+    //  * Minting also means you agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
+    //  */
+    // function mintAllowlist(
+    //     bytes32 messageHash,
+    //     bytes calldata signature,
+    //     uint256 mintNumber,
+    //     uint256 maximumAllowedMints
+    // ) external payable virtual nonReentrant {
+    //     // Minting is disabled
+    //     require(isSaleActive, "Mint disabled");
+    //     // Minting via allowlist is disabled. Please use the function mint!
+    //     require(signerAddress != address(0), "Use mint");
+    //     // Maximum allowed mints exceeded"
+    //     require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Max mints exceeded");
+    //     require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+    //     // Signature validation failed
+    //     require(verifyAddressSigner(messageHash, signature), "Validation failed");
 
-        uint256 currentSupply = totalSupply();
-        require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
+    //     uint256 currentSupply = totalSupply();
+    //     require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
 
-        totalMintsPerAddress[msg.sender] += mintNumber;
-        _safeMint(msg.sender, mintNumber);
+    //     totalMintsPerAddress[msg.sender] += mintNumber;
+    //     _safeMint(msg.sender, mintNumber);
 
-        if (currentSupply + mintNumber >= maxSupply) {
-            isSaleActive = false;
-        }
+    //     if (currentSupply + mintNumber >= maxSupply) {
+    //         isSaleActive = false;
+    //     }
         
-        // minting also means the minter agrees to our TOC
-        if (agreements[msg.sender] == false) {
-            agreements[msg.sender] = true;
-            // extra gast costs should be acceptable
-            emit Agreement(msg.sender, true);
-        }
-    }
+    //     // minting also means the minter agrees to our TOC
+    //     if (agreements[msg.sender] == false) {
+    //         agreements[msg.sender] = true;
+    //         // extra gast costs should be acceptable
+    //         emit Agreement(msg.sender, true);
+    //     }
+    // }
     
     /**
      * @notice Allow owner to send `mintNumber` tokens without cost to multiple addresses
@@ -248,7 +257,6 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     // - IERC721: 0x80ac58cd
     // - IERC721Metadata: 0x5b5e139f
     // - IERC2981: 0x2a55205a
-    // @dev see https://chiru-labs.github.io/ERC721A/#/migration?id=supportsinterface
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(ERC721A, ERC2981) returns (bool) {
@@ -256,6 +264,23 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
             ERC721A.supportsInterface(interfaceId) || 
             ERC2981.supportsInterface(interfaceId);
     }
+
+    // ******************** //
+    // NFT Royalty Standard //
+    // ******************** //
+
+    /**
+     * @dev Sets the royalty information that all ids in this contract will default to.
+     *
+     * Requirements:
+     *
+     * - `receiver` cannot be the zero address.
+     * - `feeNumerator` cannot be greater than the fee denominator.
+     */
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
+        _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
 
     // ********************* //
     // Lending functionality //
@@ -396,8 +421,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
      */
     function iAgreeToTheTermsAndConditions() external {
         // You already agreed to our terms and conditions!
-        // REMOVED because of contract code size
-        // require(agreements[msg.sender] == false, "Already agreed");
+        require(agreements[msg.sender] == false, "Already agreed");
         // You can only agree to our terms and conditions if you hold a token!
         require(balanceOf(msg.sender) > 0, "Not holder of token");
 

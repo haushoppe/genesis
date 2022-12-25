@@ -9,13 +9,24 @@ import "remix_tests.sol";
 // Although it may fail compilation in 'Solidity Compiler' plugin
 // But it will work fine in 'Solidity Unit Testing' plugin
 import "remix_accounts.sol";
+
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "../artisttoken.sol";
+
 
 contract testSuite {
     ArtistToken token;
+        
+    /// Define variables referring to different accounts
+    address acc0; // account at zero index (account-0) is default account, so owner will be acc0
+    address acc1;
+    address acc2;
 
     function beforeAll() public {
         token = new ArtistToken();
+        acc0 = TestsAccounts.getAccount(0); 
+        acc1 = TestsAccounts.getAccount(1);
+        acc2 = TestsAccounts.getAccount(2);
     }
 
     /// Test if initial value is set correctly
@@ -41,35 +52,28 @@ contract testSuite {
         // royalty payment information
         // see https://docs.openzeppelin.com/contracts/4.x/api/interfaces#IERC2981
         Assert.equal(token.supportsInterface(0x2a55205a), true, "Contract should support IERC2981: 0x2a55205a");
-
     }
 
+    function shouldHaveNoRoyaltiesAfterDeployment() public {
 
-
-
-    // function checkSuccess() public {
-    //     // Use 'Assert' methods: https://remix-ide.readthedocs.io/en/latest/assert_library.html
-    //     Assert.ok(2 == 2, 'should be true');
-    //     Assert.greaterThan(uint(2), uint(1), "2 should be greater than to 1");
-    //     Assert.lesserThan(uint(2), uint(3), "2 should be lesser than to 3");
-    // }
-
-    // function checkSuccess2() public pure returns (bool) {
-    //     // Use the return value (true or false) to test the contract
-    //     return true;
-    // }
+        uint256 salePrice = 1 ether;
+        (address receiver, uint256 royaltyAmount) = token.royaltyInfo(0, salePrice);
     
-    // function checkFailure() public {
-    //     Assert.notEqual(uint(1), uint(1), "1 should not be equal to 1");
-    // }
+        Assert.equal(receiver, address(0), "Receiver should be zero address after deployment");
+        Assert.equal(royaltyAmount, 0, "Royalties should be 0 after deployment");
+    }
 
-    // /// Custom Transaction Context: https://remix-ide.readthedocs.io/en/latest/unittesting.html#customization
-    // /// #sender: account-1
-    // /// #value: 100
-    // function checkSenderAndValue() public payable {
-    //     // account index varies 0-9, value is in wei
-    //     Assert.equal(msg.sender, TestsAccounts.getAccount(1), "Invalid sender");
-    //     Assert.equal(msg.value, 100, "Invalid value");
-    // }
+    function shouldSupportSettingRoyaltyInformation() public {
+
+        // set royalty of all NFTs to 5%
+        token.setDefaultRoyalty(acc1, 500);
+
+        uint256 salePrice = 1 ether;
+        (address receiver, uint256 royaltyAmount) = token.royaltyInfo(0, salePrice);
+        uint256 expectedRoyaltyAmount = 50000000000000000;
+    
+        Assert.equal(receiver, acc1, "Receiver should be configured account");
+        Assert.equal(royaltyAmount, expectedRoyaltyAmount, "Royalties should be 5%");
+    }
 }
     

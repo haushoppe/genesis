@@ -45,4 +45,9 @@ Left side bar: Solidity Compiler > Compiler > 0.811 or higher
 
 ### Activate the unit testing plugin
 
-https://remix-ide.readthedocs.io/en/latest/unittesting.html
+see https://remix-ide.readthedocs.io/en/latest/unittesting.html
+
+
+## How to use ERC2981 to set royalties
+
+see https://www.ethdump.com/how-use-erc2981-set-royalties

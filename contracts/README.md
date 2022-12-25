@@ -37,8 +37,12 @@ ALSO NOTE: Python3.6+ (pip3) needs to already be installed on the System.
 
 ```
 python3 --version
-``
+```
 
 ### Change the compiler version
 
 Left side bar: Solidity Compiler > Compiler > 0.811 or higher
+
+### Activate the unit testing plugin
+
+https://remix-ide.readthedocs.io/en/latest/unittesting.html

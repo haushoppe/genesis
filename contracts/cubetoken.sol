@@ -87,21 +87,10 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Allow contract owner to enable mint
+     * @notice Allows contract owner to enable/disable minting
      */
-    function enableSale() public onlyOwner {
-        // Sale is already enabled
-        require(isSaleActive == false, "Already enabled");
-        isSaleActive = true;
-    }
-
-    /**
-     * @notice Allow contract owner to disable mint
-     */
-    function disableSale() public onlyOwner {
-        // Sale is already disabled
-        require(isSaleActive == true, "Already disabled");
-        isSaleActive = false;
+    function setSaleStatus(bool status) public onlyOwner {
+        isSaleActive = status;
     }
 
     /**
@@ -213,21 +202,10 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     // ********************* //
 
     /**
-     * To be updated by contract owner to allow for the loan functionality to be toggled
+     * @notice Allows contract owner to enable/disable loan functionality
      */
-    function enableLending() public onlyOwner {
-        // Lending is already enabled
-        require(isLendingActive != true, "Already enabled");
-        isLendingActive = true;
-    }
-
-    /**
-     * To be updated by contract owner to allow for the loan functionality to be toggled
-     */
-    function disableLending() public onlyOwner {
-        // Lending is already disabled
-        require(isLendingActive != false, "Already disabled");
-        isLendingActive = false;
+    function setLendingStatus(bool status) public onlyOwner {
+        isLendingActive = status;
     }
 
     /**

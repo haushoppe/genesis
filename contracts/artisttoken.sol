@@ -250,7 +250,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
 
         for (uint256 i = 0; i < receivers.length; i++) {
             totalMintsPerAddress[receivers[i]] += mintNumber;
-            _safeMint(receivers[i], 1);
+            _safeMint(receivers[i], mintNumber);
         }
     }
 

@@ -25,11 +25,25 @@ contract testSuite {
         Assert.equal(token.isLendingActive(), false, "lending should be disabled after deployment");
     }
 
-    // function shouldSupportAllInterfaces() public {
+    function shouldSupportAllInterfaces() public {
 
-    //     Assert.equal(token.supportsInterface(), false, "sale should be disabled after deployment");
+        // defines supportsInterface, see https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified
+        Assert.equal(token.supportsInterface(0x01ffc9a7), true, "Contract should support IERC165: 0x01ffc9a7");
 
-    // }
+        // the one and only NFT contract
+        // see https://docs.openzeppelin.com/contracts/3.x/api/token/erc721#IERC721
+        Assert.equal(token.supportsInterface(0x80ac58cd), true, "Contract should support IERC721: 0x80ac58cd");
+
+        // defines: name(), symbol(), tokenURI(tokenId) and more
+        // see https://docs.openzeppelin.com/contracts/3.x/api/token/erc721#IERC721Metadata
+        Assert.equal(token.supportsInterface(0x5b5e139f), true, "Contract should support IERC721Metadata: 0x5b5e139f");
+
+        // TODO!
+        // royalty payment information
+        // see https://docs.openzeppelin.com/contracts/4.x/api/interfaces#IERC2981
+        // Assert.equal(token.supportsInterface(0x2a55205a), true, "Contract should support IERC2981: 0x2a55205a");
+
+    }
 
 
 

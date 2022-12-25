@@ -11,12 +11,6 @@ Install via:
 npm install
 ```
 
-## rotatingcube.sol
-
-The main ERC721A contract for this project. Has the following methods, more to come:
- * setBaseURI (onlyOwner)
- * mint
-
 ## IDE for contract development
 
 Use Remix IDE at https://remix.ethereum.org/

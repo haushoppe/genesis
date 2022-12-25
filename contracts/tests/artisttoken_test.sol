@@ -76,7 +76,7 @@ contract testSuite {
         Assert.equal(royaltyAmount, expectedRoyaltyAmount, "Royalties should be 5%");
     }
 
-    function shouldSupportSettingAndGettingTheTocURI() public {
+    function shouldSupportSettingAndGettingTheTermsAndConditionsURI() public {
 
         // empty string after deployment
         Assert.equal(token.termsAndConditionsURI(), "", "URI should be empty after deployment");

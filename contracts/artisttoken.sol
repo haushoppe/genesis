@@ -187,14 +187,9 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
             isSaleActive = false;
         }
 
-        // minting also means the minter agrees to our TOC
+        // minting also means the minter agrees to our terms and conditions
         if (agreements[msg.sender] == false) {
             agreements[msg.sender] = true;
-            
-            // extra gast costs should be acceptable
-            // without: execution cost 152104 gas == 2.6016 USD (if ETH is at 1221.74 USD)
-            // with: execution cost 153681 gas == 2.6286 USD (if ETH is at 1221.74 USD)
-            // according to https://www.cryptoneur.xyz/gas-fees-calculator
             emit Agreement(msg.sender, true);
         }
     }
@@ -231,10 +226,9 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     //         isSaleActive = false;
     //     }
         
-    //     // minting also means the minter agrees to our TOC
+    //     // minting also means the minter agrees to our terms and conditions
     //     if (agreements[msg.sender] == false) {
     //         agreements[msg.sender] = true;
-    //         // extra gast costs should be acceptable
     //         emit Agreement(msg.sender, true);
     //     }
     // }

@@ -6,19 +6,15 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-// not used??
-// import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-// not used??
-// import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
 /**
  * @title Collectors cube token contract
  * @author Ethspresso and Johannes
- * @notice This contract handles minting and loaning of collectors cube tokens.
- * Visit https://cube.haushoppe.art for more information
+ * @notice This contract handles minting and loaning of collectors cube tokens. By interacting with this contract, you agree to our terms and conditions.
  */
-contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
+contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
 
@@ -28,6 +24,9 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     string private _baseTokenURI;
     uint256 public price = 0.1 ether;
     uint256 public maxSupply = 10000;
+
+    // Review our terms and conditions at the following URI
+    string public termsAndConditionsURI;
 
     // Used to validate authorized mint addresses
     // zero address enables/disables minting via allowlist
@@ -87,7 +86,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Allows contract owner to enable/disable minting
+     * @notice Allow contract owner to enable/disable minting
      */
     function setSaleStatus(bool status) public onlyOwner {
         isSaleActive = status;
@@ -132,7 +131,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Mint tokens, batch mint possible - use this function if minting via allowlist is disabled
+     * @notice Mint tokens, batch mint possible. Minting also means you agree to our terms and conditions. Please review them at `termsAndConditions`!
      */
     function mint(
         uint256 mintNumber
@@ -154,7 +153,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Allow for minting of tokens up to the maximum allowed for a given address.
+     * @notice Allow for minting of tokens up to the maximum allowed for a given address. Minting also means you agree to our terms and conditions. Please review them at `termsAndConditions`!
      * The address of the sender and the number of mints allowed are hashed and signed
      * with the server's private key and verified here to prove allowlist status.
      */
@@ -197,12 +196,41 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         }
     }
 
+    // Supports the following `interfaceId`s:
+    // - IERC165: 0x01ffc9a7
+    // - IERC721: 0x80ac58cd
+    // - IERC721Metadata: 0x5b5e139f
+    // - IERC2981: 0x2a55205a
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC721A, ERC2981) returns (bool) {
+        return 
+            ERC721A.supportsInterface(interfaceId) || 
+            ERC2981.supportsInterface(interfaceId);
+    }
+
+    // ******************** //
+    // NFT Royalty Standard //
+    // ******************** //
+
+    /**
+     * @dev Sets the royalty information that all ids in this contract will default to.
+     *
+     * Requirements:
+     *
+     * - `receiver` cannot be the zero address.
+     * - `feeNumerator` cannot be greater than the fee denominator.
+     */
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
+        _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
     // ********************* //
     // Lending functionality //
     // ********************* //
 
     /**
-     * @notice Allows contract owner to enable/disable loan functionality
+     * @notice Allow contract owner to enable/disable loan functionality
      */
     function setLendingStatus(bool status) public onlyOwner {
         isLendingActive = status;
@@ -325,6 +353,17 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
      */
     function withdraw() external onlyOwner {
         payable(owner()).transfer(address(this).balance);
+    }
+
+    // ******************** //
+    // Terms and Conditions //
+    // ******************** //
+    /**
+     * @notice Let contract owner update the URI to our terms and conditions
+     * @param uri The URI to our terms and condtions
+     */
+    function setTermsAndConditionsURI(string calldata uri) public onlyOwner {
+        termsAndConditionsURI = uri;
     }
 
     // ******************** //

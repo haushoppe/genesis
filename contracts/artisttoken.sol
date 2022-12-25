@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 /**
  * @title Artist token contract
  * @author Ethspresso and Johannes
- * @notice This contract handles minting and loaning of artist tokens. It allows artists to agree to our terms and conditions on-chain.
+ * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicieltyl agree to our terms and conditions on-chain.
  */
 contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     event Loan(address indexed _from, address indexed to, uint _value);
@@ -279,7 +279,6 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
         _setDefaultRoyalty(receiver, feeNumerator);
     }
-
 
     // ********************* //
     // Lending functionality //

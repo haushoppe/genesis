@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
-
 /**
  * @title Artist token contract
  * @author Ethspresso and Johannes
@@ -75,7 +74,8 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
      */
     function setMaxSupply(uint256 newMaxSupply) public onlyOwner {
         // New value must be different from current value
-        require(maxSupply != newMaxSupply, "Same value");
+        // REMOVED to reduce contract size
+        // require(maxSupply != newMaxSupply, "Same value");
         // New max supply must be equal or higher than total minted tokens
         require(newMaxSupply >= totalSupply(), "Supply too small");
         maxSupply = newMaxSupply;
@@ -86,7 +86,8 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
      */
     function setMintPrice(uint256 newMintPrice) public onlyOwner {
         // New value must be different from current value
-        require(price != newMintPrice, "Same value");
+        // REMOVED to reduce contract size
+        // require(price != newMintPrice, "Same value");
         price = newMintPrice;
     }
 
@@ -143,8 +144,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
             balanceOf(from) == 0 && 
             agreements[from] == true) {
 
-            delete agreements[from];
-            emit Agreement(from, false);
+            agreeOrDisagreeToTermsAndConditions(false);
         }
     }
 
@@ -180,8 +180,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
 
         // minting also means the minter agrees to our terms and conditions
         if (agreements[msg.sender] == false) {
-            agreements[msg.sender] = true;
-            emit Agreement(msg.sender, true);
+            agreeOrDisagreeToTermsAndConditions(true);
         }
     }
 
@@ -198,11 +197,15 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     ) external payable virtual nonReentrant {
         // Minting is disabled
         require(isSaleActive, "Mint disabled");
+
         // Minting via allowlist is disabled. Please use the function mint!
         require(signerAddress != address(0), "Use mint");
-        // Maximum allowed mints exceeded"
+
+        // Maximum allowed mints exceeded
         require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Max mints exceeded");
+
         require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+
         // Signature validation failed
         require(verifyAddressSigner(messageHash, signature), "Validation failed");
 
@@ -218,8 +221,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
         
         // minting also means the minter agrees to our terms and conditions
         if (agreements[msg.sender] == false) {
-            agreements[msg.sender] = true;
-            emit Agreement(msg.sender, true);
+            agreeOrDisagreeToTermsAndConditions(true);
         }
     }
     
@@ -286,7 +288,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
         // ERC721: transfer to the zero address
         require(receiver != address(0), "Transfer to 0x0");
         // Trying to loan a loaned token
-        require(tokenOwnersOnLoan[tokenId] == address(0), "Loan a loaned token");
+        require(tokenOwnersOnLoan[tokenId] == address(0), "Token loaned");
 
         // Transfer the token
         safeTransferFrom(msg.sender, receiver, tokenId);
@@ -307,8 +309,10 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
      */
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
+
         // Trying to retrieve their owned loaned token
-        require(borrowerAddress != msg.sender, "Retrieve owned loaned token");
+        require(borrowerAddress != msg.sender, "Owned loaned token");
+
         // Trying to retrieve token not on loan
         require(tokenOwnersOnLoan[tokenId] == msg.sender, "Not on loan");
 
@@ -331,8 +335,10 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
      */
     function retrieveLoanAdmin(uint256 tokenId, address owner) external nonReentrant onlyOwner {
         address borrowerAddress = ownerOf(tokenId);
+        
         // This token is not on loan
         require(tokenOwnersOnLoan[tokenId] != address(0), "Not on loan");
+
         // Trying to return token to the wrong wallet
         require(tokenOwnersOnLoan[tokenId] == owner, "Wrong wallet");
 
@@ -362,7 +368,8 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
      */
     function loanedBalanceOf(address owner) public view returns (uint256) {
         // Balance query for the zero address
-        require(owner != address(0), "Balance query for 0x0");
+        // REMOVED to reduce contract size
+        // require(owner != address(0), "Balance query for 0x0");
         return totalLoanedPerAddress[owner];
     }
 
@@ -371,7 +378,8 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         // Balance query for the zero address
-        require(owner != address(0), "Balance query for 0x0");
+        // REMOVED to reduce contract size
+        // require(owner != address(0), "Balance query for 0x0");
         uint256 totalTokensLoaned = loanedBalanceOf(owner);
         uint256 mintedSoFar = totalSupply();
         uint256 tokenIdsIdx = 0;
@@ -399,27 +407,21 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     // ******************** //
 
     /**
-     * @notice Call this function to agree to our terms and conditions.
+     * @notice Call this function to agree or disagree to our terms and conditions.
      */
-    function iAgreeToTheTermsAndConditions() external {
-        // You already agreed to our terms and conditions!
-        require(agreements[msg.sender] == false, "Already agreed");
-        // You can only agree to our terms and conditions if you hold a token!
-        require(balanceOf(msg.sender) > 0, "Not holder of token");
+    function agreeOrDisagreeToTermsAndConditions(bool agreement) public {
 
-        agreements[msg.sender] = true;
-        emit Agreement(msg.sender, true);
-    }
+        if (agreement == true) {
 
-    /**
-     * @notice Call this function to revoke your agreement to our terms and conditions.
-     */
-    function iDoNotAgreeToTheTermsAndConditions() external {
-        // You have no agreement that could be revoked. 
-        require(agreements[msg.sender] == true, "No agreement");
+            // You can only agree to our terms and conditions if you hold a token!
+            require(balanceOf(msg.sender) > 0, "Not holder of token");
+            agreements[msg.sender] = true;
+            emit Agreement(msg.sender, true);
 
-        delete agreements[msg.sender];
-        emit Agreement(msg.sender, false);
+        } else {
+            delete agreements[msg.sender];
+            emit Agreement(msg.sender, false);
+        }
     }
 
     /**

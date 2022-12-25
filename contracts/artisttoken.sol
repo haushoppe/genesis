@@ -193,7 +193,8 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         // minting also means the minter agrees to our TOC
         if (agreements[msg.sender] == false) {
             agreements[msg.sender] = true;
-            emit Agreement(msg.sender, true);
+            // no extra emit to save some gas
+            // emit Agreement(msg.sender, true);
         }
     }
 
@@ -232,7 +233,8 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         // minting also means the minter agrees to our TOC
         if (agreements[msg.sender] == false) {
             agreements[msg.sender] = true;
-            emit Agreement(msg.sender, true);
+            // no extra emit to save some gas
+            // emit Agreement(msg.sender, true);
         }
     }
     
@@ -329,7 +331,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         // This token is not on loan
         require(tokenOwnersOnLoan[tokenId] != address(0), "Not on loan");
         // Trying to return token to the wrong wallet
-        require(tokenOwnersOnLoan[tokenId] == owner, "Return to wrong wallet");
+        require(tokenOwnersOnLoan[tokenId] == owner, "Wrong wallet");
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];

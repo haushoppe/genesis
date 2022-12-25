@@ -289,7 +289,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         // This token is not on loan
         require(tokenOwnersOnLoan[tokenId] != address(0), "Not on loan");
         // Trying to return token to the wrong wallet
-        require(tokenOwnersOnLoan[tokenId] == owner, "Return to wrong wallet");
+        require(tokenOwnersOnLoan[tokenId] == owner, "Wrong wallet");
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];

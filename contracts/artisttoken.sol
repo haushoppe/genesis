@@ -9,8 +9,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 // not used??
 // import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-// not used??
-// import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
+
 
 /**
  * @title Artist token contract
@@ -18,7 +18,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * @notice This contract handles minting and loaning of artist tokens. It allows artists to agree to our terms and conditions on-chain.
  * Visit https://cube.haushoppe.art for more information
  */
-contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
+contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
     event Agreement(address indexed _from, bool _value);
@@ -243,6 +243,20 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         }
     }
 
+    // Supports the following `interfaceId`s:
+    // - IERC165: 0x01ffc9a7
+    // - IERC721: 0x80ac58cd
+    // - IERC721Metadata: 0x5b5e139f
+    // - IERC2981: 0x2a55205a
+    // @dev see https://chiru-labs.github.io/ERC721A/#/migration?id=supportsinterface
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC721A, ERC2981) returns (bool) {
+        return 
+            ERC721A.supportsInterface(interfaceId) || 
+            ERC2981.supportsInterface(interfaceId);
+    }
+
     // ********************* //
     // Lending functionality //
     // ********************* //
@@ -382,7 +396,8 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
      */
     function iAgreeToTheTermsAndConditions() external {
         // You already agreed to our terms and conditions!
-        require(agreements[msg.sender] == false, "Already agreed");
+        // REMOVED because of contract code size
+        // require(agreements[msg.sender] == false, "Already agreed");
         // You can only agree to our terms and conditions if you hold a token!
         require(balanceOf(msg.sender) > 0, "Not holder of token");
 
@@ -401,7 +416,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable {
         emit Agreement(msg.sender, false);
     }
 
-    // Contract code size exceeds 24576 byte
+    // REMOVED because of contract code size
     // /**
     //  * Returns the agreement status of an address
     //  */

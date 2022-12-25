@@ -38,10 +38,9 @@ contract testSuite {
         // see https://docs.openzeppelin.com/contracts/3.x/api/token/erc721#IERC721Metadata
         Assert.equal(token.supportsInterface(0x5b5e139f), true, "Contract should support IERC721Metadata: 0x5b5e139f");
 
-        // TODO!
         // royalty payment information
         // see https://docs.openzeppelin.com/contracts/4.x/api/interfaces#IERC2981
-        // Assert.equal(token.supportsInterface(0x2a55205a), true, "Contract should support IERC2981: 0x2a55205a");
+        Assert.equal(token.supportsInterface(0x2a55205a), true, "Contract should support IERC2981: 0x2a55205a");
 
     }
 

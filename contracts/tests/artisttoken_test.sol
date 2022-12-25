@@ -75,5 +75,16 @@ contract testSuite {
         Assert.equal(receiver, acc1, "Receiver should be configured account");
         Assert.equal(royaltyAmount, expectedRoyaltyAmount, "Royalties should be 5%");
     }
+
+    function shouldSupportSettingAndGettingTheTocURI() public {
+
+        // empty string after deployment
+        Assert.equal(token.termsAndConditionsURI(), "", "URI should be empty after deployment");
+
+        // change URI
+        token.setTermsAndConditionsURI("https://example.org/");
+
+        Assert.equal(token.termsAndConditionsURI(), "https://example.org/", "URI should be changeable");
+    }
 }
     

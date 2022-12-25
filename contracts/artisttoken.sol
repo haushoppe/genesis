@@ -16,7 +16,6 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
  * @title Artist token contract
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of artist tokens. It allows artists to agree to our terms and conditions on-chain.
- * Visit https://cube.haushoppe.art for more information
  */
 contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     event Loan(address indexed _from, address indexed to, uint _value);
@@ -30,6 +29,9 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     string private _baseTokenURI;
     uint256 public price = 0 ether;
     uint256 public maxSupply = 10000;
+
+    // Review our terms and conditions at the following URI
+    string public termsAndConditionsURI;
 
     // REMOVED because of contract code size
     // Used to validate authorized mint addresses
@@ -45,7 +47,6 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     uint256 private currentLoanIndex = 0;
 
     // Agreements to our terms and conditions
-    // Please review them here: https://cube.haushoppe.art/toc
     mapping (address => bool) public agreements;
 
     // State variables
@@ -94,7 +95,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     }
 
     /**
-     * @notice Allows contract owner to enable/disable minting
+     * @notice Allow contract owner to enable/disable minting
      */
     function setSaleStatus(bool status) public onlyOwner {
         isSaleActive = status;
@@ -164,8 +165,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
 
 
     /**
-     * @notice Mint tokens, batch mint possible
-     * Minting also means you agree to our terms and conditions.
+     * @notice Mint tokens, batch mint possible. Minting also means you agree to our terms and conditions. Please review them at `termsAndConditions`!
      */
     function mint(
         uint256 mintNumber
@@ -201,10 +201,9 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
 
     // REMOVED because of contract code size
     // /**
-    //  * @notice Allow for minting of tokens up to the maximum allowed for a given address.
+    //  * @notice Allow for minting of tokens up to the maximum allowed for a given address. Minting also means you agree to our terms and conditions. Please review them at `termsAndConditions`!
     //  * The address of the sender and the number of mints allowed are hashed and signed
     //  * with the server's private key and verified here to prove allowlist status.
-    //  * Minting also means you agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
     //  */
     // function mintAllowlist(
     //     bytes32 messageHash,
@@ -287,7 +286,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     // ********************* //
 
     /**
-     * @notice Allows contract owner to enable/disable loan functionality
+     * @notice Allow contract owner to enable/disable loan functionality
      */
     function setLendingStatus(bool status) public onlyOwner {
         isLendingActive = status;
@@ -417,7 +416,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     // ******************** //
 
     /**
-     * @notice Call this function to agree to our terms and conditions. Please review them here: https://cube.haushoppe.art/toc
+     * @notice Call this function to agree to our terms and conditions.
      */
     function iAgreeToTheTermsAndConditions() external {
         // You already agreed to our terms and conditions!
@@ -440,15 +439,13 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
         emit Agreement(msg.sender, false);
     }
 
-    // REMOVED because of contract code size
-    // /**
-    //  * Returns the agreement status of an address
-    //  */
-    // function agreementsStatus(address addr) public view returns (bool) {
-    //     // Query for the zero address
-    //     require(addr != address(0), "Query for 0x0");
-    //     return agreements[addr];
-    // }
+    /**
+     * @notice Let contract owner update the URI to our terms and conditions
+     * @param uri The URI to our terms and condtions
+     */
+    function setTermsAndConditionsURI(string calldata uri) public onlyOwner {
+        termsAndConditionsURI = uri;
+    }
 
     // ******************** //
     // Change name / symbol //

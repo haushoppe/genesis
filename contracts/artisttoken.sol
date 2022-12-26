@@ -12,13 +12,14 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "ILendable.sol";
 import "ITermsAndConditions.sol";
+import "IAgreeToTermsAndConditions.sol";
 
 /**
  * @title Artist token contract
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicieltyl agree to our terms and conditions on-chain.
  */
-contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
+contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions, IAgreeToTermsAndConditions {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
     event Agreement(address indexed _from, bool _value);
@@ -77,11 +78,14 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
      * @param newMaxSupply New max supply available for minting
      */
     function setMaxSupply(uint256 newMaxSupply) public onlyOwner {
-        // New value must be different from current value
+        
         // REMOVED to reduce contract size
+        // New value must be different from current value
         // require(maxSupply != newMaxSupply, "Same value");
+
+        // REMOVED to reduce contract size
         // New max supply must be equal or higher than total minted tokens
-        require(newMaxSupply >= totalSupply(), "Supply too small");
+        // require(newMaxSupply >= totalSupply(), "Supply too small");
         maxSupply = newMaxSupply;
     }
 
@@ -248,6 +252,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
     // - IERC2981: 0x2a55205a
     // - ILendable: 0x0e3bf9bf
     // - ITermsAndConditions: 0x174fe517
+    // - IAgreeToTermsAndConditions: 0x14477c1f
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(ERC721A, ERC2981, IERC165) returns (bool) {
@@ -255,7 +260,8 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
             ERC721A.supportsInterface(interfaceId) || 
             ERC2981.supportsInterface(interfaceId) ||
             type(ILendable).interfaceId == interfaceId ||
-            type(ITermsAndConditions).interfaceId == interfaceId;
+            type(ITermsAndConditions).interfaceId == interfaceId ||
+            type(IAgreeToTermsAndConditions).interfaceId == interfaceId;
     }
 
     // ******************** //
@@ -422,7 +428,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
         if (agreement == true) {
 
             // You can only agree to our terms and conditions if you hold a token!
-            require(balanceOf(msg.sender) > 0, "Not holder of token");
+            require(balanceOf(msg.sender) > 0, "No holder of token");
             agreements[msg.sender] = true;
             emit Agreement(msg.sender, true);
 

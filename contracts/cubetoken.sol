@@ -12,13 +12,14 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "ILendable.sol";
 import "ITermsAndConditions.sol";
+import "IAgreeToTermsAndConditions.sol";
 
 /**
  * @title Collectors cube token contract
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of collectors cube tokens. By interacting with this contract, you agree to our terms and conditions.
  */
-contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
+contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions, IAgreeToTermsAndConditions {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
 
@@ -208,6 +209,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILen
     // - IERC2981: 0x2a55205a
     // - ILendable: 0x0e3bf9bf
     // - ITermsAndConditions: 0x174fe517
+    // - IAgreeToTermsAndConditions: 0x14477c1f
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(ERC721A, ERC2981, IERC165) returns (bool) {
@@ -215,7 +217,8 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILen
             ERC721A.supportsInterface(interfaceId) || 
             ERC2981.supportsInterface(interfaceId) ||
             type(ILendable).interfaceId == interfaceId ||
-            type(ITermsAndConditions).interfaceId == interfaceId;
+            type(ITermsAndConditions).interfaceId == interfaceId ||
+            type(IAgreeToTermsAndConditions).interfaceId == interfaceId;
     }
 
     // ******************** //

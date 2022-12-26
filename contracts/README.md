@@ -11,6 +11,12 @@ Install via:
 npm install
 ```
 
+Run all tests:
+
+```
+npm test
+```
+
 ## IDE for contract development
 
 Use Remix IDE at https://remix.ethereum.org/

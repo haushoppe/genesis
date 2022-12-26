@@ -67,14 +67,6 @@ contract testSuite {
 
         Assert.equal(termsAndConditionsIntefaceId, termsAndConditionsIntefaceId2, "ITermsAndConditions should have this interfaceId: 0x174fe517");
         Assert.equal(token.supportsInterface(0x174fe517), true, "Contract should support ITermsAndConditions: 0x174fe517");
-
-
-        // our own IAgreeToTermsAndConditions interface
-        bytes4 agreeToTermsAndConditionsIntefaceId = type(IAgreeToTermsAndConditions).interfaceId;
-        bytes4 agreeToTermsAndConditionsIntefaceId2 = 0x14477c1f;
-
-        Assert.equal(agreeToTermsAndConditionsIntefaceId, agreeToTermsAndConditionsIntefaceId2, "IAgreeToTermsAndConditions should have this interfaceId: 0x14477c1f");
-        Assert.equal(token.supportsInterface(0x14477c1f), true, "Contract should support IAgreeToTermsAndConditions: 0x14477c1f");
     }
 
     function shouldHaveNoRoyaltiesAfterDeployment() public {

@@ -37,6 +37,9 @@ python3 --version
 
 Left side bar: Solidity Compiler > Compiler > 0.811 or higher
 
+Make sure to compile `artisttoken.sol` with "Enable optimization: 200",
+otherwise it won't compile because of the contract size.
+
 ### Activate the unit testing plugin
 
 see https://remix-ide.readthedocs.io/en/latest/unittesting.html

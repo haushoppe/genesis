@@ -78,14 +78,10 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
      * @param newMaxSupply New max supply available for minting
      */
     function setMaxSupply(uint256 newMaxSupply) public onlyOwner {
-        
-        // REMOVED to reduce contract size
         // New value must be different from current value
-        // require(maxSupply != newMaxSupply, "Same value");
-
-        // REMOVED to reduce contract size
+        require(maxSupply != newMaxSupply, "Same value");
         // New max supply must be equal or higher than total minted tokens
-        // require(newMaxSupply >= totalSupply(), "Supply too small");
+        require(newMaxSupply >= totalSupply(), "Supply too small");
         maxSupply = newMaxSupply;
     }
 
@@ -94,8 +90,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
      */
     function setMintPrice(uint256 newMintPrice) public onlyOwner {
         // New value must be different from current value
-        // REMOVED to reduce contract size
-        // require(price != newMintPrice, "Same value");
+        require(price != newMintPrice, "Same value");
         price = newMintPrice;
     }
 
@@ -382,8 +377,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
      */
     function loanedBalanceOf(address owner) public view returns (uint256) {
         // Balance query for the zero address
-        // REMOVED to reduce contract size
-        // require(owner != address(0), "Balance query for 0x0");
+        require(owner != address(0), "Balance query for 0x0");
         return totalLoanedPerAddress[owner];
     }
 
@@ -392,8 +386,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         // Balance query for the zero address
-        // REMOVED to reduce contract size
-        // require(owner != address(0), "Balance query for 0x0");
+        require(owner != address(0), "Balance query for 0x0");
         uint256 totalTokensLoaned = loanedBalanceOf(owner);
         uint256 mintedSoFar = totalSupply();
         uint256 tokenIdsIdx = 0;
@@ -427,12 +420,19 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
 
         if (agreement == true) {
 
+            // You already agreed to our terms and conditions!
+            require(agreements[msg.sender] == false, "Already agreed");
+
             // You can only agree to our terms and conditions if you hold a token!
             require(balanceOf(msg.sender) > 0, "No holder of token");
             agreements[msg.sender] = true;
             emit Agreement(msg.sender, true);
 
         } else {
+
+            // You have no agreement that could be revoked.
+            require(agreements[msg.sender] == true, "No agreement");
+
             delete agreements[msg.sender];
             emit Agreement(msg.sender, false);
         }

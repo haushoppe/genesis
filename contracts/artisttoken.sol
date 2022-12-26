@@ -264,15 +264,31 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
     // ******************** //
 
     /**
-     * @dev Sets the royalty information that all ids in this contract will default to.
-     *
-     * Requirements:
-     *
-     * - `receiver` cannot be the zero address.
-     * - `feeNumerator` cannot be greater than the fee denominator.
+     * @notice Sets the royalty information that all ids in this contract will default to.
      */
     function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
         _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
+    /**
+     * @notice Removes default royalty information.
+     */
+    function deleteDefaultRoyalty() public onlyOwner {
+        _deleteDefaultRoyalty();
+    }
+
+    /**
+     * @notice Sets the royalty information for a specific token id, overriding the global default.
+     */
+    function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) public onlyOwner {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    /**
+     * @notice Resets royalty information for the token id back to the global default.
+     */
+    function resetTokenRoyalty(uint256 tokenId) public onlyOwner {
+        _resetTokenRoyalty(tokenId);
     }
 
     // ********************* //

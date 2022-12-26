@@ -11,13 +11,14 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "ILendable.sol";
+import "ITermsAndConditions.sol";
 
 /**
  * @title Artist token contract
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicieltyl agree to our terms and conditions on-chain.
  */
-contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable {
+contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
     event Agreement(address indexed _from, bool _value);
@@ -246,13 +247,15 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
     // - IERC721Metadata: 0x5b5e139f
     // - IERC2981: 0x2a55205a
     // - ILendable: 0x0e3bf9bf
+    // - ITermsAndConditions: 0x174fe517
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(ERC721A, ERC2981, IERC165) returns (bool) {
         return 
             ERC721A.supportsInterface(interfaceId) || 
             ERC2981.supportsInterface(interfaceId) ||
-            type(ILendable).interfaceId == interfaceId;
+            type(ILendable).interfaceId == interfaceId ||
+            type(ITermsAndConditions).interfaceId == interfaceId;
     }
 
     // ******************** //

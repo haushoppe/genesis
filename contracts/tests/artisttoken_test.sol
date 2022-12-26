@@ -54,11 +54,19 @@ contract testSuite {
         Assert.equal(token.supportsInterface(0x2a55205a), true, "Contract should support IERC2981: 0x2a55205a");
 
         // our own ILendable interface
-        bytes4 iLendableIntefaceId = type(ILendable).interfaceId;
-        bytes4 iLendableIntefaceId2 = 0x0e3bf9bf;
+        bytes4 lendableIntefaceId = type(ILendable).interfaceId;
+        bytes4 lendableIntefaceId2 = 0x0e3bf9bf;
 
-        Assert.equal(iLendableIntefaceId, iLendableIntefaceId2, "ILendable should have this interfaceId: 0x0e3bf9bf");
+        Assert.equal(lendableIntefaceId, lendableIntefaceId2, "ILendable should have this interfaceId: 0x0e3bf9bf");
         Assert.equal(token.supportsInterface(0x0e3bf9bf), true, "Contract should support ILendable: 0x0e3bf9bf");
+
+
+        // our own ITermsAndConditions interface
+        bytes4 termsAndConditionsIntefaceId = type(ITermsAndConditions).interfaceId;
+        bytes4 termsAndConditionsIntefaceId2 = 0x174fe517;
+
+        Assert.equal(termsAndConditionsIntefaceId, termsAndConditionsIntefaceId2, "ITermsAndConditions should have this interfaceId: 0x174fe517");
+        Assert.equal(token.supportsInterface(0x174fe517), true, "Contract should support ITermsAndConditions: 0x174fe517");
     }
 
     function shouldHaveNoRoyaltiesAfterDeployment() public {

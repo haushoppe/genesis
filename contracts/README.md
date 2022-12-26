@@ -14,7 +14,7 @@ npm install
 Run all tests:
 
 ```
-npm test
+npm run remix-tests
 ```
 
 ## IDE for contract development
@@ -39,6 +39,7 @@ ALSO NOTE: Python3.6+ (pip3) needs to already be installed on the System.
 python3 --version
 ```
 
+
 ### Change the compiler version
 
 Left side bar: Solidity Compiler > Compiler > 0.811 or higher
@@ -46,9 +47,24 @@ Left side bar: Solidity Compiler > Compiler > 0.811 or higher
 Make sure to compile `artisttoken.sol` with "Enable optimization: 200",
 otherwise it won't compile because of the contract size.
 
-### Activate the unit testing plugin
+
+### Remix Unit Testing plugin (dont' use anymore!)
 
 see https://remix-ide.readthedocs.io/en/latest/unittesting.html
+
+Note: Some tests were written with the plugin. 
+But its not usefull for advanced scenarios!!
+
+> Testing scenarios are very limited, because the `msg.sender` cant't be mocked 
+> sufficiently!
+see https://github.com/ethereum/remix-project/issues/1618
+see https://github.com/ethereum/remix-project/issues/2369
+
+> The problem is that the method you are trying to test is external and to use 
+> msg.sender functionality you have to inherit the contract which makes it unable
+> to call external methods.
+
+see https://github.com/ethereum/remix-project/issues/2068#issuecomment-1090306802
 
 
 ## How to use ERC2981 to set royalties

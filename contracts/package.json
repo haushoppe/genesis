@@ -4,7 +4,7 @@
   "description": "Solidity Contracts",
   "scripts": {
     "remixd": "remixd -s $(pwd) -u https://remix.ethereum.org/",
-    "test": "remix-tests --compiler 0.8.17 tests/"
+    "remix-tests": "remix-tests --compiler 0.8.17 tests/"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.0",

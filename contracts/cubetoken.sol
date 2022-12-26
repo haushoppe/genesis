@@ -9,12 +9,15 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import "ILendable.sol";
+
 /**
  * @title Collectors cube token contract
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of collectors cube tokens. By interacting with this contract, you agree to our terms and conditions.
  */
-contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
+contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
 
@@ -167,7 +170,8 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
         require(isSaleActive, "Mint disabled");
         // Minting via allowlist is disabled. Please use the function mint!
         require(signerAddress != address(0), "Use mint");
-        // Maximum allowed mints exceeded"
+
+        // Maximum allowed mints exceeded
         require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Max mints exceeded");
         require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
         // Signature validation failed
@@ -201,12 +205,14 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     // - IERC721: 0x80ac58cd
     // - IERC721Metadata: 0x5b5e139f
     // - IERC2981: 0x2a55205a
+    // - ILendable: 0x0e3bf9bf
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC721A, ERC2981) returns (bool) {
+    ) public view virtual override(ERC721A, ERC2981, IERC165) returns (bool) {
         return 
             ERC721A.supportsInterface(interfaceId) || 
-            ERC2981.supportsInterface(interfaceId);
+            ERC2981.supportsInterface(interfaceId) ||
+            type(ILendable).interfaceId == interfaceId;
     }
 
     // ******************** //
@@ -247,7 +253,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
         // ERC721: transfer to the zero address
         require(receiver != address(0), "Transfer to 0x0");
         // Trying to loan a loaned token
-        require(tokenOwnersOnLoan[tokenId] == address(0), "Loan a loaned token");
+        require(tokenOwnersOnLoan[tokenId] == address(0), "Token loaned");
 
         // Transfer the token
         safeTransferFrom(msg.sender, receiver, tokenId);
@@ -269,7 +275,8 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
         // Trying to retrieve their owned loaned token
-        require(borrowerAddress != msg.sender, "Retrieve owned loaned token");
+        require(borrowerAddress != msg.sender, "Owned loaned token");
+
         // Trying to retrieve token not on loan
         require(tokenOwnersOnLoan[tokenId] == msg.sender, "Not on loan");
 
@@ -290,10 +297,12 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981 {
     /**
      * @notice Allow admin to return a loaned token to owner
      */
-    function retrieveLoanAdmin(uint256 tokenId, address owner) external nonReentrant onlyOwner {
+    function retrieveLoanByAdmin(uint256 tokenId, address owner) external nonReentrant onlyOwner {
         address borrowerAddress = ownerOf(tokenId);
+        
         // This token is not on loan
         require(tokenOwnersOnLoan[tokenId] != address(0), "Not on loan");
+
         // Trying to return token to the wrong wallet
         require(tokenOwnersOnLoan[tokenId] == owner, "Wrong wallet");
 

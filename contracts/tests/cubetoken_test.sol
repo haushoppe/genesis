@@ -52,6 +52,13 @@ contract testSuite {
         // royalty payment information
         // see https://docs.openzeppelin.com/contracts/4.x/api/interfaces#IERC2981
         Assert.equal(token.supportsInterface(0x2a55205a), true, "Contract should support IERC2981: 0x2a55205a");
+
+        // our own ILendable interface
+        bytes4 iLendableIntefaceId = type(ILendable).interfaceId;
+        bytes4 iLendableIntefaceId2 = 0x0e3bf9bf;
+
+        Assert.equal(iLendableIntefaceId, iLendableIntefaceId2, "ILendable should have this interfaceId: 0x0e3bf9bf");
+        Assert.equal(token.supportsInterface(0x0e3bf9bf), true, "Contract should support ILendable: 0x0e3bf9bf");
     }
 
     function shouldHaveNoRoyaltiesAfterDeployment() public {

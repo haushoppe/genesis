@@ -12,7 +12,6 @@
   },
   "devDependencies": {
     "@remix-project/remix-tests": "^0.2.21",
-    "@remix-project/remixd": "^0.6.9",
-    "chai": "^4.3.7"
+    "@remix-project/remixd": "^0.6.9"
   }
 }

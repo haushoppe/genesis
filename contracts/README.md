@@ -44,16 +44,22 @@ Left side bar: Solidity Compiler > Compiler > 0.811 or higher
 Make sure to compile `artisttoken.sol` with "Enable optimization: 200",
 otherwise it won't compile because of the contract size.
 
-### Testing using Chai & Mocha
+### JavaScript Testing using Chai & Mocha (and Hardhat)
 
 Remix supports testing of your files in JavaScript
 using assertion library Chai & test framework Mocha.
 
 see https://remix-ide.readthedocs.io/en/latest/testing_using_Chai_&_Mocha.html
+see https://www.chaijs.com/api/bdd/ for the API Reference
+see https://ethereum-waffle.readthedocs.io/en/latest/matchers.html
 
 Once done with writing the tests, right click on file name in `File Explorers`
 plugin. It will show some options along with option to `Run`. 
-This `Run` option is used to run the JS scripts
+This `Run` option is used to run the JS scripts.
+
+Note: It looks like that all `require()` are dynamically loaded by Remix.
+This means nothing needs to be defined in the local `package.json`.
+
 
 
 
@@ -85,3 +91,9 @@ see https://github.com/ethereum/remix-project/issues/2068#issuecomment-109030680
 ## How to use ERC2981 to set royalties
 
 see https://www.ethdump.com/how-use-erc2981-set-royalties
+
+
+
+
+TODO
+https://github.com/Meta-Angels/ERC721A/blob/main/test/ERC721A.test.js

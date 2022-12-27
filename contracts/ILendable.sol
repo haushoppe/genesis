@@ -20,8 +20,10 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
  * This is what we did with this interface!
  * source: https://www.metaangelsnft.com/benefits/lending
  *
- * All functions are identical to the original Meta Angels contract,
- * except `isLendingActive` and `retrieveLoanByAdmin` which are new!
+ * The following functions are not identical to the original Meta Angels contract:
+ * REMOVED: `loanedBalanceOf` (just use `totalLoanedPerAddress`)
+ * RENAMED: `isLendingActive`  (previously `loansPaused`, negated!)
+ * NEW: `retrieveLoanByAdmin`
  */
 interface ILendable is IERC165 {
 
@@ -33,14 +35,14 @@ interface ILendable is IERC165 {
     function loan(uint256 tokenId, address receiver) external;
 
     /**
-     * @notice Allow owner to retrieve loaned tokens from borrower
+     * @notice Allow original owner to retrieve loaned tokens from borrower
      */
     function retrieveLoan(uint256 tokenId) external;
 
     /**
-     * @notice Allow admin (usually the contract owner) to return a loaned token to owner
+     * @notice Allow admin (usually the contract owner) to return a loaned token to the original owner
      */
-    function retrieveLoanByAdmin(uint256 tokenId, address owner) external;
+    function retrieveLoanByAdmin(uint256 tokenId) external;
 
     // ** Views **
 
@@ -63,12 +65,6 @@ interface ILendable is IERC165 {
      * Returns the total number of loaned tokens
      */
     function totalLoaned() external view returns (uint256);
-
-    /**
-     * Returns the loaned balance of an address
-     * (same as totalLoanedPerAddress[owner])
-     */
-    function loanedBalanceOf(address owner) external view returns (uint256);
 
     /**
      * Returns all the token ids owned by a given address

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "erc721a/contracts/ERC721A.sol";
+import "erc721a-for-lendable/ERC721AForLendable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -19,7 +19,7 @@ import "IAgreeToTermsAndConditions.sol";
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of collectors cube tokens. By interacting with this contract, you agree to our terms and conditions.
  */
-contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
+contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
 
@@ -52,7 +52,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILen
     /**
      * @notice Construct a contract instance with predefined name and symbol
      */
-    constructor() ERC721A("Collectors Cube", "CUBE") {}
+    constructor() ERC721AForLendable("Collectors Cube", "CUBE") {}
 
     /**
      * @dev Used by ERC721A.tokenURI to return the full Uniform Resource Identifier (URI) for a token.
@@ -120,7 +120,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILen
         address to,
         uint256 tokenId,
         uint256 quantity
-    ) internal whenNotPaused override(ERC721A) {
+    ) internal whenNotPaused override(ERC721AForLendable) {
         super._beforeTokenTransfers(from, to, tokenId, quantity);
 
         // Cannot transfer token on loan
@@ -143,6 +143,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILen
     ) external payable virtual nonReentrant {
         // Minting is disabled
         require(isSaleActive, "Mint disabled");
+
         // Minting via allowlist is enabled. Please use the function mintAllowlist!
         require(signerAddress == address(0), "Use mintAllowlist");
 
@@ -170,12 +171,15 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILen
     ) external payable virtual nonReentrant {
         // Minting is disabled
         require(isSaleActive, "Mint disabled");
+
         // Minting via allowlist is disabled. Please use the function mint!
         require(signerAddress != address(0), "Use mint");
 
         // Maximum allowed mints exceeded
         require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Max mints exceeded");
+
         require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+
         // Signature validation failed
         require(verifyAddressSigner(messageHash, signature), "Validation failed");
 
@@ -211,7 +215,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILen
     // - ITermsAndConditions: 0x174fe517
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC721A, ERC2981, IERC165) returns (bool) {
+    ) public view virtual override(ERC721AForLendable, ERC2981, IERC165) returns (bool) {
         return 
             ERC721A.supportsInterface(interfaceId) || 
             ERC2981.supportsInterface(interfaceId) ||
@@ -310,7 +314,7 @@ contract CubeToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILen
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
-        safeTransferFrom(borrowerAddress, msg.sender, tokenId);
+        _unsafeTransferFrom(borrowerAddress, msg.sender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, msg.sender, tokenId);
     }

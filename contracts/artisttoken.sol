@@ -330,7 +330,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     }
 
     /**
-     * @notice Allow owner to retrieve loaned tokens from borrower
+     * @notice Allow original owner to retrieve loaned tokens from borrower
      */
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
@@ -346,7 +346,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         // Subtract from the owner's loan balance
         uint256 loansByAddress = totalLoanedPerAddress[msg.sender];
-        totalLoanedPerAddress[msg.sender] = loansByAddress - 1;
+        totalLoanedPretrieveLoanByAdminerAddress[msg.sender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
@@ -356,16 +356,15 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     }
 
     /**
-     * @notice Allow admin to return a loaned token to owner
+     * @notice Allow admin to return a loaned token to original owner
      */
-    function retrieveLoanByAdmin(uint256 tokenId, address owner) external nonReentrant onlyOwner {
+    function retrieveLoanByAdmin(uint256 tokenId) external nonReentrant onlyOwner {
         address borrowerAddress = ownerOf(tokenId);
         
         // This token is not on loan
         require(tokenOwnersOnLoan[tokenId] != address(0), "Not on loan");
 
-        // Trying to return token to the wrong wallet
-        require(tokenOwnersOnLoan[tokenId] == owner, "Wrong wallet");
+        address owner = tokenOwnersOnLoan[tokenId]; 
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];
@@ -376,7 +375,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
-        safeTransferFrom(borrowerAddress, owner, tokenId);
+        _unsafeTransferFrom(borrowerAddress, owner, tokenId);
 
         emit LoanRetrieved(borrowerAddress, owner, tokenId);
     }
@@ -403,7 +402,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         // Balance query for the zero address
         require(owner != address(0), "Balance query for 0x0");
-        uint256 totalTokensLoaned = loanedBalanceOf(owner);
+        uint256 totalTokensLoaned = totalLoanedPerAddress[owner];
         uint256 mintedSoFar = totalSupply();
         uint256 tokenIdsIdx = 0;
 

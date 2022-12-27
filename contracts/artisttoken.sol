@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "erc721a/contracts/ERC721A.sol";
+import "erc721a-for-lendable/ERC721AForLendable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -19,7 +19,7 @@ import "IAgreeToTermsAndConditions.sol";
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicieltyl agree to our terms and conditions on-chain.
  */
-contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions, IAgreeToTermsAndConditions {
+contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions, IAgreeToTermsAndConditions {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
     event Agreement(address indexed _from, bool _value);
@@ -56,7 +56,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
     /**
      * @notice Construct a contract instance with predefined name and symbol
      */
-    constructor() ERC721A("Artist Token for Collectors Cube", "ARTIST") {}
+    constructor() ERC721AForLendable("Artist Token for Collectors Cube", "ARTIST") {}
 
     /**
      * @dev Used by ERC721A.tokenURI to return the full Uniform Resource Identifier (URI) for a token.
@@ -124,7 +124,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
         address to,
         uint256 tokenId,
         uint256 quantity
-    ) internal whenNotPaused override(ERC721A) {
+    ) internal whenNotPaused override(ERC721AForLendable) {
         super._beforeTokenTransfers(from, to, tokenId, quantity);
 
         // Cannot transfer token on loan
@@ -139,7 +139,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
         address to,
         uint256 tokenId,
         uint256 quantity
-    ) internal override(ERC721A) {
+    ) internal override(ERC721AForLendable) {
         super._afterTokenTransfers(from, to, tokenId, quantity);
 
         // also called while minting, so we have to check for the zero address, too
@@ -232,7 +232,7 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
      * @notice Allow owner to send `mintNumber` tokens without cost to multiple addresses
      */
     function gift(address[] calldata receivers, uint256 mintNumber) external onlyOwner {
-        require((totalSupply() + receivers.length * mintNumber) <= maxSupply, "Max supply exceeded");
+        require((totalSupply() + (receivers.length * mintNumber)) <= maxSupply, "Max supply exceeded");
 
         for (uint256 i = 0; i < receivers.length; i++) {
             totalMintsPerAddress[receivers[i]] += mintNumber;
@@ -250,9 +250,9 @@ contract ArtistToken is ERC721A, ReentrancyGuard, Ownable, Pausable, ERC2981, IL
     // - IAgreeToTermsAndConditions: 0x14477c1f
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC721A, ERC2981, IERC165) returns (bool) {
+    ) public view virtual override(ERC721AForLendable, ERC2981, IERC165) returns (bool) {
         return 
-            ERC721A.supportsInterface(interfaceId) || 
+            ERC721AForLendable.supportsInterface(interfaceId) || 
             ERC2981.supportsInterface(interfaceId) ||
             type(ILendable).interfaceId == interfaceId ||
             type(ITermsAndConditions).interfaceId == interfaceId ||

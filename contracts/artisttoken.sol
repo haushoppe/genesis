@@ -78,10 +78,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      * @param newMaxSupply New max supply available for minting
      */
     function setMaxSupply(uint256 newMaxSupply) public onlyOwner {
-        // New value must be different from current value
-        require(maxSupply != newMaxSupply, "Same value");
-        // New max supply must be equal or higher than total minted tokens
-        require(newMaxSupply >= totalSupply(), "Supply too small");
+        require(maxSupply != newMaxSupply, "New value must be different from current value");
+        require(newMaxSupply >= totalSupply(), "New max supply must be equal or higher than total minted tokens");
         maxSupply = newMaxSupply;
     }
 
@@ -89,8 +87,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      * @notice Let contract owner update the mint price
      */
     function setMintPrice(uint256 newMintPrice) public onlyOwner {
-        // New value must be different from current value
-        require(price != newMintPrice, "Same value");
+        require(price != newMintPrice, "New value must be different from current value");
         price = newMintPrice;
     }
 
@@ -127,8 +124,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     ) internal whenNotPaused override(ERC721AForLendable) {
         super._beforeTokenTransfers(from, to, tokenId, quantity);
 
-        // Cannot transfer token on loan
-        require(tokenOwnersOnLoan[tokenId] == address(0), "Token on loan");
+        require(tokenOwnersOnLoan[tokenId] == address(0), "Cannot transfer token on loan");
     }
 
     /**
@@ -165,11 +161,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     function mint(
         uint256 mintNumber
     ) external payable virtual nonReentrant {
-        // Minting is disabled
-        require(isSaleActive, "Mint disabled");
-
-        // Minting via allowlist is enabled. Please use the function mintAllowlist!
-        require(signerAddress == address(0), "Use mintAllowlist");
+        require(isSaleActive, "Minting is disabled");
+        require(signerAddress == address(0), "Minting via allowlist is enabled. Please use the function mintAllowlist!");
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
@@ -198,19 +191,11 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         uint256 mintNumber,
         uint256 maximumAllowedMints
     ) external payable virtual nonReentrant {
-        // Minting is disabled
-        require(isSaleActive, "Mint disabled");
-
-        // Minting via allowlist is disabled. Please use the function mint!
-        require(signerAddress != address(0), "Use mint");
-
-        // Maximum allowed mints exceeded
-        require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Max mints exceeded");
-
+        require(isSaleActive, "Minting is disabled");
+        require(signerAddress != address(0), "Minting via allowlist is disabled. Please use the function mint!");
+        require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Maximum allowed mints exceeded");
         require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
-
-        // Signature validation failed
-        require(verifyAddressSigner(messageHash, signature), "Validation failed");
+        require(verifyAddressSigner(messageHash, signature), "Signature validation failed");
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
@@ -306,14 +291,10 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      * @notice Allow owner to loan their tokens to other addresses
      */
     function loan(uint256 tokenId, address receiver) external nonReentrant {
-        // Token loans are paused
-        require(isLendingActive, "Loans paused");
-        // Trying to loan not owned token
-        require(ownerOf(tokenId) == msg.sender, "Not owned");
-        // ERC721: transfer to the zero address
-        require(receiver != address(0), "Transfer to 0x0");
-        // Trying to loan a loaned token
-        require(tokenOwnersOnLoan[tokenId] == address(0), "Token loaned");
+        require(isLendingActive, "Token loans are paused");
+        require(ownerOf(tokenId) == msg.sender, "Trying to loan not owned token");
+        require(receiver != address(0), "Transfer to the zero address");
+        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
 
         // Transfer the token
         safeTransferFrom(msg.sender, receiver, tokenId);
@@ -335,11 +316,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
 
-        // Trying to retrieve their owned loaned token
-        require(borrowerAddress != msg.sender, "Owned loaned token");
-
-        // Trying to retrieve token not on loan
-        require(tokenOwnersOnLoan[tokenId] == msg.sender, "Not on loan");
+        require(borrowerAddress != msg.sender, "Trying to retrieve their owned loaned token");
+        require(tokenOwnersOnLoan[tokenId] == msg.sender, "Trying to retrieve token not on loan");
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];
@@ -361,8 +339,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     function retrieveLoanByAdmin(uint256 tokenId) external nonReentrant onlyOwner {
         address borrowerAddress = ownerOf(tokenId);
         
-        // This token is not on loan
-        require(tokenOwnersOnLoan[tokenId] != address(0), "Not on loan");
+        require(tokenOwnersOnLoan[tokenId] != address(0), "This token is not on loan");
 
         address owner = tokenOwnersOnLoan[tokenId]; 
 
@@ -391,8 +368,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      * Returns all the token ids owned by a given address
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
-        // Balance query for the zero address
-        require(owner != address(0), "Balance query for 0x0");
+        require(owner != address(0), "Balance query for the zero address");
         uint256 totalTokensLoaned = totalLoanedPerAddress[owner];
         uint256 mintedSoFar = totalSupply();
         uint256 tokenIdsIdx = 0;
@@ -426,18 +402,14 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         if (agreement == true) {
 
-            // You already agreed to our terms and conditions!
-            require(agreements[msg.sender] == false, "Already agreed");
-
-            // You can only agree to our terms and conditions if you hold a token!
-            require(balanceOf(msg.sender) > 0, "No holder of token");
+            require(agreements[msg.sender] == false, "You already agreed to our terms and conditions!");
+            require(balanceOf(msg.sender) > 0, "You can only agree to our terms and conditions if you hold a token!");
             agreements[msg.sender] = true;
             emit Agreement(msg.sender, true);
 
         } else {
-
-            // You have no agreement that could be revoked.
-            require(agreements[msg.sender] == true, "No agreement");
+            
+            require(agreements[msg.sender] == true, "You have no agreement that could be revoked.");
 
             delete agreements[msg.sender];
             emit Agreement(msg.sender, false);

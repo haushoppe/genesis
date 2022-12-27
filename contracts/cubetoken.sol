@@ -211,13 +211,13 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
     // - IERC721: 0x80ac58cd
     // - IERC721Metadata: 0x5b5e139f
     // - IERC2981: 0x2a55205a
-    // - ILendable: 0x0e3bf9bf
+    // - ILendable: 0x7f509df7
     // - ITermsAndConditions: 0x174fe517
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(ERC721AForLendable, ERC2981, IERC165) returns (bool) {
         return 
-            ERC721A.supportsInterface(interfaceId) || 
+            ERC721AForLendable.supportsInterface(interfaceId) || 
             ERC2981.supportsInterface(interfaceId) ||
             type(ILendable).interfaceId == interfaceId ||
             type(ITermsAndConditions).interfaceId == interfaceId;
@@ -294,7 +294,7 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
     }
 
     /**
-     * @notice Allow owner to retrieve loaned tokens from borrower
+     * @notice Allow original owner to retrieve loaned tokens from borrower
      */
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
@@ -320,16 +320,15 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
     }
 
     /**
-     * @notice Allow admin to return a loaned token to owner
+     * @notice Allow admin to return a loaned token to original owner
      */
-    function retrieveLoanByAdmin(uint256 tokenId, address owner) external nonReentrant onlyOwner {
+    function retrieveLoanByAdmin(uint256 tokenId) external nonReentrant onlyOwner {
         address borrowerAddress = ownerOf(tokenId);
         
         // This token is not on loan
         require(tokenOwnersOnLoan[tokenId] != address(0), "Not on loan");
 
-        // Trying to return token to the wrong wallet
-        require(tokenOwnersOnLoan[tokenId] == owner, "Wrong wallet");
+        address owner = tokenOwnersOnLoan[tokenId]; 
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];
@@ -340,7 +339,7 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
-        safeTransferFrom(borrowerAddress, owner, tokenId);
+        _unsafeTransferFrom(borrowerAddress, owner, tokenId);
 
         emit LoanRetrieved(borrowerAddress, owner, tokenId);
     }
@@ -353,21 +352,12 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
     }
 
     /**
-     * Returns the loaned balance of an address
-     */
-    function loanedBalanceOf(address owner) public view returns (uint256) {
-        // Balance query for the zero address
-        require(owner != address(0), "Balance query for 0x0");
-        return totalLoanedPerAddress[owner];
-    }
-
-    /**
      * Returns all the token ids owned by a given address
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         // Balance query for the zero address
         require(owner != address(0), "Balance query for 0x0");
-        uint256 totalTokensLoaned = loanedBalanceOf(owner);
+        uint256 totalTokensLoaned = totalLoanedPerAddress[owner];
         uint256 mintedSoFar = totalSupply();
         uint256 tokenIdsIdx = 0;
 

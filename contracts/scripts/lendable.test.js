@@ -96,7 +96,7 @@ describe("ILendable contract", () => {
       expect(await token.tokenOwnersOnLoan(2)).to.equal(owner.address);
 
       await token.retrieveLoan(1);
-      await token.retrieveLoan(2);
+      await token.retrieveLoanByAdmin(2);
 
       expect(await token.totalLoaned()).to.equal(1);
 

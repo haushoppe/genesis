@@ -245,7 +245,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     // - IERC721: 0x80ac58cd
     // - IERC721Metadata: 0x5b5e139f
     // - IERC2981: 0x2a55205a
-    // - ILendable: 0x0e3bf9bf
+    // - ILendable: 0x7f509df7
     // - ITermsAndConditions: 0x174fe517
     // - IAgreeToTermsAndConditions: 0x14477c1f
     function supportsInterface(
@@ -346,7 +346,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         // Subtract from the owner's loan balance
         uint256 loansByAddress = totalLoanedPerAddress[msg.sender];
-        totalLoanedPretrieveLoanByAdminerAddress[msg.sender] = loansByAddress - 1;
+        totalLoanedPerAddress[msg.sender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
@@ -385,15 +385,6 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      */
     function totalLoaned() public view returns (uint256) {
         return currentLoanIndex;
-    }
-
-    /**
-     * Returns the loaned balance of an address
-     */
-    function loanedBalanceOf(address owner) public view returns (uint256) {
-        // Balance query for the zero address
-        require(owner != address(0), "Balance query for 0x0");
-        return totalLoanedPerAddress[owner];
     }
 
     /**

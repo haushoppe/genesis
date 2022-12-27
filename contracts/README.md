@@ -11,15 +11,12 @@ Install via:
 npm install
 ```
 
-Run all tests:
-
-```
-npm run remix-tests
-```
-
 ## IDE for contract development
 
 Use Remix IDE at https://remix.ethereum.org/
+
+Ready customized remix:
+> https://remix.ethereum.org/#activate=solidity,solidityUnitTesting,debugger&optimize=true&runs=200&evmVersion=null&version=soljson-v0.8.17+commit.8df45f5f.js
 
 It is recommended to install `remixd` locally. 
 That enables Remix IDE to interact with files on local disk. 
@@ -47,13 +44,31 @@ Left side bar: Solidity Compiler > Compiler > 0.811 or higher
 Make sure to compile `artisttoken.sol` with "Enable optimization: 200",
 otherwise it won't compile because of the contract size.
 
+### Testing using Chai & Mocha
 
-### Remix Unit Testing plugin (dont' use anymore!)
+Remix supports testing of your files in JavaScript
+using assertion library Chai & test framework Mocha.
+
+see https://remix-ide.readthedocs.io/en/latest/testing_using_Chai_&_Mocha.html
+
+Once done with writing the tests, right click on file name in `File Explorers`
+plugin. It will show some options along with option to `Run`. 
+This `Run` option is used to run the JS scripts
+
+
+
+### Remix Solidity Unit Testing plugin (dont' use anymore!)
+
+Run the remix solidity tests via the Remix IDE or from the command line:
+
+```
+npm run remix-tests
+```
 
 see https://remix-ide.readthedocs.io/en/latest/unittesting.html
 
 Note: Some tests were written with the plugin. 
-But its not usefull for advanced scenarios!!
+But its not useful for advanced scenarios!!
 
 > Testing scenarios are very limited, because the `msg.sender` cant't be mocked 
 > sufficiently!

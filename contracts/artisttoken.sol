@@ -17,7 +17,7 @@ import "IAgreeToTermsAndConditions.sol";
 /**
  * @title Artist token contract
  * @author Ethspresso and Johannes
- * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicieltyl agree to our terms and conditions on-chain.
+ * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicitly agree to our terms and conditions on-chain.
  */
 contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions, IAgreeToTermsAndConditions {
     event Loan(address indexed _from, address indexed to, uint _value);

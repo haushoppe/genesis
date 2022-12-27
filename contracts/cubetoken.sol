@@ -271,7 +271,7 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
      */
     function loan(uint256 tokenId, address receiver) external nonReentrant {
         // Token loans are paused
-        require(isLendingActive == true, "Loans paused");
+        require(isLendingActive, "Loans paused");
         // Trying to loan not owned token
         require(ownerOf(tokenId) == msg.sender, "Not owned");
         // ERC721: transfer to the zero address

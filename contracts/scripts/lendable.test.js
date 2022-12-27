@@ -3,10 +3,18 @@ const { ethers } = require("hardhat");
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-
+// compile contract ArtistToken before execution!
 describe("ILendable contract", () => {
   
   const tokenName = 'ArtistToken';
+
+  // sometimes it compiles the token twice for me! 🙁
+  // Message: Error from IDE : There are multiple artifacts for contract "ArtistToken", please use a fully qualified name.
+  // Please replace ArtistToken for one of these options wherever you are trying to read its artifact: 
+  // const tokenName = 'artisttoken.sol:ArtistToken';
+  // const tokenName = 'localhost/artisttoken.sol:ArtistToken';
+  
+  
   let token;
   let owner, addr1, addr2, addr3;
 
@@ -87,17 +95,14 @@ describe("ILendable contract", () => {
       expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
       expect(await token.tokenOwnersOnLoan(2)).to.equal(owner.address);
 
-      // The transaction has been reverted to the initial state.
-      // Error provided by the contract:
-      // TransferCallerNotOwnerNorApproved : The caller must own the token or be an approved operator.
       await token.retrieveLoan(1);
-      // await token.retrieveLoan(2);
+      await token.retrieveLoan(2);
 
-      // expect(await token.totalLoaned()).to.equal(1);
+      expect(await token.totalLoaned()).to.equal(1);
 
-      // expect(await token.balanceOf(owner.address)).to.equal(2);
-      // expect(await token.balanceOf(addr1.address)).to.equal(1);
-      // expect(await token.balanceOf(addr2.address)).to.equal(0);
+      expect(await token.balanceOf(owner.address)).to.equal(2);
+      expect(await token.balanceOf(addr1.address)).to.equal(1);
+      expect(await token.balanceOf(addr2.address)).to.equal(0);
     });
 
   });

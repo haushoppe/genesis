@@ -111,13 +111,14 @@ contract testSuite {
         Assert.equal(token.termsAndConditionsURI(), "https://example.org/", "URI should be changeable");
     }
 
+    // in gift() we removed the parenthesis, just to be sure that it really doesn't matter
     function checkMathematicalOperationsOrder() public {
 
         uint256 result = 5 + 7 * 2;
         Assert.equal(result, 19, "without parenthesis: 19");
 
         uint256 result2 = 5 + (7 * 2);
-        Assert.equal(result2, 19, "without parenthesis: 19");
+        Assert.equal(result2, 19, "with parenthesis: 19");
     }
 }
     

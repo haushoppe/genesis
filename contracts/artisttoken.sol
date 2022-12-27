@@ -232,7 +232,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      * @notice Allow owner to send `mintNumber` tokens without cost to multiple addresses
      */
     function gift(address[] calldata receivers, uint256 mintNumber) external onlyOwner {
-        require((totalSupply() + (receivers.length * mintNumber)) <= maxSupply, "Max supply exceeded");
+        require((totalSupply() + receivers.length * mintNumber) <= maxSupply, "Max supply exceeded");
 
         for (uint256 i = 0; i < receivers.length; i++) {
             totalMintsPerAddress[receivers[i]] += mintNumber;
@@ -350,7 +350,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
-        safeTransferFrom(borrowerAddress, msg.sender, tokenId);
+        _unsafeTransferFrom(borrowerAddress, msg.sender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, msg.sender, tokenId);
     }

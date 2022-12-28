@@ -4,8 +4,6 @@ const { deployToken } = require("./_utils");
 
 ['ArtistToken', 'CubeToken'].forEach(tokenName => {
 
-  console.log("TEST" + tokenName);
-
   describe(`ILendable: ${tokenName} contract`, () => {
 
     let owner, addr1, addr2, addr3, token;
@@ -124,6 +122,32 @@ const { deployToken } = require("./_utils");
           expect(loanedTokens2).to.include("0");
 
           expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
+        });
+
+        it('should be possible to loan a token to yourself and retrieve it', async () => {
+
+          await token.mint(2);
+          await token.loan(1, owner.address);
+
+          // a couple of checks again
+          expect(await token.totalLoaned()).to.equal(1);
+          expect(await token.balanceOf(owner.address)).to.equal(2);
+          expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
+          var loanedTokens = (await token.loanedTokensByAddress(owner.address)).map(x => x.toString());
+          expect(loanedTokens.length).to.equal(1);
+          expect(loanedTokens).to.include("1");
+          expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
+
+          // call it back
+          await token.retrieveLoan(1);
+          expect(await token.totalLoaned()).to.equal(0);
+          expect(await token.totalLoanedPerAddress(owner.address)).to.equal(0);
+
+          // loan again and call it back by admins´
+          await token.loan(0, owner.address);
+          await token.retrieveLoanByAdmin(0);
+          expect(await token.totalLoaned()).to.equal(0);
+          expect(await token.totalLoanedPerAddress(owner.address)).to.equal(0);
         });
       });
     });

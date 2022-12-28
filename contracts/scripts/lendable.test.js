@@ -35,7 +35,7 @@ const { deployToken } = require("./_utils");
         expect(await token.supportsInterface(0x01ffc9a7)).to.equal(true, "Contract should support IERC165: 0x01ffc9a7");
         expect(await token.supportsInterface(0x80ac58cd)).to.equal(true, "Contract should support IERC721: 0x80ac58cd");
         expect(await token.supportsInterface(0x5b5e139f)).to.equal(true, "Contract should support IERC721Metadata: 0x5b5e139f");
-        expect(await token.supportsInterface(0x7f509df7)).to.equal(true, "Contract should support ILendable: 0x7f509df7");
+        expect(await token.supportsInterface(0xcd36757f)).to.equal(true, "Contract should support ILendable: 0xcd36757f");
       });
 
       describe("after setup", () => {
@@ -71,21 +71,36 @@ const { deployToken } = require("./_utils");
 
         it('should be able to mint, lend and retrieve a token', async () => {
 
+          // owner mints 3 tokens
           await token.mint(3);
 
+          // loans token0 and token1 to addr1 and token2 to addr2
           await token.loan(0, addr1.address);
           await token.loan(1, addr1.address);
           await token.loan(2, addr2.address);
 
+          // now there are a total of 3 tokens loaned
           expect(await token.totalLoaned()).to.equal(3);
 
+          // orginal owner now owns no tokens anymore
+          // addr1 owns 2 tokens now
+          // addr2 owns 1 tolen now
           expect(await token.balanceOf(owner.address)).to.equal(0);
           expect(await token.balanceOf(addr1.address)).to.equal(2);
           expect(await token.balanceOf(addr2.address)).to.equal(1);
 
+          // the tokenOwnersOnLoan mapping shows the original owner
           expect(await token.tokenOwnersOnLoan(0)).to.equal(owner.address);
           expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
           expect(await token.tokenOwnersOnLoan(2)).to.equal(owner.address);
+
+          var x = await token.ownedTokensByAddress(owner.address);
+          var y = await token.ownedTokensByAddress(owner.address);
+          var z = await token.ownedTokensByAddress(owner.address);
+
+          console.log(x);
+          console.log(y);
+          console.log(z);
 
           await token.retrieveLoan(1);
           await token.retrieveLoanByAdmin(2);

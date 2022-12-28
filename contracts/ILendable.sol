@@ -21,8 +21,9 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
  * source: https://www.metaangelsnft.com/benefits/lending
  *
  * The following functions are not identical to the original Meta Angels contract:
- * REMOVED: `loanedBalanceOf` (same functionality as `totalLoanedPerAddress`)
- * RENAMED: `isLendingActive` (previously `loansPaused`, negated!)
+ * Removed: `loanedBalanceOf` (same functionality as `totalLoanedPerAddress`)
+ * Renamed: `ownedTokensByAddress` to `loanedTokensByAddress`
+ * Renamed: `loansPaused` to `isLendingActive` (negated!)
  */
 interface ILendable is IERC165 {
 
@@ -57,7 +58,7 @@ interface ILendable is IERC165 {
     function totalLoaned() external view returns (uint256);
 
     /**
-     * Returns all the token ids owned by a given address
+     * Returns all the loaned token ids owned by a given address
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory);
 }

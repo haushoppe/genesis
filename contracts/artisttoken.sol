@@ -369,7 +369,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     }
 
     /**
-     * Returns all the token ids owned by a given address
+     * Returns all the loaned token ids owned by a given address
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         require(owner != address(0), "Balance query for the zero address");

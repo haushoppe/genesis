@@ -1,35 +1,22 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { deployToken } = require("./_utils");
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+['ArtistToken', 'CubeToken'].forEach(tokenName => {
 
-// Make sure each contract is compiled and artifacts are generated before execution!
-[
-  'ArtistToken',
-  'CubeToken'
-].forEach(tokenName => {
+  console.log("TEST" + tokenName);
 
-  describe(`ILendable: ${ tokenName } contract`, () => {
-    
-    let token;
-    let owner, addr1, addr2, addr3;
+  describe(`ILendable: ${tokenName} contract`, () => {
+
+    let owner, addr1, addr2, addr3, token;
 
     beforeEach(async () => {
-
       const [_owner, _addr1, _addr2, _addr3] = await ethers.getSigners();
       owner = _owner;
       addr1 = _addr1;
       addr2 = _addr2;
       addr3 = _addr3;
-
-      // `ethers.getContractFactory` would be cooler, but here I get quite often the error: 
-      // "Message: Error from IDE : There are multiple artifacts for contract..."
-      const metadata = JSON.parse(await remix.call('fileManager', 'getFile', `artifacts/${tokenName}.json`))
-      const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner()
-      const instance = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer);
-      token = await instance.deploy();
-      await token.deployed();
-      // console.log('Token deployed! ⭐️ Contract address: ' + token.address);
+      token = await deployToken(tokenName, owner);
     });
 
     describe("after deployment", () => {
@@ -49,68 +36,67 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
         expect(await token.supportsInterface(0x80ac58cd)).to.equal(true, "Contract should support IERC721: 0x80ac58cd");
         expect(await token.supportsInterface(0x5b5e139f)).to.equal(true, "Contract should support IERC721Metadata: 0x5b5e139f");
         expect(await token.supportsInterface(0x7f509df7)).to.equal(true, "Contract should support ILendable: 0x7f509df7");
+      });
+
+      describe("after setup", () => {
+
+        beforeEach(async () => {
+          await token.setSaleStatus(true)
+          await token.setLendingStatus(true);
+        });
+
+        it('should have sale and lending active', async () => {
+          expect(await token.isSaleActive()).to.equal(true);
+          expect(await token.isLendingActive()).to.equal(true);
+        });
+
+        it('should be able to mint tokens', async () => {
+          await token.mint(3);
+
+          expect(await token.balanceOf(owner.address)).to.equal(3);
+          expect(await token.totalSupply()).to.equal(3);
+          expect(await token.totalMintsPerAddress(owner.address)).to.equal(3); // not part of ILendable
+        });
+
+        it('owner should be able to gift tokens to multiple addresses', async () => {
+          await token.gift([addr1.address, addr2.address], 5);
+
+          expect(await token.balanceOf(addr1.address)).to.equal(5);
+          expect(await token.balanceOf(addr2.address)).to.equal(5);
+          expect(await token.balanceOf(addr3.address)).to.equal(0); // addr3 got nothing!
+          expect(await token.totalSupply()).to.equal(10);
+          expect(await token.totalMintsPerAddress(addr1.address)).to.equal(5); // not part of ILendable
+          expect(await token.totalMintsPerAddress(addr2.address)).to.equal(5); // not part of ILendable
+        });
+
+        it('should be able to mint, lend and retrieve a token', async () => {
+
+          await token.mint(3);
+
+          await token.loan(0, addr1.address);
+          await token.loan(1, addr1.address);
+          await token.loan(2, addr2.address);
+
+          expect(await token.totalLoaned()).to.equal(3);
+
+          expect(await token.balanceOf(owner.address)).to.equal(0);
+          expect(await token.balanceOf(addr1.address)).to.equal(2);
+          expect(await token.balanceOf(addr2.address)).to.equal(1);
+
+          expect(await token.tokenOwnersOnLoan(0)).to.equal(owner.address);
+          expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
+          expect(await token.tokenOwnersOnLoan(2)).to.equal(owner.address);
+
+          await token.retrieveLoan(1);
+          await token.retrieveLoanByAdmin(2);
+
+          expect(await token.totalLoaned()).to.equal(1);
+
+          expect(await token.balanceOf(owner.address)).to.equal(2);
+          expect(await token.balanceOf(addr1.address)).to.equal(1);
+          expect(await token.balanceOf(addr2.address)).to.equal(0);
+        });
+      });
     });
-
-    describe("after setup", () => {
-
-      beforeEach(async () => {
-        await token.setSaleStatus(true)
-        await token.setLendingStatus(true);
-      });
-
-      it('should have sale and lending active', async () => {
-        expect(await token.isSaleActive()).to.equal(true);
-        expect(await token.isLendingActive()).to.equal(true);
-      });
-
-      it('should be able to mint tokens', async () => {
-        await token.mint(3);
-
-        expect(await token.balanceOf(owner.address)).to.equal(3);
-        expect(await token.totalSupply()).to.equal(3);
-        expect(await token.totalMintsPerAddress(owner.address)).to.equal(3); // not part of ILendable
-      });
-
-      it('owner should be able to gift tokens to multiple addresses', async () => {
-        await token.gift([addr1.address, addr2.address], 5);
-        
-        expect(await token.balanceOf(addr1.address)).to.equal(5);
-        expect(await token.balanceOf(addr2.address)).to.equal(5);
-        expect(await token.balanceOf(addr3.address)).to.equal(0); // addr3 got nothing!
-        expect(await token.totalSupply()).to.equal(10);
-        expect(await token.totalMintsPerAddress(addr1.address)).to.equal(5); // not part of ILendable
-        expect(await token.totalMintsPerAddress(addr2.address)).to.equal(5); // not part of ILendable
-      });
-
-      it('should be able to mint, lend and retrieve a token', async () => {
-        
-        await token.mint(3);
-
-        await token.loan(0, addr1.address);
-        await token.loan(1, addr1.address);
-        await token.loan(2, addr2.address);
-
-        expect(await token.totalLoaned()).to.equal(3);
-
-        expect(await token.balanceOf(owner.address)).to.equal(0);
-        expect(await token.balanceOf(addr1.address)).to.equal(2);
-        expect(await token.balanceOf(addr2.address)).to.equal(1);
-
-        expect(await token.tokenOwnersOnLoan(0)).to.equal(owner.address);
-        expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
-        expect(await token.tokenOwnersOnLoan(2)).to.equal(owner.address);
-
-        await token.retrieveLoan(1);
-        await token.retrieveLoanByAdmin(2);
-
-        expect(await token.totalLoaned()).to.equal(1);
-
-        expect(await token.balanceOf(owner.address)).to.equal(2);
-        expect(await token.balanceOf(addr1.address)).to.equal(1);
-        expect(await token.balanceOf(addr2.address)).to.equal(0);
-      });
-
-    });
-
   });
 });

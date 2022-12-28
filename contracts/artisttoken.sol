@@ -53,10 +53,14 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     bool public isSaleActive = false;
     bool public isLendingActive = false;
 
+    // Changeable token name and symbol
+    string private _changeableName = "Artist Token for Collectors Cube";
+    string private _changeableSymbol = "ARTIST";
+
     /**
      * @notice Construct a contract instance with predefined name and symbol
      */
-    constructor() ERC721AForLendable("Artist Token for Collectors Cube", "ARTIST") {}
+    constructor() ERC721AForLendable(_changeableName, _changeableSymbol) {}
 
     /**
      * @dev Used by ERC721A.tokenURI to return the full Uniform Resource Identifier (URI) for a token.
@@ -428,36 +432,31 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     // Change name / symbol //
     // ******************** //
 
-    function _setStringAtStorageSlot(string memory value, uint256 storageSlot) private {
-        assembly {
-            let stringLength := mload(value)
+    /**
+     * Returns the token collection name.
+     */
+    function name() public view virtual override  returns (string memory) {
+        return _changeableName;
+    }
 
-            switch gt(stringLength, 0x1F)
-            case 0 {
-                sstore(storageSlot, or(mload(add(value, 0x20)), mul(stringLength, 2)))
-            }
-            default {
-                sstore(storageSlot, add(mul(stringLength, 2), 1))
-                mstore(0x00, storageSlot)
-                let dataSlot := keccak256(0x00, 0x20)
-                for { let i := 0 } lt(mul(i, 0x20), stringLength) { i := add(i, 0x01) } {
-                    sstore(add(dataSlot, i), mload(add(value, mul(add(i, 1), 0x20))))
-                }
-            }
-        }
+    /**
+     * Returns the token collection symbol.
+     */
+    function symbol() public view virtual override returns (string memory) {
+        return _changeableSymbol;
     }
 
     /**
      * @notice Change token name
      */
-    function setName(string memory value) external onlyOwner {
-        _setStringAtStorageSlot(value, 2);
+    function setName(string memory newName) external onlyOwner {
+        _changeableName = newName;
     }
 
     /**
      * @notice Change token symbol
      */
-    function setSymbol(string memory value) external onlyOwner {
-        _setStringAtStorageSlot(value, 3);
+    function setSymbol(string memory newSymbol) external onlyOwner {
+        _changeableSymbol = newSymbol;
     }
 }

@@ -27,8 +27,6 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
  */
 interface ILendable is IERC165 {
 
-    // ** Lending **
-
     /**
      * @notice Allow owner to loan their tokens to other addresses
      */
@@ -43,8 +41,6 @@ interface ILendable is IERC165 {
      * @notice Allow admin (usually the contract owner) to return a loaned token to the original owner
      */
     function retrieveLoanByAdmin(uint256 tokenId) external;
-
-    // ** Views **
 
     /**
      * Returns true if tokens are currently allowed to be lent, otherwise false.

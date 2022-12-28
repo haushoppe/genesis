@@ -234,7 +234,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     // - IERC721: 0x80ac58cd
     // - IERC721Metadata: 0x5b5e139f
     // - IERC2981: 0x2a55205a
-    // - ILendable: 0x7f509df7
+    // - ILendable: 0xcd36757f
     // - ITermsAndConditions: 0x174fe517
     // - IAgreeToTermsAndConditions: 0x14477c1f
     function supportsInterface(

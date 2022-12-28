@@ -200,7 +200,7 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
     // - IERC721: 0x80ac58cd
     // - IERC721Metadata: 0x5b5e139f
     // - IERC2981: 0x2a55205a
-    // - ILendable: 0x7f509df7
+    // - ILendable: 0xcd36757f
     // - ITermsAndConditions: 0x174fe517
     function supportsInterface(
         bytes4 interfaceId

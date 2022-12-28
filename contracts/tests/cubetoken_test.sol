@@ -55,10 +55,10 @@ contract testSuite {
 
         // our own ILendable interface
         bytes4 lendableInterfaceId = type(ILendable).interfaceId;
-        bytes4 lendableInterfaceId2 = 0x7f509df7;
+        bytes4 lendableInterfaceId2 = 0xcd36757f;
 
-        Assert.equal(lendableInterfaceId, lendableInterfaceId2, "ILendable should have this interfaceId: 0x7f509df7");
-        Assert.equal(token.supportsInterface(0x7f509df7), true, "Contract should support ILendable: 0x7f509df7");
+        Assert.equal(lendableInterfaceId, lendableInterfaceId2, "ILendable should have this interfaceId: 0xcd36757f");
+        Assert.equal(token.supportsInterface(0xcd36757f), true, "Contract should support ILendable: 0xcd36757f");
 
 
         // our own ITermsAndConditions interface

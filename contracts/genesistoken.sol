@@ -43,7 +43,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     // Lending overview
     mapping (address => uint256) public totalLoanedPerAddress;
     mapping (uint256 => address) public tokenOwnersOnLoan;
-    uint256 private currentLoanIndex = 0;
+    uint256 private currentLoanIndex = 1; // same as _startTokenId
 
     // State variables
     bool public isSaleActive = false;
@@ -52,6 +52,16 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     // Changeable token name and symbol
     string private _changeableName = "Genesis by HAUS HOPPE";
     string private _changeableSymbol = "GENESIS";
+
+    // Mosaic logic: mosaicTokenId to 1st/2nd/3rd/4th tile
+    mapping (uint256 => uint256) public tile1;
+    mapping (uint256 => uint256) public tile2;
+    mapping (uint256 => uint256) public tile3;
+    mapping (uint256 => uint256) public tile4;
+
+    // every token can be only used once for a mosaic
+    mapping (uint256 => bool) public tokenInMosaic;
+
 
     /**
      * @notice Construct a contract instance with predefined name and symbol
@@ -192,6 +202,80 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         for (uint256 i = 0; i < receivers.length; i++) {
             totalMintsPerAddress[receivers[i]] += mintNumber;
             _safeMint(receivers[i], mintNumber);
+        }
+    }
+
+    /**
+     * @notice Allow the owner of 4 tokens to mint a free special token called "mosaic"
+     */
+    function mintMosaic(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) external nonReentrant {
+        require(isSaleActive, "Minting is disabled");
+
+        require(ownerOf(tokenId1) == msg.sender, "You must be the owner of the first token!");
+        require(ownerOf(tokenId2) == msg.sender, "You must be the owner of the second token!");
+        require(ownerOf(tokenId3) == msg.sender, "You must be the owner of the third token!");
+        require(ownerOf(tokenId4) == msg.sender, "You must be the owner of the fourth token!");
+
+        require(tokenInMosaic[tokenId1] == false, "The first token is already part of a mosaic!");
+        require(tokenInMosaic[tokenId2] == false, "The second token is already part of a mosaic!");
+        require(tokenInMosaic[tokenId3] == false, "The third token is already part of a mosaic!");
+        require(tokenInMosaic[tokenId4] == false, "The fourth token is already part of a mosaic!");
+
+        uint256 currentSupply = totalSupply();
+        require(currentSupply + 1 <= maxSupply, "Max supply exceeded");
+
+        // every token can be only used once for a mosaic
+        tokenInMosaic[tokenId1] = true;
+        tokenInMosaic[tokenId2] = true;
+        tokenInMosaic[tokenId3] = true;
+        tokenInMosaic[tokenId4] = true;
+
+        // with the help if these 4 mappings we will recover all tiles of the mosaic again
+        uint256 mosaicTokenId = _nextTokenId();
+        tile1[mosaicTokenId] = tokenId1;
+        tile2[mosaicTokenId] = tokenId2;
+        tile3[mosaicTokenId] = tokenId3;
+        tile4[mosaicTokenId] = tokenId4;
+
+        totalMintsPerAddress[msg.sender] += 1;
+        _safeMint(msg.sender, 1);
+
+        if (currentSupply + 1 >= maxSupply) {
+            isSaleActive = false;
+        }
+    }
+
+    /**
+     * @dev Returns the starting token ID which is 1 now!
+     * Now tokenId == 0 can be used to check for existince in the mappings
+     */
+    function _startTokenId() internal view virtual override returns (uint256) {
+        return 1;
+    }
+
+    /**
+     * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
+     */
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+
+        string memory baseURI = _baseURI();
+
+        // normal token
+        if (tile1[tokenId] == 0) {
+            return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, _toString(tokenId))) : '';
+
+        // mosaic token
+        } else {
+            return bytes(baseURI).length != 0 ? string(abi.encodePacked(
+                baseURI, 
+                _toString(tokenId), '/',
+                _toString(tile1[tokenId]), '/',
+                _toString(tile2[tokenId]), '/',
+                _toString(tile3[tokenId]), '/',
+                _toString(tile4[tokenId])
+            )) : '';
+
         }
     }
 

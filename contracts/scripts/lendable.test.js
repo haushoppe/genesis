@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployToken } = require("./_utils");
 
-['GenesisToken', 'SeaToken', 'ArtToken'].forEach(tokenName => {
+['GenesisToken' /*, 'SeaToken', 'ArtToken' */].forEach(tokenName => {
 
   describe(`ILendable: ${tokenName} contract`, () => {
 
@@ -69,13 +69,15 @@ const { deployToken } = require("./_utils");
 
         it('should be able to mint, lend and retrieve a token', async () => {
 
+          const startTokenId = tokenName == 'GenesisToken' ? 1 : 0;
+
           // owner mints 3 tokens
           await token.mint(3);
 
           // loans token0 and token1 to addr1 and token2 to addr2
-          await token.loan(0, addr1.address);
-          await token.loan(1, addr1.address);
-          await token.loan(2, addr2.address);
+          await token.loan(0 + startTokenId, addr1.address);
+          await token.loan(1 + startTokenId, addr1.address);
+          await token.loan(2 + startTokenId, addr2.address);
 
           // now there are a total of 3 tokens loaned
           expect(await token.totalLoaned()).to.equal(3);
@@ -88,23 +90,30 @@ const { deployToken } = require("./_utils");
           expect(await token.balanceOf(addr2.address)).to.equal(1);
 
           // the tokenOwnersOnLoan mapping shows the original owner
-          expect(await token.tokenOwnersOnLoan(0)).to.equal(owner.address);
-          expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
-          expect(await token.tokenOwnersOnLoan(2)).to.equal(owner.address);
+          expect(await token.tokenOwnersOnLoan(0 + startTokenId)).to.equal(owner.address);
+          expect(await token.tokenOwnersOnLoan(1 + startTokenId)).to.equal(owner.address);
+          expect(await token.tokenOwnersOnLoan(2 + startTokenId)).to.equal(owner.address);
 
           // all three tokens of the original owner are also shown here...
           var loanedTokens = (await token.loanedTokensByAddress(owner.address)).map(x => x.toString());
           expect(loanedTokens.length).to.equal(3);
-          expect(loanedTokens).to.include("0");
-          expect(loanedTokens).to.include("1");
-          expect(loanedTokens).to.include("2");
+          expect(loanedTokens).to.include((0  + startTokenId) + '');
+          expect(loanedTokens).to.include((1  + startTokenId) + '');
+          expect(loanedTokens).to.include((2  + startTokenId) + '');
+
+          console.log('OK1');
 
           // ...and he loaned a total of 3
           expect(await token.totalLoanedPerAddress(owner.address)).to.equal(3);
 
+          console.log('OK2');
+
           // but the others not (of course)
           expect(await token.totalLoanedPerAddress(addr1.address)).to.equal(0);
           expect(await token.totalLoanedPerAddress(addr2.address)).to.equal(0);
+
+          console.log('OK3');
+
 
           // now retrieve tokens, but only token1 and token2 (not token0)
           await token.retrieveLoan(1);
@@ -119,7 +128,7 @@ const { deployToken } = require("./_utils");
 
           var loanedTokens2 = (await token.loanedTokensByAddress(owner.address)).map(x => x.toString());
           expect(loanedTokens2.length).to.equal(1);
-          expect(loanedTokens2).to.include("0");
+          expect(loanedTokens2).to.include((0  + startTokenId) + '');
 
           expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
         });

@@ -102,7 +102,7 @@ contract MetaAngels is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * Returns all the token ids owned by a given address
+     * Returns all the loaned token ids owned by a given address
      */
     function ownedTokensByAddress(address owner) external view returns (uint256[] memory) {
         uint256 totalTokensOwned = balanceOf(owner);
@@ -262,7 +262,7 @@ contract MetaAngels is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * Returns all the token ids owned by a given address
+     * Returns all the loaned token ids owned by a given address
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         require(owner != address(0), "Balance query for the zero address");

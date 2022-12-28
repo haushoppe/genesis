@@ -1,42 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-// Non-Fungible Token Standard, including the Metadata extension.
-// Optimized for lower gas during batch mints.
-// Token IDs are minted in sequential order (e.g. 0, 1, 2, 3, ...)
-import "erc721a/contracts/ERC721A.sol";
-
-// Makes nonReentrant modifier available, to make sure there are no nested (reentrant) calls to functions.
+import "erc721a-for-lendable/ERC721AForLendable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
-// Privileged accounts will be able to pause the functionality marked as whenNotPaused. Useful for emergency response.
 import "@openzeppelin/contracts/security/Pausable.sol";
-
-// Mintable: Simple mechanism with a single account authorized for all privileged actions.
-// Ownable: Privileged accounts will be able to create more supply.
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-// String operations.
 import "@openzeppelin/contracts/utils/Strings.sol";
-
-// not used??
-// Provides counters that can only be incremented, decremented or reset.
-// import "@openzeppelin/contracts/utils/Counters.sol";
-
-// Elliptic Curve Digital Signature Algorithm (ECDSA) operations.
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
-// not used??
-// A standardized way to retrieve royalty payment information
-// import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import "ILendable.sol";
+import "ITermsAndConditions.sol";
+import "IAgreeToTermsAndConditions.sol";
 
 /**
- * @title Genesis contract
+ * @title Genesis token contract
  * @author Johannes from HAUS HOPPE
  * @notice This contract handles minting and loaning of genesis tokens.
- * @custom:previous-contributions This code is largely derived from the work of Ethspresso, who used the publicly available code from the Meta Angels project as a foundation.
  */
-contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
+contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
 
@@ -44,11 +27,14 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     using Strings for uint256;
 
     string private _baseTokenURI;
-    uint256 public price = 0.1 ether;
-    uint256 public maxSupply = 200;
+    uint256 public price = 0 ether;
+    uint256 public maxSupply = 10000;
+
+    // Review our terms and conditions at the following URI
+    string public termsAndConditionsURI;
 
     // Used to validate authorized mint addresses
-    // address(0) enables/disables minting via allowlist
+    // zero address enables/disables minting via allowlist
     address private signerAddress = 0x0000000000000000000000000000000000000000;
 
     // Used to track number of mints per wallet
@@ -63,10 +49,14 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     bool public isSaleActive = false;
     bool public isLendingActive = false;
 
+    // Changeable token name and symbol
+    string private _changeableName = "Genesis by HAUS HOPPE";
+    string private _changeableSymbol = "GENESIS";
+
     /**
      * @notice Construct a contract instance with predefined name and symbol
      */
-    constructor() ERC721A("Genesis by HAUS HOPPE", "GENESIS") {}
+    constructor() ERC721AForLendable(_changeableName, _changeableSymbol) {}
 
     /**
      * @dev Used by ERC721A.tokenURI to return the full Uniform Resource Identifier (URI) for a token.
@@ -102,19 +92,10 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Allow contract owner to enable mint
+     * @notice Allow contract owner to enable/disable minting
      */
-    function enableSale() public onlyOwner {
-        require(isSaleActive == false, "Sale is already enabled");
-        isSaleActive = true;
-    }
-
-    /**
-     * @notice Allow contract owner to disable mint
-     */
-    function disableSale() public onlyOwner {
-        require(isSaleActive == true, "Sale is already disabled");
-        isSaleActive = false;
+    function setSaleStatus(bool status) public onlyOwner {
+        isSaleActive = status;
     }
 
     /**
@@ -140,7 +121,7 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
         address to,
         uint256 tokenId,
         uint256 quantity
-    ) internal whenNotPaused override(ERC721A) {
+    ) internal whenNotPaused override(ERC721AForLendable) {
         super._beforeTokenTransfers(from, to, tokenId, quantity);
 
         require(tokenOwnersOnLoan[tokenId] == address(0), "Cannot transfer token on loan");
@@ -155,12 +136,12 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Mint tokens, batch mint possible - use this function if minting via allowlist is disabled
+     * @notice Mint tokens, batch mint possible. Minting also means you agree to our terms and conditions. Please review them at `termsAndConditions`!
      */
     function mint(
         uint256 mintNumber
     ) external payable virtual nonReentrant {
-        require(isSaleActive, "Mint is disabled");
+        require(isSaleActive, "Minting is disabled");
         require(signerAddress == address(0), "Minting via allowlist is enabled. Please use the function mintAllowlist!");
 
         uint256 currentSupply = totalSupply();
@@ -175,7 +156,7 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Allow for minting of tokens up to the maximum allowed for a given address.
+     * @notice Allow for minting of tokens up to the maximum allowed for a given address. Minting also means you agree to our terms and conditions. Please review them at `termsAndConditions`!
      * The address of the sender and the number of mints allowed are hashed and signed
      * with the server's private key and verified here to prove allowlist status.
      */
@@ -185,9 +166,8 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
         uint256 mintNumber,
         uint256 maximumAllowedMints
     ) external payable virtual nonReentrant {
-        require(isSaleActive, "Mint is disabled");
+        require(isSaleActive, "Minting is disabled");
         require(signerAddress != address(0), "Minting via allowlist is disabled. Please use the function mint!");
-
         require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Maximum allowed mints exceeded");
         require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
         require(verifyAddressSigner(messageHash, signature), "Signature validation failed");
@@ -211,8 +191,57 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
 
         for (uint256 i = 0; i < receivers.length; i++) {
             totalMintsPerAddress[receivers[i]] += mintNumber;
-            _safeMint(receivers[i], 1);
+            _safeMint(receivers[i], mintNumber);
         }
+    }
+
+    // Supports the following `interfaceId`s:
+    // - IERC165: 0x01ffc9a7
+    // - IERC721: 0x80ac58cd
+    // - IERC721Metadata: 0x5b5e139f
+    // - IERC2981: 0x2a55205a
+    // - ILendable: 0xcd36757f
+    // - ITermsAndConditions: 0x174fe517
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC721AForLendable, ERC2981, IERC165) returns (bool) {
+        return 
+            ERC721AForLendable.supportsInterface(interfaceId) || 
+            ERC2981.supportsInterface(interfaceId) ||
+            type(ILendable).interfaceId == interfaceId ||
+            type(ITermsAndConditions).interfaceId == interfaceId;
+    }
+
+    // ******************** //
+    // NFT Royalty Standard //
+    // ******************** //
+
+    /**
+     * @notice Sets the royalty information that all ids in this contract will default to.
+     */
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
+        _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
+    /**
+     * @notice Removes default royalty information.
+     */
+    function deleteDefaultRoyalty() public onlyOwner {
+        _deleteDefaultRoyalty();
+    }
+
+    /**
+     * @notice Sets the royalty information for a specific token id, overriding the global default.
+     */
+    function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) public onlyOwner {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
+    /**
+     * @notice Resets royalty information for the token id back to the global default.
+     */
+    function resetTokenRoyalty(uint256 tokenId) public onlyOwner {
+        _resetTokenRoyalty(tokenId);
     }
 
     // ********************* //
@@ -220,28 +249,19 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     // ********************* //
 
     /**
-     * To be updated by contract owner to allow for the loan functionality to be toggled
+     * @notice Allow contract owner to enable/disable loan functionality
      */
-    function enableLending() public onlyOwner {
-        require(isLendingActive != true, "Lending is already enabled");
-        isLendingActive = true;
-    }
-
-    /**
-     * To be updated by contract owner to allow for the loan functionality to be toggled
-     */
-    function disableLending() public onlyOwner {
-        require(isLendingActive != false, "Lending is already disabled");
-        isLendingActive = false;
+    function setLendingStatus(bool status) public onlyOwner {
+        isLendingActive = status;
     }
 
     /**
      * @notice Allow owner to loan their tokens to other addresses
      */
     function loan(uint256 tokenId, address receiver) external nonReentrant {
-        require(isLendingActive == true, "Token loans are paused");
+        require(isLendingActive, "Token loans are paused");
         require(ownerOf(tokenId) == msg.sender, "Trying to loan not owned token");
-        require(receiver != address(0), "ERC721: transfer to the zero address");
+        require(receiver != address(0), "Transfer to the zero address");
         require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
 
         // Transfer the token
@@ -259,10 +279,11 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Allow owner to retrieve loaned tokens from borrower
+     * @notice Allow original owner to retrieve loaned tokens from borrower
      */
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
+
         require(borrowerAddress != msg.sender, "Trying to retrieve their owned loaned token");
         require(tokenOwnersOnLoan[tokenId] == msg.sender, "Trying to retrieve token not on loan");
 
@@ -275,18 +296,20 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
-        safeTransferFrom(borrowerAddress, msg.sender, tokenId);
+        _unsafeTransferFrom(borrowerAddress, msg.sender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, msg.sender, tokenId);
     }
 
     /**
-     * @notice Allow admin to return a loaned token to owner
+     * @notice Allow admin to return a loaned token to original owner
      */
-    function retrieveLoanAdmin(uint256 tokenId, address owner) external nonReentrant onlyOwner {
+    function retrieveLoanByAdmin(uint256 tokenId) external nonReentrant onlyOwner {
         address borrowerAddress = ownerOf(tokenId);
+        
         require(tokenOwnersOnLoan[tokenId] != address(0), "This token is not on loan");
-        require(tokenOwnersOnLoan[tokenId] == owner, "Trying to return token to the wrong wallet");
+
+        address owner = tokenOwnersOnLoan[tokenId]; 
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];
@@ -297,7 +320,7 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
-        safeTransferFrom(borrowerAddress, owner, tokenId);
+        _unsafeTransferFrom(borrowerAddress, owner, tokenId);
 
         emit LoanRetrieved(borrowerAddress, owner, tokenId);
     }
@@ -310,19 +333,11 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * Returns the loaned balance of an address
-     */
-    function loanedBalanceOf(address owner) public view returns (uint256) {
-        require(owner != address(0), "Balance query for the zero address");
-        return totalLoanedPerAddress[owner];
-    }
-
-    /**
      * Returns all the token ids owned by a given address
      */
     function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
         require(owner != address(0), "Balance query for the zero address");
-        uint256 totalTokensLoaned = loanedBalanceOf(owner);
+        uint256 totalTokensLoaned = totalLoanedPerAddress[owner];
         uint256 mintedSoFar = totalSupply();
         uint256 tokenIdsIdx = 0;
 
@@ -342,5 +357,48 @@ contract Genesis is ERC721A, ReentrancyGuard, Ownable, Pausable {
      */
     function withdraw() external onlyOwner {
         payable(owner()).transfer(address(this).balance);
+    }
+
+    // ******************** //
+    // Terms and Conditions //
+    // ******************** //
+    /**
+     * @notice Let contract owner update the URI to our terms and conditions
+     * @param uri The URI to our terms and condtions
+     */
+    function setTermsAndConditionsURI(string calldata uri) public onlyOwner {
+        termsAndConditionsURI = uri;
+    }
+
+    // ******************** //
+    // Change name / symbol //
+    // ******************** //
+
+    /**
+     * Returns the token collection name.
+     */
+    function name() public view virtual override  returns (string memory) {
+        return _changeableName;
+    }
+
+    /**
+     * Returns the token collection symbol.
+     */
+    function symbol() public view virtual override returns (string memory) {
+        return _changeableSymbol;
+    }
+
+    /**
+     * @notice Change token name
+     */
+    function setName(string memory newName) external onlyOwner {
+        _changeableName = newName;
+    }
+
+    /**
+     * @notice Change token symbol
+     */
+    function setSymbol(string memory newSymbol) external onlyOwner {
+        _changeableSymbol = newSymbol;
     }
 }

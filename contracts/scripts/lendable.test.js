@@ -94,22 +94,36 @@ const { deployToken } = require("./_utils");
           expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
           expect(await token.tokenOwnersOnLoan(2)).to.equal(owner.address);
 
-          var x = await token.ownedTokensByAddress(owner.address);
-          var y = await token.ownedTokensByAddress(owner.address);
-          var z = await token.ownedTokensByAddress(owner.address);
+          // all three tokens of the original owner are also shown here...
+          var loanedTokens = (await token.loanedTokensByAddress(owner.address)).map(x => x.toString());
+          expect(loanedTokens.length).to.equal(3);
+          expect(loanedTokens).to.include("0");
+          expect(loanedTokens).to.include("1");
+          expect(loanedTokens).to.include("2");
 
-          console.log(x);
-          console.log(y);
-          console.log(z);
+          // ...and he loaned a total of 3
+          expect(await token.totalLoanedPerAddress(owner.address)).to.equal(3);
 
+          // but the others not (of course)
+          expect(await token.totalLoanedPerAddress(addr1.address)).to.equal(0);
+          expect(await token.totalLoanedPerAddress(addr2.address)).to.equal(0);
+
+          // now retrieve tokens, but only token1 and token2 (not token0)
           await token.retrieveLoan(1);
           await token.retrieveLoanByAdmin(2);
 
+          // and finally check some numbers again
           expect(await token.totalLoaned()).to.equal(1);
-
           expect(await token.balanceOf(owner.address)).to.equal(2);
           expect(await token.balanceOf(addr1.address)).to.equal(1);
           expect(await token.balanceOf(addr2.address)).to.equal(0);
+          expect(await token.tokenOwnersOnLoan(0)).to.equal(owner.address);
+
+          var loanedTokens2 = (await token.loanedTokensByAddress(owner.address)).map(x => x.toString());
+          expect(loanedTokens2.length).to.equal(1);
+          expect(loanedTokens2).to.include("0");
+
+          expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
         });
       });
     });

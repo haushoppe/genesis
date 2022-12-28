@@ -99,6 +99,21 @@ But its not useful for advanced scenarios!!
 > * see https://github.com/ethereum/remix-project/issues/2068#issuecomment-1090306802
 
 
-## How to use ERC2981 to set royalties
+## Know How
 
-see https://www.ethdump.com/how-use-erc2981-set-royalties
+
+* How to use ERC2981 to set royalties
+  see https://www.ethdump.com/how-use-erc2981-set-royalties
+* How to Get Testnet ETH from a Goerli Faucet
+  1. [Register for a free Alchemy account](https://alchemy.com/?a=829a4dd348
+  2. Go to [goerlifaucet.com](https://goerlifaucet.com/)
+  3. Click ‘Send Me ETH’
+* How to add rich metadata to your ERC721 or ERC1155 NFTs:
+  https://docs.opensea.io/docs/metadata-standards
+* Deploy the contract
+  https://remix-ide.readthedocs.io/en/latest/create_deploy.html#deploy-the-contract
+  choose: `Injected Provider - MetaMask`
+* Verify Contract
+  1. use the Plugin: "ETHERSCAN - CONTRACT VERIFICATION"
+  2. enter Etherscan API key
+  3. submit the form (`scrips/etherscan` is used)

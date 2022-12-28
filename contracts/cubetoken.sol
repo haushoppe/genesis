@@ -27,7 +27,7 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
     using Strings for uint256;
 
     string private _baseTokenURI;
-    uint256 public price = 0.1 ether;
+    uint256 public price = 0 ether;
     uint256 public maxSupply = 10000;
 
     // Review our terms and conditions at the following URI

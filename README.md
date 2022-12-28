@@ -2,9 +2,17 @@
 
 Home of the cool 3D rotating cube (private repo)
 
-**This folder structure is just a first try, feel free to change everything! =)**
 
----
+### Static Metadata Page
+
+* This can later be replaced by an API and finally by a directory on IPFS.
+* Coudflare pages deploys the directory `static-metadata-page` after every push to the `main` branch
+* Static metadata files:
+    * https://genesis.haushoppe.art/x/0
+    * https://genesis.haushoppe.art/x/1
+    * [...]
+    * https://genesis.haushoppe.art/x/10
+
 
 ### ⭐️ testmint
 

@@ -5,7 +5,7 @@ const { deployToken } = require("./_utils");
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
 
-['ArtistToken', 'CubeToken'].forEach(tokenName => {
+['ArtistToken'/*, 'CubeToken'*/].forEach(tokenName => {
 
   describe(`ILendable: ${tokenName} contract`, () => {
 
@@ -57,6 +57,33 @@ const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
           expect(await token.balanceOf(owner.address)).to.equal(3);
           expect(await token.totalSupply()).to.equal(3);
           expect(await token.totalMintsPerAddress(owner.address)).to.equal(3); // not part of ILendable
+        });
+
+        it('should be able to mint tokens for ETH', async () => {
+
+          const f = ethers.utils.formatEther;
+
+          const contractBalanceBefore = await ethers.provider.getBalance(token.address);
+          const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+
+          console.log('OLD CONTRACT BALANCE ' + f(contractBalanceBefore));
+          console.log('OLD OWNER BALANCE ' + f(ownerBalanceBefore));
+
+          const oneEther = ethers.utils.parseUnits('1', 'ether');
+
+          console.log('OLD PRICE ' + f(await token.price()));
+          await token.setMintPrice(oneEther);
+          expect(await token.price()).to.equal(oneEther);
+          console.log('NEW PRICE ' + f(await token.price()));
+
+          await token.mint(3);
+
+          const contractBalanceAfter = await ethers.provider.getBalance(token.address);
+          const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
+
+          console.log('NEW CONTRACT BALANCE ' + f(contractBalanceAfter));
+          console.log('NEW OWNER BALANCE ' + f(ownerBalanceAfter));
+
         });
 
         it('owner should be able to gift tokens to multiple addresses', async () => {

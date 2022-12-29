@@ -168,6 +168,8 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
 
+        require(msg.value == (price * mintNumber), "Invalid paid amount");
+
         totalMintsPerAddress[msg.sender] += mintNumber;
         _safeMint(msg.sender, mintNumber);
 
@@ -195,6 +197,8 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
+
+        require(msg.value == (price * mintNumber), "Invalid paid amount");
 
         totalMintsPerAddress[msg.sender] += mintNumber;
         _safeMint(msg.sender, mintNumber);

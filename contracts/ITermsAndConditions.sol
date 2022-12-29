@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
  * @dev Interface for exposing an URI to the terms and conditions.
  *
  * This makes it possible to specify the current terms and conditions on-chain. 
- * Ideally, the URI points to an IPFS address or the other immutable source.
+ * Ideally, the URI points to an IPFS address or some other immutable source.
  */
 interface ITermsAndConditions is IERC165 {
 

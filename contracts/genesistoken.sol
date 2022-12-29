@@ -28,8 +28,6 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
 
     string private _baseTokenURI;
     string private _baseTokenURIForMosaic;
-    string private _baseTokenURIForMosaicSeparator1;
-    string private _baseTokenURIForMosaicSeparator2;
     uint256 public price = 0 ether;
     uint256 public maxSupply = 10000;
 
@@ -87,13 +85,9 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     /**
      * @notice Let contract owner update base URI for metadata for the mosaic tokens
      * @param baseURI The URI to use as base URI for metadata
-     * @param separator1 First seperator for additional params
-     * @param separator2 All other seperators for additional params
      */
-    function setBaseURIForMosaic(string calldata baseURI, string calldata separator1, string calldata separator2) public onlyOwner {
+    function setBaseURIForMosaic(string calldata baseURI) public onlyOwner {
         _baseTokenURIForMosaic = baseURI;
-        _baseTokenURIForMosaicSeparator1 = separator1;
-        _baseTokenURIForMosaicSeparator2 = separator2;
     }
 
     /**
@@ -285,10 +279,10 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
 
             return bytes(_baseTokenURIForMosaic).length != 0 ? string(abi.encodePacked(
                 _baseTokenURIForMosaic, 
-                _toString(tokenId), _baseTokenURIForMosaicSeparator1,
-                _toString(tokenId1), _baseTokenURIForMosaicSeparator2,
-                _toString(tokenId2), _baseTokenURIForMosaicSeparator2,
-                _toString(tokenId3), _baseTokenURIForMosaicSeparator2,
+                _toString(tokenId), '/',
+                _toString(tokenId1), '/',
+                _toString(tokenId2), '/',
+                _toString(tokenId3), '/',
                 _toString(tokenId4)
             )) : '';
         }

@@ -37,12 +37,8 @@ describe(`Genesis contract`, () => {
     await token.mintMosaic(1, 2, 5, 6);
 
     expect(await token.ownerOf(10)).to.equal(owner.address);
-
-    expect(await token.tokenIsMosaic(10)).to.equal(true);
-    expect(await token.tile1(10)).to.equal(1);
-    expect(await token.tile2(10)).to.equal(2);
-    expect(await token.tile3(10)).to.equal(5);
-    expect(await token.tile4(10)).to.equal(6);
+    expect(await token.isMosaic(10)).to.equal(true);
+    expect((await token.mosaics(10)).map(x => x.toString())).to.eql(["1", "2", "5", "6"] )
 
     // tokenURI for normal token
     expect(await token.tokenURI(1)).to.equal('https://example.org/1');

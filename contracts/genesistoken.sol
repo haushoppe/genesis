@@ -14,6 +14,13 @@ import "ILendable.sol";
 import "ITermsAndConditions.sol";
 import "IAgreeToTermsAndConditions.sol";
 
+struct Mosaic {
+    uint256 tile1;
+    uint256 tile2;
+    uint256 tile3;
+    uint256 tile4;
+}
+
 /**
  * @title Genesis token contract
  * @author Johannes from HAUS HOPPE
@@ -56,14 +63,11 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
 
     // Mosaic logic
 
-    // all tokens that are special mosaic token
-    mapping (uint256 => bool) public tokenIsMosaic;
+    // all tokens that are a special mosaic token
+    mapping (uint256 => bool) public isMosaic;
     
     // mosaicTokenId to 1st/2nd/3rd/4th tile
-    mapping (uint256 => uint256) public tile1;
-    mapping (uint256 => uint256) public tile2;
-    mapping (uint256 => uint256) public tile3;
-    mapping (uint256 => uint256) public tile4;
+    mapping (uint256 => Mosaic) public mosaics;
 
     // every token can be only used once for a mosaic
     mapping (uint256 => bool) public tokenInMosaic;
@@ -234,7 +238,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         uint256 mosaicTokenId = _nextTokenId();
 
         // all tokens that are special mosaic token
-        tokenIsMosaic[mosaicTokenId] = true;
+        isMosaic[mosaicTokenId] = true;
 
         // every token can be only used once for a mosaic
         tokenInMosaic[tokenId1] = true;
@@ -242,11 +246,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         tokenInMosaic[tokenId3] = true;
         tokenInMosaic[tokenId4] = true;
 
-        // with the help if these 4 mappings we will recover all tiles of the mosaic again
-        tile1[mosaicTokenId] = tokenId1;
-        tile2[mosaicTokenId] = tokenId2;
-        tile3[mosaicTokenId] = tokenId3;
-        tile4[mosaicTokenId] = tokenId4;
+        mosaics[mosaicTokenId] = Mosaic(tokenId1, tokenId2, tokenId3, tokenId4);
 
         totalMintsPerAddress[msg.sender] += 1;
         _safeMint(msg.sender, 1);
@@ -263,7 +263,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
 
         // normal token
-        if (tokenIsMosaic[tokenId] == false) {
+        if (isMosaic[tokenId] == false) {
             
             return bytes(_baseTokenURI).length != 0 ? string(abi.encodePacked(
                 _baseTokenURI, _toString(tokenId)
@@ -272,18 +272,15 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         // mosaic token
         } else {
 
-            uint256 tokenId1 = tile1[tokenId];
-            uint256 tokenId2 = tile2[tokenId];
-            uint256 tokenId3 = tile3[tokenId];
-            uint256 tokenId4 = tile4[tokenId];
+            Mosaic memory mosaic = mosaics[tokenId];
 
             return bytes(_baseTokenURIForMosaic).length != 0 ? string(abi.encodePacked(
                 _baseTokenURIForMosaic, 
                 _toString(tokenId), '/',
-                _toString(tokenId1), '/',
-                _toString(tokenId2), '/',
-                _toString(tokenId3), '/',
-                _toString(tokenId4)
+                _toString(mosaic.tile1), '/',
+                _toString(mosaic.tile2), '/',
+                _toString(mosaic.tile3), '/',
+                _toString(mosaic.tile4)
             )) : '';
         }
     }

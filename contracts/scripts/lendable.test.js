@@ -2,6 +2,9 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployToken } = require("./_utils");
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
+
 ['GenesisToken', 'SeaToken', 'ArtToken'].forEach(tokenName => {
 
   describe(`ILendable: ${tokenName} contract`, () => {
@@ -124,15 +127,41 @@ const { deployToken } = require("./_utils");
           expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
         });
 
-        it('should not be possible to loan a not owned token', async () => {
+        it('should NOT be possible to loan a not owned token', async () => {
           await token.mint(2);
           await token.loan(1, addr1.address);
           await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan not owned token');
         });
 
-        it('should not be possible to loan a token to yourself', async () => {
+        it('should NOT be possible to loan a token to yourself', async () => {
           await token.mint(2);
           await expect(token.loan(1, owner.address)).to.be.revertedWith('Trying to loan a token to the same address');
+        });
+
+        it('should NOT be possible to loan a token to the zero address', async () => {
+          await token.mint(2);
+          await expect(token.loan(1, ZERO_ADDRESS)).to.be.revertedWith('Transfer to the zero address');
+        });
+
+        it('should be possible to loan/retrieve a token to the one address', async () => {
+          await token.mint(2);
+          await token.loan(1, ONE_ADDRESS);
+          await token.retrieveLoan(1);
+
+          expect(await token.totalLoaned()).to.equal(0);
+        });
+
+        // checks for: 
+        // TransferToNonERC721ReceiverImplementer: 
+        // Cannot safely transfer to a contract that does not implement the ERC721Receiver interface.
+        // 
+        // ...which should not happen anymore, because we do a very unsafe transfer now
+        it('should be possible to loan/retrieve a token to any contract address', async () => {
+          await token.mint(2);
+          await token.loan(1, token.address);
+          await token.retrieveLoan(1);
+
+          expect(await token.totalLoaned()).to.equal(0);
         });
       });
     });

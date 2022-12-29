@@ -9,7 +9,7 @@ const { deployToken } = require("./_utils");
 },
 {
   tokenName: 'SeaToken',
-  name: 'Sea by HAUS HOPPE',
+  name: 'At the sea by HAUS HOPPE',
   symbol: 'SEA'
 },
 {

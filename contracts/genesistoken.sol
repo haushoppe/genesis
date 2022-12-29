@@ -355,8 +355,9 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(receiver != msg.sender, "Trying to loan a token to the same address");
 
-        // Transfer the token
-        safeTransferFrom(msg.sender, receiver, tokenId);
+        // transfer without any checks
+        // because the lender (and admin) can always retrieve the token again
+        _veryUnsafeTransferFrom(msg.sender, receiver, tokenId);
 
         // Add it to the mapping of originally loaned tokens
         tokenOwnersOnLoan[tokenId] = msg.sender;
@@ -375,9 +376,6 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
 
-        // why??
-        // require(borrowerAddress != msg.sender, "Trying to retrieve their owned loaned token");
-
         require(tokenOwnersOnLoan[tokenId] != address(0), "This token is not on loan");
         require(tokenOwnersOnLoan[tokenId] == msg.sender, "You must be the lender of the token to retrieve it");
 
@@ -391,8 +389,8 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         totalLoanedPerAddress[lender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
         
-        // Transfer the token back
-        _unsafeTransferFrom(borrowerAddress, lender, tokenId);
+        // transfer the token back
+        _veryUnsafeTransferFrom(borrowerAddress, lender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, lender, tokenId);
     }
@@ -415,8 +413,8 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         totalLoanedPerAddress[lender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
         
-        // Transfer the token back
-        _unsafeTransferFrom(borrowerAddress, lender, tokenId);
+        // transfer the token back
+        _veryUnsafeTransferFrom(borrowerAddress, lender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, lender, tokenId);
     }

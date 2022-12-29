@@ -5,7 +5,13 @@ const { deployToken } = require("./_utils");
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
 
-['ArtistToken'/*, 'CubeToken'*/].forEach(tokenName => {
+const format = ethers.utils.formatEther;
+
+const oneEther = ethers.utils.parseEther("1");
+const threeEther = ethers.utils.parseEther("3");
+const pointOneEther = ethers.utils.parseEther("0.1");
+
+['ArtistToken', 'CubeToken'].forEach(tokenName => {
 
   describe(`ILendable: ${tokenName} contract`, () => {
 
@@ -59,31 +65,53 @@ const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
           expect(await token.totalMintsPerAddress(owner.address)).to.equal(3); // not part of ILendable
         });
 
-        it('should be able to mint tokens for ETH', async () => {
+        it('should be able to mint 3 tokens for 3 ETH', async () => {
 
-          const f = ethers.utils.formatEther;
-
-          const contractBalanceBefore = await ethers.provider.getBalance(token.address);
           const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
 
-          console.log('OLD CONTRACT BALANCE ' + f(contractBalanceBefore));
-          console.log('OLD OWNER BALANCE ' + f(ownerBalanceBefore));
+          // const contractBalanceBefore = await ethers.provider.getBalance(token.address);
+          // console.log('OLD CONTRACT BALANCE ' + format(contractBalanceBefore));
+          // console.log('OLD OWNER BALANCE ' + format(ownerBalanceBefore));
 
-          const oneEther = ethers.utils.parseUnits('1', 'ether');
-
-          console.log('OLD PRICE ' + f(await token.price()));
           await token.setMintPrice(oneEther);
           expect(await token.price()).to.equal(oneEther);
-          console.log('NEW PRICE ' + f(await token.price()));
-
-          await token.mint(3);
+          await token.mint(3, { value: threeEther });
 
           const contractBalanceAfter = await ethers.provider.getBalance(token.address);
           const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
+          
+          // contract has exactly 3 ETH now
+          expect(contractBalanceAfter.eq(threeEther)).to.be.true;
 
-          console.log('NEW CONTRACT BALANCE ' + f(contractBalanceAfter));
-          console.log('NEW OWNER BALANCE ' + f(ownerBalanceAfter));
+          // owner spend a little bit more than 3 ETH (eg. 99 ETH - 95.9 > 3.1) because of the gas
+          expect(ownerBalanceBefore.sub(ownerBalanceAfter).gt(threeEther)).to.be.true;
 
+          // console.log('NEW CONTRACT BALANCE ' + format(contractBalanceAfter));
+          // console.log('NEW OWNER BALANCE ' + format(ownerBalanceAfter));
+        });
+
+        it('should revert mints with lower paid value', async () => {
+          await token.setMintPrice(oneEther);
+          await expect(token.mint(3, { value: oneEther })).to.be.revertedWith('Invalid paid amount');
+        });
+
+        it('should revert mints with higher paid value', async () => {
+          await token.setMintPrice(pointOneEther);
+          await expect(token.mint(1, { value: oneEther })).to.be.revertedWith('Invalid paid amount');
+        });
+
+        it('owner should be able to withdraw the contracts full balance to own address', async () => {
+
+          await token.setMintPrice(oneEther);
+          await token.mint(3, { value: threeEther });
+
+          const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+          await token.withdraw();
+          const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
+
+          // the owner gets his 3 ETH back, but lost a bit money because of gas
+          const aLittleBitGas = ethers.utils.parseEther("0.0001")
+          expect(ownerBalanceAfter.sub(ownerBalanceBefore).add(aLittleBitGas).gt(threeEther)).to.be.true;
         });
 
         it('owner should be able to gift tokens to multiple addresses', async () => {

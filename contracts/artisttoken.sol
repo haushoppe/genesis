@@ -28,7 +28,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     using Strings for uint256;
 
     string private _baseTokenURI;
-    uint256 public price = 0.1 ether;
+    uint256 public price = 0 ether;
     uint256 public maxSupply = 10000;
 
     // Review our terms and conditions at the following URI
@@ -171,6 +171,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
 
+        require(msg.value == (price * mintNumber), "Invalid paid amount");
+
         totalMintsPerAddress[msg.sender] += mintNumber;
         _safeMint(msg.sender, mintNumber);
 
@@ -203,6 +205,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
+
+        require(msg.value == (price * mintNumber), "Invalid paid amount");
 
         totalMintsPerAddress[msg.sender] += mintNumber;
         _safeMint(msg.sender, mintNumber);
@@ -393,7 +397,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     }
 
     /**
-     * @notice Allow contract owner to withdraw funds to its own account.
+     * @notice Allow contract owner to withdraw all funds to its own account.
      */
     function withdraw() external onlyOwner {
         payable(owner()).transfer(address(this).balance);

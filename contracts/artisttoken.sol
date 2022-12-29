@@ -303,7 +303,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         // transfer without any checks
         // because the lender (and admin) can always retrieve the token again
-        _veryUnsafeTransfer(msg.sender, receiver, tokenId);
+        _veryUnsafeTransferFrom(msg.sender, receiver, tokenId);
 
         // Add it to the mapping of originally loaned tokens
         tokenOwnersOnLoan[tokenId] = msg.sender;
@@ -336,7 +336,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         currentLoanIndex = currentLoanIndex - 1;
         
         // transfer the token back
-        _veryUnsafeTransfer(borrowerAddress, lender, tokenId);
+        _veryUnsafeTransferFrom(borrowerAddress, lender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, lender, tokenId);
     }
@@ -360,7 +360,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         currentLoanIndex = currentLoanIndex - 1;
         
         // transfer the token back
-        _veryUnsafeTransfer(borrowerAddress, lender, tokenId);
+        _veryUnsafeTransferFrom(borrowerAddress, lender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, lender, tokenId);
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// ERC721A Contracts v4.2.3 - with extra method _veryUnsafeTransfer
+// ERC721A Contracts v4.2.3 - with extra method _veryUnsafeTransferFrom
 // Creator: Chiru Labs + Johannes
 
 pragma solidity ^0.8.4;
@@ -618,7 +618,7 @@ contract ERC721AForLendable is IERC721A {
      *
      * Emits a {Transfer} event.
      */
-    function _veryUnsafeTransfer(
+    function _veryUnsafeTransferFrom(
         address from,
         address to,
         uint256 tokenId

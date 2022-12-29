@@ -14,7 +14,7 @@ describe(`Genesis contract`, () => {
 
     await token.setSaleStatus(true);
     await token.setBaseURI('https://example.org/');
-    await token.setBaseURIForMosaic('https://example-mosaic.org/');
+    await token.setBaseURIForMosaic('https://example-mosaic.org/', '?', ';');
   });
 
   it('should be able to create a mosaic', async () => {
@@ -48,6 +48,6 @@ describe(`Genesis contract`, () => {
     expect(await token.tokenURI(1)).to.equal('https://example.org/1');
 
     // tokenURI for the mosaic
-    expect(await token.tokenURI(10)).to.equal('https://example-mosaic.org/10/1/2/5/6');
+    expect(await token.tokenURI(10)).to.equal('https://example-mosaic.org/10?1;2;5;6');
   });
 });

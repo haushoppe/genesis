@@ -87,12 +87,12 @@ const { deployToken } = require("./_utils");
           expect(await token.balanceOf(addr1.address)).to.equal(2);
           expect(await token.balanceOf(addr2.address)).to.equal(1);
 
-          // the tokenOwnersOnLoan mapping shows the original owner
+          // the tokenOwnersOnLoan mapping shows the lender
           expect(await token.tokenOwnersOnLoan(0)).to.equal(owner.address);
           expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
           expect(await token.tokenOwnersOnLoan(2)).to.equal(owner.address);
 
-          // all three tokens of the original owner are also shown here...
+          // all three tokens of the lender are also shown here...
           var loanedTokens = (await token.loanedTokensByAddress(owner.address)).map(x => x.toString());
           expect(loanedTokens.length).to.equal(3);
           expect(loanedTokens).to.include("0");
@@ -124,30 +124,15 @@ const { deployToken } = require("./_utils");
           expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
         });
 
-        it('should be possible to loan a token to yourself and retrieve it', async () => {
-
+        it('should not be possible to loan a not owned token', async () => {
           await token.mint(2);
-          await token.loan(1, owner.address);
+          await token.loan(1, addr1.address);
+          await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan not owned token');
+        });
 
-          // a couple of checks again
-          expect(await token.totalLoaned()).to.equal(1);
-          expect(await token.balanceOf(owner.address)).to.equal(2);
-          expect(await token.tokenOwnersOnLoan(1)).to.equal(owner.address);
-          var loanedTokens = (await token.loanedTokensByAddress(owner.address)).map(x => x.toString());
-          expect(loanedTokens.length).to.equal(1);
-          expect(loanedTokens).to.include("1");
-          expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
-
-          // call it back
-          await token.retrieveLoan(1);
-          expect(await token.totalLoaned()).to.equal(0);
-          expect(await token.totalLoanedPerAddress(owner.address)).to.equal(0);
-
-          // loan again and call it back by admins´
-          await token.loan(0, owner.address);
-          await token.retrieveLoanByAdmin(0);
-          expect(await token.totalLoaned()).to.equal(0);
-          expect(await token.totalLoanedPerAddress(owner.address)).to.equal(0);
+        it('should not be possible to loan a token to yourself', async () => {
+          await token.mint(2);
+          await expect(token.loan(1, owner.address)).to.be.revertedWith('Trying to loan a token to the same address');
         });
       });
     });

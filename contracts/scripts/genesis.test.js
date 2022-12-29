@@ -40,6 +40,9 @@ describe(`Genesis contract`, () => {
     expect(await token.isMosaic(10)).to.equal(true);
     expect((await token.mosaics(10)).map(x => x.toString())).to.eql(["1", "2", "5", "6"] )
 
+    // the other tokens are not a mosaic
+    expect(await token.isMosaic(1)).to.equal(false);
+
     // tokenURI for normal token
     expect(await token.tokenURI(1)).to.equal('https://example.org/1');
 

@@ -15,14 +15,13 @@ import "ITermsAndConditions.sol";
 import "IAgreeToTermsAndConditions.sol";
 
 /**
- * @title Artist token contract
+ * @title Collectors cube token contract
  * @author Ethspresso and Johannes
- * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicitly agree to our terms and conditions on-chain.
+ * @notice This contract handles minting and loaning of collectors cube tokens. By interacting with this contract, you agree to our terms and conditions.
  */
-contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions, IAgreeToTermsAndConditions {
+contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
     event Loan(address indexed _from, address indexed to, uint _value);
     event LoanRetrieved(address indexed _from, address indexed to, uint value);
-    event Agreement(address indexed _from, bool _value);
 
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -46,16 +45,13 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     mapping (uint256 => address) public tokenOwnersOnLoan;
     uint256 private currentLoanIndex = 0;
 
-    // Agreements to our terms and conditions
-    mapping (address => bool) public agreements;
-
     // State variables
     bool public isSaleActive = false;
     bool public isLendingActive = false;
 
     // Changeable token name and symbol
-    string private _changeableName = "Artist Token for Collectors Cube";
-    string private _changeableSymbol = "ARTIST";
+    string private _changeableName = "Collectors Cube";
+    string private _changeableSymbol = "CUBE";
 
     /**
      * @notice Construct a contract instance with predefined name and symbol
@@ -131,26 +127,6 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         require(tokenOwnersOnLoan[tokenId] == address(0), "Cannot transfer token on loan");
     }
 
-    /**
-     * An empty balance also means that the former owner no longer gives his consent.
-     */
-    function _afterTokenTransfers(
-        address from,
-        address to,
-        uint256 tokenId,
-        uint256 quantity
-    ) internal override(ERC721AForLendable) {
-        super._afterTokenTransfers(from, to, tokenId, quantity);
-
-        // also called while minting, so we have to check for the zero address, too
-        if (from != address(0) && 
-            balanceOf(from) == 0 && 
-            agreements[from] == true) {
-
-            agreeOrDisagreeToTermsAndConditions(false);
-        }
-    }
-
     function verifyAddressSigner(bytes32 messageHash, bytes memory signature) private view returns (bool) {
         return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
     }
@@ -176,11 +152,6 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         if (currentSupply + mintNumber >= maxSupply) {
             isSaleActive = false;
-        }
-
-        // minting also means the minter agrees to our terms and conditions
-        if (agreements[msg.sender] == false) {
-            agreeOrDisagreeToTermsAndConditions(true);
         }
     }
 
@@ -210,11 +181,6 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         if (currentSupply + mintNumber >= maxSupply) {
             isSaleActive = false;
         }
-        
-        // minting also means the minter agrees to our terms and conditions
-        if (agreements[msg.sender] == false) {
-            agreeOrDisagreeToTermsAndConditions(true);
-        }
     }
     
     /**
@@ -236,7 +202,6 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     // - IERC2981: 0x2a55205a
     // - ILendable: 0xcd36757f
     // - ITermsAndConditions: 0x174fe517
-    // - IAgreeToTermsAndConditions: 0x14477c1f
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(ERC721AForLendable, ERC2981, IERC165) returns (bool) {
@@ -244,8 +209,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
             ERC721AForLendable.supportsInterface(interfaceId) || 
             ERC2981.supportsInterface(interfaceId) ||
             type(ILendable).interfaceId == interfaceId ||
-            type(ITermsAndConditions).interfaceId == interfaceId ||
-            type(IAgreeToTermsAndConditions).interfaceId == interfaceId;
+            type(ITermsAndConditions).interfaceId == interfaceId;
     }
 
     // ******************** //
@@ -404,28 +368,6 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     // ******************** //
     // Terms and Conditions //
     // ******************** //
-
-    /**
-     * @notice Call this function to agree or disagree to our terms and conditions.
-     */
-    function agreeOrDisagreeToTermsAndConditions(bool agreement) public {
-
-        if (agreement == true) {
-
-            require(agreements[msg.sender] == false, "You already agreed to our terms and conditions!");
-            require(balanceOf(msg.sender) > 0, "You can only agree to our terms and conditions if you hold a token!");
-            agreements[msg.sender] = true;
-            emit Agreement(msg.sender, true);
-
-        } else {
-            
-            require(agreements[msg.sender] == true, "You have no agreement that could be revoked.");
-
-            delete agreements[msg.sender];
-            emit Agreement(msg.sender, false);
-        }
-    }
-
     /**
      * @notice Let contract owner update the URI to our terms and conditions
      * @param uri The URI to our terms and condtions

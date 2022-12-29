@@ -1,0 +1,16 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "description": "Solidity Contracts",
+  "scripts": {
+    "remixd": "remixd -s $(pwd) -u https://remix.ethereum.org/",
+    "remix-tests": "remix-tests --compiler 0.8.17 tests/"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.8.0"
+  },
+  "devDependencies": {
+    "@remix-project/remix-tests": "^0.2.21",
+    "@remix-project/remixd": "^0.6.9"
+  }
+}

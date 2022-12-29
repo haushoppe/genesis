@@ -7,10 +7,10 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
  * @dev Interface for Lending NFTs.
  *
  * A (un)standardized way to lend non-fungible tokens (NFTs) to other parties.
- * The contract has to keep the original owner of a token on a mapping from
+ * The contract has to keep the lender of a token on a mapping from
  * uint256 to an address called `tokenOwnersOnLoan`, which guarantees later 
  * retrieval. * This also blocks any transferring or selling of the token while
- * it is on loan, as only the original owner can authorize transactions. 
+ * it is on loan, as only the lender can authorize transactions. 
  *
  * This is all part of the smart contract for the Meta Angels collection:
  * https://etherscan.io/address/0xaD265Ab9B99296364F13Ce5b8B3e8d0998778bfb
@@ -33,7 +33,7 @@ interface ILendable is IERC165 {
     function loan(uint256 tokenId, address receiver) external;
 
     /**
-     * @notice Allow original owner to retrieve loaned tokens from borrower
+     * @notice Allow lender to retrieve loaned tokens from borrower
      */
     function retrieveLoan(uint256 tokenId) external;
 
@@ -43,12 +43,12 @@ interface ILendable is IERC165 {
     function isLendingActive() external view returns (bool);
 
     /**
-     * Returns the amount of tokens an owner has loaned
+     * Returns the amount of tokens a lender has loaned
      */
-    function totalLoanedPerAddress(address owner) external view returns (uint256);
+    function totalLoanedPerAddress(address lender) external view returns (uint256);
 
     /**
-     * Returns the original owner of a token
+     * Returns the lender of a token
      */
     function tokenOwnersOnLoan(uint256 tokenId) external view returns (address);
 
@@ -60,5 +60,5 @@ interface ILendable is IERC165 {
     /**
      * Returns all the loaned token ids owned by a given address
      */
-    function loanedTokensByAddress(address owner) external view returns (uint256[] memory);
+    function loanedTokensByAddress(address lender) external view returns (uint256[] memory);
 }

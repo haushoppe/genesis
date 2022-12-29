@@ -184,7 +184,7 @@ contract ArtToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC
     }
     
     /**
-     * @notice Allow owner to send `mintNumber` tokens without cost to multiple addresses
+     * @notice Allow contract owner to send `mintNumber` tokens without cost to multiple addresses
      */
     function gift(address[] calldata receivers, uint256 mintNumber) external onlyOwner {
         require((totalSupply() + receivers.length * mintNumber) <= maxSupply, "Max supply exceeded");
@@ -263,6 +263,7 @@ contract ArtToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC
         require(ownerOf(tokenId) == msg.sender, "Trying to loan not owned token");
         require(receiver != address(0), "Transfer to the zero address");
         require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
+        require(receiver != msg.sender, "Trying to loan a token to the same address");
 
         // Transfer the token
         safeTransferFrom(msg.sender, receiver, tokenId);
@@ -279,50 +280,55 @@ contract ArtToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC
     }
 
     /**
-     * @notice Allow original owner to retrieve loaned tokens from borrower
+     * @notice Allow lender to retrieve loaned tokens from borrower
      */
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
 
-        require(borrowerAddress != msg.sender, "Trying to retrieve their owned loaned token");
-        require(tokenOwnersOnLoan[tokenId] == msg.sender, "Trying to retrieve token not on loan");
+        // why??
+        // require(borrowerAddress != msg.sender, "Trying to retrieve their owned loaned token");
+
+        require(tokenOwnersOnLoan[tokenId] != address(0), "This token is not on loan");
+        require(tokenOwnersOnLoan[tokenId] == msg.sender, "You must be the lender of the token to retrieve it");
+
+        address lender = tokenOwnersOnLoan[tokenId]; 
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];
 
-        // Subtract from the owner's loan balance
-        uint256 loansByAddress = totalLoanedPerAddress[msg.sender];
-        totalLoanedPerAddress[msg.sender] = loansByAddress - 1;
+        // Subtract from the lender's loan balance
+        uint256 loansByAddress = totalLoanedPerAddress[lender];
+        totalLoanedPerAddress[lender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
-        _unsafeTransferFrom(borrowerAddress, msg.sender, tokenId);
+        _unsafeTransferFrom(borrowerAddress, lender, tokenId);
 
-        emit LoanRetrieved(borrowerAddress, msg.sender, tokenId);
+        emit LoanRetrieved(borrowerAddress, lender, tokenId);
     }
 
     /**
-     * @notice Allow admin to return a loaned token to original owner
+     * @notice Allow admin to return a loaned token to lender
      */
     function retrieveLoanByAdmin(uint256 tokenId) external nonReentrant onlyOwner {
         address borrowerAddress = ownerOf(tokenId);
         
         require(tokenOwnersOnLoan[tokenId] != address(0), "This token is not on loan");
 
-        address owner = tokenOwnersOnLoan[tokenId]; 
+        address lender = tokenOwnersOnLoan[tokenId]; 
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];
 
-        // Subtract from the owner's loan balance
-        uint256 loansByAddress = totalLoanedPerAddress[owner];
-        totalLoanedPerAddress[owner] = loansByAddress - 1;
+        // Subtract from the lender's loan balance
+        uint256 loansByAddress = totalLoanedPerAddress[lender];
+        totalLoanedPerAddress[lender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
         
         // Transfer the token back
-        _unsafeTransferFrom(borrowerAddress, owner, tokenId);
+        _unsafeTransferFrom(borrowerAddress, lender, tokenId);
 
-        emit LoanRetrieved(borrowerAddress, owner, tokenId);
+        emit LoanRetrieved(borrowerAddress, lender, tokenId);
     }
 
     /**
@@ -333,17 +339,17 @@ contract ArtToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC
     }
 
     /**
-     * Returns all the token ids owned by a given address
+     * Returns all the loaned token ids owned by a given address
      */
-    function loanedTokensByAddress(address owner) external view returns (uint256[] memory) {
-        require(owner != address(0), "Balance query for the zero address");
-        uint256 totalTokensLoaned = totalLoanedPerAddress[owner];
+    function loanedTokensByAddress(address lender) external view returns (uint256[] memory) {
+        require(lender != address(0), "Balance query for the zero address");
+        uint256 totalTokensLoaned = totalLoanedPerAddress[lender];
         uint256 mintedSoFar = totalSupply();
         uint256 tokenIdsIdx = 0;
 
         uint256[] memory allTokenIds = new uint256[](totalTokensLoaned);
         for (uint256 i = 0; i < mintedSoFar && tokenIdsIdx != totalTokensLoaned; i++) {
-            if (tokenOwnersOnLoan[i] == owner) {
+            if (tokenOwnersOnLoan[i] == lender) {
                 allTokenIds[tokenIdsIdx] = i;
                 tokenIdsIdx++;
             }

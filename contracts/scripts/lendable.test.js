@@ -2,6 +2,9 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployToken } = require("./_utils");
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
+
 ['ArtistToken', 'CubeToken'].forEach(tokenName => {
 
   describe(`ILendable: ${tokenName} contract`, () => {
@@ -133,6 +136,28 @@ const { deployToken } = require("./_utils");
         it('should not be possible to loan a token to yourself', async () => {
           await token.mint(2);
           await expect(token.loan(1, owner.address)).to.be.revertedWith('Trying to loan a token to the same address');
+        });
+
+        it('should not be possible to loan a token to the zero address', async () => {
+          await token.mint(2);
+          await expect(token.loan(1, ZERO_ADDRESS)).to.be.revertedWith('Transfer to the zero address');
+        });
+
+        it('should not be possible to loan/retrieve a token to the one address', async () => {
+          await token.mint(2);
+          await token.loan(1, ONE_ADDRESS);
+          await token.retrieveLoan(1);
+
+          expect(await token.totalLoaned()).to.equal(0);
+        });
+
+        // doesn't work!
+        it('should not be possible to loan/retrieve a token to a contract address', async () => {
+          await token.mint(2);
+          await token.loan(1, token.address);
+          await token.retrieveLoan(1);
+
+          expect(await token.totalLoaned()).to.equal(0);
         });
       });
     });

@@ -9,7 +9,7 @@ const oneEther = ethers.utils.parseEther("1");
 const threeEther = ethers.utils.parseEther("3");
 const pointOneEther = ethers.utils.parseEther("0.1");
 
-['GenesisToken', 'SeaToken', 'ArtToken'].forEach(tokenName => {
+['GenesisToken', 'SeaToken', 'ArtToken', 'MosaicToken'].forEach(tokenName => {
 
   describe(`ILendable: ${tokenName} contract`, () => {
 

@@ -54,7 +54,7 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
     // Changeable token name and symbol
     string private _changeableName = "Mosaics by HAUS HOPPE";
-    string private _changeableSymbol = "MOSAICS";
+    string private _changeableSymbol = "MOSAIC";
 
     // Mosaic logic
 

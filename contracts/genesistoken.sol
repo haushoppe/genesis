@@ -14,6 +14,18 @@ import "ILendable.sol";
 import "ITermsAndConditions.sol";
 import "IMosaic.sol";
 
+
+////////////////////////////////////////////
+//                                        //
+//                                        //
+//               HAUS HOPPE               //
+//    --------------------------------    //
+//          Gallery of Fine Arts          //
+//                                        //
+//                                        //
+////////////////////////////////////////////
+
+
 /**
  * @title Genesis token contract
  * @author Johannes from HAUS HOPPE

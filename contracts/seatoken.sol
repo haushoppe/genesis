@@ -13,6 +13,18 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "ILendable.sol";
 import "ITermsAndConditions.sol";
 
+
+////////////////////////////////////////////
+//                                        //
+//                                        //
+//               HAUS HOPPE               //
+//    --------------------------------    //
+//          Gallery of Fine Arts          //
+//                                        //
+//                                        //
+////////////////////////////////////////////
+
+
 /**
  * @title Sea token contract
  * @author Johannes from HAUS HOPPE

@@ -14,6 +14,7 @@ const { deployToken } = require("./_utils");
       token = await deployToken(tokenName, owner);
 
       await token.setSaleStatus(true);
+      await token.setBatchMosaicMintStatus(true);
       await token.setBaseURI('https://example.org/');
       await token.setBaseURIForMosaic('https://example-mosaic.org/');
     });
@@ -63,15 +64,15 @@ const { deployToken } = require("./_utils");
       expect(await token.tokenURI(11)).to.equal('https://example-mosaic.org/11/3/4/7/10');
     });
 
-    // TODO
+    // TODO -- find an efficient algorithm to check for duplicate params
     it('should not be possible to use a tile twice in a mosaic', async () => {
 
       await token.mint(4);
 
-      // mint a mosaic - tokenId is now #4
+      // this must revoke
       await token.mintMosaic(1, 1, 1, 1);
 
-      // tokenURI for the mosaic
+      // tokenURI for the mosaic -- this should not be possible
       expect(await token.tokenURI(4)).to.equal('https://example-mosaic.org/4/1/1/1/1');
 
     });

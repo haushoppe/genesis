@@ -50,6 +50,7 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     // State variables
     bool public isSaleActive = false;
     bool public isLendingActive = false;
+    bool public isBatchMosaicMintActive = false;
 
     // Changeable token name and symbol
     string private _changeableName = "Mosaics by HAUS HOPPE";
@@ -274,7 +275,12 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         }
     }
 
-
+    /**
+     * @notice Allow contract owner to enable/disable batch minting of mosaics
+     */
+    function setBatchMosaicMintStatus(bool status) public onlyOwner {
+        isBatchMosaicMintActive = status;
+    }
 
     /**
      * @notice Allow the owner of up to 16 tokens to mint up to 4 mosaics in a batch.
@@ -282,6 +288,7 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      */
     function mintMosaicBatch(Mosaic calldata mosaic1, Mosaic calldata mosaic2, Mosaic calldata mosaic3, Mosaic calldata mosaic4) external payable nonReentrant {
         require(isSaleActive, "Minting is disabled");
+        require(isBatchMosaicMintActive, "Batch minting of mosaics is disabled");
 
         uint amountOfMosaics;
         if (     mosaic1.tile1 == 0 && mosaic1.tile2 == 0 && mosaic1.tile3 == 0 && mosaic1.tile4 == 0) { amountOfMosaics = 0; } 
@@ -310,22 +317,6 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
             isSaleActive = false;
         }
     }
-
-    /**
-     * 
-     */
-    function checkOwnership(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) private view {
-
-
-    }
-
-    /**
-     */
-    function checkAlreadyInMosaic(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) private view {
-
-    }
-
-
 
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.

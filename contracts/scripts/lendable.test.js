@@ -150,7 +150,7 @@ const pointOneEther = ethers.utils.parseEther("0.1");
 
         it('should be able to mint, lend and retrieve a token', async () => {
 
-          // owner mints 3 tokens
+          // user mints 3 tokens
           await token.mint(3);
 
           // loans token0 and token1 to addr1 and token2 to addr2

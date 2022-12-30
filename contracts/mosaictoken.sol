@@ -231,16 +231,26 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     function prepareMosaicState(uint256 mosaicTokenId, uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) private {
 
         // msg.sender must be owner of all 4 mosaics
-        require(ownerOf(tokenId1) == msg.sender, "You must be the owner of the first token!");
-        require(ownerOf(tokenId2) == msg.sender, "You must be the owner of the second token!");
-        require(ownerOf(tokenId3) == msg.sender, "You must be the owner of the third token!");
-        require(ownerOf(tokenId4) == msg.sender, "You must be the owner of the fourth token!");
+        require(
+            ownerOf(tokenId1) == msg.sender && 
+            ownerOf(tokenId2) == msg.sender && 
+            ownerOf(tokenId3) == msg.sender && 
+            ownerOf(tokenId4) == msg.sender, "You must be the owner of all four tokens");
 
         // every token must not be already part of a mosaic
-        require(tokenInMosaic[tokenId1] == false, "The first token is already part of a mosaic!");
-        require(tokenInMosaic[tokenId2] == false, "The second token is already part of a mosaic!");
-        require(tokenInMosaic[tokenId3] == false, "The third token is already part of a mosaic!");
-        require(tokenInMosaic[tokenId4] == false, "The fourth token is already part of a mosaic!");
+        require(
+            tokenInMosaic[tokenId1] == false && 
+            tokenInMosaic[tokenId2] == false && 
+            tokenInMosaic[tokenId3] == false && 
+            tokenInMosaic[tokenId4] == false, "One of the tokens is already part of a mosaic");
+
+        // lets check that all tokenIds are unique
+        require(tokenId1 != tokenId2 && 
+                tokenId1 != tokenId3 && 
+                tokenId1 != tokenId4 && 
+                tokenId2 != tokenId3 && 
+                tokenId2 != tokenId4 && 
+                tokenId3 != tokenId4, "All tokens for a mosaic must be unique");
 
         // all tokens that are special mosaic tokens
         isMosaic[mosaicTokenId] = true;

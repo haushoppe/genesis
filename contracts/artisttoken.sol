@@ -58,9 +58,9 @@ import "IAgreeToTermsAndConditions.sol";
  * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicitly agree to our terms and conditions on-chain.
  */
 contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions, IAgreeToTermsAndConditions {
-    event Loan(address indexed _from, address indexed to, uint _value);
-    event LoanRetrieved(address indexed _from, address indexed to, uint value);
-    event Agreement(address indexed _from, bool _value);
+    event Loan(address indexed from, address indexed to, uint tokenId);
+    event LoanRetrieved(address indexed from, address indexed to, uint tokenId);
+    event Agreement(address indexed from, bool agreement);
 
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -449,7 +449,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
     /**
      * @notice Call this function to agree or disagree to our terms and conditions.
-     * @param agreement true: token holder agrees to the terms and conditions | false: token holder does not agree to the terms and conditions
+     * @param agreement true: token holder agrees to the terms and conditions | true: token holder does not agree to the terms and conditions
      */
     function agreeOrDisagreeToTermsAndConditions(bool agreement) public {
 

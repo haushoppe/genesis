@@ -22,7 +22,7 @@ interface IAgreeToTermsAndConditions is ITermsAndConditions {
 
     /**
      * @notice Call this to agree or disagree to the terms and conditions.
-     * @param agreement true: token holder agrees to the terms and conditions | false: token holder does not agree to the terms and conditions
+     * @param agreement true: token holder agrees to the terms and conditions | true: token holder does not agree to the terms and conditions
      */
     function agreeOrDisagreeToTermsAndConditions(bool agreement) external;
 

@@ -12,14 +12,7 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "ILendable.sol";
 import "ITermsAndConditions.sol";
-import "IAgreeToTermsAndConditions.sol";
-
-struct Mosaic {
-    uint256 tile1;
-    uint256 tile2;
-    uint256 tile3;
-    uint256 tile4;
-}
+import "IMosaic.sol";
 
 /**
  * @title Genesis token contract
@@ -36,6 +29,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     string private _baseTokenURI;
     string private _baseTokenURIForMosaic;
     uint256 public price = 0 ether;
+    uint256 public priceForMosaic = 0 ether;
     uint256 public maxSupply = 10000;
 
     // Review our terms and conditions at the following URI
@@ -110,6 +104,14 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     function setMintPrice(uint256 newMintPrice) public onlyOwner {
         require(price != newMintPrice, "New value must be different from current value");
         price = newMintPrice;
+    }
+
+    /**
+     * @notice Let contract owner update the mint price for the mosaics
+     */
+    function setMintPriceForMosaic(uint256 newMintPrice) public onlyOwner {
+        require(priceForMosaic != newMintPrice, "New value must be different from current value");
+        priceForMosaic = newMintPrice;
     }
 
     /**
@@ -223,9 +225,9 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     }
 
     /**
-     * @notice Allow the owner of 4 tokens to mint a free special token called "mosaic"
+     * @notice Allow the owner of 4 tokens to mint a special token called "Mosaic". Mosaics can be used recursively in subsequent mosaics.
      */
-    function mintMosaic(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) external nonReentrant {
+    function mintMosaic(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) external payable nonReentrant {
         require(isSaleActive, "Minting is disabled");
 
         require(ownerOf(tokenId1) == msg.sender, "You must be the owner of the first token!");
@@ -240,6 +242,8 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + 1 <= maxSupply, "Max supply exceeded");
+
+        require(msg.value == priceForMosaic, "Invalid paid amount");
 
         uint256 mosaicTokenId = _nextTokenId();
 

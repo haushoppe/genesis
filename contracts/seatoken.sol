@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "ILendable.sol";
 import "ITermsAndConditions.sol";
-import "IAgreeToTermsAndConditions.sol";
 
 /**
  * @title Sea token contract

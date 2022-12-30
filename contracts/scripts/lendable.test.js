@@ -1,12 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { deployToken } = require("./_utils");
+const { deployToken, ZERO_ADDRESS, ONE_ADDRESS, SignatureHelpers } = require("./_utils");
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const ONE_ADDRESS = '0x0000000000000000000000000000000000000001';
 
 const format = ethers.utils.formatEther;
-
 const oneEther = ethers.utils.parseEther("1");
 const threeEther = ethers.utils.parseEther("3");
 const pointOneEther = ethers.utils.parseEther("0.1");
@@ -65,6 +62,31 @@ const pointOneEther = ethers.utils.parseEther("0.1");
           expect(await token.totalMintsPerAddress(owner.address)).to.equal(3); // not part of ILendable
         });
 
+        it('should be able to mint via mintAllowlist (hashed+signed message)', async () => {
+
+          const signer = SignatureHelpers.getRandomSigner();
+          await token.setSignerAddress(signer.address);
+
+          const sender = owner.address;
+          const maximumAllowedMints = 4;
+
+          // Difference to the MA contract:
+          // they use `abi.encode`
+          // we use `abi.encodePacked`
+          // explained in detail here: https://89devs.com/solidity/keccak-hash/
+          //
+          // It is recommended to encode the data first instead of hashing the raw data input.
+          // The difference between abi.encode and abiencodePacked is that the encoded data is packed and therefore its data size is smaller.
+          // const message = SignatureHelpers.encodeMessage(sender, maximumAllowedMints);
+          const message = SignatureHelpers.encodePackedMessage(sender, maximumAllowedMints);
+          const messageHash = SignatureHelpers.hashMessage(message);
+          const signature = await SignatureHelpers.signMessage(signer, messageHash);
+
+          await token.mintAllowlist(messageHash, signature, 1, maximumAllowedMints);
+
+          expect(await token.totalSupply()).to.equal(1);
+        });
+
         it('should be able to mint 3 tokens for 3 ETH', async () => {
 
           const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
@@ -79,7 +101,7 @@ const pointOneEther = ethers.utils.parseEther("0.1");
 
           const contractBalanceAfter = await ethers.provider.getBalance(token.address);
           const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
-          
+
           // contract has exactly 3 ETH now
           expect(contractBalanceAfter.eq(threeEther)).to.be.true;
 

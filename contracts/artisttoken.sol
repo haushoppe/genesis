@@ -155,8 +155,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
     }
 
-    function hashMessage(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
-        return keccak256(abi.encode(sender, maximumAllowedMints));
+    function hashMessagePacked(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(sender, maximumAllowedMints));
     }
 
     /**
@@ -200,7 +200,9 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         require(isSaleActive, "Minting is disabled");
         require(signerAddress != address(0), "Minting via allowlist is disabled. Please use the function mint!");
         require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Maximum allowed mints exceeded");
-        require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+        
+        require(hashMessagePacked(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+
         require(verifyAddressSigner(messageHash, signature), "Signature validation failed");
 
         uint256 currentSupply = totalSupply();

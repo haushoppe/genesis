@@ -205,10 +205,22 @@ const pointOneEther = ethers.utils.parseEther("0.1");
           expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
         });
 
-        it('should NOT be possible to loan a not owned token', async () => {
+        it('should NOT be possible to loan a loaned token', async () => {
           await token.mint(2);
           await token.loan(1, addr1.address);
+          await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan a loaned token');
+        });
+
+        it('should NOT be possible to loan not owned token', async () => {
+          await token.mint(2);
+          await token.safeTransferFrom(owner.address, addr1.address, 1);
           await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan not owned token');
+        });
+
+        it('should NOT be possible to transfer a token on loan', async () => {
+          await token.mint(2);
+          await token.loan(1, addr1.address);
+          await expect(token.safeTransferFrom(owner.address, addr1.address, 1)).to.be.revertedWith('Cannot transfer token on loan');
         });
 
         it('should NOT be possible to loan a token to yourself', async () => {

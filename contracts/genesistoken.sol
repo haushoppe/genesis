@@ -32,8 +32,8 @@ import "IMosaic.sol";
  * @notice This contract handles minting and loaning of genesis tokens.
  */
 contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
-    event Loan(address indexed _from, address indexed to, uint _value);
-    event LoanRetrieved(address indexed _from, address indexed to, uint value);
+    event Loan(address indexed from, address indexed to, uint tokenId);
+    event LoanRetrieved(address indexed from, address indexed to, uint tokenId);
 
     using ECDSA for bytes32;
     using Strings for uint256;

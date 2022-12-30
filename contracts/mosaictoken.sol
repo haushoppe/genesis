@@ -231,6 +231,7 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         require(isSaleActive, "Minting is disabled");
 
         checkOwnership(tokenId1, tokenId2, tokenId3, tokenId4);
+        checkAlreadyInMosaic(tokenId1, tokenId2, tokenId3, tokenId4);
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + 1 <= maxSupply, "Max supply exceeded");
@@ -261,6 +262,7 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     /**
      * @notice Allow the owner of up to 16 tokens to mint up to 4 mosaics in a batch.
      * This is the same logic as in `mintMosaic`, but duplicated for mosaic2, mosaic3 and mosaic4
+     * Enter the value 0 (zero) for mosaics that should be skipped.
      */
     function mintMosaicBatch(
         
@@ -274,21 +276,20 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         uint amountOfMosaics = 1;
 
-        // only default values for a mosaic means no data was given
-        if (mosaic2.tile1 != 0 && mosaic2.tile2 != 0 && mosaic2.tile3 != 0 && mosaic2.tile4 != 0) {
-            amountOfMosaics = 2;
-        }
-        if (mosaic3.tile1 != 0 && mosaic3.tile2 != 0 && mosaic3.tile3 != 0 && mosaic3.tile4 != 0) {
-            amountOfMosaics = 3;
-        }
-        if (mosaic4.tile1 != 0 && mosaic4.tile2 != 0 && mosaic4.tile3 != 0 && mosaic4.tile4 != 0) {
-            amountOfMosaics = 4;
-        }
+        // only zeros for a mosaic means this mosaic should be skipped
+        if (mosaic2.tile1 != 0 && mosaic2.tile2 != 0 && mosaic2.tile3 != 0 && mosaic2.tile4 != 0) { amountOfMosaics = 2; }
+        if (mosaic3.tile1 != 0 && mosaic3.tile2 != 0 && mosaic3.tile3 != 0 && mosaic3.tile4 != 0) { amountOfMosaics = 3; }
+        if (mosaic4.tile1 != 0 && mosaic4.tile2 != 0 && mosaic4.tile3 != 0 && mosaic4.tile4 != 0) { amountOfMosaics = 4; }
 
                                     checkOwnership(mosaic1.tile1, mosaic1.tile2, mosaic1.tile3, mosaic1.tile4);
-        if (amountOfMosaics == 2) { checkOwnership(mosaic2.tile1, mosaic2.tile2, mosaic2.tile3, mosaic2.tile4); }
-        if (amountOfMosaics == 3) { checkOwnership(mosaic3.tile1, mosaic3.tile2, mosaic3.tile3, mosaic3.tile4); }
+        if (amountOfMosaics >= 2) { checkOwnership(mosaic2.tile1, mosaic2.tile2, mosaic2.tile3, mosaic2.tile4); }
+        if (amountOfMosaics >= 3) { checkOwnership(mosaic3.tile1, mosaic3.tile2, mosaic3.tile3, mosaic3.tile4); }
         if (amountOfMosaics == 4) { checkOwnership(mosaic4.tile1, mosaic4.tile2, mosaic4.tile3, mosaic4.tile4); }
+
+                                    checkAlreadyInMosaic(mosaic1.tile1, mosaic1.tile2, mosaic1.tile3, mosaic1.tile4);
+        if (amountOfMosaics >= 2) { checkAlreadyInMosaic(mosaic2.tile1, mosaic2.tile2, mosaic2.tile3, mosaic2.tile4); }
+        if (amountOfMosaics >= 3) { checkAlreadyInMosaic(mosaic3.tile1, mosaic3.tile2, mosaic3.tile3, mosaic3.tile4); }
+        if (amountOfMosaics == 4) { checkAlreadyInMosaic(mosaic4.tile1, mosaic4.tile2, mosaic4.tile3, mosaic4.tile4); }
 
 
         uint256 currentSupply = totalSupply();
@@ -299,8 +300,8 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         // // all tokens that are special mosaic token
                                     isMosaic[mosaicTokenId    ] = true;
-        if (amountOfMosaics == 2) { isMosaic[mosaicTokenId + 1] = true; }
-        if (amountOfMosaics == 3) { isMosaic[mosaicTokenId + 2] = true; }
+        if (amountOfMosaics >= 2) { isMosaic[mosaicTokenId + 1] = true; }
+        if (amountOfMosaics >= 3) { isMosaic[mosaicTokenId + 2] = true; }
         if (amountOfMosaics == 4) { isMosaic[mosaicTokenId + 3] = true; }
 
         // every token can be only used once for a mosaic
@@ -309,14 +310,14 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         tokenInMosaic[mosaic1.tile3] = true;
         tokenInMosaic[mosaic1.tile4] = true;
 
-        if (amountOfMosaics == 2) {
+        if (amountOfMosaics >= 2) {
             tokenInMosaic[mosaic2.tile1] = true;
             tokenInMosaic[mosaic2.tile2] = true;
             tokenInMosaic[mosaic2.tile3] = true;
             tokenInMosaic[mosaic2.tile4] = true;
         }
 
-        if (amountOfMosaics == 3) {
+        if (amountOfMosaics >= 3) {
             tokenInMosaic[mosaic3.tile1] = true;
             tokenInMosaic[mosaic3.tile2] = true;
             tokenInMosaic[mosaic3.tile3] = true;
@@ -332,8 +333,8 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         // lets copy all values again, just to be sure that everything is fine
                                     mosaics[mosaicTokenId    ] = Mosaic(mosaic1.tile1, mosaic1.tile2, mosaic1.tile3, mosaic1.tile4);
-        if (amountOfMosaics == 2) { mosaics[mosaicTokenId + 1] = Mosaic(mosaic2.tile1, mosaic2.tile2, mosaic2.tile3, mosaic2.tile4); }
-        if (amountOfMosaics == 3) { mosaics[mosaicTokenId + 2] = Mosaic(mosaic3.tile1, mosaic3.tile2, mosaic3.tile3, mosaic3.tile4); }
+        if (amountOfMosaics >= 2) { mosaics[mosaicTokenId + 1] = Mosaic(mosaic2.tile1, mosaic2.tile2, mosaic2.tile3, mosaic2.tile4); }
+        if (amountOfMosaics >= 3) { mosaics[mosaicTokenId + 2] = Mosaic(mosaic3.tile1, mosaic3.tile2, mosaic3.tile3, mosaic3.tile4); }
         if (amountOfMosaics == 4) { mosaics[mosaicTokenId + 3] = Mosaic(mosaic4.tile1, mosaic4.tile2, mosaic4.tile3, mosaic4.tile4); }
 
         totalMintsPerAddress[msg.sender] += amountOfMosaics;
@@ -344,13 +345,21 @@ contract MosaicToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         }
     }
 
+    /**
+     * msg.sender must be owner of all 4 mosaics
+     */
     function checkOwnership(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) private view {
 
         require(ownerOf(tokenId1) == msg.sender, "You must be the owner of the first token!");
         require(ownerOf(tokenId2) == msg.sender, "You must be the owner of the second token!");
         require(ownerOf(tokenId3) == msg.sender, "You must be the owner of the third token!");
         require(ownerOf(tokenId4) == msg.sender, "You must be the owner of the fourth token!");
+    }
 
+    /**
+     * every token must not be already part of a mosaic
+     */
+    function checkAlreadyInMosaic(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) private view {
         require(tokenInMosaic[tokenId1] == false, "The first token is already part of a mosaic!");
         require(tokenInMosaic[tokenId2] == false, "The second token is already part of a mosaic!");
         require(tokenInMosaic[tokenId3] == false, "The third token is already part of a mosaic!");

@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployToken } = require("./_utils");
 
-['GenesisToken', 'MosaicToken'].forEach(tokenName => {
+[/*'GenesisToken',*/ 'MosaicToken'].forEach(tokenName => {
 
   describe(`IMosaic ${tokenName}`, () => {
 
@@ -62,5 +62,44 @@ const { deployToken } = require("./_utils");
       expect((await token.mosaics(11)).map(x => x.toString())).to.eql(["3", "4", "7", "10"] )
       expect(await token.tokenURI(11)).to.equal('https://example-mosaic.org/11/3/4/7/10');
     });
+
+    // TODO
+    it('should not be possible to use a tile twice in a mosaic', async () => {
+
+      await token.mint(4);
+
+      // mint a mosaic - tokenId is now #4
+      await token.mintMosaic(1, 1, 1, 1);
+
+      // tokenURI for the mosaic
+      expect(await token.tokenURI(4)).to.equal('https://example-mosaic.org/4/1/1/1/1');
+
+    });
+
+    it('should be able to mint mosaics in a batch', async () => {
+
+      // owner mints 12 tokens for 3 mosaics
+      await token.mint(12);
+
+      // mint a 3 mosaics - new tokenIds are #12, #13, #14
+      await token.mintMosaicBatch(
+        [ 0, 1, 2, 3 ],
+        [ 4, 5, 6, 7 ],
+        [ 8, 9, 10, 11 ],
+        [ 0, 0, 0, 0 ]
+      );
+
+      expect(await token.totalSupply()).to.equal(15, 'There must be 15 tokens now!');
+
+      expect(await token.isMosaic(12)).to.equal(true, 'Token #12 is not a Mosaic');
+      expect(await token.isMosaic(13)).to.equal(true, 'Token #13 is not a Mosaic');
+      expect(await token.isMosaic(14)).to.equal(true, 'Token #14 is not a Mosaic');
+
+      // check all tokenURIs for the mosaics
+      expect(await token.tokenURI(12)).to.equal('https://example-mosaic.org/12/0/1/2/3');
+      expect(await token.tokenURI(13)).to.equal('https://example-mosaic.org/13/4/5/6/7');
+      expect(await token.tokenURI(14)).to.equal('https://example-mosaic.org/14/8/9/10/11');
+    });
+    
   });
 });

@@ -86,7 +86,7 @@ const { deployToken } = require("./_utils");
         [ 0, 1, 2, 3 ],
         [ 4, 5, 6, 7 ],
         [ 8, 9, 10, 11 ],
-        [ 0, 0, 0, 0 ]
+        [ 0, 0, 0, 0 ] // skipped
       );
 
       expect(await token.totalSupply()).to.equal(15, 'There must be 15 tokens now!');

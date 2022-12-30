@@ -449,7 +449,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
     /**
      * @notice Call this function to agree or disagree to our terms and conditions.
-     * @param agreement true: token holder agrees to the terms and conditions | true: token holder does not agree to the terms and conditions
+     * @param agreement true: token holder agrees to the terms and conditions | false: token holder does not agree to the terms and conditions
      */
     function agreeOrDisagreeToTermsAndConditions(bool agreement) public {
 

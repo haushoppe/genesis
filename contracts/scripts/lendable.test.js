@@ -213,20 +213,30 @@ const pointOneEther = ethers.utils.parseEther("0.1");
 
         it('should NOT be possible to loan not owned token', async () => {
           await token.mint(2);
-          await token.safeTransferFrom(owner.address, addr1.address, 1);
+          //  safeTransferFrom is a overloaded function. In ethers, the syntax to call an overloaded contract function is different from the non-overloaded function
+          await token["safeTransferFrom(address,address,uint256)"](owner.address, addr1.address, 1);
           await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan not owned token');
         });
 
-        it('should NOT be possible to transfer a token on loan', async () => {
+        it('should NOT be possible to transfer a token on loan by the lender', async () => {
           await token.mint(2);
           await token.loan(1, addr1.address);
-          await expect(token.safeTransferFrom(owner.address, addr1.address, 1)).to.be.revertedWith('Cannot transfer token on loan');
+
+          // TransferFromIncorrectOwner : The token must be owned by `from`.
+          await expect(token["safeTransferFrom(address,address,uint256)"](owner.address, addr1.address, 1)).to.be.reverted;
+        });
+
+        it('should NOT be possible to transfer a token on loan by the borrower', async () => {
+          await token.mint(2);
+          await token.loan(1, addr1.address);
+          await expect(token.connect(addr1)["safeTransferFrom(address,address,uint256)"](addr1.address, addr2.address, 1)).to.be.revertedWith('Cannot transfer token on loan');
         });
 
         it('should NOT be possible to loan a token to yourself', async () => {
           await token.mint(2);
           await expect(token.loan(1, owner.address)).to.be.revertedWith('Trying to loan a token to the same address');
         });
+       
 
         it('should NOT be possible to loan a token to the zero address', async () => {
           await token.mint(2);

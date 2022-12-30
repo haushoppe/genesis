@@ -13,6 +13,44 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "ILendable.sol";
 import "ITermsAndConditions.sol";
 
+
+/*
+
+             +----------------------------------------+
+            /                                        /|
+           /                                        / |
+          /                                        /  |
+         /                                        /   |
+        /                                        /    |
+       /                                        /     |
+      /                                        /      |
+     /                                        /       |
+    /                                        /        |
+   /                                        /         |
+  +----------------------------------------+          |
+  |                                        |          |
+  |                                        |          |
+  |                                        |          |
+  |                                        |          |
+  |                                        |          |
+  |                                        |          |
+  |                                        |          |
+  |     _______ _     _ ______  _______    |          +
+  |     |       |     | |_____] |______    |         /
+  |     |_____  |_____| |_____] |______    |        /
+  |                                        |       /
+  |                                        |      /
+  |                                        |     /
+  |                                        |    /
+  |                                        |   /
+  |                                        |  /
+  |                                        | /
+  |                                        |/
+  +----------------------------------------+
+
+*/
+
+
 /**
  * @title Collectors cube token contract
  * @author Ethspresso and Johannes

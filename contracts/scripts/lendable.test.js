@@ -9,7 +9,7 @@ const oneEther = ethers.utils.parseEther("1");
 const threeEther = ethers.utils.parseEther("3");
 const pointOneEther = ethers.utils.parseEther("0.1");
 
-['GenesisToken', 'SeaToken', 'ArtToken'].forEach(tokenName => {
+['GenesisToken', 'SeaToken', 'ArtToken', 'MosaicToken'].forEach(tokenName => {
 
   describe(`ILendable: ${tokenName} contract`, () => {
 
@@ -150,7 +150,7 @@ const pointOneEther = ethers.utils.parseEther("0.1");
 
         it('should be able to mint, lend and retrieve a token', async () => {
 
-          // owner mints 3 tokens
+          // user mints 3 tokens
           await token.mint(3);
 
           // loans token0 and token1 to addr1 and token2 to addr2
@@ -205,17 +205,38 @@ const pointOneEther = ethers.utils.parseEther("0.1");
           expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
         });
 
-        it('should NOT be possible to loan a not owned token', async () => {
+        it('should NOT be possible to loan a loaned token', async () => {
           await token.mint(2);
           await token.loan(1, addr1.address);
+          await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan a loaned token');
+        });
+
+        it('should NOT be possible to loan not owned token', async () => {
+          await token.mint(2);
+          //  safeTransferFrom is a overloaded function. In ethers, the syntax to call an overloaded contract function is different from the non-overloaded function
+          await token["safeTransferFrom(address,address,uint256)"](owner.address, addr1.address, 1);
           await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan not owned token');
+        });
+
+        it('should NOT be possible to transfer a token on loan by the lender', async () => {
+          await token.mint(2);
+          await token.loan(1, addr1.address);
+
+          // TransferFromIncorrectOwner : The token must be owned by `from`.
+          await expect(token["safeTransferFrom(address,address,uint256)"](owner.address, addr1.address, 1)).to.be.reverted;
+        });
+
+        it('should NOT be possible to transfer a token on loan by the borrower', async () => {
+          await token.mint(2);
+          await token.loan(1, addr1.address);
+          await expect(token.connect(addr1)["safeTransferFrom(address,address,uint256)"](addr1.address, addr2.address, 1)).to.be.revertedWith('Cannot transfer token on loan');
         });
 
         it('should NOT be possible to loan a token to yourself', async () => {
           await token.mint(2);
           await expect(token.loan(1, owner.address)).to.be.revertedWith('Trying to loan a token to the same address');
         });
-
+       
         it('should NOT be possible to loan a token to the zero address', async () => {
           await token.mint(2);
           await expect(token.loan(1, ZERO_ADDRESS)).to.be.revertedWith('Transfer to the zero address');

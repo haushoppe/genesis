@@ -13,14 +13,26 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "ILendable.sol";
 import "ITermsAndConditions.sol";
 
+
+////////////////////////////////////////////
+//                                        //
+//                                        //
+//               HAUS HOPPE               //
+//    --------------------------------    //
+//          Gallery of Fine Arts          //
+//                                        //
+//                                        //
+////////////////////////////////////////////
+
+
 /**
  * @title Art token contract
  * @author Johannes from HAUS HOPPE
  * @notice This contract handles minting and loaning of art tokens.
  */
 contract ArtToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
-    event Loan(address indexed _from, address indexed to, uint _value);
-    event LoanRetrieved(address indexed _from, address indexed to, uint value);
+    event Loan(address indexed from, address indexed to, uint tokenId);
+    event LoanRetrieved(address indexed from, address indexed to, uint tokenId);
 
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -265,9 +277,9 @@ contract ArtToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC
      */
     function loan(uint256 tokenId, address receiver) external nonReentrant {
         require(isLendingActive, "Token loans are paused");
+        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(ownerOf(tokenId) == msg.sender, "Trying to loan not owned token");
         require(receiver != address(0), "Transfer to the zero address");
-        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(receiver != msg.sender, "Trying to loan a token to the same address");
 
         // transfer without any checks

@@ -1,6 +1,12 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { deployToken } = require("./_utils");
+const { deployToken, ZERO_ADDRESS, ONE_ADDRESS, SignatureHelpers } = require("./_utils");
+
+
+const format = ethers.utils.formatEther;
+const oneEther = ethers.utils.parseEther("1");
+const threeEther = ethers.utils.parseEther("3");
+const pointOneEther = ethers.utils.parseEther("0.1");
 
 ['ArtistToken', 'CubeToken'].forEach(tokenName => {
 
@@ -54,6 +60,80 @@ const { deployToken } = require("./_utils");
           expect(await token.balanceOf(owner.address)).to.equal(3);
           expect(await token.totalSupply()).to.equal(3);
           expect(await token.totalMintsPerAddress(owner.address)).to.equal(3); // not part of ILendable
+        });
+
+        it('should be able to mint via mintAllowlist (hashed+signed message)', async () => {
+
+          const signer = SignatureHelpers.getRandomSigner();
+          await token.setSignerAddress(signer.address);
+
+          const sender = owner.address;
+          const maximumAllowedMints = 4;
+
+          // Difference to the MA contract:
+          // they use `abi.encode`
+          // we use `abi.encodePacked`
+          // explained in detail here: https://89devs.com/solidity/keccak-hash/
+          //
+          // It is recommended to encode the data first instead of hashing the raw data input.
+          // The difference between abi.encode and abiencodePacked is that the encoded data is packed and therefore its data size is smaller.
+          // const message = SignatureHelpers.encodeMessage(sender, maximumAllowedMints);
+          const message = SignatureHelpers.encodePackedMessage(sender, maximumAllowedMints);
+          const messageHash = SignatureHelpers.hashMessage(message);
+          const signature = await SignatureHelpers.signMessage(signer, messageHash);
+
+          await token.mintAllowlist(messageHash, signature, 1, maximumAllowedMints);
+
+          expect(await token.totalSupply()).to.equal(1);
+        });
+
+        it('should be able to mint 3 tokens for 3 ETH', async () => {
+
+          const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+
+          // const contractBalanceBefore = await ethers.provider.getBalance(token.address);
+          // console.log('OLD CONTRACT BALANCE ' + format(contractBalanceBefore));
+          // console.log('OLD OWNER BALANCE ' + format(ownerBalanceBefore));
+
+          await token.setMintPrice(oneEther);
+          expect(await token.price()).to.equal(oneEther);
+          await token.mint(3, { value: threeEther });
+
+          const contractBalanceAfter = await ethers.provider.getBalance(token.address);
+          const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
+          
+          // contract has exactly 3 ETH now
+          expect(contractBalanceAfter.eq(threeEther)).to.be.true;
+
+          // owner spend a little bit more than 3 ETH (eg. 99 ETH - 95.9 > 3.1) because of the gas
+          expect(ownerBalanceBefore.sub(ownerBalanceAfter).gt(threeEther)).to.be.true;
+
+          // console.log('NEW CONTRACT BALANCE ' + format(contractBalanceAfter));
+          // console.log('NEW OWNER BALANCE ' + format(ownerBalanceAfter));
+        });
+
+        it('should revert mints with lower paid value', async () => {
+          await token.setMintPrice(oneEther);
+          await expect(token.mint(3, { value: oneEther })).to.be.revertedWith('Invalid paid amount');
+        });
+
+        it('should revert mints with higher paid value', async () => {
+          await token.setMintPrice(pointOneEther);
+          await expect(token.mint(1, { value: oneEther })).to.be.revertedWith('Invalid paid amount');
+        });
+
+        it('owner should be able to withdraw the contracts full balance to own address', async () => {
+
+          await token.setMintPrice(oneEther);
+          await token.mint(3, { value: threeEther });
+
+          const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+          await token.withdraw();
+          const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
+
+          // the owner gets his 3 ETH back, but lost a bit money because of gas
+          const aLittleBitGas = ethers.utils.parseEther("0.0001")
+          expect(ownerBalanceAfter.sub(ownerBalanceBefore).add(aLittleBitGas).gt(threeEther)).to.be.true;
         });
 
         it('owner should be able to gift tokens to multiple addresses', async () => {
@@ -124,15 +204,62 @@ const { deployToken } = require("./_utils");
           expect(await token.totalLoanedPerAddress(owner.address)).to.equal(1);
         });
 
-        it('should not be possible to loan a not owned token', async () => {
+        it('should NOT be possible to loan a loaned token', async () => {
           await token.mint(2);
           await token.loan(1, addr1.address);
+          await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan a loaned token');
+        });
+
+        it('should NOT be possible to loan not owned token', async () => {
+          await token.mint(2);
+          //  safeTransferFrom is a overloaded function. In ethers, the syntax to call an overloaded contract function is different from the non-overloaded function
+          await token["safeTransferFrom(address,address,uint256)"](owner.address, addr1.address, 1);
           await expect(token.loan(1, addr2.address)).to.be.revertedWith('Trying to loan not owned token');
         });
 
-        it('should not be possible to loan a token to yourself', async () => {
+        it('should NOT be possible to transfer a token on loan by the lender', async () => {
+          await token.mint(2);
+          await token.loan(1, addr1.address);
+
+          // TransferFromIncorrectOwner : The token must be owned by `from`.
+          await expect(token["safeTransferFrom(address,address,uint256)"](owner.address, addr1.address, 1)).to.be.reverted;
+        });
+
+        it('should NOT be possible to transfer a token on loan by the borrower', async () => {
+          await token.mint(2);
+          await token.loan(1, addr1.address);
+          await expect(token.connect(addr1)["safeTransferFrom(address,address,uint256)"](addr1.address, addr2.address, 1)).to.be.revertedWith('Cannot transfer token on loan');
+        });
+
+        it('should NOT be possible to loan a token to yourself', async () => {
           await token.mint(2);
           await expect(token.loan(1, owner.address)).to.be.revertedWith('Trying to loan a token to the same address');
+        });
+       
+        it('should NOT be possible to loan a token to the zero address', async () => {
+          await token.mint(2);
+          await expect(token.loan(1, ZERO_ADDRESS)).to.be.revertedWith('Transfer to the zero address');
+        });
+
+        it('should be possible to loan/retrieve a token to the one address', async () => {
+          await token.mint(2);
+          await token.loan(1, ONE_ADDRESS);
+          await token.retrieveLoan(1);
+
+          expect(await token.totalLoaned()).to.equal(0);
+        });
+
+        // checks for: 
+        // TransferToNonERC721ReceiverImplementer: 
+        // Cannot safely transfer to a contract that does not implement the ERC721Receiver interface.
+        // 
+        // ...which should not happen anymore, because we do a very unsafe transfer now
+        it('should be possible to loan/retrieve a token to any contract address', async () => {
+          await token.mint(2);
+          await token.loan(1, token.address);
+          await token.retrieveLoan(1);
+
+          expect(await token.totalLoaned()).to.equal(0);
         });
       });
     });

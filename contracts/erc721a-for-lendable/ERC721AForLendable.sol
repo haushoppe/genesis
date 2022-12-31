@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// ERC721A Contracts v4.2.3 - with extra method _unsafeTransfer
+// ERC721A Contracts v4.2.3 - with extra method _veryUnsafeTransferFrom
 // Creator: Chiru Labs + Johannes
 
 pragma solidity ^0.8.4;
@@ -602,7 +602,13 @@ contract ERC721AForLendable is IERC721A {
 
     /**
      * @dev Transfers `tokenId` from `from` to `to`  without checking for ownership approval.
-     * smae as transferFrom but does not revert with TransferCallerNotOwnerNorApproved
+     * same as transferFrom but does not revert with TransferCallerNotOwnerNorApproved
+     *
+     * WARNING:
+     * 1. transfer possible without approval
+     * 2. transfer to contract without IERC721Receiver possible
+     *
+     * !! NEVER call this function outside the lending context! !!
      *
      * Requirements:
      *
@@ -612,7 +618,7 @@ contract ERC721AForLendable is IERC721A {
      *
      * Emits a {Transfer} event.
      */
-    function _unsafeTransferFrom(
+    function _veryUnsafeTransferFrom(
         address from,
         address to,
         uint256 tokenId
@@ -623,7 +629,7 @@ contract ERC721AForLendable is IERC721A {
 
         (uint256 approvedAddressSlot, address approvedAddress) = _getApprovedSlotAndAddress(tokenId);
 
-        // REMOVED
+        // !! REMOVED !!
         // // The nested ifs save around 20+ gas over a compound boolean condition.
         // if (!_isSenderApprovedOrOwner(approvedAddress, from, _msgSenderERC721A()))
         //     if (!isApprovedForAll(from, _msgSenderERC721A())) revert TransferCallerNotOwnerNorApproved();

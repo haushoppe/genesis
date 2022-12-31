@@ -14,15 +14,53 @@ import "ILendable.sol";
 import "ITermsAndConditions.sol";
 import "IAgreeToTermsAndConditions.sol";
 
+
+/*
+
+             +-----------------------------------------+
+            /                                         /|
+           /                                         / |
+          /                                         /  |
+         /                                         /   |
+        /                                         /    |
+       /                                         /     |
+      /                                         /      |
+     /                                         /       |
+    /                                         /        |
+   /                                         /         |
+  +-----------------------------------------+          |
+  |                                         |          |
+  |                                         |          |
+  |                                         |          |
+  |                                         |          |
+  |                                         |          |
+  |                                         |          |
+  |                                         |          |
+  |     _______ _     _ ______  _______     |          +
+  |     |       |     | |_____] |______     |         /
+  |     |_____  |_____| |_____] |______     |        /
+  |                                         |       /
+  |                                         |      /
+  |                                         |     /
+  |                                         |    /
+  |                                         |   /
+  |                                         |  /
+  |                                         | /
+  |                                         |/
+  +-----------------------------------------+
+
+*/
+
+
 /**
  * @title Artist token contract
  * @author Ethspresso and Johannes
  * @notice This contract handles minting and loaning of artist tokens. It allows artists to explicitly agree to our terms and conditions on-chain.
  */
 contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions, IAgreeToTermsAndConditions {
-    event Loan(address indexed _from, address indexed to, uint _value);
-    event LoanRetrieved(address indexed _from, address indexed to, uint value);
-    event Agreement(address indexed _from, bool _value);
+    event Loan(address indexed from, address indexed to, uint tokenId);
+    event LoanRetrieved(address indexed from, address indexed to, uint tokenId);
+    event Agreement(address indexed from, bool agreement);
 
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -155,8 +193,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         return signerAddress == messageHash.toEthSignedMessageHash().recover(signature);
     }
 
-    function hashMessage(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
-        return keccak256(abi.encode(sender, maximumAllowedMints));
+    function hashMessagePacked(address sender, uint256 maximumAllowedMints) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(sender, maximumAllowedMints));
     }
 
     /**
@@ -170,6 +208,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
+
+        require(msg.value == (price * mintNumber), "Invalid paid amount");
 
         totalMintsPerAddress[msg.sender] += mintNumber;
         _safeMint(msg.sender, mintNumber);
@@ -198,11 +238,15 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         require(isSaleActive, "Minting is disabled");
         require(signerAddress != address(0), "Minting via allowlist is disabled. Please use the function mint!");
         require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Maximum allowed mints exceeded");
-        require(hashMessage(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+        
+        require(hashMessagePacked(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
+
         require(verifyAddressSigner(messageHash, signature), "Signature validation failed");
 
         uint256 currentSupply = totalSupply();
         require(currentSupply + mintNumber <= maxSupply, "Max supply exceeded");
+
+        require(msg.value == (price * mintNumber), "Invalid paid amount");
 
         totalMintsPerAddress[msg.sender] += mintNumber;
         _safeMint(msg.sender, mintNumber);
@@ -296,13 +340,14 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      */
     function loan(uint256 tokenId, address receiver) external nonReentrant {
         require(isLendingActive, "Token loans are paused");
+        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(ownerOf(tokenId) == msg.sender, "Trying to loan not owned token");
         require(receiver != address(0), "Transfer to the zero address");
-        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(receiver != msg.sender, "Trying to loan a token to the same address");
 
-        // Transfer the token
-        safeTransferFrom(msg.sender, receiver, tokenId);
+        // transfer without any checks
+        // because the lender (and admin) can always retrieve the token again
+        _veryUnsafeTransferFrom(msg.sender, receiver, tokenId);
 
         // Add it to the mapping of originally loaned tokens
         tokenOwnersOnLoan[tokenId] = msg.sender;
@@ -321,9 +366,6 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     function retrieveLoan(uint256 tokenId) external nonReentrant {
         address borrowerAddress = ownerOf(tokenId);
 
-        // why??
-        // require(borrowerAddress != msg.sender, "Trying to retrieve their owned loaned token");
-
         require(tokenOwnersOnLoan[tokenId] != address(0), "This token is not on loan");
         require(tokenOwnersOnLoan[tokenId] == msg.sender, "You must be the lender of the token to retrieve it");
 
@@ -337,8 +379,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         totalLoanedPerAddress[lender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
         
-        // Transfer the token back
-        _unsafeTransferFrom(borrowerAddress, lender, tokenId);
+        // transfer the token back
+        _veryUnsafeTransferFrom(borrowerAddress, lender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, lender, tokenId);
     }
@@ -361,8 +403,8 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
         totalLoanedPerAddress[lender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
         
-        // Transfer the token back
-        _unsafeTransferFrom(borrowerAddress, lender, tokenId);
+        // transfer the token back
+        _veryUnsafeTransferFrom(borrowerAddress, lender, tokenId);
 
         emit LoanRetrieved(borrowerAddress, lender, tokenId);
     }
@@ -395,7 +437,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
     }
 
     /**
-     * @notice Allow contract owner to withdraw funds to its own account.
+     * @notice Allow contract owner to withdraw all funds to its own account.
      */
     function withdraw() external onlyOwner {
         payable(owner()).transfer(address(this).balance);
@@ -407,6 +449,7 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
 
     /**
      * @notice Call this function to agree or disagree to our terms and conditions.
+     * @param agreement true: token holder agrees to the terms and conditions | true: token holder does not agree to the terms and conditions
      */
     function agreeOrDisagreeToTermsAndConditions(bool agreement) public {
 

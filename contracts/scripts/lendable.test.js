@@ -237,7 +237,6 @@ const pointOneEther = ethers.utils.parseEther("0.1");
           await expect(token.loan(1, owner.address)).to.be.revertedWith('Trying to loan a token to the same address');
         });
        
-
         it('should NOT be possible to loan a token to the zero address', async () => {
           await token.mint(2);
           await expect(token.loan(1, ZERO_ADDRESS)).to.be.revertedWith('Transfer to the zero address');

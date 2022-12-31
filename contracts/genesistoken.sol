@@ -14,14 +14,26 @@ import "ILendable.sol";
 import "ITermsAndConditions.sol";
 import "IMosaic.sol";
 
+
+////////////////////////////////////////////
+//                                        //
+//                                        //
+//               HAUS HOPPE               //
+//    --------------------------------    //
+//          Gallery of Fine Arts          //
+//                                        //
+//                                        //
+////////////////////////////////////////////
+
+
 /**
  * @title Genesis token contract
  * @author Johannes from HAUS HOPPE
  * @notice This contract handles minting and loaning of genesis tokens.
  */
 contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ERC2981, ILendable, ITermsAndConditions {
-    event Loan(address indexed _from, address indexed to, uint _value);
-    event LoanRetrieved(address indexed _from, address indexed to, uint value);
+    event Loan(address indexed from, address indexed to, uint tokenId);
+    event LoanRetrieved(address indexed from, address indexed to, uint tokenId);
 
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -50,6 +62,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     // State variables
     bool public isSaleActive = false;
     bool public isLendingActive = false;
+    bool public isBatchMosaicMintActive = false;
 
     // Changeable token name and symbol
     string private _changeableName = "Genesis by HAUS HOPPE";
@@ -225,29 +238,33 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     }
 
     /**
-     * @notice Allow the owner of 4 tokens to mint a special token called "Mosaic". Mosaics can be used recursively in subsequent mosaics.
+     * Prepares all values for a mint of a mosaic
      */
-    function mintMosaic(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) external payable nonReentrant {
-        require(isSaleActive, "Minting is disabled");
+    function prepareMosaicState(uint256 mosaicTokenId, uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) private {
 
-        require(ownerOf(tokenId1) == msg.sender, "You must be the owner of the first token!");
-        require(ownerOf(tokenId2) == msg.sender, "You must be the owner of the second token!");
-        require(ownerOf(tokenId3) == msg.sender, "You must be the owner of the third token!");
-        require(ownerOf(tokenId4) == msg.sender, "You must be the owner of the fourth token!");
+        // msg.sender must be owner of all 4 mosaics
+        require(
+            ownerOf(tokenId1) == msg.sender && 
+            ownerOf(tokenId2) == msg.sender && 
+            ownerOf(tokenId3) == msg.sender && 
+            ownerOf(tokenId4) == msg.sender, "You must be the owner of all four tokens");
 
-        require(tokenInMosaic[tokenId1] == false, "The first token is already part of a mosaic!");
-        require(tokenInMosaic[tokenId2] == false, "The second token is already part of a mosaic!");
-        require(tokenInMosaic[tokenId3] == false, "The third token is already part of a mosaic!");
-        require(tokenInMosaic[tokenId4] == false, "The fourth token is already part of a mosaic!");
+        // every token must not be already part of a mosaic
+        require(
+            tokenInMosaic[tokenId1] == false && 
+            tokenInMosaic[tokenId2] == false && 
+            tokenInMosaic[tokenId3] == false && 
+            tokenInMosaic[tokenId4] == false, "One of the tokens is already part of a mosaic");
 
-        uint256 currentSupply = totalSupply();
-        require(currentSupply + 1 <= maxSupply, "Max supply exceeded");
+        // lets check that all tokenIds are unique
+        require(tokenId1 != tokenId2 && 
+                tokenId1 != tokenId3 && 
+                tokenId1 != tokenId4 && 
+                tokenId2 != tokenId3 && 
+                tokenId2 != tokenId4 && 
+                tokenId3 != tokenId4, "All tokens for a mosaic must be unique");
 
-        require(msg.value == priceForMosaic, "Invalid paid amount");
-
-        uint256 mosaicTokenId = _nextTokenId();
-
-        // all tokens that are special mosaic token
+        // all tokens that are special mosaic tokens
         isMosaic[mosaicTokenId] = true;
 
         // every token can be only used once for a mosaic
@@ -257,11 +274,68 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         tokenInMosaic[tokenId4] = true;
 
         mosaics[mosaicTokenId] = Mosaic(tokenId1, tokenId2, tokenId3, tokenId4);
+    }
+
+    /**
+     * @notice Allow the owner of 4 tokens to mint a special token called "Mosaic". Mosaics can be used recursively in subsequent mosaics.
+     */
+    function mintMosaic(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) external payable nonReentrant {
+        require(isSaleActive, "Minting is disabled");
+                
+        uint256 currentSupply = totalSupply();
+        require(currentSupply + 1 <= maxSupply, "Max supply exceeded");
+        require(msg.value == priceForMosaic, "Invalid paid amount");
+
+        uint256 mosaicTokenId = _nextTokenId();
+        prepareMosaicState(mosaicTokenId, tokenId1, tokenId2, tokenId3, tokenId4);
 
         totalMintsPerAddress[msg.sender] += 1;
         _safeMint(msg.sender, 1);
 
         if (currentSupply + 1 >= maxSupply) {
+            isSaleActive = false;
+        }
+    }
+
+    /**
+     * @notice Allow contract owner to enable/disable batch minting of mosaics
+     */
+    function setBatchMosaicMintStatus(bool status) public onlyOwner {
+        isBatchMosaicMintActive = status;
+    }
+
+    /**
+     * @notice Allow the owner of up to 16 tokens to mint up to 4 mosaics in a batch.
+     * Only zeros for a mosaic means this mosaic and all following mosaics should be skipped.
+     */
+    function mintMosaicBatch(Mosaic calldata mosaic1, Mosaic calldata mosaic2, Mosaic calldata mosaic3, Mosaic calldata mosaic4) external payable nonReentrant {
+        require(isSaleActive, "Minting is disabled");
+        require(isBatchMosaicMintActive, "Batch minting of mosaics is disabled");
+
+        uint amountOfMosaics;
+        if (     mosaic1.tile1 == 0 && mosaic1.tile2 == 0 && mosaic1.tile3 == 0 && mosaic1.tile4 == 0) { amountOfMosaics = 0; } 
+        else if (mosaic2.tile1 == 0 && mosaic2.tile2 == 0 && mosaic2.tile3 == 0 && mosaic2.tile4 == 0) { amountOfMosaics = 1; } 
+        else if (mosaic3.tile1 == 0 && mosaic3.tile2 == 0 && mosaic3.tile3 == 0 && mosaic3.tile4 == 0) { amountOfMosaics = 2; }
+        else if (mosaic4.tile1 == 0 && mosaic4.tile2 == 0 && mosaic4.tile3 == 0 && mosaic4.tile4 == 0) { amountOfMosaics = 3; }
+        else                                                                                           { amountOfMosaics = 4; }
+
+        require(amountOfMosaics != 0, "First mosaic can't be skipped.");
+
+        uint256 currentSupply = totalSupply();
+        require(currentSupply + amountOfMosaics <= maxSupply, "Max supply exceeded");
+        require(msg.value == (priceForMosaic * amountOfMosaics), "Invalid paid amount");
+
+        uint256 mosaicTokenId = _nextTokenId();
+
+                                    prepareMosaicState(mosaicTokenId    , mosaic1.tile1, mosaic1.tile2, mosaic1.tile3, mosaic1.tile4);
+        if (amountOfMosaics >= 2) { prepareMosaicState(mosaicTokenId + 1, mosaic2.tile1, mosaic2.tile2, mosaic2.tile3, mosaic2.tile4); }
+        if (amountOfMosaics >= 3) { prepareMosaicState(mosaicTokenId + 2, mosaic3.tile1, mosaic3.tile2, mosaic3.tile3, mosaic3.tile4); }
+        if (amountOfMosaics == 4) { prepareMosaicState(mosaicTokenId + 3, mosaic4.tile1, mosaic4.tile2, mosaic4.tile3, mosaic4.tile4); }
+
+        totalMintsPerAddress[msg.sender] += amountOfMosaics;
+        _safeMint(msg.sender, amountOfMosaics);
+
+        if (currentSupply + amountOfMosaics >= maxSupply) {
             isSaleActive = false;
         }
     }
@@ -360,9 +434,9 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
      */
     function loan(uint256 tokenId, address receiver) external nonReentrant {
         require(isLendingActive, "Token loans are paused");
+        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(ownerOf(tokenId) == msg.sender, "Trying to loan not owned token");
         require(receiver != address(0), "Transfer to the zero address");
-        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(receiver != msg.sender, "Trying to loan a token to the same address");
 
         // transfer without any checks

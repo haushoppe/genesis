@@ -117,3 +117,4 @@ But its not useful for advanced scenarios!!
   1. use the Plugin: "ETHERSCAN - CONTRACT VERIFICATION"
   2. enter Etherscan API key
   3. submit the form (`scrips/etherscan` is used)
+* BigNumbers: https://docs.ethers.org/v5/api/utils/bignumber/

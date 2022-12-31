@@ -406,6 +406,13 @@ contract CubeToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, ER
         payable(owner()).transfer(address(this).balance);
     }
 
+    /**
+     * @notice Allow contract owner to withdraw funds to an address
+     */
+    function withdrawTo(address to, uint amount) external nonReentrant onlyOwner {
+        payable(to).transfer(amount);
+    }
+
     // ******************** //
     // Terms and Conditions //
     // ******************** //

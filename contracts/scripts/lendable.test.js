@@ -7,6 +7,7 @@ const format = ethers.utils.formatEther;
 const oneEther = ethers.utils.parseEther("1");
 const threeEther = ethers.utils.parseEther("3");
 const pointOneEther = ethers.utils.parseEther("0.1");
+const aLittleBitGas = ethers.utils.parseEther("0.0001");
 
 ['ArtistToken', 'CubeToken'].forEach(tokenName => {
 
@@ -132,7 +133,6 @@ const pointOneEther = ethers.utils.parseEther("0.1");
           const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
 
           // the owner gets his 3 ETH back, but lost a bit money because of gas
-          const aLittleBitGas = ethers.utils.parseEther("0.0001")
           expect(ownerBalanceAfter.sub(ownerBalanceBefore).add(aLittleBitGas).gt(threeEther)).to.be.true;
         });
 

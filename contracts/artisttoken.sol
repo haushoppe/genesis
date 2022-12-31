@@ -340,9 +340,9 @@ contract ArtistToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable, 
      */
     function loan(uint256 tokenId, address receiver) external nonReentrant {
         require(isLendingActive, "Token loans are paused");
+        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(ownerOf(tokenId) == msg.sender, "Trying to loan not owned token");
         require(receiver != address(0), "Transfer to the zero address");
-        require(tokenOwnersOnLoan[tokenId] == address(0), "Trying to loan a loaned token");
         require(receiver != msg.sender, "Trying to loan a token to the same address");
 
         // transfer without any checks

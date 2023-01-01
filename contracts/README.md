@@ -8,6 +8,12 @@ https://goerli.etherscan.io/address/0x7dD31A2F91860E6cD82ba29D5C6c2497ea427ba6
 ArtistToken on Mainnet
 https://etherscan.io/address/0x034F95d5EF960567e02af0Ac8C648288ad0b6691
 
+CubeToken on Goerli
+https://goerli.etherscan.io/address/0xB50f1A5149a68C1f27b4de2FC3aDC05A8410dA5D
+
+CubeToken on Mainnet
+https://etherscan.io/address/0x3E1a35F35fCBb302EEBAD8D8c59aB0369065696E
+
 
 ## Dependencies
 

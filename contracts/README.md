@@ -18,7 +18,10 @@ SeaToken on Goerli
 https://goerli.etherscan.io/address/0x3E1a35F35fCBb302EEBAD8D8c59aB0369065696E
 
 SeaToken on Mainnet
-https://etherscan.io/address/0x1c95e3014dA741C26E0F74cD67fa7f6D0891Fd6a
+(BOTTED https://etherscan.io/address/0x1c95e3014dA741C26E0F74cD67fa7f6D0891Fd6a )
+
+SeaToken on Mainnet (2)
+https://etherscan.io/address/0xf05A5D8d9DCf1BB1D33B09322Cc52df320A04fC5
 
 
 

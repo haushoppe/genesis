@@ -1,5 +1,14 @@
 # Solidity contracts
 
+## Final Contracts
+
+ArtistToken on Goerli
+https://goerli.etherscan.io/address/0x7dD31A2F91860E6cD82ba29D5C6c2497ea427ba6
+
+ArtistToken on Mainnet
+https://etherscan.io/address/0x034F95d5EF960567e02af0Ac8C648288ad0b6691
+
+
 ## Dependencies
 
  * ~~ERC721A contract v4.2.3 (https://www.npmjs.com/package/erc721a)~~ (hacked version included)

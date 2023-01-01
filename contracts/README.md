@@ -4,25 +4,39 @@
 
 GenesisToken on Goerli
 https://goerli.etherscan.io/address/0x728265b4DD95E502EC46CF18E06787c57b473482
+by 0x33CF8688b6aFC84ea4F1F9464f000bA9B02Be356
 
 GenesisToken on Mainnet
 https://etherscan.io/address/0xBF79e5797dd766288F7831689EF943b286f92d86
+by haushoppe.eth 
 
 MosaicToken on Goerli
 https://goerli.etherscan.io/address/0x9d0C0eC7f18A7D017f716a602E8991640412E07f
+by 0x33CF8688b6aFC84ea4F1F9464f000bA9B02Be356
 
 MosaicToken on Mainnet
 https://etherscan.io/address/0xa8af731F0513DA720691d423d0a6C839Ab5d4a22
+by haushoppe.eth 
 
 SeaToken on Goerli
 https://goerli.etherscan.io/address/0x3E1a35F35fCBb302EEBAD8D8c59aB0369065696E
+by 0x33CF8688b6aFC84ea4F1F9464f000bA9B02Be356
 
 SeaToken on Mainnet
-(BOTTED https://etherscan.io/address/0x1c95e3014dA741C26E0F74cD67fa7f6D0891Fd6a )
-
-SeaToken on Mainnet (2)
 https://etherscan.io/address/0xf05A5D8d9DCf1BB1D33B09322Cc52df320A04fC5
+by haushoppe.eth 
 
+ArtToken on Goerli
+https://goerli.etherscan.io/address/0xBF79e5797dd766288F7831689EF943b286f92d86
+by 0x33CF8688b6aFC84ea4F1F9464f000bA9B02Be356
+
+ArtToken on Mainnet
+https://etherscan.io/address/0xb40889c9fac33cd7684D3C9B14490EeE29a84761
+by haushoppe.eth
+
+
+Not used anymore -- SeaToken on Mainnet
+(BOTTED https://etherscan.io/address/0x1c95e3014dA741C26E0F74cD67fa7f6D0891Fd6a )
 
 
 ## Dependencies
@@ -41,9 +55,7 @@ npm install
 For both tokens:
 
 1. call `setBaseURI("https://genesis.haushoppe.art/x/")`
-2. call `setSaleStatus(true)`
-3. call `mint(1)`
-4. call `setSaleStatus(false)`
+2. call `gift`
 
 ## IDE for contract development
 

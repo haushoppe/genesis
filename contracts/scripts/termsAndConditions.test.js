@@ -77,7 +77,6 @@ const twoEther = ethers.utils.parseEther("2");
         .to.emit(token, 'Agreement')
         .withArgs(addr1.address, true);
 
-      console.log('TEST!1');
       expect(await token.agreements(addr1.address)).to.be.true;
 
       // lets agree twice

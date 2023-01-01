@@ -125,10 +125,18 @@ const { deployToken } = require("./_utils");
       expect(await token.tokenURI(14)).to.equal('https://example-mosaic.org/14/8/9/10/11');
     });
 
-    it('should be able to mint 1, 2 and 4 mosaics in a batch', async () => {
+    it('should be able to mint 1, 2 and 4 mosaics in a batch, but not 0', async () => {
 
       // user mints 28 tokens
       await token.mint(28);
+
+      
+      await expect(token.mintMosaicBatch(
+        [ 0, 0, 0, 0 ], // skipped
+        [ 0, 0, 0, 0 ], // skipped
+        [ 0, 0, 0, 0 ], // skipped
+        [ 0, 0, 0, 0 ] // skipped
+      )).to.be.revertedWith("First mosaic can't be skipped.");
 
       // mint a 1 mosaic - new tokenId is #28 --- this is not effective, but should be possible
       await token.mintMosaicBatch(

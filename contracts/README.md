@@ -8,7 +8,11 @@ https://goerli.etherscan.io/address/0x728265b4DD95E502EC46CF18E06787c57b473482
 GenesisToken on Mainnet
 https://etherscan.io/address/0xBF79e5797dd766288F7831689EF943b286f92d86
 
+MosaicToken on Goerli
+https://goerli.etherscan.io/address/0x9d0C0eC7f18A7D017f716a602E8991640412E07f
 
+MosaicToken on Mainnet
+https://etherscan.io/address/0xa8af731F0513DA720691d423d0a6C839Ab5d4a22
 
 
 

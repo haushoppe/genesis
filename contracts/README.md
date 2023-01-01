@@ -1,5 +1,17 @@
 # Solidity contracts
 
+## Final Contracts
+
+GenesisToken on Goerli
+https://goerli.etherscan.io/address/0x728265b4DD95E502EC46CF18E06787c57b473482
+
+GenesisToken on Mainnet
+https://etherscan.io/address/0xBF79e5797dd766288F7831689EF943b286f92d86
+
+
+
+
+
 ## Dependencies
 
  * ~~ERC721A contract v4.2.3 (https://www.npmjs.com/package/erc721a)~~ (hacked version included)
@@ -15,7 +27,7 @@ npm install
 
 For both tokens:
 
-1. call `setBaseURI("https://cube.haushoppe.art/x/")`
+1. call `setBaseURI("https://genesis.haushoppe.art/x/")`
 2. call `setSaleStatus(true)`
 3. call `mint(1)`
 4. call `setSaleStatus(false)`

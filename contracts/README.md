@@ -14,6 +14,12 @@ https://goerli.etherscan.io/address/0x9d0C0eC7f18A7D017f716a602E8991640412E07f
 MosaicToken on Mainnet
 https://etherscan.io/address/0xa8af731F0513DA720691d423d0a6C839Ab5d4a22
 
+SeaToken on Goerli
+https://goerli.etherscan.io/address/0x3E1a35F35fCBb302EEBAD8D8c59aB0369065696E
+
+SeaToken on Mainnet
+https://etherscan.io/address/0x1c95e3014dA741C26E0F74cD67fa7f6D0891Fd6a
+
 
 
 ## Dependencies

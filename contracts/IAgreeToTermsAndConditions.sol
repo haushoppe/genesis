@@ -15,7 +15,7 @@ import "ITermsAndConditions.sol";
  * 2. If a previous holder no longer owns any tokens,
  *    this should be interpreted as a revoke of the agreement.
  * 3. After a token transfer, the new owner has not given his agreement. 
- *    He/She must call the function `agreeOrDisagreeToTermsAndConditions(true)`
+ *    Please call the function `agreeOrDisagreeToTermsAndConditions(true)`
  *    to agree to the terms and conditions.
  */
 interface IAgreeToTermsAndConditions is ITermsAndConditions {

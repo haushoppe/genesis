@@ -2,8 +2,6 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployToken, ZERO_ADDRESS, ONE_ADDRESS, SignatureHelpers } = require("./_utils");
 
-
-const format = ethers.utils.formatEther;
 const oneEther = ethers.utils.parseEther("1");
 const threeEther = ethers.utils.parseEther("3");
 const pointOneEther = ethers.utils.parseEther("0.1");

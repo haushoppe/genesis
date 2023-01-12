@@ -17,7 +17,7 @@ jobs:
         node-version: 16.x
 
     - run: npm install
-    - run: npm run build:frontend:production
+    - run: npm run build:scales-dashboard-frontend:production
     - name: Deploy Frontend to `haushoppe/scales-dashboard-frontend-build` repo
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}

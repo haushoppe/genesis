@@ -25,8 +25,8 @@ npm run start:backend
 Start Frontend (Angular App) in dev mode:
 
 ```
-npm run start:frontend 
-```
+npm run start:scales-dashboard-frontend
+``` 
 
 Start all
 

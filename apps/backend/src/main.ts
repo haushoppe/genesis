@@ -12,11 +12,10 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   const openApiConfig = new DocumentBuilder()
-    .setTitle('Scales Dashboard API')
+    .setTitle('🎨 NFT API')
     // Markdown is also supported!
-    .setDescription('Serves data for our Scales Dashboard')
+    .setDescription('Serves data for our NFT projects')
     .setVersion('1.0')
-    // .addTag('cats')
     .build();
 
   const document = SwaggerModule.createDocument(app, openApiConfig);

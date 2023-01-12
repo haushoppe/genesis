@@ -4,6 +4,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
 import { ApiController } from './api/api.controller';
+import { CubeController } from './api/cube.controller';
+import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -23,7 +25,7 @@ import { AppService } from './app.service';
       validationSchema
     })
   ],
-  controllers: [AppController, ApiController],
+  controllers: [AppController, ApiController, CubeController, ScalesController],
   providers: [AppService],
 })
 export class AppModule {}

@@ -14,33 +14,38 @@ export class AppController {
     const html = `<!DOCTYPE html>
 <html>
 <head>
-  <title>Scales Dashboard API</title>
+  <title>🎨 NFT API</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
-
-  <!--<link rel="icon" href="assets/XXX.svg" type="image/x-icon">-->
   <link rel="stylesheet" href="assets/style.css" media="screen">
 </head>
 
 <body class="markdown-body">
   <h1>
-    Scales Dashboard API
+    🎨 NFT API
   </h1>
 
   <p>
-    This is an internal API.
+    This is an internal API. There is not much to see here.
   </p>
 
   <ul>
     <li>
-      <a href="/open-api">OpenAPI documentation</a>
+      <a href="/open-api">OpenAPI UI</a>
     </li>
-    <!--<li>
-      <a href="/open-api-json">OpenAPI JSON file</a>
-    </li>-->
+    <li>
+      <a href="/open-api-json">OpenAPI specification</a>
+    </li>
   </ul>
 </html>`;
 
     return response.send(html);
+  }
+
+  @Get('/robots.txt')
+  @ApiExcludeEndpoint()
+  getRobotsTxt(@Res() response: express.Response) {
+    response.setHeader('Content-Type', 'text/plain',);
+    return response.send('User-agent: *\nDisallow: /');
   }
 }

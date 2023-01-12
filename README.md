@@ -1,4 +1,4 @@
-# Scales Dashboard
+# Big Mongorepo
 
 This project was generated using [Nx](https://nx.dev).
 
@@ -37,17 +37,12 @@ npm run start
 ## Infrastructure
 
 
-### Crawler
-
-* Some custom python script?
-
 
 ### Database
 
-* https://data.mongodb-api.com/app/data-wkgaq/endpoint/data/v1/action/
 * [MongoDB Atlas](https://www.mongodb.com/cloud)
 
-### Backend API
+### Backend API (TODO - get rid of Render!)
 
 * https://scales-dashboard-backend.onrender.com
 * [Nest.js](https://nestjs.com/) (on top of [Express](https://expressjs.com/)) Webserver in a [Nx](https://nx.dev/) workspace
@@ -56,7 +51,7 @@ npm run start
 
 Web services on the free plan are automatically spun down after 15 minutes of inactivity. When a new request for a free service comes in, Render spins it up again so it can process the request. This can cause a response delay of up to 30 seconds for the first request that comes in after a period of inactivity. More info [here](https://render.com/docs/free#free-web-services).
 
-### Frontend
+### Scales Frontend (TODO)
 
 * https://scales-dashboard.theangelswing.art/
 * [Angular](https://angular.io/) app in a [Nx](https://nx.dev/) workspace

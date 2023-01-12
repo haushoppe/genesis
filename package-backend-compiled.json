@@ -1,0 +1,23 @@
+{
+  "name": "scales-dashboard-backend-compiled",
+  "version": "0.0.0",
+  "license": "None",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "engines": {
+    "node": "16.x"
+  },
+  "private": true,
+  "dependencies": {
+    "@nestjs/common": "^9.2.1",
+    "@nestjs/config": "^2.2.0",
+    "@nestjs/core": "^9.2.1",
+    "@nestjs/platform-express": "^9.2.1",
+    "@nestjs/serve-static": "^3.0.0",
+    "@nestjs/swagger": "^6.1.4",
+    "tslib": "^2.3.0",
+    "joi": "^17.7.0",
+    "swagger-ui-express": "^4.6.0"
+  }
+}

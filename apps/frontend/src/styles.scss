@@ -1,0 +1,32 @@
+/* You can add global styles to this file, and also import other style files */
+
+$dark: #282828;
+
+@import "bootstrap/scss/bootstrap.scss";
+
+
+body {
+  text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
+  box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
+}
+
+/* Custom default button */
+.btn-secondary,
+.btn-secondary:hover,
+.btn-secondary:focus {
+  color: #333;
+  text-shadow: none; /* Prevent inheritance from `body` */
+}
+
+/* text-justify has been removed in Bootstrap 5 */
+.text-justify {
+  text-align: justify;
+}
+
+// see http://www.simon-li.com/design-and-code/an-elegant-way-to-break-the-bootstrap-container/
+.break-out-container {
+  width: 100vw;
+  position: relative;
+  left: calc(-1 * (100vw - 100%) / 2);
+}
+

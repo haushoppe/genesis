@@ -13,7 +13,6 @@ async function bootstrap() {
 
   const openApiConfig = new DocumentBuilder()
     .setTitle('🎨 NFT API')
-    // Markdown is also supported!
     .setDescription('Serves data for our NFT projects')
     .setVersion('1.0')
     .build();

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -8,13 +9,14 @@ import { CubeController } from './api/cube.controller';
 import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AllowlistService } from './model/allowlist.service';
+
 
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, 'assets'),
-      serveRoot: '/assets',
+      rootPath: join(__dirname, 'assets/public'),
+      serveRoot: '/public',
       serveStaticOptions: {
         index: false,
       },
@@ -23,9 +25,19 @@ import { AppService } from './app.service';
       isGlobal: true,
       load: [configuration],
       validationSchema
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      // TODO
+      useFactory: async (config: ConfigService) => ({
+        uri: config.get('mongodbUri'),
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }),
+      inject: [ConfigService],
     })
   ],
   controllers: [AppController, ApiController, CubeController, ScalesController],
-  providers: [AppService],
+  providers: [AllowlistService],
 })
-export class AppModule {}
+export class AppModule { }

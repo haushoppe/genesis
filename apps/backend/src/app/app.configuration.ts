@@ -18,7 +18,7 @@ export const configuration = () => {
     knownTokens: [
       ...(environment === 'development' ?
         [{ name: 'genesis', maximumAllowedMintsPerAddress: 4, address: '0x728265b4DD95E502EC46CF18E06787c57b473482' },
-        { name: 'mosaics', maximumAllowedMintsPerAddress: 4, address: '0x9d0C0eC7f18A7D017f716a602E8991640412E07f' },
+        { name: 'mosaic', maximumAllowedMintsPerAddress: 4, address: '0x9d0C0eC7f18A7D017f716a602E8991640412E07f' },
         { name: 'sea', maximumAllowedMintsPerAddress: 4, address: '0x3E1a35F35fCBb302EEBAD8D8c59aB0369065696E' },
         { name: 'art', maximumAllowedMintsPerAddress: 4, address: '0xBF79e5797dd766288F7831689EF943b286f92d86' },
         { name: 'artist', maximumAllowedMintsPerAddress: 4, address: '0x7dD31A2F91860E6cD82ba29D5C6c2497ea427ba6' },

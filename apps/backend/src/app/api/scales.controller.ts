@@ -8,6 +8,7 @@ import axios from 'axios';
 @Controller()
 export class ScalesController {
 
+  // TODO: outdated!
   readonly mongodbRestEndpoint = this.config.get('mongodbRestEndpoint');
   readonly mongodbApiKey = this.config.get('mongodbApiKey');
   readonly restApiConfig = {
@@ -21,14 +22,14 @@ export class ScalesController {
   constructor(private config: ConfigService) { }
 
   /**
-   * Test: Returns the single NFT with the given ID
+   * Returns the single NFT with the given ID
    */
   @ApiParam({
     name: 'token_id',
     description: 'The ID of the NFT',
     example: '333'
   })
-  @Get(['api/getSingle/:token_id'])
+  @Get(['scales/getSingle/:token_id'])
   async getSingle(@Param('token_id') token_id: string) {
 
     // Logger.verbose("Serving api/getSingle/" + token_id);
@@ -56,7 +57,7 @@ export class ScalesController {
   /**
    * Returns all data we have
    */
-  @Get(['api/getAll'])
+  @Get(['scales/getAll'])
   async getAll() {
 
     // Logger.verbose("Serving api/getAll/");

@@ -14,7 +14,7 @@ export class CubeController {
   /**
    * HTTP proxy to avoid CORS issues
    */
-  @Get(['api/proxy/:url'])
+  @Get(['cube/proxy/:url'])
   @ApiParam({
     name: 'url',
     description: 'The full URL to request',

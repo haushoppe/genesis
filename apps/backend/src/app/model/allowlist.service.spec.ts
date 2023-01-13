@@ -1,0 +1,60 @@
+import { AllowlistEntry } from './allowlist-entry';
+import { AllowlistService } from './allowlist.service';
+import * as path from 'path';
+
+
+const expected: AllowlistEntry = {
+  timestamp: 'Mon Dec 05 2022 22:53:10 GMT+0000 (Coordinated Universal Time)',
+  ipAddressHash: '6102b97a0e6e83f0f490c76c70b391be',
+  mintWallet: '0xc9E2eA211A16d5d5d9dE68804f85B13C52D8C548',
+  unverifiedWallet: 'false',
+  walletBalance: '0.2247778363123946',
+  discord: 'Ethspresso#2080',
+  discordId: '883661660814995516',
+  twitter: 'ethspresso',
+  twitterId: '994957486607216640',
+  twitterFollowerCount: '1266',
+  twitterAccountCreationDate: 'Fri May 11 2018 15:08:45 GMT+0000 (Coordinated Universal Time)',
+  email: '',
+  status: 'PENDING',
+  collab: ''
+};
+
+describe('AllowlistService', () => {
+  let service: AllowlistService;
+
+  beforeAll(async () => {
+    service = new AllowlistService();
+    service.allowlistFolder = path.resolve(__dirname + '../../../assets/data/');
+  });
+
+  it('should parse directly a string to AllowlistEntry[]"', () => {
+
+    const testData = `timestamp,ipAddressHash,mintWallet,unverifiedWallet,walletBalance,discord,discordId,twitter,twitterId,twitterFollowerCount,twitterAccountCreationDate,email,status,collab
+Mon Dec 05 2022 22:53:10 GMT+0000 (Coordinated Universal Time),6102b97a0e6e83f0f490c76c70b391be,0xc9E2eA211A16d5d5d9dE68804f85B13C52D8C548,false,0.2247778363123946,Ethspresso#2080,883661660814995516,ethspresso,994957486607216640,1266,Fri May 11 2018 15:08:45 GMT+0000 (Coordinated Universal Time),,PENDING,
+Sun Jan 01 2023 12:13:05 GMT+0000 (Coordinated Universal Time),b5b11439cff936a1acffc0ce65196a9d,0x4cE4fD36C1040eC42f01566684b5D6424f142126,false,0.3557239461996932,CasperB#9751,848958580962099301,CryptoCasperB,182732855,1261,Wed Aug 25 2010 07:55:30 GMT+0000 (Coordinated Universal Time),casperb.gallery@gmail.com,PENDING,
+Tue Dec 06 2022 14:06:58 GMT+0000 (Coordinated Universal Time),b03966e785ec965b50cf657ef1629bb4,0x7201db66b9ceca0e6d1dee8f87a77df4e6131a41,false,0.4624865849218966,Yune 🔮#8929,883048583874621450,yunewild,1245788851890601985,1311,Thu Apr 02 2020 19:04:36 GMT+0000 (Coordinated Universal Time),,PENDING,
+Mon Dec 05 2022 23:02:08 GMT+0000 (Coordinated Universal Time),acbcf4fdeda55a81e3e1b9c70dba8772,0x8c11c53f77ad5e91fb13611904f2f59b07aa7c93,false,0.01082039734944856,Hans#6438,437557668723425280,HausHoppe,1403996502813556736,1352,Sun Jun 13 2021 08:45:36 GMT+0000 (Coordinated Universal Time),johannes@haushoppe.art,PENDING,
+Mon Dec 19 2022 13:26:37 GMT+0000 (Coordinated Universal Time),dda260f963922da91c41af213e17549f,0xec24180f30dc21b3b5282124a9781f99a64eb450,false,0.1746380376567292,Rabblerouser#4846,711257762797191249,0xrabblerouser,216050338,334,Mon Nov 15 2010 17:22:55 GMT+0000 (Coordinated Universal Time),,PENDING,
+    `
+    const entries = service.parseHeymintCsv(testData);
+    expect(entries[0]).toEqual(expected);
+  });
+
+  it('should parse a file to AllowlistEntry[]"', () => {
+    const entries = service.parseHeymintCsvFromFile('allowlist_genesis.csv');
+    expect(entries[0]).toEqual(expected);
+  });
+
+  it('should provide a simple cached wallet-list for a token', () => {
+
+    const mintWallets = service.getMintWallets('genesis');
+    expect(mintWallets).toEqual([
+      '0xc9E2eA211A16d5d5d9dE68804f85B13C52D8C548',
+      '0x4cE4fD36C1040eC42f01566684b5D6424f142126',
+      '0x7201db66b9ceca0e6d1dee8f87a77df4e6131a41',
+      '0x8c11c53f77ad5e91fb13611904f2f59b07aa7c93',
+      '0xec24180f30dc21b3b5282124a9781f99a64eb450'
+    ]);
+  });
+});

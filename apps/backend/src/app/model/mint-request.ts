@@ -6,7 +6,7 @@ export class MintRequest {
     description: 'The contract to interact with',
     example: 'genesis',
   })
-  token: string;
+  tokenName: string;
 
   @ApiProperty({
     description: 'The msg.sender that will interact with the contract',

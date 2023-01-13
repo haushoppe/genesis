@@ -1,12 +1,13 @@
 import { AllowlistEntry } from './allowlist-entry';
-import { CsvService } from './csv.service';
+import { AllowlistService } from './allowlist.service';
+import * as path from 'path';
 
-// everything still string/unparsed, until it's really needed
+
 const expected: AllowlistEntry = {
   timestamp: 'Mon Dec 05 2022 22:53:10 GMT+0000 (Coordinated Universal Time)',
   ipAddressHash: '6102b97a0e6e83f0f490c76c70b391be',
   mintWallet: '0xc9E2eA211A16d5d5d9dE68804f85B13C52D8C548',
-  unverifiedWallet:'false',
+  unverifiedWallet: 'false',
   walletBalance: '0.2247778363123946',
   discord: 'Ethspresso#2080',
   discordId: '883661660814995516',
@@ -19,11 +20,12 @@ const expected: AllowlistEntry = {
   collab: ''
 };
 
-describe('CsvService.parseHeymintCsv', () => {
-  let service: CsvService;
+describe('AllowlistService', () => {
+  let service: AllowlistService;
 
   beforeAll(async () => {
-    service = new CsvService();
+    service = new AllowlistService();
+    service.allowlistFolder = path.resolve(__dirname + '../../../assets/data/');
   });
 
   it('should parse directly a string to AllowlistEntry[]"', () => {
@@ -37,5 +39,22 @@ Mon Dec 19 2022 13:26:37 GMT+0000 (Coordinated Universal Time),dda260f963922da91
     `
     const entries = service.parseHeymintCsv(testData);
     expect(entries[0]).toEqual(expected);
+  });
+
+  it('should parse a file to AllowlistEntry[]"', () => {
+    const entries = service.parseHeymintCsvFromFile('allowlist_genesis.csv');
+    expect(entries[0]).toEqual(expected);
+  });
+
+  it('should provide a simple cached wallet-list for a token', () => {
+
+    const mintWallets = service.getMintWallets('genesis');
+    expect(mintWallets).toEqual([
+      '0xc9E2eA211A16d5d5d9dE68804f85B13C52D8C548',
+      '0x4cE4fD36C1040eC42f01566684b5D6424f142126',
+      '0x7201db66b9ceca0e6d1dee8f87a77df4e6131a41',
+      '0x8c11c53f77ad5e91fb13611904f2f59b07aa7c93',
+      '0xec24180f30dc21b3b5282124a9781f99a64eb450'
+    ]);
   });
 });

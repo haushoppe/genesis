@@ -14,7 +14,7 @@ export class AppController {
   <title>🎨 NFT API</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
-  <link rel="stylesheet" href="assets/style.css" media="screen">
+  <link rel="stylesheet" href="public/style.css" media="screen">
 </head>
 
 <body class="markdown-body">
@@ -31,7 +31,7 @@ export class AppController {
       <a href="/open-api">OpenAPI UI</a>
     </li>
     <li>
-      <a href="/open-api-json">OpenAPI specification</a>
+      <a href="/open-api-json">OpenAPI Specification</a>
     </li>
   </ul>
 </html>`;

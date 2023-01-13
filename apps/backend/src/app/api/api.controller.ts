@@ -1,18 +1,22 @@
-import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, Param, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { MintTicket } from '../model/mint-ticket';
+import { ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+
+import { AllowlistService } from '../model/allowlist.service';
+import { formatSeconds } from '../model/date-utils';
+import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
+import { KnownToken } from '../model/known-token';
 import { MintRequest } from '../model/mint-request';
-import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/utils';
+import { MintTicket } from '../model/mint-ticket';
 
 
 @ApiTags('api')
 @Controller()
 export class ApiController {
 
-  private readonly knownTokens = ['genesis', 'mosaic', 'sea', 'art', 'artist', 'cube'];
+  knownTokens: KnownToken[] = this.config.get('knownTokens');
 
-  constructor(private config: ConfigService) { }
+  constructor(private config: ConfigService, private allowlist: AllowlistService) { }
 
   /**
    * Minting via allowlist
@@ -22,27 +26,34 @@ export class ApiController {
    * with the server's private key and verified on-chain to prove allowlist status.
    */
   @Post(['api/mintAllowlist'])
-  @ApiNotFoundResponse({ description: 'Unkown token name!'})
-  @ApiForbiddenResponse({ description: 'The sender is not on the allowlist!'})
+  @ApiNotFoundResponse({ description: 'Unkown token name' })
+  @ApiForbiddenResponse({ description: 'The sender is not on the allowlist' })
   @ApiOkResponse({
     description: 'The required params to execute the mint',
     type: MintTicket
   })
   async mintAllowlist(@Body() mintRequest: MintRequest): Promise<MintTicket> {
 
-    Logger.verbose(`Mint request for token ${mintRequest.token} from sender ${mintRequest.sender}`);
+    const tokenName = mintRequest.tokenName;
+    const sender = mintRequest.sender.toLowerCase();
 
-    if (!this.knownTokens.includes(mintRequest.token)) {
-      throw new NotFoundException('Unknown token name: ' + mintRequest.token);
+    Logger.verbose(`Mint request for token ${tokenName} from sender ${sender}`);
+
+    if (!this.knownTokens.map(x => x.name).includes(tokenName)) {
+      throw new NotFoundException('Unknown token name');
     }
 
-    if (mintRequest.sender === '0x0000000000000000000000000000000000000000') {
+    if (sender === '0x0000000000000000000000000000000000000000') {
       throw new ForbiddenException('The zero address is not a valid sender');
     }
 
-    const privateKey = this.config.get('signerKey_' + mintRequest.token);
+    const mintWallets = this.allowlist.getMintWallets(tokenName);
+    if (!mintWallets.includes(sender)) {
+      throw new ForbiddenException('The sender is not on the allowlist');
+    }
+
+    const privateKey = this.config.get('signerKey_' + tokenName);
     const signer = getSigner(privateKey);
-    const sender = mintRequest.sender;
     const maximumAllowedMints = 4;
 
     const message = encodePackedMessage(sender, maximumAllowedMints);
@@ -63,21 +74,17 @@ export class ApiController {
   async getStatus() {
     return {
       environment: this.config.get('environment'),
-      uptime: this.formatSeconds(process.uptime()),
-      signers: this.knownTokens.map(token => ({
-        name: token,
-        address: getSigner(this.config.get('signerKey_' + token)).address }))
+      uptime: formatSeconds(process.uptime()),
+      knownTokens: this.knownTokens.map(token => ({
+        name: token.name,
+        address: token.address,
+        etherscanLink: (this.config.get('environment') === 'development' ?
+          'https://goerli.etherscan.io/address/' :
+          'https://etherscan.io/address/') + token.address,
+        signer: getSigner(this.config.get('signerKey_' + token.name)).address,
+        maximumAllowedMintsPerAddress: token.maximumAllowedMintsPerAddress,
+        allowlistEntries: this.allowlist.getMintWallets(token.name).length
+      }))
     };
-  }
-
-  private formatSeconds(seconds: number) {
-    const pad = function (s: number) {
-      return (s < 10 ? '0' : '') + s;
-    }
-    const hours = Math.floor(seconds / (60 * 60));
-    const minutes = Math.floor(seconds % (60 * 60) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    return pad(hours) + ':' + pad(minutes) + ':' + pad(secs);
   }
 }

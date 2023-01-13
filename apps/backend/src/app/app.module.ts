@@ -9,14 +9,14 @@ import { CubeController } from './api/cube.controller';
 import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
-import { AppService } from './model/csv.service';
+import { AllowlistService } from './model/allowlist.service';
 
 
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, 'assets'),
-      serveRoot: '/assets',
+      rootPath: join(__dirname, 'assets/public'),
+      serveRoot: '/public',
       serveStaticOptions: {
         index: false,
       },
@@ -38,6 +38,6 @@ import { AppService } from './model/csv.service';
     })
   ],
   controllers: [AppController, ApiController, CubeController, ScalesController],
-  providers: [AppService],
+  providers: [AllowlistService],
 })
 export class AppModule { }

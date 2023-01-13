@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, NotFoundException, Param, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, Param, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MintTicket } from '../model/mint-ticket';
@@ -34,6 +34,10 @@ export class ApiController {
 
     if (!this.knownTokens.includes(mintRequest.token)) {
       throw new NotFoundException('Unknown token name: ' + mintRequest.token);
+    }
+
+    if (mintRequest.sender === '0x0000000000000000000000000000000000000000') {
+      throw new ForbiddenException('The zero address is not a valid sender');
     }
 
     const privateKey = this.config.get('signerKey_' + mintRequest.token);

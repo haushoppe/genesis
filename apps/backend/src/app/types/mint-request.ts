@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { ZERO_ADDRESS } from './ethers-utils';
+import { ZERO_ADDRESS } from '../model/ethers-utils';
 import { KnownTokenName } from './known-token-name';
 
 export class MintRequest {

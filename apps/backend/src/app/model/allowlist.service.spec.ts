@@ -1,4 +1,4 @@
-import { AllowlistEntry } from './allowlist-entry';
+import { AllowlistEntry } from '../types/allowlist-entry';
 import { AllowlistService } from './allowlist.service';
 import * as path from 'path';
 

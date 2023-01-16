@@ -3,7 +3,8 @@ import * as fs from 'fs';
 import * as Papa from 'papaparse';
 import * as path from 'path';
 
-import { AllowlistEntry } from './allowlist-entry';
+import { AllowlistEntry } from '../types/allowlist-entry';
+
 
 @Injectable()
 export class AllowlistService {

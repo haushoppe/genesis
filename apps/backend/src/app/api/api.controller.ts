@@ -6,10 +6,10 @@ import { AllowlistService } from '../model/allowlist.service';
 import { ContractService } from '../model/contract.service';
 import { formatSeconds } from '../model/date-utils';
 import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
-import { KnownTokenConfig } from '../model/known-token-config';
-import { KnownTokenName } from '../model/known-token-name';
-import { MintRequest } from '../model/mint-request';
-import { MintTicket } from '../model/mint-ticket';
+import { KnownTokenConfig } from '../types/known-token-config';
+import { KnownTokenName } from '../types/known-token-name';
+import { MintRequest } from '../types/mint-request';
+import { MintTicket } from '../types/mint-ticket';
 
 
 @ApiTags('api')

@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
 
-import { KnownTokenConfig } from "./model/known-token-config";
-import { KnownTokenName } from './model/known-token-name';
+import { KnownTokenConfig } from "./types/known-token-config";
+import { KnownTokenName } from './types/known-token-name';
 
 const allTokens: KnownTokenConfig[] = [{
   name: KnownTokenName.genesis,

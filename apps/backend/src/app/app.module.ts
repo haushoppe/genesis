@@ -10,6 +10,7 @@ import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
 import { AllowlistService } from './model/allowlist.service';
+import { ContractService } from './model/contract.service';
 
 
 @Module({
@@ -26,18 +27,18 @@ import { AllowlistService } from './model/allowlist.service';
       load: [configuration],
       validationSchema
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      // TODO
-      useFactory: async (config: ConfigService) => ({
-        uri: config.get('mongodbUri'),
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      }),
-      inject: [ConfigService],
-    })
+    // MongooseModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   // TODO
+    //   useFactory: async (config: ConfigService) => ({
+    //     uri: config.get('mongodbUri'),
+    //     useNewUrlParser: true,
+    //     useUnifiedTopology: true,
+    //   }),
+    //   inject: [ConfigService],
+    // })
   ],
   controllers: [AppController, ApiController, CubeController, ScalesController],
-  providers: [AllowlistService],
+  providers: [AllowlistService, ContractService],
 })
 export class AppModule { }

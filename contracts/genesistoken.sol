@@ -72,7 +72,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
 
     // all tokens that are a special mosaic token
     mapping (uint256 => bool) public isMosaic;
-    
+
     // mosaicTokenId to 1st/2nd/3rd/4th tile
     mapping (uint256 => Mosaic) public mosaics;
 
@@ -148,7 +148,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     function unpause() public onlyOwner {
         _unpause();
     }
-    
+
     /**
      * When the contract is paused, all token transfers are prevented in case of emergency.
      */
@@ -207,7 +207,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         require(isSaleActive, "Minting is disabled");
         require(signerAddress != address(0), "Minting via allowlist is disabled. Please use the function mint!");
         require(totalMintsPerAddress[msg.sender] + mintNumber <= maximumAllowedMints, "Maximum allowed mints exceeded");
-        
+
         require(hashMessagePacked(msg.sender, maximumAllowedMints) == messageHash, "Message invalid");
 
         require(verifyAddressSigner(messageHash, signature), "Signature validation failed");
@@ -224,7 +224,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
             isSaleActive = false;
         }
     }
-    
+
     /**
      * @notice Allow contract owner to send `mintNumber` tokens without cost to multiple addresses
      */
@@ -244,24 +244,24 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
 
         // msg.sender must be owner of all 4 mosaics
         require(
-            ownerOf(tokenId1) == msg.sender && 
-            ownerOf(tokenId2) == msg.sender && 
-            ownerOf(tokenId3) == msg.sender && 
+            ownerOf(tokenId1) == msg.sender &&
+            ownerOf(tokenId2) == msg.sender &&
+            ownerOf(tokenId3) == msg.sender &&
             ownerOf(tokenId4) == msg.sender, "You must be the owner of all four tokens");
 
         // every token must not be already part of a mosaic
         require(
-            tokenInMosaic[tokenId1] == false && 
-            tokenInMosaic[tokenId2] == false && 
-            tokenInMosaic[tokenId3] == false && 
+            tokenInMosaic[tokenId1] == false &&
+            tokenInMosaic[tokenId2] == false &&
+            tokenInMosaic[tokenId3] == false &&
             tokenInMosaic[tokenId4] == false, "One of the tokens is already part of a mosaic");
 
         // lets check that all tokenIds are unique
-        require(tokenId1 != tokenId2 && 
-                tokenId1 != tokenId3 && 
-                tokenId1 != tokenId4 && 
-                tokenId2 != tokenId3 && 
-                tokenId2 != tokenId4 && 
+        require(tokenId1 != tokenId2 &&
+                tokenId1 != tokenId3 &&
+                tokenId1 != tokenId4 &&
+                tokenId2 != tokenId3 &&
+                tokenId2 != tokenId4 &&
                 tokenId3 != tokenId4, "All tokens for a mosaic must be unique");
 
         // all tokens that are special mosaic tokens
@@ -281,7 +281,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
      */
     function mintMosaic(uint256 tokenId1, uint256 tokenId2, uint256 tokenId3, uint256 tokenId4) external payable nonReentrant {
         require(isSaleActive, "Minting is disabled");
-                
+
         uint256 currentSupply = totalSupply();
         require(currentSupply + 1 <= maxSupply, "Max supply exceeded");
         require(msg.value == priceForMosaic, "Invalid paid amount");
@@ -313,8 +313,8 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         require(isBatchMosaicMintActive, "Batch minting of mosaics is disabled");
 
         uint amountOfMosaics;
-        if (     mosaic1.tile1 == 0 && mosaic1.tile2 == 0 && mosaic1.tile3 == 0 && mosaic1.tile4 == 0) { amountOfMosaics = 0; } 
-        else if (mosaic2.tile1 == 0 && mosaic2.tile2 == 0 && mosaic2.tile3 == 0 && mosaic2.tile4 == 0) { amountOfMosaics = 1; } 
+        if (     mosaic1.tile1 == 0 && mosaic1.tile2 == 0 && mosaic1.tile3 == 0 && mosaic1.tile4 == 0) { amountOfMosaics = 0; }
+        else if (mosaic2.tile1 == 0 && mosaic2.tile2 == 0 && mosaic2.tile3 == 0 && mosaic2.tile4 == 0) { amountOfMosaics = 1; }
         else if (mosaic3.tile1 == 0 && mosaic3.tile2 == 0 && mosaic3.tile3 == 0 && mosaic3.tile4 == 0) { amountOfMosaics = 2; }
         else if (mosaic4.tile1 == 0 && mosaic4.tile2 == 0 && mosaic4.tile3 == 0 && mosaic4.tile4 == 0) { amountOfMosaics = 3; }
         else                                                                                           { amountOfMosaics = 4; }
@@ -348,7 +348,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
 
         // normal token
         if (isMosaic[tokenId] == false) {
-            
+
             return bytes(_baseTokenURI).length != 0 ? string(abi.encodePacked(
                 _baseTokenURI, _toString(tokenId)
             )) : '';
@@ -359,7 +359,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
             Mosaic memory mosaic = mosaics[tokenId];
 
             return bytes(_baseTokenURIForMosaic).length != 0 ? string(abi.encodePacked(
-                _baseTokenURIForMosaic, 
+                _baseTokenURIForMosaic,
                 _toString(tokenId), '/',
                 _toString(mosaic.tile1), '/',
                 _toString(mosaic.tile2), '/',
@@ -379,8 +379,8 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(ERC721AForLendable, ERC2981, IERC165) returns (bool) {
-        return 
-            ERC721AForLendable.supportsInterface(interfaceId) || 
+        return
+            ERC721AForLendable.supportsInterface(interfaceId) ||
             ERC2981.supportsInterface(interfaceId) ||
             type(ILendable).interfaceId == interfaceId ||
             type(ITermsAndConditions).interfaceId == interfaceId;
@@ -463,7 +463,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         require(tokenOwnersOnLoan[tokenId] != address(0), "This token is not on loan");
         require(tokenOwnersOnLoan[tokenId] == msg.sender, "You must be the lender of the token to retrieve it");
 
-        address lender = tokenOwnersOnLoan[tokenId]; 
+        address lender = tokenOwnersOnLoan[tokenId];
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];
@@ -472,7 +472,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         uint256 loansByAddress = totalLoanedPerAddress[lender];
         totalLoanedPerAddress[lender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
-        
+
         // transfer the token back
         _veryUnsafeTransferFrom(borrowerAddress, lender, tokenId);
 
@@ -484,10 +484,10 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
      */
     function retrieveLoanByAdmin(uint256 tokenId) external nonReentrant onlyOwner {
         address borrowerAddress = ownerOf(tokenId);
-        
+
         require(tokenOwnersOnLoan[tokenId] != address(0), "This token is not on loan");
 
-        address lender = tokenOwnersOnLoan[tokenId]; 
+        address lender = tokenOwnersOnLoan[tokenId];
 
         // Remove it from the array of loaned out tokens
         delete tokenOwnersOnLoan[tokenId];
@@ -496,7 +496,7 @@ contract GenesisToken is ERC721AForLendable, ReentrancyGuard, Ownable, Pausable,
         uint256 loansByAddress = totalLoanedPerAddress[lender];
         totalLoanedPerAddress[lender] = loansByAddress - 1;
         currentLoanIndex = currentLoanIndex - 1;
-        
+
         // transfer the token back
         _veryUnsafeTransferFrom(borrowerAddress, lender, tokenId);
 

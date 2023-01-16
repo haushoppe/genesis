@@ -1,11 +1,13 @@
-import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, Param, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { AllowlistService } from '../model/allowlist.service';
+import { ContractService } from '../model/contract.service';
 import { formatSeconds } from '../model/date-utils';
 import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
-import { KnownToken } from '../model/known-token';
+import { KnownTokenConfig } from '../model/known-token-config';
+import { KnownTokenName } from '../model/known-token-name';
 import { MintRequest } from '../model/mint-request';
 import { MintTicket } from '../model/mint-ticket';
 
@@ -14,9 +16,12 @@ import { MintTicket } from '../model/mint-ticket';
 @Controller()
 export class ApiController {
 
-  knownTokens: KnownToken[] = this.config.get('knownTokens');
+  private knownTokens = this.config.get<KnownTokenConfig[]>('knownTokens');
 
-  constructor(private config: ConfigService, private allowlist: AllowlistService) { }
+  constructor(
+    private config: ConfigService,
+    private allowlist: AllowlistService,
+    private contract: ContractService) { }
 
   /**
    * Minting via allowlist
@@ -70,21 +75,56 @@ export class ApiController {
   /**
    * Status of this service
    */
-  @Get(['api/status'])
-  async getStatus() {
+  @ApiParam({
+    name: 'tokenName',
+    description: 'Limits the contract details to one token',
+    enum: ['all', ...Object.keys(KnownTokenName)],
+    example: KnownTokenName.genesis,
+  })
+  @Get(['api/status/:tokenName'])
+  async getStatus(@Param('tokenName') tokenName: 'all' | KnownTokenName) {
+
+    let knownTokens = this.knownTokens;
+
+    if (tokenName !== 'all') {
+      knownTokens = [knownTokens.find(x => x.name === tokenName)];
+    }
+
     return {
       environment: this.config.get('environment'),
       uptime: formatSeconds(process.uptime()),
-      knownTokens: this.knownTokens.map(token => ({
+      network: this.config.get('network'),
+      knownTokens: await Promise.all(knownTokens.map(async token => ({
         name: token.name,
         address: token.address,
-        etherscanLink: (this.config.get('environment') === 'development' ?
+        etherscanLink: (this.config.get('network') === 'goerli' ?
           'https://goerli.etherscan.io/address/' :
           'https://etherscan.io/address/') + token.address,
         signer: getSigner(this.config.get('signerKey_' + token.name)).address,
         maximumAllowedMintsPerAddress: token.maximumAllowedMintsPerAddress,
-        allowlistEntries: this.allowlist.getMintWallets(token.name).length
-      }))
+        allowlistEntries: this.allowlist.getMintWallets(token.name).length,
+        contractName: (await this.contract.getName(token.name)),
+        totalSupply: (await this.contract.getTotalSupply(token.name))
+      })))
     };
   }
+
+  /**
+   * Only for debugging, will not be exposed on production
+   */
+    @ApiParam({
+      name: 'tokenName',
+      enum: KnownTokenName,
+      example: KnownTokenName.genesis,
+    })
+    @Get(['api/getAllMints/:tokenName'])
+    @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+    async getAllMints(@Param('tokenName') tokenName: KnownTokenName) {
+
+      if (this.config.get('environment') !== 'development') {
+        throw new ForbiddenException('This method should not be called on production');
+      }
+
+      return await this.contract.getAllMints(tokenName);
+    }
 }

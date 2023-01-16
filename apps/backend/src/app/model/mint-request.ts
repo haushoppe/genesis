@@ -1,16 +1,20 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
+
+import { ZERO_ADDRESS } from './ethers-utils';
+import { KnownTokenName } from './known-token-name';
 
 export class MintRequest {
 
   @ApiProperty({
     description: 'The contract to interact with',
-    example: 'genesis',
+    example: KnownTokenName.genesis,
+    enum: KnownTokenName,
   })
-  tokenName: string;
+  tokenName: KnownTokenName;
 
   @ApiProperty({
     description: 'The msg.sender that will interact with the contract',
-    example: '0x0000000000000000000000000000000000000000'
+    example: ZERO_ADDRESS
   })
   sender: string;
 }

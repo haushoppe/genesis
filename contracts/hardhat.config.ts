@@ -11,7 +11,7 @@ subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS)
 
     // let paths = await runSuper();
     let paths = fs.readdirSync(__dirname).filter(x => x.endsWith('.sol'))
-    console.log('*** Discovered the following .sol files: ', paths)
+    console.log('*** Discovered the following .sol files:', paths)
     return paths;
   });
 

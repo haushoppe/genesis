@@ -1,6 +1,7 @@
-import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, Param, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, NotImplementedException, Param, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiTags } from '@nestjs/swagger';
+import { createMetadata, genesisArtworks } from '../../assets/data/tokendata_genesis';
 
 import { AllowlistService } from '../model/allowlist.service';
 import { ContractService } from '../model/contract.service';
@@ -8,6 +9,7 @@ import { formatSeconds } from '../model/date-utils';
 import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
 import { KnownTokenConfig } from '../types/known-token-config';
 import { KnownTokenName } from '../types/known-token-name';
+import { Metadata } from '../types/metadata';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
 
@@ -110,21 +112,49 @@ export class ApiController {
   }
 
   /**
+   * TODO: Get all confirmed mints for a token
+   */
+  @ApiParam({
+    name: 'tokenName',
+    enum: KnownTokenName,
+    example: KnownTokenName.genesis,
+  })
+  @Get(['api/getMints/:tokenName'])
+  async getMints(@Param('tokenName') tokenName: KnownTokenName) {
+
+
+    return await this.contract.getAllMints(tokenName);
+  }
+
+  /**
    * Only for debugging, will not be exposed on production
    */
-    @ApiParam({
-      name: 'tokenName',
-      enum: KnownTokenName,
-      example: KnownTokenName.genesis,
-    })
-    @Get(['api/getAllMints/:tokenName'])
-    @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-    async getAllMints(@Param('tokenName') tokenName: KnownTokenName) {
+  @ApiParam({
+    name: 'tokenName',
+    enum: KnownTokenName,
+    example: KnownTokenName.genesis,
+  })
+  @Get(['api/debugMetadata/:tokenName'])
+  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+  debugAllMetadata(@Param('tokenName') tokenName: KnownTokenName) {
 
-      if (this.config.get('environment') !== 'development') {
-        throw new ForbiddenException('This method should not be called on production');
-      }
-
-      return await this.contract.getAllMints(tokenName);
+    if (this.config.get('environment') !== 'development') {
+      throw new ForbiddenException('This method should not be called on production');
     }
+
+    let metadata: Metadata[];
+
+    if (tokenName === KnownTokenName.genesis) {
+
+      metadata = createMetadata(genesisArtworks);
+      return {
+        amountOfTokens: metadata.length,
+        metadata
+      }
+    }
+
+    throw new NotImplementedException('This token is not ready yet!');
+
+  }
+
 }

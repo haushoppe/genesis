@@ -54,9 +54,9 @@ export class ContractService {
   }
 
   /**
-   * TODO: error handling!
+   * TODO: error handling!?
    */
-  async getAllMints(tokenName: KnownTokenName) {
+  async getAllMints(tokenName: KnownTokenName, startBlockNumber = 0) {
     const tokenConfig = this.knownTokens.find(x => x.name === tokenName);
     const contract = this.getContract(tokenName);
 
@@ -93,26 +93,27 @@ export class ContractService {
       }
     ]
     */
-    const events = await contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
+    const events = await contract.queryFilter(filter, startBlockNumber || tokenConfig.firstBlockNumber, 'latest');
 
-    let mintInfo: MintInfo[] = events.map(event => ({
+    let mintInfos: MintInfo[] = events.map(event => ({
       newOwner: event.args[1],
       tokenId: event.args[2].toNumber(),
-      transactionHash: event.transactionHash
+      transactionHash: event.transactionHash,
+      blockNumber: event.blockNumber
     }));
 
     if (tokenConfig.implementsMosaics) {
-      mintInfo = await Promise.all(mintInfo.map(async mint => ({
+      mintInfos = await Promise.all(mintInfos.map(async mint => ({
         ...mint,
         isMosaic: await contract.isMosaic(mint.tokenId)
       })));
 
-      mintInfo = await Promise.all(mintInfo.map(async mint => ({
+      mintInfos = await Promise.all(mintInfos.map(async mint => ({
         ...mint,
         mosaics: mint.isMosaic ? (await contract.mosaics(mint.tokenId)).map(x => x.toNumber()) : []
       })));
     }
 
-    return mintInfo;
+    return mintInfos;
   }
 }

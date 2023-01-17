@@ -155,3 +155,28 @@ But its not useful for advanced scenarios!!
   2. enter Etherscan API key
   3. submit the form (`scrips/etherscan` is used)
 * BigNumbers: https://docs.ethers.org/v5/api/utils/bignumber/
+
+
+# Hardhat Project for Local Development
+
+All `.js` files are for Remix, the `.ts` files are hardhat world.
+
+Hardhat files:
+- `hardhat.config.ts`
+- `tsconfig.json`
+
+Demo files:
+- `Lock.sol`
+- `tests/Lock.ts`
+
+Executes all *.ts unit tests (not really used)
+
+```sh
+npm run hardhat:test
+```
+
+Starts a  local node, deploys all contracts to it and mints some tokens:
+
+```sh
+npm run hardhat:start-localhost-network
+```

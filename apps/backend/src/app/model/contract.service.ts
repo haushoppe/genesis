@@ -21,14 +21,24 @@ export class ContractService {
     const tokenConfig = this.knownTokens.find(x => x.name === tokenName);
     const abi = knownAbis[tokenName];
     const network = tokenConfig.network;
-    const apiKey = this.config.get<string>('alchemyKey_' + network);
+    let provider: ethers.providers.Provider;
 
-    // const provider = new ethers.providers.FallbackProvider([
-    //   new ethers.providers.AlchemyProvider(NETWORK_NAME, ALCHEMY_KEY),
-    //   new ethers.providers.InfuraProvider(NETWORK_NAME, INFURA_KEY),
-    // ]);
+    if (network === 'hardhat') {
 
-    const provider = new ethers.providers.AlchemyProvider(network, apiKey)
+      // Ethers connects to the default `http://localhost:8545`
+      provider = new ethers.providers.JsonRpcProvider();
+
+    } else {
+      const apiKey = this.config.get<string>('alchemyKey_' + network);
+
+      // const provider = new ethers.providers.FallbackProvider([
+      //   new ethers.providers.AlchemyProvider(NETWORK_NAME, ALCHEMY_KEY),
+      //   new ethers.providers.InfuraProvider(NETWORK_NAME, INFURA_KEY),
+      // ]);
+
+      provider = new ethers.providers.AlchemyProvider(network, apiKey);
+    }
+
     const contract = new ethers.Contract(tokenConfig.address, abi, provider);
     return contract;
   }

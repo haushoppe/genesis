@@ -4,13 +4,19 @@
   "description": "Solidity Contracts",
   "scripts": {
     "remixd": "remixd -s $(pwd) -u https://remix.ethereum.org/",
-    "remix-tests": "remix-tests --compiler 0.8.17 tests/"
+    "remix-tests": "remix-tests --compiler 0.8.17 tests/",
+    "hardhat:test": "hardhat test",
+    "hardhat:start-localhost-network": "concurrently --raw \"npm run hardhat:node\" \"npm run hardhat:deploy\"",
+    "hardhat:node": "hardhat node  --verbose",
+    "hardhat:deploy": "wait-on http://localhost:8545/ && hardhat run --network localhost scripts/deploy-via-hardhat.ts"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.0"
   },
   "devDependencies": {
     "@remix-project/remix-tests": "^0.2.21",
-    "@remix-project/remixd": "^0.6.9"
+    "@remix-project/remixd": "^0.6.9",
+    "concurrently": "^7.6.0",
+    "wait-on": "^7.0.1"
   }
 }

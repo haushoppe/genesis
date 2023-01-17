@@ -4,7 +4,7 @@ export interface KnownTokenConfig {
   name: KnownTokenName;
   maximumAllowedMintsPerAddress: number;
   address: string;
-  network: 'mainnet' | 'goerli';
+  network: 'hardhat' | 'goerli' | 'mainnet';
 
   /**
    * used to limit queries, add the block number where the token was minted

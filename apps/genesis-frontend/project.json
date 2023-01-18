@@ -14,7 +14,7 @@
         "polyfills": "apps/genesis-frontend/src/polyfills.ts",
         "tsConfig": "apps/genesis-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
-        "assets": ["apps/genesis-frontend/src/assets"],
+        "assets": ["apps/genesis-frontend/src/assets", "apps/genesis-frontend/src/x"],
         "styles": ["apps/genesis-frontend/src/styles.scss"],
         "scripts": []
       },

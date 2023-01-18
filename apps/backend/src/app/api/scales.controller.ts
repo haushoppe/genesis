@@ -9,8 +9,8 @@ import axios from 'axios';
 export class ScalesController {
 
   // TODO: outdated!
-  readonly mongodbRestEndpoint = this.config.get('mongodbRestEndpoint');
-  readonly mongodbApiKey = this.config.get('mongodbApiKey');
+  readonly mongodbRestEndpoint = this.configService.get('mongodbRestEndpoint');
+  readonly mongodbApiKey = this.configService.get('mongodbApiKey');
   readonly restApiConfig = {
     headers: {
       'Content-Type': 'application/json',
@@ -19,7 +19,7 @@ export class ScalesController {
     }
   }
 
-  constructor(private config: ConfigService) { }
+  constructor(private configService: ConfigService) { }
 
   /**
    * Returns the single NFT with the given ID

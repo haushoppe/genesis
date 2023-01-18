@@ -95,7 +95,7 @@ export class ContractService {
     */
     const events = await contract.queryFilter(filter, startBlockNumber || tokenConfig.firstBlockNumber, 'latest');
 
-    let mintInfos: MintInfo[] = events.map(event => ({
+    let allMints: MintInfo[] = events.map(event => ({
       newOwner: event.args[1],
       tokenId: event.args[2].toNumber(),
       transactionHash: event.transactionHash,
@@ -103,17 +103,17 @@ export class ContractService {
     }));
 
     if (tokenConfig.implementsMosaics) {
-      mintInfos = await Promise.all(mintInfos.map(async mint => ({
+      allMints = await Promise.all(allMints.map(async mint => ({
         ...mint,
         isMosaic: await contract.isMosaic(mint.tokenId)
       })));
 
-      mintInfos = await Promise.all(mintInfos.map(async mint => ({
+      allMints = await Promise.all(allMints.map(async mint => ({
         ...mint,
         mosaics: mint.isMosaic ? (await contract.mosaics(mint.tokenId)).map(x => x.toNumber()) : []
       })));
     }
 
-    return mintInfos;
+    return allMints;
   }
 }

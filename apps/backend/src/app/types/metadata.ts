@@ -7,4 +7,7 @@ export interface Metadata {
   image: string;
   name: string;
   attributes: MetatdataAttribute[];
+
+  // not standard
+  tokenId?: number;
 }

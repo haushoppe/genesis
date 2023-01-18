@@ -1,16 +1,14 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
 import { ApiController } from './api/api.controller';
-import { CubeController } from './api/cube.controller';
-import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
 import { AllowlistService } from './model/allowlist.service';
 import { ContractService } from './model/contract.service';
+import { MetadataService } from './model/metadata.service';
 
 
 @Module({
@@ -30,15 +28,15 @@ import { ContractService } from './model/contract.service';
     // MongooseModule.forRootAsync({
     //   imports: [ConfigModule],
     //   // TODO
-    //   useFactory: async (config: ConfigService) => ({
-    //     uri: config.get('mongodbUri'),
+    //   useFactory: async (configService: ConfigService) => ({
+    //     uri: configService.get('mongodbUri'),
     //     useNewUrlParser: true,
     //     useUnifiedTopology: true,
     //   }),
     //   inject: [ConfigService],
     // })
   ],
-  controllers: [AppController, ApiController, CubeController, ScalesController],
-  providers: [AllowlistService, ContractService],
+  controllers: [AppController, ApiController /*, CubeController, ScalesController*/],
+  providers: [AllowlistService, ContractService, MetadataService],
 })
 export class AppModule { }

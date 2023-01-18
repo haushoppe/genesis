@@ -138,13 +138,11 @@ But its not useful for advanced scenarios!!
 
 ## Know How
 
-
 * How to use ERC2981 to set royalties
   see https://www.ethdump.com/how-use-erc2981-set-royalties
-* How to Get Testnet ETH from a Goerli Faucet
-  1. [Register for a free Alchemy account](https://alchemy.com/?a=829a4dd348
-  2. Go to [goerlifaucet.com](https://goerlifaucet.com/)
-  3. Click ‘Send Me ETH’
+
+* How to Get Testnet ETH from a Goerli Faucet – 0.5 Goerli ETH for Alchemy Users
+  
 * How to add rich metadata to your ERC721 or ERC1155 NFTs:
   https://docs.opensea.io/docs/metadata-standards
 * Deploy the contract
@@ -155,6 +153,19 @@ But its not useful for advanced scenarios!!
   2. enter Etherscan API key
   3. submit the form (`scrips/etherscan` is used)
 * BigNumbers: https://docs.ethers.org/v5/api/utils/bignumber/
+
+
+
+## GOERLI FAUCETS
+
+How to Get Testnet ETH from a Goerli Faucet
+
+* 0.5 Goerli ETH for Alchemy Users
+  1. [Register for a free Alchemy account](https://alchemy.com/?a=829a4dd348
+  2. Go to [goerlifaucet.com](https://goerlifaucet.com/)
+  3. Click ‘Send Me ETH’
+* 0.2 Goerli ETH: https://goerlifaucet.org/ (requires telegram registration)
+* https://goerli-faucet.pk910.de/ -- this faucet requires some "mining work" to be done in exchange for free testnet funds!
 
 
 # Hardhat Project for Local Development

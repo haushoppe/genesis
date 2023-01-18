@@ -4,7 +4,7 @@
  *
  * see https://docs.artblocks.io/creator-docs/creator-onboarding/readme/
  */
-export class PseudeoRandom {
+export class PseudoRandom {
 
   private useA = false;
   private prngA: () => number;

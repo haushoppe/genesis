@@ -9,7 +9,7 @@ import { Response as Res } from 'express';
 @Controller()
 export class CubeController {
 
-  constructor(private config: ConfigService) { }
+  constructor(private configService: ConfigService) { }
 
   /**
    * HTTP proxy to avoid CORS issues

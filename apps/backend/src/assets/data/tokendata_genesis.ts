@@ -1,6 +1,11 @@
 import { Metadata } from "../../app/types/metadata";
 
 const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOUNT__ different woodblocks and printed them on top of each other with absolute precision.'
+const externalUrl = 'https://genesis.haushoppe.art/';
+const assetsBaseUrl = 'https://assets.haushoppe.art/';
+const mosaicBaseUrl = 'https://assets.haushoppe.art/';
+const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
+
 
 export interface WoodcutDetails {
   name: string;
@@ -54,7 +59,51 @@ export const genesisArtworks: WoodcutDetails[] = [
   }
 ];
 
-export function createMetadata(artworks: WoodcutDetails[]) {
+export function createGenesisMosaicMetadata(
+  tokenId: number,
+  mosaicCounter: number,
+  tokenTile1: Metadata,
+  tokenTile2: Metadata,
+  tokenTile3: Metadata,
+  tokenTile4: Metadata): Metadata {
+
+  const metadata: Metadata = {
+    name: 'Mosaic #' + mosaicCounter,
+    description:
+`A mosaic of four tiles:
+${tokenTile1.name} (${tokenTile1.tokenId})
+${tokenTile2.name} (${tokenTile2.tokenId})
+${tokenTile3.name} (${tokenTile3.tokenId})
+${tokenTile4.name} (${tokenTile4.tokenId})`,
+    external_url: externalUrl,
+    image: '?',
+    attributes: [
+      {
+        trait_type: 'Special trait',
+        value: 'Mosaic',
+      }
+    ],
+    tokenId
+  }
+
+  return metadata
+}
+
+export function createFallbackImage(tokenId: number) {
+  const metadata: Metadata = {
+    name: 'Unrevealed #' + tokenId,
+    description: 'Please stay tuned!',
+    external_url: externalUrl,
+    image: fallbackImage,
+    attributes: [],
+    tokenId
+  }
+
+  return metadata;
+}
+
+// only tokenId is missing, these entries are "unassigned"
+export function createRawGenesisMetadata(artworks: WoodcutDetails[]) {
 
   const results: Metadata[] = [];
 
@@ -63,8 +112,8 @@ export function createMetadata(artworks: WoodcutDetails[]) {
     const template: Metadata = {
       name: '?',
       description: genericDescription.replace('__AMOUNT__', artwork.amountOfColors + ''),
-      external_url: 'https://genesis.haushoppe.art/',
-      image: 'https://assets.haushoppe.art/',
+      external_url: externalUrl,
+      image: '?',
       attributes: [
         {
           trait_type: 'Year',
@@ -101,7 +150,7 @@ export function createMetadata(artworks: WoodcutDetails[]) {
             trait_type: 'Type',
             value: 'Single print',
           }],
-        image: template.image + artwork.path + `/woodcut${i}.jpg`
+        image: assetsBaseUrl + artwork.path + `/woodcut${i}.jpg`
       };
 
       results.push(metadata);
@@ -126,12 +175,12 @@ export function createMetadata(artworks: WoodcutDetails[]) {
             trait_type: 'Type',
             value: 'Multilayer print',
           }],
-        image: template.image + artwork.path + `/${i}colors.jpg`
+        image: assetsBaseUrl + artwork.path + `/${i}colors.jpg`
       }
 
       if (finalPiece) {
         metatdata.attributes.push({
-          trait_type: 'Speciality',
+          trait_type: 'Special trait',
           value: 'Final piece',
         })
       }

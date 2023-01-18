@@ -1,4 +1,4 @@
-name: Build & deploy Frontend
+name: Build & deploy Scales Dashboard Frontend
 
 on:
   push:
@@ -22,4 +22,4 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --message="Auto-generated commit" --repo=https://github.com/haushoppe/scales-dashboard-frontend-build.git --branch=main --dir=dist/apps/frontend --name="The Buildbot" --email=noreply@haushoppe.art
+        npx angular-cli-ghpages --message="Auto-generated commit" --repo=https://github.com/haushoppe/scales-dashboard-frontend-build.git --branch=main --dir=dist/apps/scales-dashboard-frontend --name="The Buildbot" --email=noreply@haushoppe.art

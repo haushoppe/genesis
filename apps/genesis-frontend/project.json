@@ -1,21 +1,21 @@
 {
-  "name": "scales-dashboard-frontend",
+  "name": "genesis-frontend",
   "projectType": "application",
-  "sourceRoot": "apps/scales-dashboard-frontend/src",
+  "sourceRoot": "apps/genesis-frontend/src",
   "prefix": "app",
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:browser",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/scales-dashboard-frontend",
-        "index": "apps/scales-dashboard-frontend/src/index.html",
-        "main": "apps/scales-dashboard-frontend/src/main.ts",
-        "polyfills": "apps/scales-dashboard-frontend/src/polyfills.ts",
-        "tsConfig": "apps/scales-dashboard-frontend/tsconfig.app.json",
+        "outputPath": "dist/apps/genesis-frontend",
+        "index": "apps/genesis-frontend/src/index.html",
+        "main": "apps/genesis-frontend/src/main.ts",
+        "polyfills": "apps/genesis-frontend/src/polyfills.ts",
+        "tsConfig": "apps/genesis-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
-        "assets": ["apps/scales-dashboard-frontend/src/favicon.ico", "apps/scales-dashboard-frontend/src/assets"],
-        "styles": ["apps/scales-dashboard-frontend/src/styles.scss"],
+        "assets": ["apps/genesis-frontend/src/assets"],
+        "styles": ["apps/genesis-frontend/src/styles.scss"],
         "scripts": []
       },
       "configurations": {
@@ -34,8 +34,8 @@
           ],
           "fileReplacements": [
             {
-              "replace": "apps/scales-dashboard-frontend/src/environments/environment.ts",
-              "with": "apps/scales-dashboard-frontend/src/environments/environment.prod.ts"
+              "replace": "apps/genesis-frontend/src/environments/environment.ts",
+              "with": "apps/genesis-frontend/src/environments/environment.prod.ts"
             }
           ],
           "outputHashing": "all"
@@ -54,14 +54,14 @@
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
       "options": {
-        "port": 4201
+        "port": 4200
       },
       "configurations": {
         "production": {
-          "browserTarget": "scales-dashboard-frontend:build:production"
+          "browserTarget": "genesis-frontend:build:production"
         },
         "development": {
-          "browserTarget": "scales-dashboard-frontend:build:development"
+          "browserTarget": "genesis-frontend:build:development"
         }
       },
       "defaultConfiguration": "development"
@@ -69,20 +69,20 @@
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
       "options": {
-        "browserTarget": "scales-dashboard-frontend:build"
+        "browserTarget": "genesis-frontend:build"
       }
     },
     "lint": {
       "executor": "@nrwl/linter:eslint",
       "options": {
-        "lintFilePatterns": ["apps/scales-dashboard-frontend/**/*.ts", "apps/scales-dashboard-frontend/**/*.html"]
+        "lintFilePatterns": ["apps/genesis-frontend/**/*.ts", "apps/genesis-frontend/**/*.html"]
       }
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/apps/scales-dashboard-frontend"],
+      "outputs": ["{workspaceRoot}/coverage/apps/genesis-frontend"],
       "options": {
-        "jestConfig": "apps/scales-dashboard-frontend/jest.config.ts",
+        "jestConfig": "apps/genesis-frontend/jest.config.ts",
         "passWithNoTests": true
       }
     }

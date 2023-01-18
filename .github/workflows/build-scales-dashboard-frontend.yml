@@ -22,4 +22,4 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --cname=scales-dashboard.theangelswing.art --repo=https://github.com/haushoppe/scales-dashboard-frontend-build.git --branch=main --dir=dist/apps/frontend --name="The Buildbot" --email=noreply@haushoppe.art
+        npx angular-cli-ghpages --message="Auto-generated commit" --repo=https://github.com/haushoppe/scales-dashboard-frontend-build.git --branch=main --dir=dist/apps/frontend --name="The Buildbot" --email=noreply@haushoppe.art

@@ -1,0 +1,25 @@
+name: Build & deploy Genesis Frontend
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16.x
+
+    - run: npm install
+    - run: npm run build:genesis-frontend:production
+    - name: Deploy Frontend to `haushoppe/genesis-frontend-build` repo
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        npx angular-cli-ghpages --message="Auto-generated commit" --repo=https://github.com/haushoppe/genesis-frontend-build.git --branch=main --dir=dist/apps/frontend --name="The Buildbot" --email=noreply@haushoppe.art

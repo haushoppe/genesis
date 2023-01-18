@@ -22,10 +22,10 @@ Start backend (API) in dev mode:
 npm run start:backend 
 ```
 
-Start Frontend (Angular App) in dev mode:
+Start Genesis Frontend (Angular App) in dev mode:
 
 ```
-npm run start:scales-dashboard-frontend
+npm run start:genesis-frontend
 ``` 
 
 Start all

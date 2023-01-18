@@ -13,7 +13,8 @@ export class BackendService {
   constructor(private http: HttpClient) { }
 
   getAllScales(): Observable<Scale[]> {
-    return this.http.get<RawScale[]>(environment.api + 'getAll').pipe(
+
+    return this.http.get<RawScale[]>(environment.api + '/scales/getAll').pipe(
       retry({
         count: 3,
         delay: 1000

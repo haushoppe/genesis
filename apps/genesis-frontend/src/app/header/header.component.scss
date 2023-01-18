@@ -1,0 +1,17 @@
+.nav-masthead {
+
+  .nav-link {
+    color: darkgray;
+    border-bottom: .25rem solid transparent;
+    + {
+      .nav-link {
+        margin-left: 1rem;
+      }
+    }
+  }
+
+  .active {
+    color: darkgray;
+    ;
+  }
+}

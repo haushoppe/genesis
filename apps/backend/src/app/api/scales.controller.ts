@@ -32,6 +32,10 @@ export class ScalesController {
   @Get(['scales/getSingle/:token_id'])
   async getSingle(@Param('token_id') token_id: string) {
 
+    return {
+      'not': 'implemented'
+    };
+
     // Logger.verbose("Serving api/getSingle/" + token_id);
 
     const response = await axios.post(
@@ -61,6 +65,8 @@ export class ScalesController {
   async getAll() {
 
     // Logger.verbose("Serving api/getAll/");
+
+    return [];
 
     const response = await axios.post(
       // https://www.mongodb.com/docs/manual/reference/method/db.collection.find/

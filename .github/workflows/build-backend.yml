@@ -18,9 +18,9 @@ jobs:
 
     - run: npm install
     - run: npm run build:backend:production
-    - name: Deploy Backend to `haushoppe/scales-dashboard-backend-build` repo
+    - name: Deploy Backend to `haushoppe/backend-build` repo
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/scales-dashboard-backend-build.git --branch=main --dir=dist/apps/backend --name="The Buildbot" --email=noreply@haushoppe.art
+        npx angular-cli-ghpages --message="Auto-generated commit" --repo=https://github.com/haushoppe/backend-build.git --branch=main --dir=dist/apps/backend --name="The Buildbot" --email=noreply@haushoppe.art
 

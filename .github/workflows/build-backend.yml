@@ -3,6 +3,9 @@ name: Build & deploy Backend
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'apps/backend/**'
+      - '*.json'
 
 jobs:
 

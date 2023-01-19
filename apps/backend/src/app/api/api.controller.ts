@@ -1,6 +1,6 @@
 import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, NotImplementedException, Param, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { createRawGenesisMetadata, createGenesisMosaicMetadata, genesisArtworks, createFallbackImage } from '../../assets/data/tokendata_genesis';
 
 import { AllowlistService } from '../model/allowlist.service';
@@ -13,6 +13,7 @@ import { KnownTokenName } from '../types/known-token-name';
 import { Metadata } from '../types/metadata';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
+import { StatusResponse } from '../types/status-response';
 
 
 @ApiTags('api')
@@ -76,6 +77,8 @@ export class ApiController {
     };
   }
 
+
+
   /**
    * Status of this service
    */
@@ -85,8 +88,9 @@ export class ApiController {
     enum: ['all', ...Object.keys(KnownTokenName)],
     example: KnownTokenName.genesis,
   })
+  @ApiResponse({ type: StatusResponse, isArray: true })
   @Get(['api/status/:tokenName'])
-  async getStatus(@Param('tokenName') tokenName: 'all' | KnownTokenName) {
+  async status(@Param('tokenName') tokenName: 'all' | KnownTokenName): Promise<StatusResponse> {
 
     let knownTokens = this.knownTokens;
 
@@ -161,7 +165,8 @@ export class ApiController {
     example: KnownTokenName.genesis,
   })
   @Get(['api/allMetadata/:tokenName'])
-  async metadata(@Param('tokenName') tokenName: KnownTokenName) {
+  @ApiOkResponse({ type: Metadata, isArray: true })
+  async metadata(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
     const allMints = await this.contractService.getAllMints(tokenName);
 

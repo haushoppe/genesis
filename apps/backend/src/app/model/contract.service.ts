@@ -48,7 +48,7 @@ export class ContractService {
     return await contract.name();
   }
 
-  async getTotalSupply(tokenName: KnownTokenName): Promise<string> {
+  async getTotalSupply(tokenName: KnownTokenName): Promise<number> {
     const contract = this.getContract(tokenName);
     return (await contract.totalSupply()).toNumber();
   }

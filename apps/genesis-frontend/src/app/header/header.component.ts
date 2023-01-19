@@ -3,12 +3,12 @@ import { Component, HostBinding } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-header',
+  templateUrl: './header.component.html',
+  styleUrls: ['./header.component.scss'],
+  selector: 'header',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent {
-  @HostBinding('class') class = 'mb-auto';
+  @HostBinding('class') class = 'header-height';
 }

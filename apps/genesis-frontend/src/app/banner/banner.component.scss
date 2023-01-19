@@ -1,0 +1,23 @@
+// https://www.w3schools.com/howto/howto_css_cutout_text.asp
+.image-container {
+  background-image: url("https://haushoppe.de/wp-content/uploads/2021/04/2016-05-A-%C2%A9-Olaf-Hoppe-actually-5-2016%C2%A9-Acryl-auf-Leinwand-240-cm-x-50-cm.jpg");
+  background-size: cover;
+  position: relative;
+  height: 13vw;
+}
+
+.text {
+  background-color: white;
+  color: black;
+  font-size: 14vw;
+  line-height: 9vw;
+  font-weight: bold;
+  padding-left: 0.8vw;
+  padding-right: 0.8vw;
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: screen;
+}

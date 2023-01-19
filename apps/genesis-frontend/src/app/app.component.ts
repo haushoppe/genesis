@@ -7,5 +7,5 @@ import { Component, HostBinding } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  @HostBinding('class') class = 'd-flex h-100 text-center';
+  @HostBinding('class') class = 'mt-2';
 }

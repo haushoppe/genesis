@@ -4,6 +4,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
 import { ApiController } from './api/api.controller';
+import { CubeController } from './api/cube.controller';
 import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
@@ -37,7 +38,7 @@ import { MetadataService } from './model/metadata.service';
     //   inject: [ConfigService],
     // })
   ],
-  controllers: [AppController, ApiController, ScalesController /*, CubeController, */],
+  controllers: [AppController, ApiController, ScalesController, CubeController],
   providers: [AllowlistService, ContractService, MetadataService],
 })
 export class AppModule { }

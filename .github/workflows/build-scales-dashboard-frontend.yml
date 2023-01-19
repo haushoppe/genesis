@@ -1,4 +1,4 @@
-name: Build & deploy Scales Dashboard Frontend
+name: Build Scales Dashboard Frontend
 
 on:
   push:

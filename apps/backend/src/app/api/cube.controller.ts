@@ -1,6 +1,5 @@
 import { Controller, Get, Logger, Param, Response, StreamableFile } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiParam, ApiTags } from '@nestjs/swagger';
 import axios from 'axios';
 import { Response as Res } from 'express';
 
@@ -9,10 +8,9 @@ import { Response as Res } from 'express';
 @Controller()
 export class CubeController {
 
-  constructor(private configService: ConfigService) { }
-
   /**
    * HTTP proxy to avoid CORS issues
+   * (hidden from Open Api but can be called on production)
    */
   @Get(['cube/proxy/:url'])
   @ApiParam({
@@ -20,6 +18,7 @@ export class CubeController {
     description: 'The full URL to request',
     example: 'https://cloudflare-ipfs.com/ipfs/QmYKabnBxtucct5Vkf81o9ZX6u2sCnZKU94VfGqUwzbZwg'
   })
+  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
   async getProxy(@Param('url') url: string, @Response({ passthrough: true }) res: Res): Promise<StreamableFile> {
 
     // Logger.verbose("Serving api/proxy/" + url);

@@ -1,4 +1,4 @@
-const httpProxy = 'https://cube-api.onrender.com/api/proxy/';
+const httpProxy = 'https://backend.haushoppe.art/cube/proxy/';
 
 export const config = {
   httpProxy,

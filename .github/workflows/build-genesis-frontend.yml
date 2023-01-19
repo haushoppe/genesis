@@ -1,4 +1,4 @@
-name: Build & deploy Genesis Frontend
+name: Build Genesis Frontend
 
 on:
   push:

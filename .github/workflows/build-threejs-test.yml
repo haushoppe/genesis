@@ -3,6 +3,8 @@ name: Build Three.js Test Cube
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'z_extra/prototypes/threejs-test/**'
 
 jobs:
 
@@ -21,7 +23,7 @@ jobs:
 
     - run: npm install
     - run: npm run build
-    - name: Deploy API to cube-threejs-test-build repo
+    - name: Deploy Page to cube-threejs-test-build repo
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |

@@ -21,6 +21,16 @@ const { deployToken } = require("./_utils");
   tokenName: 'MosaicToken',
   name: 'Mosaics by HAUS HOPPE',
   symbol: 'MOSAIC'
+},
+{
+  tokenName: 'ArtistToken',
+  name: 'Artist Token for Collectors Cube',
+  symbol: 'ARTIST'
+},
+{
+  tokenName: 'CubeToken',
+  name: 'Collectors Cube',
+  symbol: 'CUBE'
 }].forEach(({ tokenName, name, symbol }) => {
 
   describe(`Change name & symbol: ${tokenName} contract`, () => {

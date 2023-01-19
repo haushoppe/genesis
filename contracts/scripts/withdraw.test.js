@@ -7,7 +7,7 @@ const twoEther = ethers.utils.parseEther("2");
 const threeEther = ethers.utils.parseEther("3");
 const aLittleBitGas = ethers.utils.parseEther("0.0001");
 
-['GenesisToken', 'SeaToken', 'ArtToken', 'MosaicToken'].forEach(tokenName => {
+['GenesisToken', 'SeaToken', 'ArtToken', 'MosaicToken', 'ArtistToken', 'CubeToken'].forEach(tokenName => {
 
   describe(`Paypments: ${tokenName} contract`, () => {
 

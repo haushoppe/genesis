@@ -34,6 +34,18 @@ ArtToken on Mainnet
 https://etherscan.io/address/0xb40889c9fac33cd7684D3C9B14490EeE29a84761
 by haushoppe.eth
 
+ArtistToken on Goerli
+https://goerli.etherscan.io/address/0x7dD31A2F91860E6cD82ba29D5C6c2497ea427ba6
+
+ArtistToken on Mainnet
+https://etherscan.io/address/0x034F95d5EF960567e02af0Ac8C648288ad0b6691
+
+CubeToken on Goerli
+https://goerli.etherscan.io/address/0xB50f1A5149a68C1f27b4de2FC3aDC05A8410dA5D
+
+CubeToken on Mainnet
+https://etherscan.io/address/0x3E1a35F35fCBb302EEBAD8D8c59aB0369065696E
+
 
 Not used anymore -- SeaToken on Mainnet
 (BOTTED https://etherscan.io/address/0x1c95e3014dA741C26E0F74cD67fa7f6D0891Fd6a )

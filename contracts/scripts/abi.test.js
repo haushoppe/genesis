@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-['GenesisToken', 'SeaToken', 'ArtToken', 'MosaicToken'].forEach(tokenName => {
+['GenesisToken', 'SeaToken', 'ArtToken', 'MosaicToken', 'ArtistToken', 'CubeToken'].forEach(tokenName => {
 
   describe(`${tokenName} contract`, () => {
 

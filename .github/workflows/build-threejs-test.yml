@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./prototypes/threejs-test
+        working-directory: ./z_extra/prototypes/threejs-test
 
     steps:
     - uses: actions/checkout@v2

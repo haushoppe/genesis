@@ -5,12 +5,13 @@ $enable-negative-margins: true;
 @import "bootstrap/scss/bootstrap.scss";
 
 body {
-  // font-family: "Roboto", sans-serif;
+  font-family: "Yantramanav", sans-serif;
   font-weight: 300;
+  font-size: 1.2em;
 }
 
 strong {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 h1, h2, h3, h4 {

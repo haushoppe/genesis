@@ -15,7 +15,10 @@
         "tsConfig": "apps/genesis-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": ["apps/genesis-frontend/src/assets", "apps/genesis-frontend/src/x"],
-        "styles": ["apps/genesis-frontend/src/styles.scss"],
+        "styles": [
+          "node_modules/@fontsource/roboto/400.css",
+          "node_modules/@fontsource/merriweather/400.css",
+          "apps/genesis-frontend/src/styles.scss"],
         "scripts": []
       },
       "configurations": {
@@ -54,7 +57,7 @@
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
       "options": {
-        "port": 4200
+        "port": 4201
       },
       "configurations": {
         "production": {

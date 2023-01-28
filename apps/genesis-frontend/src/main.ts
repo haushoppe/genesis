@@ -2,6 +2,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { enableProdMode, importProvidersFrom } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
+import { ApiModule, Configuration } from '../../../libs/openapi-client'
 
 import { AppComponent } from './app/app.component';
 import { MemberComponent } from './app/member/member.component';
@@ -15,6 +16,9 @@ if (environment.production) {
 bootstrapApplication(AppComponent,{
   providers: [
     importProvidersFrom(HttpClientModule),
+    importProvidersFrom(ApiModule.forRoot(() => new Configuration({
+      basePath: environment.api
+    }))),
     importProvidersFrom(RouterModule.forRoot([
       { path: '', component: StartComponent },
       { path: 'member', component: MemberComponent }

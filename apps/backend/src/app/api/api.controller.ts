@@ -164,9 +164,9 @@ export class ApiController {
     enum: KnownTokenName,
     example: KnownTokenName.genesis,
   })
-  @Get(['api/allMetadata/:tokenName'])
+  @Get(['api/allMints/:tokenName'])
   @ApiOkResponse({ type: Metadata, isArray: true })
-  async metadata(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
+  async allMints(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
     const allMints = await this.contractService.getAllMints(tokenName);
 

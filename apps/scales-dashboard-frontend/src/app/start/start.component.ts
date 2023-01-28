@@ -1,13 +1,12 @@
-import { CommonModule } from '@angular/common';
 import { Component, HostBinding } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-start',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
   templateUrl: './start.component.html',
-  styleUrls: ['./start.component.scss']
+  styleUrls: ['./start.component.scss'],
+  standalone: true,
+  imports: [RouterLink]
 })
 export class StartComponent {
   @HostBinding('class') class = 'px-3';

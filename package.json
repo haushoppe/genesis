@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "nx run-many --target=serve --projects=backend,genesis-frontend",
-    "build": "nx run-many --target=build --projects=backend,genesis-frontend",
-    "test": "nx run-many --target=test --projects=backend,genesis-frontend",
+    "start": "nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend",
+    "build": "nx run-many --target=build --projects=backend,genesis-frontend,scales-dashboard-frontend",
+    "test": "nx run-many --target=test --projects=backend,genesis-frontend,scales-dashboard-frontend",
     "start:backend": "nx serve --project=backend",
     "start:hardhat": "cd contracts && npm run hardhat:start-localhost-network",
     "build:backend": "nx build --project=backend",

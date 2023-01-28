@@ -1,13 +1,12 @@
-import { CommonModule } from '@angular/common';
 import { Component, HostBinding } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-header',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss']
+  styleUrls: ['./header.component.scss'],
+  standalone: true,
+  imports: [RouterLink, RouterLinkActive]
 })
 export class HeaderComponent {
   @HostBinding('class') class = 'mb-auto';

@@ -2,7 +2,8 @@ import { Metadata } from "../../app/types/metadata";
 
 const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOUNT__ different woodblocks and printed them on top of each other with absolute precision.'
 const externalUrl = 'https://genesis.haushoppe.art/';
-const assetsBaseUrl = 'https://assets.haushoppe.art/';
+const assetsBaseUrlLive = 'https://assets.haushoppe.art/';
+const assetsBaseUrlLocalhost = 'http://127.0.0.1:8080/';
 const mosaicBaseUrl = 'https://assets.haushoppe.art/';
 const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
 
@@ -16,7 +17,7 @@ export interface WoodcutDetails {
   batch: number;
 }
 
-export const genesisArtworks: WoodcutDetails[] = [
+export const genesisRawArtworks: WoodcutDetails[] = [
   {
     name: 'Genesis I (Red Rose)',
     path: 'genesis1',
@@ -103,8 +104,9 @@ export function createFallbackImage(tokenId: number) {
 }
 
 // only tokenId is missing, these entries are "unassigned"
-export function createRawGenesisMetadata(artworks: WoodcutDetails[]) {
+export function createRawGenesisMetadata(artworks: WoodcutDetails[], environment: string) {
 
+  const assetsBaseUrl = environment === 'development' ? assetsBaseUrlLocalhost : assetsBaseUrlLive;
   const results: Metadata[] = [];
 
   artworks.forEach((artwork) => {

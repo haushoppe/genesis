@@ -1,7 +1,7 @@
 import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, NotImplementedException, Param, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { createRawGenesisMetadata, createGenesisMosaicMetadata, genesisArtworks, createFallbackImage } from '../../assets/data/tokendata_genesis';
+import { createRawGenesisMetadata, createGenesisMosaicMetadata, genesisRawArtworks, createFallbackImage } from '../../assets/data/tokendata_genesis';
 
 import { AllowlistService } from '../model/allowlist.service';
 import { ContractService } from '../model/contract.service';
@@ -149,7 +149,7 @@ export class ApiController {
     let rawMetadata: Metadata[];
 
     if (tokenName === KnownTokenName.genesis) {
-      rawMetadata = createRawGenesisMetadata(genesisArtworks);
+      rawMetadata = createRawGenesisMetadata(genesisRawArtworks, this.configService.get('environment'));
       return {
         amountOfTokens: rawMetadata.length,
         metadata: rawMetadata
@@ -173,7 +173,7 @@ export class ApiController {
     let rawMetadata: Metadata[];
 
     if (tokenName === KnownTokenName.genesis) {
-      rawMetadata = createRawGenesisMetadata(genesisArtworks);
+      rawMetadata = createRawGenesisMetadata(genesisRawArtworks, this.configService.get('environment'));
       return this.metadataService.generateMetadata(
         allMints,
         rawMetadata,

@@ -2,10 +2,10 @@ import { HttpClientModule } from '@angular/common/http';
 import { enableProdMode, importProvidersFrom } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
-import { ApiModule, Configuration } from '../../../libs/openapi-client'
 
 import { AppComponent } from './app/app.component';
 import { MemberComponent } from './app/member/member.component';
+import { ApiModule, Configuration } from './app/openapi-client';
 import { StartComponent } from './app/start/start.component';
 import { environment } from './environments/environment';
 

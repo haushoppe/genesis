@@ -1,7 +1,8 @@
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgFor } from '@angular/common';
 import { Component, HostBinding, inject } from '@angular/core';
 
-import { ApiService } from '../../../../../libs/openapi-client';
+import { NftDisplayComponent } from '../nft-display/nft-display.component';
+import { ApiService } from '../openapi-client';
 
 @Component({
   selector: 'app-start',
@@ -10,7 +11,9 @@ import { ApiService } from '../../../../../libs/openapi-client';
   standalone: true,
   imports: [
     AsyncPipe,
-    JsonPipe
+    JsonPipe,
+    NftDisplayComponent,
+    NgFor
   ]
 })
 export class StartComponent {

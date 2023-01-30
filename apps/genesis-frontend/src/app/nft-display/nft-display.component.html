@@ -1,3 +1,7 @@
-<div class="image-container">
-  <div class="text">GENESIS</div>
+<div class="wrapper">
+  <img [src]="nft?.image" class="img-fluid">
+
+  <div class="nft-name one-line fs-6 text-muted lh-sm mt-2 one-line" title="{{ nft?.name }}">
+    {{ nft?.name }}
+  </div>
 </div>

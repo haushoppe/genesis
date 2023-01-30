@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
+import { Metadata } from '../openapi-client';
 
 @Component({
   selector: 'app-nft-display',
@@ -7,4 +8,6 @@ import { Component } from '@angular/core';
   standalone: true
 })
 export class NftDisplayComponent {
+
+  @Input() nft?: Metadata
 }

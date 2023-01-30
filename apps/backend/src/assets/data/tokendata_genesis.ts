@@ -2,8 +2,8 @@ import { Metadata } from "../../app/types/metadata";
 
 const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOUNT__ different woodblocks and printed them on top of each other with absolute precision.'
 const externalUrl = 'https://genesis.haushoppe.art/';
-const assetsBaseUrlLive = 'https://assets.haushoppe.art/';
-const assetsBaseUrlLocalhost = 'http://127.0.0.1:8080/';
+const assetsBaseUrlLive = 'https://assets.haushoppe.art/genesis/';
+const assetsBaseUrlLocalhost = 'http://127.0.0.1:8080/genesis/';
 const mosaicBaseUrl = 'https://assets.haushoppe.art/';
 const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
 
@@ -49,15 +49,15 @@ export const genesisRawArtworks: WoodcutDetails[] = [
     amountOfColors: 5,
     mainColor: 'Yellow',
     batch: 0
-  },
-  {
-    name: 'The Closed Door',
-    path: 'closed-door',
-    year: 2015,
-    amountOfColors: 9,
-    mainColor: 'Orange',
-    batch: 1
   }
+  // ,{
+  //   name: 'The Closed Door',
+  //   path: 'closed-door',
+  //   year: 2015,
+  //   amountOfColors: 9,
+  //   mainColor: 'Orange',
+  //   batch: 1
+  // }
 ];
 
 export function createGenesisMosaicMetadata(

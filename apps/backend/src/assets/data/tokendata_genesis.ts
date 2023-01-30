@@ -92,7 +92,8 @@ ${tokenTile4.name} (${tokenTile4.tokenId})`,
         value: 'Mosaic',
       }
     ],
-    tokenId
+    tokenId,
+    isMosaic: true
   }
 
   return metadata

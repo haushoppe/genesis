@@ -211,7 +211,7 @@ export class ApiController {
 
   @ApiParam({
     name: 'tokenName',
-    enum: KnownTokenName,
+    enum: [KnownTokenName.genesis, KnownTokenName.mosaic],
     example: KnownTokenName.genesis,
   })
   @ApiParam({
@@ -228,6 +228,10 @@ export class ApiController {
 
     if (!mosaic) {
       throw new NotFoundException('Unknown tokenId');
+    }
+
+    if (!mosaic.isMosaic) {
+      throw new NotFoundException('This token is not a mosaic');
     }
 
     const imageBuffer = await this.imageService.getMosiacPreview(tokenName, tokenId, mosaic);

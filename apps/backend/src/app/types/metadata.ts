@@ -12,6 +12,9 @@ export class Metadata {
   // not standard
   @ApiProperty() tokenId?: number;
 
+  // not standard
+  @ApiProperty() isMosaic?: true | undefined;
+
   // adding more untyped metadata
-  [key: string]: string | number | MetatdataAttribute[];
+  [key: string]: string | number | MetatdataAttribute[] | boolean;
 }

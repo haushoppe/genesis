@@ -77,7 +77,9 @@ ${tokenTile2.name} (${tokenTile2.tokenId})
 ${tokenTile3.name} (${tokenTile3.tokenId})
 ${tokenTile4.name} (${tokenTile4.tokenId})`,
     external_url: externalUrl,
-    image: '?',
+    image: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 204 204'>"
+    + "<image href='" + tokenTile1.image + "' width='100' height='100' />"
+    + "</svg>",
     attributes: [
       {
         trait_type: 'Special trait',

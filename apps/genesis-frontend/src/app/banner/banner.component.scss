@@ -19,7 +19,7 @@
 
   transform: translate(-50%,-50%) rotate(45deg); /* center the element then rotate */
   animation-name: spin;
-  animation-duration: 100000ms;
+  animation-duration: 200s;
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 }
@@ -48,4 +48,77 @@
   left: 50%;
   transform: translate(-50%, -50%);
   mix-blend-mode: screen;
+}
+
+
+// X-Small devices (portrait phones, less than 576px)
+@media (min-width: 0) {
+  .image-container {
+    height: 34vw;
+  }
+
+  .text {
+    font-size: 24vw;
+    line-height: 13vw;
+  }
+}
+
+// Small devices (landscape phones, 576px and up)
+@media (min-width: 576px) {
+  .image-container {
+    height: 28vw;
+  }
+
+  .text {
+    font-size: 22vw;
+    line-height: 11vw;
+  }
+}
+
+// Medium devices (tablets, 768px and up)
+@media (min-width: 768px) {
+  .image-container {
+    height: 24vw;
+  }
+
+  .text {
+    font-size: 22vw;
+    line-height: 11vw;
+  }
+}
+
+// Large devices (desktops, 992px and up)
+@media (min-width: 992px) {
+  .image-container {
+    height: 22vw;
+  }
+
+  .text {
+    font-size: 22vw;
+    line-height: 11vw;
+  }
+}
+
+// X-Large devices (large desktops, 1200px and up)
+@media (min-width: 1200px) {
+  .image-container {
+    height: 20vw;
+  }
+
+  .text {
+    font-size: 20vw;
+    line-height: 10vw;
+  }
+}
+
+// XX-Large devices (larger desktops, 1400px and up)
+@media (min-width: 1400px) {
+  .image-container {
+    height: 16vw;
+  }
+
+  .text {
+    font-size: 18vw;
+    line-height: 8vw;
+  }
 }

@@ -4,7 +4,7 @@ const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOU
 const externalUrl = 'https://genesis.haushoppe.art/';
 const assetsBaseUrlLive = 'https://assets.haushoppe.art/genesis/';
 const assetsBaseUrlLocalhost = 'http://localhost:8080/genesis/';
-const mosaicBaseUrlLive = 'https://api.haushoppe.art/api/mosaicPreview/genesis/';
+const mosaicBaseUrlLive = 'https://backend.haushoppe.art/api/mosaicPreview/genesis/';
 const mosaicBaseUrlLocalhost = 'http://localhost:3333/api/mosaicPreview/genesis/';
 const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
 

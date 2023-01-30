@@ -37,7 +37,7 @@ export class ImageService {
         width: 404,
         height: 404,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 255 }
+        background: { r: 255, g: 255, b: 255, alpha: 0 }
       }
     })
     .composite([

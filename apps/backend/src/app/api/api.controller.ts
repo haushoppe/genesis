@@ -80,8 +80,6 @@ export class ApiController {
     };
   }
 
-
-
   /**
    * Status of this service
    */
@@ -114,7 +112,7 @@ export class ApiController {
         signer: getSigner(this.configService.get('signerKey_' + token.name)).address,
         maximumAllowedMintsPerAddress: token.maximumAllowedMintsPerAddress,
         allowlistEntries: this.allowlistService.getMintWallets(token.name).length,
-        contractName: (await this.contractService.getName(token.name)),
+        contractName: (await this.contractService.getContractName(token.name)),
         totalSupply: (await this.contractService.getTotalSupply(token.name))
       })))
     };
@@ -185,6 +183,30 @@ export class ApiController {
     }
 
     throw new NotImplementedException('This token is not ready yet!');
+  }
+
+  @ApiParam({
+    name: 'tokenName',
+    enum: KnownTokenName,
+    example: KnownTokenName.genesis,
+  })
+  @ApiParam({
+    name: 'tokenId',
+    type: 'number'
+  })
+  @Get(['api/tokenInfo/:tokenName/:tokenId', 'api/tokenInfo/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
+  @ApiOkResponse({ type: Metadata })
+  @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  async tokenInfo(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<Metadata> {
+
+    const allMints = await this.allMints(tokenName);
+    const token = allMints.find(x =>  x.tokenId === tokenId);
+
+    if (!token) {
+      throw new NotFoundException('Unknown tokenId');
+    }
+
+    return token;
   }
 
   @ApiParam({

@@ -4,25 +4,26 @@ import * as Papa from 'papaparse';
 import * as path from 'path';
 
 import { AllowlistEntry } from '../types/allowlist-entry';
+import { CacheService } from './cache.service';
 
 
 @Injectable()
 export class AllowlistService {
 
+  constructor(private cacheService: CacheService) { }
+
   allowlistFolder = path.resolve(__dirname + '/assets/data/');
-  private cachedMintWallets: { [tokenName: string]: string[] } = {};
 
   getMintWallets(tokenName: string): string[] {
 
-    let mintWallets = this.cachedMintWallets[tokenName];
-    if (mintWallets) {
-      return mintWallets
+    const cacheKey = 'mintWallets_' + tokenName;
+    if (this.cacheService.has(cacheKey)) {
+      return this.cacheService.get<string[]>(cacheKey);
     }
 
     const entries = this.parseHeymintCsvFromFile('allowlist_' + tokenName + '.csv');
-    mintWallets = entries.map(x => x.mintWallet);
-    this.cachedMintWallets[tokenName] = mintWallets;
-    return mintWallets;
+    const mintWallets = entries.map(x => x.mintWallet);
+    return this.cacheService.set(cacheKey, mintWallets);
   }
 
   parseHeymintCsvFromFile(filename: string): AllowlistEntry[] {

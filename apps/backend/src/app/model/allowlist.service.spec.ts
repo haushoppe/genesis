@@ -1,6 +1,7 @@
 import { AllowlistEntry } from '../types/allowlist-entry';
 import { AllowlistService } from './allowlist.service';
 import * as path from 'path';
+import { CacheService } from './cache.service';
 
 
 const expected: AllowlistEntry = {
@@ -24,7 +25,7 @@ describe('AllowlistService', () => {
   let service: AllowlistService;
 
   beforeAll(async () => {
-    service = new AllowlistService();
+    service = new AllowlistService(new CacheService());
     service.allowlistFolder = path.resolve(__dirname + '../../../assets/data/');
   });
 
@@ -46,7 +47,7 @@ Mon Dec 19 2022 13:26:37 GMT+0000 (Coordinated Universal Time),00000000000000000
     expect(entries[0]).toEqual(expected);
   });
 
-  it('should provide a simple cached wallet-list for a token', () => {
+  it('should provide a simple wallet-list for a token', () => {
 
     const mintWallets = service.getMintWallets('genesis');
     expect(mintWallets).toEqual([

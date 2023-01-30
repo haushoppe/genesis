@@ -9,6 +9,7 @@ import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
 import { AllowlistService } from './model/allowlist.service';
+import { CacheService } from './model/cache.service';
 import { ContractService } from './model/contract.service';
 import { ImageService } from './model/image.service';
 import { MetadataService } from './model/metadata.service';
@@ -40,6 +41,6 @@ import { MetadataService } from './model/metadata.service';
     // })
   ],
   controllers: [AppController, ApiController, ScalesController, CubeController],
-  providers: [AllowlistService, ContractService, MetadataService, ImageService],
+  providers: [AllowlistService, ContractService, MetadataService, ImageService, CacheService],
 })
 export class AppModule { }

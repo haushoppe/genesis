@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 import { KnownTokenConfig } from '../types/known-token-config';
 import { KnownTokenName } from '../types/known-token-name';
 import { MintInfo } from '../types/mint-info';
+import { CacheService } from './cache.service';
 import { ZERO_ADDRESS } from './ethers-utils';
 import { knownAbis } from './known-abis';
 
@@ -12,9 +13,10 @@ import { knownAbis } from './known-abis';
 @Injectable()
 export class ContractService {
 
-  knownTokens = this.config.get<KnownTokenConfig[]>('knownTokens');
+  private knownTokens = this.config.get<KnownTokenConfig[]>('knownTokens');
+  private readonly cacheTimeToLive = 60 * 5; // 5 minutes
 
-  constructor(private config: ConfigService) { }
+  constructor(private config: ConfigService, private cacheService: CacheService) { }
 
   getContract(tokenName: string) {
 
@@ -43,20 +45,38 @@ export class ContractService {
     return contract;
   }
 
-  async getName(tokenName: KnownTokenName): Promise<string> {
+  async getContractName(tokenName: KnownTokenName): Promise<string> {
+
+    const cacheKey = 'contractName_' + tokenName;
+    if (this.cacheService.has(cacheKey)) {
+      return this.cacheService.get<string>(cacheKey);
+    }
+
     const contract = this.getContract(tokenName);
-    return await contract.name();
+    const contractName = await contract.name();
+
+    return this.cacheService.set(cacheKey, contractName, this.cacheTimeToLive);
   }
 
   async getTotalSupply(tokenName: KnownTokenName): Promise<number> {
+
+    const cacheKey = 'totalSupply_' + tokenName;
+    if (this.cacheService.has(cacheKey)) {
+      return this.cacheService.get<number>(cacheKey);
+    }
+
     const contract = this.getContract(tokenName);
-    return (await contract.totalSupply()).toNumber();
+    const totalSupply = (await contract.totalSupply()).toNumber();
+    return this.cacheService.set(cacheKey, totalSupply, this.cacheTimeToLive);
   }
 
-  /**
-   * TODO: error handling!?
-   */
-  async getAllMints(tokenName: KnownTokenName, startBlockNumber = 0) {
+  async getAllMints(tokenName: KnownTokenName): Promise<MintInfo[]> {
+
+    const cacheKey = 'allMints_' + tokenName;
+    if (this.cacheService.has(cacheKey)) {
+      return this.cacheService.get<MintInfo[]>(cacheKey);
+    }
+
     const tokenConfig = this.knownTokens.find(x => x.name === tokenName);
     const contract = this.getContract(tokenName);
 
@@ -93,7 +113,7 @@ export class ContractService {
       }
     ]
     */
-    const events = await contract.queryFilter(filter, startBlockNumber || tokenConfig.firstBlockNumber, 'latest');
+    const events = await contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
 
     let allMints: MintInfo[] = events.map(event => ({
       newOwner: event.args[1],
@@ -114,6 +134,6 @@ export class ContractService {
       })));
     }
 
-    return allMints;
+    return this.cacheService.set(cacheKey, allMints, this.cacheTimeToLive);
   }
 }

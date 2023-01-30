@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import sharp = require('sharp')
-import { Metadata } from '../types/metadata';
 import axios from 'axios';
+import sharp = require('sharp');
+
+import { Metadata } from '../types/metadata';
+import { CacheService } from './cache.service';
 
 
 // Docs:
@@ -11,17 +12,13 @@ import axios from 'axios';
 @Injectable()
 export class ImageService {
 
-  private cachedImages: { [tokenNameAndTokenId: string]: Buffer } = {};
-
-  constructor(private configService: ConfigService) { }
+  constructor(private cacheService: CacheService) { }
 
   async getMosiacPreview(tokenName: string, tokenId: number, mosaic: Metadata): Promise<Buffer> {
 
-    const cacheKey = tokenName + '-' + tokenId;
-
-    let image = this.cachedImages[cacheKey];
-    if (image) {
-      return image;
+    const cacheKey = 'mosiacPreview_' + tokenName + '_' + tokenId;
+    if (this.cacheService.has(cacheKey)) {
+      return this.cacheService.get<Buffer>(cacheKey);
     }
 
     const allImages = await Promise.all([
@@ -32,7 +29,7 @@ export class ImageService {
     ]);
 
     // Create a blank 400x400 PNG image with transparent background
-    image = await sharp({
+    const image = await sharp({
       create: {
         width: 404,
         height: 404,
@@ -49,16 +46,12 @@ export class ImageService {
     .png()
     .toBuffer()
 
-    this.cachedImages[cacheKey] = image;
-    return image;
+    return this.cacheService.set(cacheKey, image);
   }
 
   async getThumbnail(imagUrl: string) {
-
     const response = await axios.get(imagUrl, { responseType: 'arraybuffer' })
     const buffer = Buffer.from(response.data);
     return await sharp(buffer).resize({ width: 200, height: 200 }).toBuffer();
   }
-
-
 }

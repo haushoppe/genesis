@@ -64,10 +64,16 @@ npm install
 
 ## Things to do after deployment to mainnet
 
-For both tokens:
+For all tokens:
 
 1. call `setBaseURI("https://genesis.haushoppe.art/x/")`
 2. call `gift`
+
+Later:
+
+1. call `setBaseURI("https://backend.haushoppe.art/api/tokenInfo/genesis/")`
+1. call `setBaseURIForMosaic("https://backend.haushoppe.art/api/tokenInfo/genesis/")`
+
 
 ## IDE for contract development
 

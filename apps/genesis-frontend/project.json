@@ -17,6 +17,7 @@
         "assets": ["apps/genesis-frontend/src/assets", "apps/genesis-frontend/src/x"],
         "styles": [
           "node_modules/@fontsource/yantramanav/300.css",
+          "node_modules/@fontsource/yantramanav/500.css",
           "node_modules/@fontsource/yantramanav/700.css",
           "node_modules/@fontsource/merriweather/400.css",
           "apps/genesis-frontend/src/styles.scss"],

@@ -1,9 +1,36 @@
 // https://www.w3schools.com/howto/howto_css_cutout_text.asp
 .image-container {
-  background-image: url("/assets/actually-banner.jpg");
-  background-size: cover;
   position: relative;
   height: 13vw;
+  overflow: hidden;
+}
+
+// https://stackoverflow.com/a/62135576
+.image-container::before {
+  content: "";
+  position: absolute;
+  width: 110vw;
+  height: 110vw;
+  left: 50%;
+  top: 50%;
+
+  background: url("https://assets.haushoppe.art/genesis/genesis2/5colors.jpg");
+  background-size: cover;
+
+  transform: translate(-50%,-50%) rotate(45deg); /* center the element then rotate */
+  animation-name: spin;
+  animation-duration: 100000ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-50%,-50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%,-50%) rotate(360deg);
+  }
 }
 
 .text {

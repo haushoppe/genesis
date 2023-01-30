@@ -9,7 +9,7 @@ import { PseudoRandom } from './pseudo-random';
 @Injectable()
 export class MetadataService {
 
-  constructor(private config: ConfigService) { }
+  constructor(private configService: ConfigService) { }
 
   generateMetadata(
     allMints: MintInfo[],
@@ -20,10 +20,12 @@ export class MetadataService {
       tokenTile1: Metadata,
       tokenTile2: Metadata,
       tokenTile3: Metadata,
-      tokenTile4: Metadata
+      tokenTile4: Metadata,
+      environment: string
     ) => Metadata,
     createFallbackImageFn: (tokenId: number) => Metadata): Metadata[] {
 
+    const environment = this.configService.get('environment');
     const availableMetadata = [...rawMetadata];
     const results: Metadata[] = []; // array index == tokenId!!
     let mosaicCounter = 0;
@@ -55,7 +57,7 @@ export class MetadataService {
         const tokenTile3 = results[mint.mosaics[2]];
         const tokenTile4 = results[mint.mosaics[3]];
 
-        const metadata = createMosaicMetadataFn(tokenId, mosaicCounter, tokenTile1, tokenTile2, tokenTile3, tokenTile4);
+        const metadata = createMosaicMetadataFn(tokenId, mosaicCounter, tokenTile1, tokenTile2, tokenTile3, tokenTile4, environment);
         results.push(metadata);
       }
     });

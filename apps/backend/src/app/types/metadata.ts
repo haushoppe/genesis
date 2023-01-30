@@ -11,4 +11,7 @@ export class Metadata {
 
   // not standard
   @ApiProperty() tokenId?: number;
+
+  // adding more untyped metadata
+  [key: string]: string | number | MetatdataAttribute[];
 }

@@ -1,7 +1,8 @@
-import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, NotImplementedException, Param, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, NotImplementedException, Param, ParseIntPipe, Post, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { createRawGenesisMetadata, createGenesisMosaicMetadata, genesisRawArtworks, createFallbackImage } from '../../assets/data/tokendata_genesis';
+import * as express from 'express';
 
 import { AllowlistService } from '../model/allowlist.service';
 import { ContractService } from '../model/contract.service';
@@ -14,6 +15,7 @@ import { Metadata } from '../types/metadata';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
 import { StatusResponse } from '../types/status-response';
+import { ImageService } from '../model/image.service';
 
 
 @ApiTags('api')
@@ -26,7 +28,8 @@ export class ApiController {
     private configService: ConfigService,
     private allowlistService: AllowlistService,
     private contractService: ContractService,
-    private metadataService: MetadataService) { }
+    private metadataService: MetadataService,
+    private imageService: ImageService) { }
 
   /**
    * Minting via allowlist
@@ -182,6 +185,32 @@ export class ApiController {
     }
 
     throw new NotImplementedException('This token is not ready yet!');
+  }
+
+  @ApiParam({
+    name: 'tokenName',
+    enum: KnownTokenName,
+    example: KnownTokenName.genesis,
+  })
+  @ApiParam({
+    name: 'tokenId',
+    type: 'number'
+  })
+  @Get(['api/mosaicPreview/:tokenName/:tokenId'])
+  @ApiOkResponse({ type: Metadata, isArray: true })
+  @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  async mosaicPreview(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number, @Res() response: express.Response) {
+
+    const allMints = await this.allMints(tokenName);
+    const mosaic = allMints.find(x =>  x.tokenId === tokenId);
+
+    if (!mosaic) {
+      throw new NotFoundException('Unknown tokenId');
+    }
+
+    const imageBuffer = await this.imageService.getMosiacPreview(tokenName, tokenId, mosaic);
+    response.setHeader('Content-Type', 'image/png',);
+    return response.send(imageBuffer);
   }
 
 }

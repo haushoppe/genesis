@@ -3,8 +3,9 @@ import { Metadata } from "../../app/types/metadata";
 const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOUNT__ different woodblocks and printed them on top of each other with absolute precision.'
 const externalUrl = 'https://genesis.haushoppe.art/';
 const assetsBaseUrlLive = 'https://assets.haushoppe.art/genesis/';
-const assetsBaseUrlLocalhost = 'http://127.0.0.1:8080/genesis/';
-const mosaicBaseUrl = 'https://assets.haushoppe.art/';
+const assetsBaseUrlLocalhost = 'http://localhost:8080/genesis/';
+const mosaicBaseUrlLive = 'https://api.haushoppe.art/api/mosaicPreview/genesis/';
+const mosaicBaseUrlLocalhost = 'http://localhost:3333/api/mosaicPreview/genesis/';
 const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
 
 
@@ -66,7 +67,10 @@ export function createGenesisMosaicMetadata(
   tokenTile1: Metadata,
   tokenTile2: Metadata,
   tokenTile3: Metadata,
-  tokenTile4: Metadata): Metadata {
+  tokenTile4: Metadata,
+  environment: string): Metadata {
+
+  const mosaicBaseUrl = environment === 'development' ? mosaicBaseUrlLocalhost : mosaicBaseUrlLive;
 
   const metadata: Metadata = {
     name: 'Mosaic #' + mosaicCounter,
@@ -77,9 +81,11 @@ ${tokenTile2.name} (${tokenTile2.tokenId})
 ${tokenTile3.name} (${tokenTile3.tokenId})
 ${tokenTile4.name} (${tokenTile4.tokenId})`,
     external_url: externalUrl,
-    image: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 204 204'>"
-    + "<image href='" + tokenTile1.image + "' width='100' height='100' />"
-    + "</svg>",
+    image: mosaicBaseUrl + tokenId,
+    tile1Image: tokenTile1.image,
+    tile2Image: tokenTile2.image,
+    tile3Image: tokenTile3.image,
+    tile4Image: tokenTile4.image,
     attributes: [
       {
         trait_type: 'Special trait',

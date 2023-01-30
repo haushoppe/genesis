@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Param } from '@nestjs/common';
+import { Controller, Get, Logger, Param, ParseIntPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import axios from 'axios';
@@ -25,15 +25,16 @@ export class ScalesController {
    * Returns the single NFT with the given ID
    */
   @ApiParam({
-    name: 'token_id',
+    name: 'tokenId',
     description: 'The ID of the NFT',
-    example: '333'
+    example: '333',
+    type: 'number'
   })
-  @Get(['scales/getSingle/:token_id'])
-  async getSingle(@Param('token_id') token_id: string) {
+  @Get(['scales/getSingle/:tokenId'])
+  async getSingle(@Param('tokenId', ParseIntPipe) tokenId: number) {
 
     return {
-      'not': 'implemented'
+      'not implemted': tokenId
     };
 
     // Logger.verbose("Serving api/getSingle/" + token_id);
@@ -46,7 +47,7 @@ export class ScalesController {
         database: 'scales',
         dataSource: 'mongodb-eth-1',
         filter: {
-          token_id: +token_id,
+          token_id: tokenId,
         },
         projection: {
           // '_id': 1

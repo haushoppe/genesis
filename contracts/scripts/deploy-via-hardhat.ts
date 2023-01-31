@@ -43,6 +43,10 @@ async function main() {
       // now mint a mosaic of mosaics! new tokenIds is #24
       await token.mintMosaic(20, 21, 22, 23,
         { value: ethers.utils.parseEther("0.05") });
+
+      // and a mixed one, new tokenIds is #25
+      await token.mintMosaic(24, 16, 17, 18,
+        { value: ethers.utils.parseEther("0.05") });
     }
   }
 }

@@ -21,6 +21,9 @@
   background-image: var(--banner-image);
   background-size: cover;
 
+  background-blend-mode: darken;
+  transition: 4s;
+
   transform: translate(-50%,-50%) rotate(45deg); /* center the element then rotate */
   animation-name: spin;
   animation-duration: 200s;

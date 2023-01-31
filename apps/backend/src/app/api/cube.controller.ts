@@ -1,5 +1,5 @@
-import { Controller, Get, Logger, Param, Response, StreamableFile } from '@nestjs/common';
-import { ApiExcludeEndpoint, ApiParam, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, Response, StreamableFile } from '@nestjs/common';
+import { ApiExcludeEndpoint, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import axios from 'axios';
 import { Response as Res } from 'express';
 
@@ -13,6 +13,7 @@ export class CubeController {
    * (hidden from Open Api but can be called on production)
    */
   @Get(['cube/proxy/:url'])
+  @ApiOperation({ operationId: 'proxy' })
   @ApiParam({
     name: 'url',
     description: 'The full URL to request',

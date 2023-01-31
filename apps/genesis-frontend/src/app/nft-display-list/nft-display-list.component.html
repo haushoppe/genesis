@@ -1,4 +1,4 @@
-<div class="wrapper">
+<a class="wrapper" [routerLink]="['/nft', nft?.tokenId]">
 
   <div class="resize-container">
     <img [src]="nft?.image" class="img-fluid">
@@ -7,4 +7,4 @@
   <div class="nft-name one-line fs-6 lh-sm mt-2 ps-1 one-line" title="{{ nft?.name }}">
     {{ nft?.name }}
   </div>
-</div>
+</a>

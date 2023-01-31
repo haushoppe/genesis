@@ -24,7 +24,7 @@ export class StartComponent {
 
   loading = false;
 
-  latestMints$ = inject(ApiService).apiControllerAllMints('genesis').pipe(
+  latestMints$ = inject(ApiService).allMints('genesis').pipe(
     tap(() => this.loading = true),
     map(x => x.reverse()),
     retry({ delay: 1000 }),

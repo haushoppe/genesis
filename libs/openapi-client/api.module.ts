@@ -3,6 +3,7 @@ import { Configuration } from './configuration';
 import { HttpClient } from '@angular/common/http';
 
 import { ApiService } from './api/api.service';
+import { CubeService } from './api/cube.service';
 import { ScalesService } from './api/scales.service';
 
 @NgModule({

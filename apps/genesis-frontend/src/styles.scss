@@ -1,5 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 
+$primary: rgb(98, 98, 98);
 $enable-rounded: false;
 $enable-negative-margins: true;
 @import "bootstrap/scss/bootstrap.scss";
@@ -21,6 +22,14 @@ h1, h2, h3, h4 {
 /* text-justify has been removed in Bootstrap 5 */
 .text-justify {
   text-align: justify;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 // see http://www.simon-li.com/design-and-code/an-elegant-way-to-break-the-bootstrap-container/

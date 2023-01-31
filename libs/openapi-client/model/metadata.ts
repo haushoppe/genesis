@@ -19,5 +19,6 @@ export interface Metadata {
     name: string;
     attributes: Array<MetatdataAttribute>;
     tokenId: number;
+    isMosaic: boolean;
 }
 

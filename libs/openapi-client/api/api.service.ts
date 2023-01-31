@@ -104,12 +104,12 @@ export class ApiService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public apiControllerAllMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<Metadata>>;
-    public apiControllerAllMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<Metadata>>>;
-    public apiControllerAllMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<Metadata>>>;
-    public apiControllerAllMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public allMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<Metadata>>;
+    public allMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<Metadata>>>;
+    public allMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<Metadata>>>;
+    public allMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (tokenName === null || tokenName === undefined) {
-            throw new Error('Required parameter tokenName was null or undefined when calling apiControllerAllMints.');
+            throw new Error('Required parameter tokenName was null or undefined when calling allMints.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -163,12 +163,12 @@ export class ApiService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public apiControllerDebugMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<object>>;
-    public apiControllerDebugMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<object>>>;
-    public apiControllerDebugMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<object>>>;
-    public apiControllerDebugMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public debugMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<object>>;
+    public debugMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<object>>>;
+    public debugMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<object>>>;
+    public debugMints(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (tokenName === null || tokenName === undefined) {
-            throw new Error('Required parameter tokenName was null or undefined when calling apiControllerDebugMints.');
+            throw new Error('Required parameter tokenName was null or undefined when calling debugMints.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -222,12 +222,12 @@ export class ApiService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public apiControllerDebugRawMetadata(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any>;
-    public apiControllerDebugRawMetadata(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpResponse<any>>;
-    public apiControllerDebugRawMetadata(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpEvent<any>>;
-    public apiControllerDebugRawMetadata(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any> {
+    public debugRawMetadata(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any>;
+    public debugRawMetadata(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpResponse<any>>;
+    public debugRawMetadata(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpEvent<any>>;
+    public debugRawMetadata(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any> {
         if (tokenName === null || tokenName === undefined) {
-            throw new Error('Required parameter tokenName was null or undefined when calling apiControllerDebugRawMetadata.');
+            throw new Error('Required parameter tokenName was null or undefined when calling debugRawMetadata.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -280,12 +280,12 @@ export class ApiService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public apiControllerMintAllowlist(mintRequest: MintRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<MintTicket>;
-    public apiControllerMintAllowlist(mintRequest: MintRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<MintTicket>>;
-    public apiControllerMintAllowlist(mintRequest: MintRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<MintTicket>>;
-    public apiControllerMintAllowlist(mintRequest: MintRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public mintAllowlist(mintRequest: MintRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<MintTicket>;
+    public mintAllowlist(mintRequest: MintRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<MintTicket>>;
+    public mintAllowlist(mintRequest: MintRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<MintTicket>>;
+    public mintAllowlist(mintRequest: MintRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (mintRequest === null || mintRequest === undefined) {
-            throw new Error('Required parameter mintRequest was null or undefined when calling apiControllerMintAllowlist.');
+            throw new Error('Required parameter mintRequest was null or undefined when calling mintAllowlist.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -344,17 +344,80 @@ export class ApiService {
 
     /**
      * 
+     * 
+     * @param tokenName 
+     * @param tokenId 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public mosaicPreview(tokenName: 'genesis' | 'mosaic', tokenId: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<Metadata>>;
+    public mosaicPreview(tokenName: 'genesis' | 'mosaic', tokenId: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<Metadata>>>;
+    public mosaicPreview(tokenName: 'genesis' | 'mosaic', tokenId: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<Metadata>>>;
+    public mosaicPreview(tokenName: 'genesis' | 'mosaic', tokenId: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (tokenName === null || tokenName === undefined) {
+            throw new Error('Required parameter tokenName was null or undefined when calling mosaicPreview.');
+        }
+        if (tokenId === null || tokenId === undefined) {
+            throw new Error('Required parameter tokenId was null or undefined when calling mosaicPreview.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/mosaicPreview/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'genesis' | 'mosaic'", dataFormat: undefined})}/${this.configuration.encodeParam({name: "tokenId", value: tokenId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}`;
+        return this.httpClient.request<Array<Metadata>>('get', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * 
      * Status of this service
      * @param tokenName Limits the contract details to one token
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public apiControllerStatus(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<StatusResponse>;
-    public apiControllerStatus(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<StatusResponse>>;
-    public apiControllerStatus(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<StatusResponse>>;
-    public apiControllerStatus(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public status(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<StatusResponse>;
+    public status(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<StatusResponse>>;
+    public status(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<StatusResponse>>;
+    public status(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (tokenName === null || tokenName === undefined) {
-            throw new Error('Required parameter tokenName was null or undefined when calling apiControllerStatus.');
+            throw new Error('Required parameter tokenName was null or undefined when calling status.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -390,6 +453,148 @@ export class ApiService {
 
         let localVarPath = `/api/status/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}`;
         return this.httpClient.request<StatusResponse>('get', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * 
+     * 
+     * @param tokenName 
+     * @param tokenId 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public tokenInfo(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', tokenId: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Metadata>;
+    public tokenInfo(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', tokenId: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Metadata>>;
+    public tokenInfo(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', tokenId: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Metadata>>;
+    public tokenInfo(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', tokenId: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (tokenName === null || tokenName === undefined) {
+            throw new Error('Required parameter tokenName was null or undefined when calling tokenInfo.');
+        }
+        if (tokenId === null || tokenId === undefined) {
+            throw new Error('Required parameter tokenId was null or undefined when calling tokenInfo.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/tokenInfo/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}/${this.configuration.encodeParam({name: "tokenId", value: tokenId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}`;
+        return this.httpClient.request<Metadata>('get', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * 
+     * 
+     * @param tokenName 
+     * @param tokenId 
+     * @param tile1 
+     * @param tile2 
+     * @param tile3 
+     * @param tile4 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public tokenInfoMosaic(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Metadata>;
+    public tokenInfoMosaic(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Metadata>>;
+    public tokenInfoMosaic(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Metadata>>;
+    public tokenInfoMosaic(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (tokenName === null || tokenName === undefined) {
+            throw new Error('Required parameter tokenName was null or undefined when calling tokenInfoMosaic.');
+        }
+        if (tokenId === null || tokenId === undefined) {
+            throw new Error('Required parameter tokenId was null or undefined when calling tokenInfoMosaic.');
+        }
+        if (tile1 === null || tile1 === undefined) {
+            throw new Error('Required parameter tile1 was null or undefined when calling tokenInfoMosaic.');
+        }
+        if (tile2 === null || tile2 === undefined) {
+            throw new Error('Required parameter tile2 was null or undefined when calling tokenInfoMosaic.');
+        }
+        if (tile3 === null || tile3 === undefined) {
+            throw new Error('Required parameter tile3 was null or undefined when calling tokenInfoMosaic.');
+        }
+        if (tile4 === null || tile4 === undefined) {
+            throw new Error('Required parameter tile4 was null or undefined when calling tokenInfoMosaic.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/tokenInfo/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}/${this.configuration.encodeParam({name: "tokenId", value: tokenId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "tile1", value: tile1, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "tile2", value: tile2, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "tile3", value: tile3, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "tile4", value: tile4, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}`;
+        return this.httpClient.request<Metadata>('get', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

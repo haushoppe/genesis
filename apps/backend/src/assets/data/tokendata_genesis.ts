@@ -75,11 +75,11 @@ export function createGenesisMosaicMetadata(
   const metadata: Metadata = {
     name: 'Mosaic #' + mosaicCounter,
     description:
-`A mosaic of four tiles:
-${tokenTile1.name} (${tokenTile1.tokenId})
-${tokenTile2.name} (${tokenTile2.tokenId})
-${tokenTile3.name} (${tokenTile3.tokenId})
-${tokenTile4.name} (${tokenTile4.tokenId})`,
+      `A mosaic of four tiles:  \n`  // Markdown style linebreaks
+    + `${tokenTile1.name} (Token #${tokenTile1.tokenId})  \n`
+    + `${tokenTile2.name} (Token #${tokenTile2.tokenId})  \n`
+    + `${tokenTile3.name} (Token #${tokenTile3.tokenId})  \n`
+    + `${tokenTile4.name} (Token #${tokenTile4.tokenId})`,
     external_url: externalUrl,
     image: mosaicBaseUrl + tokenId,
     tile1Image: tokenTile1.image,

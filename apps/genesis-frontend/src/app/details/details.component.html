@@ -1,6 +1,14 @@
-<h2>TODO!</h2>
+<ng-container *ngIf="nft$ | async as nft">
 
-<br>
+  <h1 class="mt-3">{{ nft.name }} <small class="text-muted font-weight-light">(Token #{{ nft.tokenId }})</small></h1>
 
-<app-loading-indicator></app-loading-indicator>
+  <img [src]="nft.image">
 
+  <p class="mt-4">{{ nft.description }}</p>
+
+</ng-container>
+
+<app-loading-indicator *ngIf="loading" class="mb-5" text="Loading token details…"></app-loading-indicator>
+
+
+<a routerLink="/" class="btn btn btn-primary fw-bold mb-4" >« Back</a>

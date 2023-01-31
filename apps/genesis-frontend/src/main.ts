@@ -21,7 +21,7 @@ bootstrapApplication(AppComponent,{
     }))),
     importProvidersFrom(RouterModule.forRoot([
       { path: '', component: StartComponent },
-      { path: 'details/:tokenId', component: DetailsComponent }
+      { path: 'nft/:tokenId', component: DetailsComponent }
     ]))
   ]
 })

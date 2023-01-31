@@ -1,6 +1,6 @@
 import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, NotImplementedException, Param, ParseIntPipe, Post, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { createRawGenesisMetadata, createGenesisMosaicMetadata, genesisRawArtworks, createFallbackImage } from '../../assets/data/tokendata_genesis';
 import * as express from 'express';
 
@@ -39,6 +39,7 @@ export class ApiController {
    * with the server's private key and verified on-chain to prove allowlist status.
    */
   @Post(['api/mintAllowlist'])
+  @ApiOperation({ operationId: 'mintAllowlist' })
   @ApiNotFoundResponse({ description: 'Unkown token name' })
   @ApiForbiddenResponse({ description: 'The sender is not on the allowlist' })
   @ApiOkResponse({
@@ -83,6 +84,8 @@ export class ApiController {
   /**
    * Status of this service
    */
+  @Get(['api/status/:tokenName'])
+  @ApiOperation({ operationId: 'status' })
   @ApiParam({
     name: 'tokenName',
     description: 'Limits the contract details to one token',
@@ -90,7 +93,6 @@ export class ApiController {
     example: KnownTokenName.genesis,
   })
   @ApiResponse({ type: StatusResponse, isArray: true })
-  @Get(['api/status/:tokenName'])
   async status(@Param('tokenName') tokenName: 'all' | KnownTokenName): Promise<StatusResponse> {
 
     let knownTokens = this.knownTokens;
@@ -118,12 +120,13 @@ export class ApiController {
     };
   }
 
+  @Get(['api/debugMints/:tokenName'])
+  @ApiOperation({ operationId: 'debugMints' })
   @ApiParam({
     name: 'tokenName',
     enum: KnownTokenName,
     example: KnownTokenName.genesis,
   })
-  @Get(['api/debugMints/:tokenName'])
   @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
   async debugMints(@Param('tokenName') tokenName: KnownTokenName) {
 
@@ -134,12 +137,13 @@ export class ApiController {
     return await this.contractService.getAllMints(tokenName);
   }
 
+  @Get(['api/debugRawMetadata/:tokenName'])
+  @ApiOperation({ operationId: 'debugRawMetadata' })
   @ApiParam({
     name: 'tokenName',
     enum: KnownTokenName,
     example: KnownTokenName.genesis,
   })
-  @Get(['api/debugRawMetadata/:tokenName'])
   @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
   debugRawMetadata(@Param('tokenName') tokenName: KnownTokenName) {
 
@@ -160,12 +164,13 @@ export class ApiController {
     throw new NotImplementedException('This token is not ready yet!');
   }
 
+  @Get(['api/allMints/:tokenName'])
+  @ApiOperation({ operationId: 'allMints' })
   @ApiParam({
     name: 'tokenName',
     enum: KnownTokenName,
     example: KnownTokenName.genesis,
   })
-  @Get(['api/allMints/:tokenName'])
   @ApiOkResponse({ type: Metadata, isArray: true })
   async allMints(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
@@ -185,6 +190,8 @@ export class ApiController {
     throw new NotImplementedException('This token is not ready yet!');
   }
 
+  @Get(['api/tokenInfo/:tokenName/:tokenId'])
+  @ApiOperation({ operationId: 'tokenInfo' })
   @ApiParam({
     name: 'tokenName',
     enum: KnownTokenName,
@@ -194,7 +201,6 @@ export class ApiController {
     name: 'tokenId',
     type: 'number'
   })
-  @Get(['api/tokenInfo/:tokenName/:tokenId', 'api/tokenInfo/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
   @ApiOkResponse({ type: Metadata })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
   async tokenInfo(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<Metadata> {
@@ -209,6 +215,34 @@ export class ApiController {
     return token;
   }
 
+  @Get(['api/tokenInfo/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
+  @ApiOperation({ operationId: 'tokenInfoMosaic' })
+  @ApiParam({
+    name: 'tokenName',
+    enum: KnownTokenName,
+    example: KnownTokenName.genesis,
+  })
+  @ApiParam({
+    name: 'tokenId',
+    type: 'number'
+  })
+  @ApiParam({ name: 'tile1', type: 'number' })
+  @ApiParam({ name: 'tile2', type: 'number' })
+  @ApiParam({ name: 'tile3', type: 'number' })
+  @ApiParam({ name: 'tile4', type: 'number' })
+  @ApiOkResponse({ type: Metadata })
+  @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  async tokenInfoLong(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
+  @Param('tile1', ParseIntPipe) tile1: number,
+  @Param('tile2', ParseIntPipe) tile2: number,
+  @Param('tile3', ParseIntPipe) tile3: number,
+  @Param('tile4', ParseIntPipe) tile4: number
+  ): Promise<Metadata> {
+    return this.tokenInfo(tokenName, tokenId)
+  }
+
+  @Get(['api/mosaicPreview/:tokenName/:tokenId'])
+  @ApiOperation({ operationId: 'mosaicPreview' })
   @ApiParam({
     name: 'tokenName',
     enum: [KnownTokenName.genesis, KnownTokenName.mosaic],
@@ -218,7 +252,6 @@ export class ApiController {
     name: 'tokenId',
     type: 'number'
   })
-  @Get(['api/mosaicPreview/:tokenName/:tokenId'])
   @ApiOkResponse({ type: Metadata, isArray: true })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
   async mosaicPreview(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number, @Res() response: express.Response) {

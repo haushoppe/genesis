@@ -14,7 +14,11 @@
   left: 50%;
   top: 50%;
 
+  // fallback
   background: url("https://assets.haushoppe.art/genesis/genesis2/5colors.jpg");
+
+  // --banner-image: url("https://assets.haushoppe.art/genesis/genesis2/5colors.jpg");
+  background-image: var(--banner-image);
   background-size: cover;
 
   transform: translate(-50%,-50%) rotate(45deg); /* center the element then rotate */

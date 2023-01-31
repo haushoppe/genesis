@@ -4,7 +4,7 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
 
 import { AppComponent } from './app/app.component';
-import { MemberComponent } from './app/member/member.component';
+import { DetailsComponent } from './app/details/details.component';
 import { ApiModule, Configuration } from './app/openapi-client';
 import { StartComponent } from './app/start/start.component';
 import { environment } from './environments/environment';
@@ -21,7 +21,7 @@ bootstrapApplication(AppComponent,{
     }))),
     importProvidersFrom(RouterModule.forRoot([
       { path: '', component: StartComponent },
-      { path: 'member', component: MemberComponent }
+      { path: 'details/:tokenId', component: DetailsComponent }
     ]))
   ]
 })

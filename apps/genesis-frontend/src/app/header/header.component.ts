@@ -1,4 +1,4 @@
-import { Component, HostBinding } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterLinkActive } from '@angular/router';
 
 @Component({
@@ -9,5 +9,4 @@ import { RouterLinkActive } from '@angular/router';
   imports: [RouterLinkActive, RouterLinkActive]
 })
 export class HeaderComponent {
-  @HostBinding('class') class = 'header-height';
 }

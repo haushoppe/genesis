@@ -1,4 +1,4 @@
-import { Component, HostBinding } from '@angular/core';
+import { Component } from '@angular/core';
 
 import { LoadingIndicatorComponent } from './loading-indicator/loading-indicator.component';
 
@@ -10,6 +10,4 @@ import { LoadingIndicatorComponent } from './loading-indicator/loading-indicator
   imports: [LoadingIndicatorComponent]
 })
 export class MemberComponent {
-
-  @HostBinding('class') class = 'px-3';
 }

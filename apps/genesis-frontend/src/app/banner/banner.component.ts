@@ -1,4 +1,4 @@
-import { Component, HostBinding } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-banner',
@@ -7,5 +7,4 @@ import { Component, HostBinding } from '@angular/core';
   standalone: true
 })
 export class BannerComponent {
-  @HostBinding('class') class = '';
 }

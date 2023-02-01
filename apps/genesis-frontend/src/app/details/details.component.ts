@@ -5,6 +5,7 @@ import { map, retry, switchMap, tap } from 'rxjs';
 
 import { LoadingIndicatorComponent } from '../loading-indicator/loading-indicator.component';
 import { ApiService } from '../openapi-client';
+import { ParseMarkdownPipe } from './parse-markdown.pipe';
 
 @Component({
   selector: 'app-details',
@@ -15,6 +16,7 @@ import { ApiService } from '../openapi-client';
     AsyncPipe,
     LoadingIndicatorComponent,
     NgIf,
+    ParseMarkdownPipe,
     RouterLink
   ]
 })

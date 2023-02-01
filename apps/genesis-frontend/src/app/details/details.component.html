@@ -4,7 +4,7 @@
 
   <img [src]="nft.image">
 
-  <p class="mt-4">{{ nft.description }}</p>
+  <p class="mt-4" [innerHTML]="nft.description | parseMarkdown"></p>
 
 </ng-container>
 

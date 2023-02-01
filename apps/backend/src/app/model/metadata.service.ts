@@ -43,6 +43,7 @@ export class MetadataService {
             ...getAndRemoveItem(availableMetadata, randomIndex),
             tokenId
           };
+          metadata.external_url = metadata.external_url + tokenId
           results.push(metadata);
         } else {
           // we have a problem: we sold too much! :-/

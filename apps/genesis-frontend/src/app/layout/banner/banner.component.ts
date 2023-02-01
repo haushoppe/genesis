@@ -1,5 +1,5 @@
 import { NgFor } from '@angular/common';
-import { Component, HostBinding, ViewEncapsulation } from '@angular/core';
+import { Component, HostBinding } from '@angular/core';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Component({

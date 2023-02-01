@@ -76,3 +76,8 @@ Johannes has been in the topic 10 years before, and has pretty much forgotten it
 
 * see `prototypes/webgl-2012`
 * hint: start with a real webserver, eg `npx http-server`
+
+
+# TODO
+
+https://chat.blockscan.com/apis --> https://backend.haushoppe.art/chat/webhook

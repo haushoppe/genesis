@@ -1,11 +1,11 @@
 import { Metadata } from "../../app/types/metadata";
 
 const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOUNT__ different woodblocks and printed them on top of each other with absolute precision.'
-const externalUrl = 'https://genesis.haushoppe.art/';
+const externalUrl = 'https://genesis.haushoppe.art/nft/';
 const assetsBaseUrlLive = 'https://assets.haushoppe.art/genesis/';
 const assetsBaseUrlLocalhost = 'http://localhost:8080/genesis/';
-const mosaicBaseUrlLive = 'https://backend.haushoppe.art/api/mosaicPreview/genesis/';
-const mosaicBaseUrlLocalhost = 'http://localhost:3333/api/mosaicPreview/genesis/';
+const mosaicBaseUrlLive = 'https://backend.haushoppe.art/api/tokenPreview/genesis/';
+const mosaicBaseUrlLocalhost = 'http://localhost:3333/api/tokenPreview/genesis/';
 const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
 
 
@@ -80,7 +80,7 @@ export function createGenesisMosaicMetadata(
     + `${tokenTile2.name} (Token #${tokenTile2.tokenId})  \n`
     + `${tokenTile3.name} (Token #${tokenTile3.tokenId})  \n`
     + `${tokenTile4.name} (Token #${tokenTile4.tokenId})`,
-    external_url: externalUrl,
+    external_url: externalUrl + tokenId,
     image: mosaicBaseUrl + tokenId,
     tile1Image: tokenTile1.image,
     tile2Image: tokenTile2.image,
@@ -103,7 +103,6 @@ export function createFallbackImage(tokenId: number) {
   const metadata: Metadata = {
     name: 'Unrevealed #' + tokenId,
     description: 'Please stay tuned!',
-    external_url: externalUrl,
     image: fallbackImage,
     attributes: [],
     tokenId

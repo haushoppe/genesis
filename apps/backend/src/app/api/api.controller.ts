@@ -192,15 +192,8 @@ export class ApiController {
 
   @Get(['api/tokenInfo/:tokenName/:tokenId'])
   @ApiOperation({ operationId: 'tokenInfo' })
-  @ApiParam({
-    name: 'tokenName',
-    enum: KnownTokenName,
-    example: KnownTokenName.genesis,
-  })
-  @ApiParam({
-    name: 'tokenId',
-    type: 'number'
-  })
+  @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
+  @ApiParam({ name: 'tokenId', type: 'number' })
   @ApiOkResponse({ type: Metadata })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
   async tokenInfo(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<Metadata> {
@@ -217,15 +210,8 @@ export class ApiController {
 
   @Get(['api/tokenInfo/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
   @ApiOperation({ operationId: 'tokenInfoMosaic' })
-  @ApiParam({
-    name: 'tokenName',
-    enum: KnownTokenName,
-    example: KnownTokenName.genesis,
-  })
-  @ApiParam({
-    name: 'tokenId',
-    type: 'number'
-  })
+  @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
+  @ApiParam({ name: 'tokenId', type: 'number' })
   @ApiParam({ name: 'tile1', type: 'number' })
   @ApiParam({ name: 'tile2', type: 'number' })
   @ApiParam({ name: 'tile3', type: 'number' })
@@ -241,20 +227,13 @@ export class ApiController {
     return this.tokenInfo(tokenName, tokenId)
   }
 
-  @Get(['api/mosaicPreview/:tokenName/:tokenId'])
-  @ApiOperation({ operationId: 'mosaicPreview' })
-  @ApiParam({
-    name: 'tokenName',
-    enum: [KnownTokenName.genesis, KnownTokenName.mosaic],
-    example: KnownTokenName.genesis,
-  })
-  @ApiParam({
-    name: 'tokenId',
-    type: 'number'
-  })
+  @Get(['api/tokenPreview/:tokenName/:tokenId'])
+  @ApiOperation({ operationId: 'tokenPreview' })
+  @ApiParam({ name: 'tokenName', enum: [KnownTokenName.genesis, KnownTokenName.mosaic], example: KnownTokenName.genesis })
+  @ApiParam({ name: 'tokenId', type: 'number' })
   @ApiOkResponse({ type: Metadata, isArray: true })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
-  async mosaicPreview(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number, @Res() response: express.Response) {
+  async tokenPreview(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number, @Res() response: express.Response) {
 
     const allMints = await this.allMints(tokenName);
     const mosaic = allMints.find(x =>  x.tokenId === tokenId);

@@ -22,11 +22,14 @@ body {
 }
 
 
-/* from https://codepen.io/MattWindle/pen/perZRG */
-.mosaic,
-.tile {
+.mosaic, .tile, img {
   width: 100%;
   height: 100%;
+  overflow: hidden; /* not all images are perfect squares */
+}
+
+div {
+  box-sizing: border-box;
 }
 
 .mosaic {
@@ -34,29 +37,22 @@ body {
   grid-template-columns: 50% 50%;
 }
 
-.tile {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.tile:nth-child(1) {
+.mosaic > div:nth-child(1) {
   border-right: 1px solid transparent;
   border-bottom: 1px solid transparent;
 }
 
-.tile:nth-child(2) {
+.mosaic > div:nth-child(2) {
   border-left: 1px solid transparent;
   border-bottom: 1px solid transparent;
 }
 
-.tile:nth-child(3) {
+.mosaic > div:nth-child(3) {
   border-top: 1px solid transparent;
   border-right: 1px solid transparent;
 }
 
-.tile:nth-child(4) {
+.mosaic > div:nth-child(4) {
   border-top: 1px solid transparent;
   border-left: 1px solid transparent;
 }

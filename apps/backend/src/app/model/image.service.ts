@@ -64,7 +64,7 @@ export class ImageService {
   getAnimationHtml(tokenId: number, allMints: Metadata[]) {
 
     const token = allMints.find(x =>  x.tokenId === tokenId);
-    return `<img class="tile" src="${ token.image }" alt="${ token?.name } (Token #${ tokenId })" title="${ token?.name } (Token #${ tokenId })">\n`;
+    return `<div class="tile"><img src="${ token.image }" alt="${ token?.name } (Token #${ tokenId })" title="${ token?.name } (Token #${ tokenId })"></div>\n`;
 }
 
   getMosaicAnimationHtml(tile1: number, tile2: number, tile3: number, tile4: number, allMints: Metadata[]) {

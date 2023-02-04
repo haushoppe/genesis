@@ -96,6 +96,12 @@ export function createGenesisMosaicMetadata(
     external_url: externalUrl + tokenId,
     animation_url: `${ animationMosaicBaseUrl}${ tokenId }/${ tokenTile1.tokenId }/${ tokenTile2.tokenId }/${ tokenTile3.tokenId }/${ tokenTile4.tokenId }`,
     image: mosaicBaseUrl + tokenId,
+
+    tile1TokenId: tokenTile1.tokenId,
+    tile2TokenId: tokenTile2.tokenId,
+    tile3TokenId: tokenTile3.tokenId,
+    tile4TokenId: tokenTile4.tokenId,
+
     tile1Image: tokenTile1.image,
     tile2Image: tokenTile2.image,
     tile3Image: tokenTile3.image,

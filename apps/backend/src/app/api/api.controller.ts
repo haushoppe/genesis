@@ -314,42 +314,42 @@ export class ApiController {
   @ApiParam({ name: 'tile3', type: 'number' })
   @ApiParam({ name: 'tile4', type: 'number' })
   @ApiOkResponse({ type: String })
-  @ApiNotFoundResponse({ description: 'Unknown tokenId' })
   @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
   async tokenAnimationMosaic(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
   @Param('tile1', ParseIntPipe) tile1: number,
   @Param('tile2', ParseIntPipe) tile2: number,
   @Param('tile3', ParseIntPipe) tile3: number,
-  @Param('tile4', ParseIntPipe) tile4: number,
-  @Res() response: express.Response
-  ): Promise<string> {
+  @Param('tile4', ParseIntPipe) tile4: number): Promise<string> {
 
     const allMints = await this.allMints(tokenName);
-    const token = allMints.find(x =>  x.tokenId === tokenId);
 
-    if (!token) {
-      throw new NotFoundException('Unknown tokenId');
-    }
+    // token can be also null, then we are in preview mode
+    const token = allMints.find(x =>  x.tokenId === tokenId);
 
     const html =
 `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Genesis NFT by HAUS HOPPE</title>
-    <base href="/">
+    <title>Genesis NFT by HAUS HOPPE → ${ token?.name } (Token #${ tokenId })</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link rel="icon" href="/assets/logo.svg">
-    <link rel=”mask-icon” href=”/assets/logo.svg” color=”#000000">
-    <link rel="apple-touch-icon" href="/assets/logo-apple-touch-icon.png">
-    <meta name="theme-color" content="#ffffff">
-
+    <link rel="icon" href="/public/logo.svg">
+    <link rel="stylesheet" href="/public/style-mosaic.css">
   </head>
-  <body>Loading...</body>
+  <body>
+
+    <div class="square">
+
+      ${ this.imageService.getMosaicAnimationHtml(tile1, tile2, tile3, tile4, allMints) }
+
+    </div>
+
+  </body>
 </html>
 `;
 
     return html;
   }
 }
+
+

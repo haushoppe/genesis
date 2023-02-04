@@ -338,11 +338,9 @@ export class ApiController {
   </head>
   <body>
 
-    <div class="square">
-
-      ${ this.imageService.getMosaicAnimationHtml(tile1, tile2, tile3, tile4, allMints) }
-
-    </div>
+<div class="square">
+${ this.imageService.getMosaicAnimationHtml(tokenId, tile1, tile2, tile3, tile4, allMints) }
+</div>
 
   </body>
 </html>

@@ -1,10 +1,14 @@
 body {
   margin: 0;
   height: 100%;
-  /* overflow: hidden; */
+  overflow: hidden; /* just to be sure */
 }
 
-/* from https://stackoverflow.com/a/25842259 */
+/*
+ * centralize a full-screen square in any screen size
+ * see https://stackoverflow.com/a/25842259
+ * see https://codepen.io/hashem/pen/yLRRXR
+ */
 body,
 .square {
   display: flex;
@@ -22,19 +26,29 @@ body {
 }
 
 
+/*
+ * display mosaic tiles in a 2x2 css grid
+ * see https://codepen.io/MattWindle/pen/perZRG
+ */
 .mosaic, .tile, img {
   width: 100%;
   height: 100%;
   overflow: hidden; /* not all images are perfect squares */
 }
 
-div {
-  box-sizing: border-box;
-}
 
 .mosaic {
   display: grid;
   grid-template-columns: 50% 50%;
+}
+
+
+/*
+ * childs of mosaics are getting a border for the sides that are touching a sibling
+ * togehter with border-box this results in a solid 2px white line everywhere
+ */
+div {
+  box-sizing: border-box;
 }
 
 .mosaic > div:nth-child(1) {
@@ -55,4 +69,17 @@ div {
 .mosaic > div:nth-child(4) {
   border-top: 1px solid transparent;
   border-left: 1px solid transparent;
+}
+
+
+/*
+ * zoom in image (similar to OpenSea list)
+ */
+
+img {
+  transition: transform 1s ease-in-out;
+}
+
+img:hover {
+  transform: scale(1.8) rotate(45deg);
 }

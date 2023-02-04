@@ -64,11 +64,13 @@ export class ImageService {
   getAnimationHtml(tokenId: number, allMints: Metadata[]) {
 
     const token = allMints.find(x =>  x.tokenId === tokenId);
-    return `<div class="tile"><img src="${ token.image }" alt="${ token?.name } (Token #${ tokenId })" title="${ token?.name } (Token #${ tokenId })"></div>\n`;
+    return `<div class="tile"><a href="${ token.animation_url }"><img src="${ token.image }" alt="" title="${ token?.name } (Token #${ tokenId })"></a></div>`;
 }
 
-  getMosaicAnimationHtml(tile1: number, tile2: number, tile3: number, tile4: number, allMints: Metadata[]) {
+  getMosaicAnimationHtml(tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, allMints: Metadata[]) {
 
+        // token can be also null!
+      const token = allMints.find(x =>  x.tokenId === tokenId);
       const tokenTile1 = allMints.find(x =>  x.tokenId === tile1);
       const tokenTile2 = allMints.find(x =>  x.tokenId === tile2);
       const tokenTile3 = allMints.find(x =>  x.tokenId === tile3);
@@ -76,30 +78,33 @@ export class ImageService {
 
       return `<div class="mosaic">
 ${ tokenTile1.isMosaic ? this.getMosaicAnimationHtml(
+  tokenTile1.tokenId,
   tokenTile1.tile1TokenId as number,
   tokenTile1.tile2TokenId as number,
   tokenTile1.tile3TokenId as number,
   tokenTile1.tile4TokenId as number,
   allMints) : this.getAnimationHtml(tokenTile1.tokenId, allMints) }
 ${ tokenTile2.isMosaic ? this.getMosaicAnimationHtml(
+  tokenTile2.tokenId,
   tokenTile2.tile1TokenId as number,
   tokenTile2.tile2TokenId as number,
   tokenTile2.tile3TokenId as number,
   tokenTile2.tile4TokenId as number,
   allMints) : this.getAnimationHtml(tokenTile2.tokenId, allMints) }
 ${ tokenTile3.isMosaic ? this.getMosaicAnimationHtml(
+  tokenTile3.tokenId,
   tokenTile3.tile1TokenId as number,
   tokenTile3.tile2TokenId as number,
   tokenTile3.tile3TokenId as number,
   tokenTile3.tile4TokenId as number,
   allMints) : this.getAnimationHtml(tokenTile3.tokenId, allMints) }
 ${ tokenTile4.isMosaic ? this.getMosaicAnimationHtml(
+  tokenTile4.tokenId,
   tokenTile4.tile1TokenId as number,
   tokenTile4.tile2TokenId as number,
   tokenTile4.tile3TokenId as number,
   tokenTile4.tile4TokenId as number,
   allMints) : this.getAnimationHtml(tokenTile4.tokenId, allMints) }
-</div>
-`;
+</div>`;
   }
 }

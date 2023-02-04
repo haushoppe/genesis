@@ -1,7 +1,9 @@
-import { Controller, Get, Param, Response, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Header, Param, Response, StreamableFile } from '@nestjs/common';
 import { ApiExcludeEndpoint, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import axios from 'axios';
 import { Response as Res } from 'express';
+
+import { oneWeekInSeconds } from '../types/constants';
 
 
 @ApiTags('cube')
@@ -20,6 +22,7 @@ export class CubeController {
     example: 'https://cloudflare-ipfs.com/ipfs/QmYKabnBxtucct5Vkf81o9ZX6u2sCnZKU94VfGqUwzbZwg'
   })
   @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+  @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
   async getProxy(@Param('url') url: string, @Response({ passthrough: true }) res: Res): Promise<StreamableFile> {
 
     // Logger.verbose("Serving api/proxy/" + url);
@@ -28,8 +31,7 @@ export class CubeController {
     const buffer = Buffer.from(response.data, 'binary')
 
     res.set({
-      'content-type': response.headers['content-type'],
-      'cache-control': 'public, max-age=29030400, immutable' // 4 weeks: 60 * 60 * 24 * 7 * 4 * 12 = 29030400
+      'Content-Type': response.headers['content-type'],
     });
 
     return new StreamableFile(buffer);

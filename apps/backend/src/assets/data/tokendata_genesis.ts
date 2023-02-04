@@ -23,7 +23,7 @@ const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
 export interface WoodcutDetails {
   name: string;
   path: string;
-  year: number;
+  year: string; // as a number it would be shown as `2,001 of 2,001` on OS
   amountOfColors: number;
   mainColor: string;
   batch: number;
@@ -33,7 +33,7 @@ export const genesisRawArtworks: WoodcutDetails[] = [
   {
     name: 'Genesis I (Red Rose)',
     path: 'genesis1',
-    year: 2001,
+    year: '2001',
     amountOfColors: 7,
     mainColor: 'Red',
     batch: 0
@@ -41,7 +41,7 @@ export const genesisRawArtworks: WoodcutDetails[] = [
   {
     name: 'Genesis II (Blue Sunflower)',
     path: 'genesis2',
-    year: 2001,
+    year: '2001',
     amountOfColors: 5,
     mainColor: 'Blue',
     batch: 0
@@ -49,7 +49,7 @@ export const genesisRawArtworks: WoodcutDetails[] = [
   {
     name: 'Genesis III (Gray Seashell)',
     path: 'genesis3',
-    year: 2001,
+    year: '2001',
     amountOfColors: 6,
     mainColor: 'Gray',
     batch: 0
@@ -57,7 +57,7 @@ export const genesisRawArtworks: WoodcutDetails[] = [
   {
     name: 'Genesis IV (Yellow Dandelion)',
     path: 'genesis4',
-    year: 2001,
+    year: '2001',
     amountOfColors: 5,
     mainColor: 'Yellow',
     batch: 0
@@ -145,8 +145,7 @@ export function createRawGenesisMetadata(artworks: WoodcutDetails[], environment
       attributes: [
         {
           trait_type: 'Year',
-          value: artwork.year,
-          display_type: 'number'
+          value: artwork.year
         },
         {
           trait_type: 'Amount of colors',

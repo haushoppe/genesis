@@ -1,21 +1,49 @@
-import { Body, Controller, ForbiddenException, Get, Logger, NotFoundException, NotImplementedException, Param, ParseIntPipe, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Header,
+  Logger,
+  NotFoundException,
+  NotImplementedException,
+  Param,
+  ParseIntPipe,
+  Post,
+  Res,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiExcludeEndpoint, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { createRawGenesisMetadata, createGenesisMosaicMetadata, genesisRawArtworks, createFallbackImage } from '../../assets/data/tokendata_genesis';
+import {
+  ApiExcludeEndpoint,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import * as express from 'express';
 
+import {
+  createFallbackImage,
+  createGenesisMosaicMetadata,
+  createRawGenesisMetadata,
+  genesisRawArtworks,
+} from '../../assets/data/tokendata_genesis';
 import { AllowlistService } from '../model/allowlist.service';
 import { ContractService } from '../model/contract.service';
 import { formatSeconds } from '../model/date-utils';
 import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
+import { ImageService } from '../model/image.service';
 import { MetadataService } from '../model/metadata.service';
+import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { KnownTokenConfig } from '../types/known-token-config';
 import { KnownTokenName } from '../types/known-token-name';
 import { Metadata } from '../types/metadata';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
 import { StatusResponse } from '../types/status-response';
-import { ImageService } from '../model/image.service';
 
 
 @ApiTags('api')
@@ -93,6 +121,7 @@ export class ApiController {
     example: KnownTokenName.genesis,
   })
   @ApiResponse({ type: StatusResponse, isArray: true })
+  @Header('Cache-Control', 'no-cache')
   async status(@Param('tokenName') tokenName: 'all' | KnownTokenName): Promise<StatusResponse> {
 
     let knownTokens = this.knownTokens;
@@ -128,6 +157,7 @@ export class ApiController {
     example: KnownTokenName.genesis,
   })
   @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+  @Header('Cache-Control', 'no-cache')
   async debugMints(@Param('tokenName') tokenName: KnownTokenName) {
 
     if (this.configService.get('environment') !== 'development') {
@@ -145,6 +175,7 @@ export class ApiController {
     example: KnownTokenName.genesis,
   })
   @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+  @Header('Cache-Control', 'no-cache')
   debugRawMetadata(@Param('tokenName') tokenName: KnownTokenName) {
 
     if (this.configService.get('environment') !== 'development') {
@@ -172,6 +203,7 @@ export class ApiController {
     example: KnownTokenName.genesis,
   })
   @ApiOkResponse({ type: Metadata, isArray: true })
+  @Header('Cache-Control', 'no-cache')
   async allMints(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
     const allMints = await this.contractService.getAllMints(tokenName);
@@ -196,6 +228,7 @@ export class ApiController {
   @ApiParam({ name: 'tokenId', type: 'number' })
   @ApiOkResponse({ type: Metadata })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  @Header('Cache-Control', 'public, max-age=' + tenMinutesInSeconds + ', immutable')
   async tokenInfo(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<Metadata> {
 
     const allMints = await this.allMints(tokenName);
@@ -218,6 +251,7 @@ export class ApiController {
   @ApiParam({ name: 'tile4', type: 'number' })
   @ApiOkResponse({ type: Metadata })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  @Header('Cache-Control', 'public, max-age=' + tenMinutesInSeconds + ', immutable')
   async tokenInfoMosaic(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
   @Param('tile1', ParseIntPipe) tile1: number,
   @Param('tile2', ParseIntPipe) tile2: number,
@@ -233,6 +267,7 @@ export class ApiController {
   @ApiParam({ name: 'tokenId', type: 'number' })
   @ApiOkResponse({ type: Metadata, isArray: true })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
   async tokenPreview(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number, @Res() response: express.Response) {
 
     const allMints = await this.allMints(tokenName);
@@ -257,6 +292,7 @@ export class ApiController {
   @ApiParam({ name: 'tokenId', type: 'number' })
   @ApiOkResponse({ type: String })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
   async tokenAnimation(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<string> {
 
     const allMints = await this.allMints(tokenName);
@@ -279,11 +315,13 @@ export class ApiController {
   @ApiParam({ name: 'tile4', type: 'number' })
   @ApiOkResponse({ type: String })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
   async tokenAnimationMosaic(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
   @Param('tile1', ParseIntPipe) tile1: number,
   @Param('tile2', ParseIntPipe) tile2: number,
   @Param('tile3', ParseIntPipe) tile3: number,
-  @Param('tile4', ParseIntPipe) tile4: number
+  @Param('tile4', ParseIntPipe) tile4: number,
+  @Res() response: express.Response
   ): Promise<string> {
 
     const allMints = await this.allMints(tokenName);
@@ -293,6 +331,25 @@ export class ApiController {
       throw new NotFoundException('Unknown tokenId');
     }
 
-    return 'HELLO WORLD 2';
+    const html =
+`<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Genesis NFT by HAUS HOPPE</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" href="/assets/logo.svg">
+    <link rel=”mask-icon” href=”/assets/logo.svg” color=”#000000">
+    <link rel="apple-touch-icon" href="/assets/logo-apple-touch-icon.png">
+    <meta name="theme-color" content="#ffffff">
+
+  </head>
+  <body>Loading...</body>
+</html>
+`;
+
+    return html;
   }
 }

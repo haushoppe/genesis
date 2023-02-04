@@ -2,7 +2,7 @@
 
   <h1 class="mt-3">{{ nft.name }} <small class="text-muted font-weight-light">(Token #{{ nft.tokenId }})</small></h1>
 
-  <iframe *ngIf="nft.animation_url" [src]="nft.animation_url | safeResourceUrl" width="400" height="400"></iframe>
+  <iframe style="border: 1px solid gray" *ngIf="nft.animation_url" [src]="nft.animation_url | safeResourceUrl" width="400" height="400"></iframe>
   <img *ngIf="!nft.animation_url" [src]="nft.image">
 
   <p class="mt-4" [innerHTML]="nft.description | parseMarkdown"></p>

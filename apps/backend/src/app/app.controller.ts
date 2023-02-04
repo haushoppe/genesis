@@ -1,15 +1,17 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Header } from '@nestjs/common';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
-import * as express from 'express';
+
+import { oneHourInSeconds, oneWeekInSeconds } from './types/constants';
 
 @Controller()
 export class AppController {
 
   @Get()
   @ApiExcludeEndpoint()
-  getStart(@Res() response: express.Response) {
-    const html = `<!DOCTYPE html>
-<html>
+  @Header('Cache-Control', 'public, max-age=' + oneHourInSeconds + ', immutable')
+  getStart(): string {
+    return `<!DOCTYPE html>
+<html lang="en">
 <head>
   <title>🎨 NFT API</title>
   <meta charset="UTF-8">
@@ -19,7 +21,7 @@ export class AppController {
 
 <body class="markdown-body">
   <h1>
-    🎨 NFT API
+    🎨 NFT API!
   </h1>
 
   <p>
@@ -35,14 +37,13 @@ export class AppController {
     </li>
   </ul>
 </html>`;
-
-    return response.send(html);
   }
 
   @Get('/robots.txt')
   @ApiExcludeEndpoint()
-  getRobotsTxt(@Res() response: express.Response) {
-    response.setHeader('Content-Type', 'text/plain',);
-    return response.send('User-agent: *\nDisallow: /');
+  @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
+  @Header('Content-Type', 'text/plain')
+  getRobotsTxt(): string {
+    return 'User-agent: *\nDisallow: /';
   }
 }

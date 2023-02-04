@@ -1,7 +1,9 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Header, Param, ParseIntPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import axios from 'axios';
+
+import { tenMinutesInSeconds } from '../types/constants';
 
 
 @ApiTags('scales')
@@ -32,6 +34,7 @@ export class ScalesController {
     example: '333',
     type: 'number'
   })
+  @Header('Cache-Control', 'public, max-age=' + tenMinutesInSeconds + ', immutable')
   async getSingle(@Param('tokenId', ParseIntPipe) tokenId: number) {
 
     return {
@@ -65,6 +68,7 @@ export class ScalesController {
    */
   @Get(['scales/getAll'])
   @ApiOperation({ operationId: 'getAll' })
+  @Header('Cache-Control', 'public, max-age=' + tenMinutesInSeconds + ', immutable')
   async getAll() {
 
     // Logger.verbose("Serving api/getAll/");

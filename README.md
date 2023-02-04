@@ -78,6 +78,9 @@ Johannes has been in the topic 10 years before, and has pretty much forgotten it
 * hint: start with a real webserver, eg `npx http-server`
 
 
-# TODO
+# TODO Chats
 
-https://chat.blockscan.com/apis --> https://backend.haushoppe.art/chat/webhook
+* https://chat.blockscan.com/apis --> https://backend.haushoppe.art/chat/webhook
+* Kendo Chat + Twilio?
+  * https://www.telerik.com/kendo-angular-ui/components/conversational-ui/
+  * https://www.twilio.com/docs/conversations/javascript/exploring-conversations-javascript-quickstart

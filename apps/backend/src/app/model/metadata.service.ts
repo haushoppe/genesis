@@ -44,6 +44,7 @@ export class MetadataService {
             tokenId
           };
           metadata.external_url = metadata.external_url + tokenId
+          metadata.animation_url = metadata.animation_url + tokenId
           results.push(metadata);
         } else {
           // we have a problem: we sold too much! :-/

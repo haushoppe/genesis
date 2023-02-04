@@ -13,8 +13,8 @@ import { MetatdataAttributeValue } from './metatdataAttributeValue';
 
 
 export interface MetatdataAttribute { 
-    traitType: string;
+    trait_type: string;
     value: MetatdataAttributeValue;
-    displayType: string;
+    display_type: string;
 }
 

@@ -218,7 +218,7 @@ export class ApiController {
   @ApiParam({ name: 'tile4', type: 'number' })
   @ApiOkResponse({ type: Metadata })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
-  async tokenInfoLong(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
+  async tokenInfoMosaic(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
   @Param('tile1', ParseIntPipe) tile1: number,
   @Param('tile2', ParseIntPipe) tile2: number,
   @Param('tile3', ParseIntPipe) tile3: number,
@@ -251,4 +251,48 @@ export class ApiController {
     return response.send(imageBuffer);
   }
 
+  @Get(['api/tokenAnimation/:tokenName/:tokenId'])
+  @ApiOperation({ operationId: 'tokenAnimation' })
+  @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
+  @ApiParam({ name: 'tokenId', type: 'number' })
+  @ApiOkResponse({ type: String })
+  @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  async tokenAnimation(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<string> {
+
+    const allMints = await this.allMints(tokenName);
+    const token = allMints.find(x =>  x.tokenId === tokenId);
+
+    if (!token) {
+      throw new NotFoundException('Unknown tokenId');
+    }
+
+    return 'HELLO WORLD';
+  }
+
+  @Get(['api/tokenAnimation/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
+  @ApiOperation({ operationId: 'tokenAnimationMosaic' })
+  @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
+  @ApiParam({ name: 'tokenId', type: 'number' })
+  @ApiParam({ name: 'tile1', type: 'number' })
+  @ApiParam({ name: 'tile2', type: 'number' })
+  @ApiParam({ name: 'tile3', type: 'number' })
+  @ApiParam({ name: 'tile4', type: 'number' })
+  @ApiOkResponse({ type: String })
+  @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  async tokenAnimationMosaic(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
+  @Param('tile1', ParseIntPipe) tile1: number,
+  @Param('tile2', ParseIntPipe) tile2: number,
+  @Param('tile3', ParseIntPipe) tile3: number,
+  @Param('tile4', ParseIntPipe) tile4: number
+  ): Promise<string> {
+
+    const allMints = await this.allMints(tokenName);
+    const token = allMints.find(x =>  x.tokenId === tokenId);
+
+    if (!token) {
+      throw new NotFoundException('Unknown tokenId');
+    }
+
+    return 'HELLO WORLD 2';
+  }
 }

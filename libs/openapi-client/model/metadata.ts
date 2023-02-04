@@ -14,7 +14,8 @@ import { MetatdataAttribute } from './metatdataAttribute';
 
 export interface Metadata { 
     description: string;
-    externalUrl: string;
+    external_url: string;
+    animation_url: string;
     image: string;
     name: string;
     attributes: Array<MetatdataAttribute>;

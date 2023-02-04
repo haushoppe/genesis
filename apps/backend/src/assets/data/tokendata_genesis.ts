@@ -1,11 +1,22 @@
 import { Metadata } from "../../app/types/metadata";
 
 const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOUNT__ different woodblocks and printed them on top of each other with absolute precision.'
-const externalUrl = 'https://genesis.haushoppe.art/nft/';
+
+const externalUrlLive = 'https://genesis.haushoppe.art/nft/';
+const externalUrlLocalhost = 'http://localhost:4201/nft/';
+
 const assetsBaseUrlLive = 'https://assets.haushoppe.art/genesis/';
 const assetsBaseUrlLocalhost = 'http://localhost:8080/genesis/';
+
 const mosaicBaseUrlLive = 'https://backend.haushoppe.art/api/tokenPreview/genesis/';
 const mosaicBaseUrlLocalhost = 'http://localhost:3333/api/tokenPreview/genesis/';
+
+const animationBaseUrlLive = 'https://backend.haushoppe.art/api/tokenAnimation/genesis/';
+const animationBaseUrlLocalhost = 'http://localhost:3333/api/tokenAnimation/genesis/';
+
+const animationMosaicBaseUrlLive = 'https://backend.haushoppe.art/api/tokenAnimation/genesis/';
+const animationMosaicBaseUrlLocalhost = 'http://localhost:3333/api/tokenAnimation/genesis/';
+
 const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
 
 
@@ -70,7 +81,9 @@ export function createGenesisMosaicMetadata(
   tokenTile4: Metadata,
   environment: string): Metadata {
 
+  const externalUrl = environment === 'development' ? externalUrlLocalhost : externalUrlLive;
   const mosaicBaseUrl = environment === 'development' ? mosaicBaseUrlLocalhost : mosaicBaseUrlLive;
+  const animationMosaicBaseUrl = environment === 'development' ? animationMosaicBaseUrlLocalhost : animationMosaicBaseUrlLive;
 
   const metadata: Metadata = {
     name: 'Mosaic #' + mosaicCounter,
@@ -81,6 +94,7 @@ export function createGenesisMosaicMetadata(
     + `${tokenTile3.name} (Token #${tokenTile3.tokenId})  \n`
     + `${tokenTile4.name} (Token #${tokenTile4.tokenId})`,
     external_url: externalUrl + tokenId,
+    animation_url: `${ animationMosaicBaseUrl}${ tokenId }/${ tokenTile1.tokenId }/${ tokenTile2.tokenId }/${ tokenTile3.tokenId }/${ tokenTile4.tokenId }`,
     image: mosaicBaseUrl + tokenId,
     tile1Image: tokenTile1.image,
     tile2Image: tokenTile2.image,
@@ -114,7 +128,10 @@ export function createFallbackImage(tokenId: number) {
 // only tokenId is missing, these entries are "unassigned"
 export function createRawGenesisMetadata(artworks: WoodcutDetails[], environment: string) {
 
+  const externalUrl = environment === 'development' ? externalUrlLocalhost : externalUrlLive;
+  const animationBaseUrl = environment === 'development' ? animationBaseUrlLocalhost : animationBaseUrlLive;
   const assetsBaseUrl = environment === 'development' ? assetsBaseUrlLocalhost : assetsBaseUrlLive;
+
   const results: Metadata[] = [];
 
   artworks.forEach((artwork) => {
@@ -123,6 +140,7 @@ export function createRawGenesisMetadata(artworks: WoodcutDetails[], environment
       name: '?',
       description: genericDescription.replace('__AMOUNT__', artwork.amountOfColors + ''),
       external_url: externalUrl,
+      animation_url: animationBaseUrl,
       image: '?',
       attributes: [
         {

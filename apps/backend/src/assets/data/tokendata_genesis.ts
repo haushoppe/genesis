@@ -89,10 +89,10 @@ export function createGenesisMosaicMetadata(
     name: 'Mosaic #' + mosaicCounter,
     description:
       `A mosaic of four tiles:  \n`  // Markdown style linebreaks
-    + `${tokenTile1.name} (Token #${tokenTile1.tokenId})  \n`
-    + `${tokenTile2.name} (Token #${tokenTile2.tokenId})  \n`
-    + `${tokenTile3.name} (Token #${tokenTile3.tokenId})  \n`
-    + `${tokenTile4.name} (Token #${tokenTile4.tokenId})`,
+    + `[${ tokenTile1.name } (Token #${ tokenTile1.tokenId })](${ tokenTile1.external_url })  \n`
+    + `[${ tokenTile2.name } (Token #${ tokenTile2.tokenId })](${ tokenTile2.external_url })  \n`
+    + `[${ tokenTile3.name } (Token #${ tokenTile3.tokenId })](${ tokenTile3.external_url })  \n`
+    + `[${ tokenTile4.name } (Token #${ tokenTile4.tokenId })](${ tokenTile4.external_url })`,
     external_url: externalUrl + tokenId,
     animation_url: `${ animationMosaicBaseUrl}${ tokenId }/${ tokenTile1.tokenId }/${ tokenTile2.tokenId }/${ tokenTile3.tokenId }/${ tokenTile4.tokenId }`,
     image: mosaicBaseUrl + tokenId,

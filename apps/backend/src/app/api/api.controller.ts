@@ -295,14 +295,7 @@ export class ApiController {
   @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
   async tokenAnimation(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<string> {
 
-    const allMints = await this.allMints(tokenName);
-    const token = allMints.find(x =>  x.tokenId === tokenId);
-
-    if (!token) {
-      throw new NotFoundException('Unknown tokenId');
-    }
-
-    return 'HELLO WORLD';
+    return this.tokenAnimationMosaic(tokenName, tokenId, 0 , 0, 0, 0)
   }
 
   @Get(['api/tokenAnimation/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
@@ -322,12 +315,12 @@ export class ApiController {
   @Param('tile4', ParseIntPipe) tile4: number): Promise<string> {
 
     const allMints = await this.allMints(tokenName);
+    const noTiles = tile1 === 0 && tile2 === 0 && tile3 ===  0 && tile4 === 0;
 
     // token can be also null, then we are in preview mode
     const token = allMints.find(x =>  x.tokenId === tokenId);
 
-    const html =
-`<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -339,14 +332,15 @@ export class ApiController {
   <body>
 
 <div class="square">
-${ this.imageService.getMosaicAnimationHtml(tokenId, tile1, tile2, tile3, tile4, allMints) }
+${
+  noTiles ?
+  this.imageService.getAnimationHtml(tokenId, allMints) :
+  this.imageService.getMosaicAnimationHtml(tokenId, tile1, tile2, tile3, tile4, allMints) }
 </div>
 
   </body>
 </html>
 `;
-
-    return html;
   }
 }
 

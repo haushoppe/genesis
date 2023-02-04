@@ -22,7 +22,7 @@ bootstrapApplication(AppComponent,{
     importProvidersFrom(RouterModule.forRoot([
       { path: '', component: StartComponent },
       { path: 'nft/:tokenId', component: DetailsComponent }
-    ]))
+    ], { scrollPositionRestoration: 'top' }))
   ]
 })
 .catch((err) => console.error(err));

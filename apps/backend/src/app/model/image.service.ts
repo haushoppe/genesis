@@ -61,13 +61,13 @@ export class ImageService {
     return await sharp(buffer).resize({ width: 200, height: 200 }).toBuffer();
   }
 
-  getAnimationHtml(tokenId: number, allMints: Metadata[]) {
+  getAnimationHtml(tokenId: number, allMints: Metadata[], level = 1) {
 
     const token = allMints.find(x =>  x.tokenId === tokenId);
-    return `<div class="tile"><a href="${ token.animation_url }"><img src="${ token.image }" alt="" title="${ token?.name } (Token #${ tokenId })"></a></div>`;
+    return `${ '  '.repeat(level) }<div class="tile"><a href="${ token.animation_url }"><img src="${ token.image }" alt="" title="${ token?.name } (Token #${ tokenId })"></a></div>`;
 }
 
-  getMosaicAnimationHtml(tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, allMints: Metadata[]) {
+  getMosaicAnimationHtml(tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, allMints: Metadata[], level = 1) {
 
         // token can be also null!
       const token = allMints.find(x =>  x.tokenId === tokenId);
@@ -76,35 +76,35 @@ export class ImageService {
       const tokenTile3 = allMints.find(x =>  x.tokenId === tile3);
       const tokenTile4 = allMints.find(x =>  x.tokenId === tile4);
 
-      return `<div class="mosaic">
+      return `${ '  '.repeat(level) }<div class="mosaic" title="${ token?.name } (Token #${ tokenId })">
 ${ tokenTile1.isMosaic ? this.getMosaicAnimationHtml(
   tokenTile1.tokenId,
   tokenTile1.tile1TokenId as number,
   tokenTile1.tile2TokenId as number,
   tokenTile1.tile3TokenId as number,
   tokenTile1.tile4TokenId as number,
-  allMints) : this.getAnimationHtml(tokenTile1.tokenId, allMints) }
+  allMints, level + 1) : this.getAnimationHtml(tokenTile1.tokenId, allMints, level + 1) }
 ${ tokenTile2.isMosaic ? this.getMosaicAnimationHtml(
   tokenTile2.tokenId,
   tokenTile2.tile1TokenId as number,
   tokenTile2.tile2TokenId as number,
   tokenTile2.tile3TokenId as number,
   tokenTile2.tile4TokenId as number,
-  allMints) : this.getAnimationHtml(tokenTile2.tokenId, allMints) }
+  allMints, level + 1) : this.getAnimationHtml(tokenTile2.tokenId, allMints, level + 1) }
 ${ tokenTile3.isMosaic ? this.getMosaicAnimationHtml(
   tokenTile3.tokenId,
   tokenTile3.tile1TokenId as number,
   tokenTile3.tile2TokenId as number,
   tokenTile3.tile3TokenId as number,
   tokenTile3.tile4TokenId as number,
-  allMints) : this.getAnimationHtml(tokenTile3.tokenId, allMints) }
+  allMints, level + 1) : this.getAnimationHtml(tokenTile3.tokenId, allMints, level + 1) }
 ${ tokenTile4.isMosaic ? this.getMosaicAnimationHtml(
   tokenTile4.tokenId,
   tokenTile4.tile1TokenId as number,
   tokenTile4.tile2TokenId as number,
   tokenTile4.tile3TokenId as number,
   tokenTile4.tile4TokenId as number,
-  allMints) : this.getAnimationHtml(tokenTile4.tokenId, allMints) }
-</div>`;
+  allMints, level + 1) : this.getAnimationHtml(tokenTile4.tokenId, allMints, level + 1) }
+${ '  '.repeat(level) }</div>`;
   }
 }

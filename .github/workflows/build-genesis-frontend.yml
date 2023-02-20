@@ -21,6 +21,7 @@ jobs:
         node-version: 16.x
 
     - run: npm install
+    - run: npx kendo-ui-license activate
     - run: npm run build:genesis-frontend:production
     - name: Deploy Frontend to `haushoppe/genesis-frontend-build` repo
       env:

@@ -1,0 +1,16 @@
+name: Redeploy backend.haushoppe.art
+
+on:
+  workflow_dispatch
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Redeploy
+      env:
+        KOYEB_API_KEY: ${{ secrets.KOYEB_API_KEY }}
+      run: 'curl -X POST "https://app.koyeb.com/v1/services/26aa4bdc-538f-4bbd-8f2d-38ec9be7959f/redeploy" -H "Authorization: Bearer $KOYEB_API_KEY"'

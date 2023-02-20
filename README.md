@@ -1,12 +1,13 @@
 # Big Mongorepo
 
-* https://genesis.haushoppe.art/
-* https://backend.haushoppe.art/
-* https://assets.haushoppe.art/
+* https://genesis.haushoppe.art/  (Cloudflare Pages)
+* https://backend.haushoppe.art/  (Koyeb)
+  * Internal URL: https://backend-teamkow593gppp.koyeb.app/
+* https://assets.haushoppe.art/  (Cloudflare Pages)
 
-TODO
-* https://scales-dashboard.theangelswing.art/
-* https://cube-threejs-test-build.pages.dev/
+Unfinished projects:
+* https://scales-dashboard.theangelswing.art/  (Cloudflare Pages)
+* https://cube-threejs-test-build.pages.dev/  (Cloudflare Pages)
 
 
 ## Setup
@@ -43,7 +44,7 @@ npm run start
 
 ## Infrastructure
 
-### Database
+### Database (TODO, right now unused)
 
 * [MongoDB Atlas](https://www.mongodb.com/cloud)
 

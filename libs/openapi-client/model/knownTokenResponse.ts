@@ -13,10 +13,13 @@
 
 export interface KnownTokenResponse { 
     name: string;
+    maximumAllowedMintsPerAddress: number;
     address: string;
+    network: string;
+    firstBlockNumber: number;
+    implementsMosaics: boolean;
     etherscanLink: string;
     signer: string;
-    maximumAllowedMintsPerAddress: number;
     allowlistEntries: number;
     contractName: string;
     totalSupply: number;

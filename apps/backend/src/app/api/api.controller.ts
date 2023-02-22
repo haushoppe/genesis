@@ -38,8 +38,8 @@ import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../mod
 import { ImageService } from '../model/image.service';
 import { MetadataService } from '../model/metadata.service';
 import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
-import { KnownTokenConfig } from '../types/known-token-config';
-import { KnownTokenName } from '../types/known-token-name';
+import { KnownTokenConfig } from '../../../../shared/known-token-config';
+import { KnownTokenName } from '../../../../shared/known-token-name';
 import { Metadata } from '../types/metadata';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
@@ -133,15 +133,18 @@ export class ApiController {
     return {
       environment: this.configService.get('environment'),
       uptime: formatSeconds(process.uptime()),
-      network: this.configService.get('network'),
       knownTokens: await Promise.all(knownTokens.map(async token => ({
         name: token.name,
+        maximumAllowedMintsPerAddress: token.maximumAllowedMintsPerAddress,
         address: token.address,
+        network: token.network,
+        firstBlockNumber: token.firstBlockNumber,
+        implementsMosaics: token.implementsMosaics,
+
         etherscanLink: (this.configService.get('network') === 'goerli' ?
           'https://goerli.etherscan.io/address/' :
           'https://etherscan.io/address/') + token.address,
         signer: getSigner(this.configService.get('signerKey_' + token.name)).address,
-        maximumAllowedMintsPerAddress: token.maximumAllowedMintsPerAddress,
         allowlistEntries: this.allowlistService.getMintWallets(token.name).length,
         contractName: (await this.contractService.getContractName(token.name)),
         totalSupply: (await this.contractService.getTotalSupply(token.name))

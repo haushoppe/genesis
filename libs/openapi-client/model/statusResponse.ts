@@ -15,7 +15,6 @@ import { KnownTokenResponse } from './knownTokenResponse';
 export interface StatusResponse { 
     environment: string;
     uptime: string;
-    network: string;
     knownTokens: Array<KnownTokenResponse>;
 }
 

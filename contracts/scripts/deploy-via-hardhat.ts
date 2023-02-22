@@ -2,20 +2,20 @@ import { ethers } from 'hardhat';
 
 async function main() {
 
-  // doing 2x for loops to have the same contract addresses each time
+  // doing 2x for loops to have the same contract addresses each time, see `known-tokens.ts`
   const deployedTokens: { [tokenName: string]: any } = {};
-  for (const tokenName of ['GenesisToken',  'MosaicToken', 'SeaToken', 'ArtToken']) {
+  for (const tokenName of ['GenesisToken',  'MosaicToken', 'SeaToken', 'ArtToken', 'ArtistToken', 'CubeToken']) {
 
     const contractFactory = await ethers.getContractFactory(tokenName);
     const token = await contractFactory.deploy();
     await token.deployed();
 
-    console.log(`*** ${ tokenName } deployed to ${ token.address } ***`);
+    console.log(`\x1b[33m *** ${ tokenName } deployed to ${ token.address } *** \x1b[0m`);
 
     deployedTokens[tokenName] = token;
   }
 
-  for (const tokenName of ['GenesisToken',  'MosaicToken', 'SeaToken', 'ArtToken']) {
+  for (const tokenName of ['GenesisToken',  'MosaicToken', 'SeaToken', 'ArtToken', 'ArtistToken', 'CubeToken']) {
 
     const token = deployedTokens[tokenName];
 

@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
 
-import { KnownTokenConfig } from '../types/known-token-config';
-import { KnownTokenName } from '../types/known-token-name';
+import { KnownTokenConfig } from '../../../../shared/known-token-config';
+import { KnownTokenName } from '../../../../shared/known-token-name';
 import { MintInfo } from '../types/mint-info';
 import { CacheService } from './cache.service';
 import { ZERO_ADDRESS } from './ethers-utils';
-import { knownAbis } from './known-abis';
+import { knownAbis } from '../../../../shared/known-abis';
 
 
 @Injectable()

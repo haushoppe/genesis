@@ -51,8 +51,17 @@ This will open a webserver on http://localhost:8080/ .
 Start all apps and also the test ethereum network with test data:
 
 ```
-npm run start
+npm run start:all
 ```
+
+Or run them separately, in two shells:
+
+```
+npm start
+npm run start:hardhat
+```
+
+
 
 Only start backend (API) in dev mode:
 

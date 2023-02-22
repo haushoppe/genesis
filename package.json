@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "concurrently --raw \"nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend\" \"npm run start:hardhat\"",
+    "start": "nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend",
+    "start:all": "concurrently --raw \"nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend\" \"npm run start:hardhat\"",
     "build": "nx run-many --target=build --projects=backend,genesis-frontend,scales-dashboard-frontend",
     "test": "nx run-many --target=test --projects=backend,genesis-frontend,scales-dashboard-frontend",
     "start:backend": "nx serve --project=backend",

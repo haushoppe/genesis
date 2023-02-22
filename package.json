@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend",
+    "start": "concurrently --raw \"nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend\" \"npm run start:hardhat\"",
     "build": "nx run-many --target=build --projects=backend,genesis-frontend,scales-dashboard-frontend",
     "test": "nx run-many --target=test --projects=backend,genesis-frontend,scales-dashboard-frontend",
     "start:backend": "nx serve --project=backend",
@@ -84,6 +84,7 @@
     "@types/sharp": "^0.31.1",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
     "@typescript-eslint/parser": "^5.48.0",
+    "concurrently": "^7.6.0",
     "eslint": "^8.31.0",
     "eslint-config-prettier": "^8.6.0",
     "hardhat": "^2.12.6",

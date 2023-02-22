@@ -12,7 +12,14 @@ Unfinished projects:
 
 ## Setup
 
+This project was developed with Node v16. Newer version should work fine, too.  
 Copy `.env.example` to `.env` and adjust the config values.
+
+Install all npm deps:
+
+```
+npm install
+```
 
 To make the developer experience nicer,
 you may want to install the Nx CLI globally.  
@@ -22,25 +29,43 @@ But this is optional:
 npm install -g nx
 ```
 
+
+## Assets
+
+Are in a different repo, hosted on Cloudflare Pages:
+
+https://github.com/haushoppe/assets
+
+For local development, clone the repo and run a simple webserver like this:
+
+```
+cd assets
+npx http-server -o
+```
+
+This will open a webserver on http://localhost:8080/ .
+
+
 ## Howto
 
-Start backend (API) in dev mode:
+Start all apps and also the test ethereum network with test data:
+
+```
+npm run start
+```
+
+Only start backend (API) in dev mode:
 
 ```
 npm run start:backend 
 ```
 
-Start Genesis Frontend (Angular App) in dev mode:
+Only start Genesis Frontend (Angular App) in dev mode:
 
 ```
 npm run start:genesis-frontend
 ``` 
 
-Start all
-
-```
-npm run start
-```
 
 ## Infrastructure
 

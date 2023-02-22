@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
 
-import { KnownTokenConfig } from '../../../../shared/known-token-config';
+import { KnownTokenConfig } from '../config/known-token-config';
 import { KnownTokenName } from '../../../../shared/known-token-name';
 import { MintInfo } from '../types/mint-info';
 import { CacheService } from './cache.service';
@@ -13,16 +13,16 @@ import { knownAbis } from '../../../../shared/known-abis';
 @Injectable()
 export class ContractService {
 
-  private knownTokens = this.config.get<KnownTokenConfig[]>('knownTokens');
+  private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
   private readonly cacheTimeToLive = 60 * 5; // 5 minutes
 
-  constructor(private config: ConfigService, private cacheService: CacheService) { }
+  constructor(private configService: ConfigService, private cacheService: CacheService) { }
 
   getContract(tokenName: string) {
 
     const tokenConfig = this.knownTokens.find(x => x.name === tokenName);
     const abi = knownAbis[tokenName];
-    const network = tokenConfig.network;
+    const network = tokenConfig.networkName;
     let provider: ethers.providers.Provider;
 
     if (network === 'hardhat') {
@@ -31,7 +31,7 @@ export class ContractService {
       provider = new ethers.providers.JsonRpcProvider();
 
     } else {
-      const apiKey = this.config.get<string>('alchemyKey_' + network);
+      const apiKey = this.configService.get<string>('alchemyKey_' + network);
 
       // const provider = new ethers.providers.FallbackProvider([
       //   new ethers.providers.AlchemyProvider(NETWORK_NAME, ALCHEMY_KEY),

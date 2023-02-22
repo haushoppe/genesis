@@ -15,7 +15,8 @@ export interface KnownTokenResponse {
     name: string;
     maximumAllowedMintsPerAddress: number;
     address: string;
-    network: string;
+    networkName: string;
+    networkConfig: object;
     firstBlockNumber: number;
     implementsMosaics: boolean;
     explorerLink: string;

@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
 
-import { knownTokens } from '../../../shared/known-tokens';
-import { explorerLinks, KnownNetworkName } from '../../../shared/known-network-name';
+import { knownTokens } from './config/known-tokens';
+import { KnownNetworkName } from '../../../shared/known-network-name';
 
 
 export const configuration = () => {
@@ -19,8 +19,7 @@ export const configuration = () => {
     signerKey_artist: process.env.SIGNER_KEY_ARTIST,
     signerKey_cube: process.env.SIGNER_KEY_CUBE,
     network,
-    knownTokens: knownTokens.filter(x => x.network === network),
-    explorerLink: explorerLinks[network],
+    knownTokens: knownTokens.filter(x => x.networkName === network),
     alchemyKey_goerli: process.env.ALCHEMY_KEY_MAINNET,
     alchemyKey_mainnet: process.env.ALCHEMY_KEY_GOERLI,
   }

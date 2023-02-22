@@ -38,12 +38,13 @@ import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../mod
 import { ImageService } from '../model/image.service';
 import { MetadataService } from '../model/metadata.service';
 import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
-import { KnownTokenConfig } from '../../../../shared/known-token-config';
+import { KnownTokenConfig } from '../config/known-token-config';
 import { KnownTokenName } from '../../../../shared/known-token-name';
 import { Metadata } from '../types/metadata';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
 import { StatusResponse } from '../types/status-response';
+import { KnownChains } from '../config/known-chains';
 
 
 @ApiTags('api')
@@ -137,10 +138,14 @@ export class ApiController {
         name: token.name,
         maximumAllowedMintsPerAddress: token.maximumAllowedMintsPerAddress,
         address: token.address,
-        network: token.network,
+        networkName: token.networkName,
+        networkConfig: {
+          ...KnownChains[token.networkName],
+          rpcUrl: KnownChains[token.networkName].rpcUrl.replace('API_KEY', this.configService.get<string>('alchemyKey_' + token.networkName))
+        },
         firstBlockNumber: token.firstBlockNumber,
         implementsMosaics: token.implementsMosaics,
-        explorerLink: this.configService.get('explorerLink') + token.address,
+        explorerLink: KnownChains[token.networkName].blockExplorerUrl + '/address/' + token.address,
         signer: getSigner(this.configService.get('signerKey_' + token.name)).address,
         allowlistEntries: this.allowlistService.getMintWallets(token.name).length,
         contractName: (await this.contractService.getContractName(token.name)),

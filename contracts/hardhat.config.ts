@@ -30,6 +30,14 @@ const config: HardhatUserConfig = {
     cache: './cache',
     sources: './', // <-- default would be `test`
     tests: './tests' // <-- default would be `test`
+  },
+
+  // MetaMask chainId issue
+  // https://hardhat.org/hardhat-network/docs/metamask-issue#metamask-chainid-issue
+  networks: {
+    hardhat: {
+      chainId: 1337
+    }
   }
 };
 

@@ -15,11 +15,27 @@
 </p>
 
 
+<app-alert *ngIf="!mintService.checkForWeb3Provider()">
+  This browser does not have an Ethereum provider installed.<br>
+  Please install <a href="https://metamask.io/" target="_blank">MetaMask</a> or any other wallet of your choice
+  to interact with the <a href="https://ethereum.org/">Ethereum blockchain</a>.
+</app-alert>
+
 <p class="mb-5">
-  <a href="javascript:void(0);" class="btn btn-lg btn-secondary fw-bold">
+
+  <button *ngIf="mintService.checkForWeb3Provider()"
+    class="btn btn-lg btn-secondary fw-bold" (click)="mintService.connectWallet()">
     Connect wallet
-  </a>
+  </button>
+
+    <button
+      *ngIf="!mintService.checkForWeb3Provider()"
+      disabled
+      class="btn btn-lg btn-secondary fw-bold">
+      Can't connect wallet
+    </button>
 </p>
+
 
 <h2>All elements</h2>
 

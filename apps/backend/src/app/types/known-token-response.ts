@@ -10,7 +10,7 @@ export class KnownTokenResponse {
   @ApiProperty() firstBlockNumber: number;
   @ApiProperty() implementsMosaics: boolean | undefined;
 
-  @ApiProperty() etherscanLink: string;
+  @ApiProperty() explorerLink: string;
   @ApiProperty() signer: string;
   @ApiProperty() allowlistEntries: number;
   @ApiProperty() contractName: string;

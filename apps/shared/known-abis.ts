@@ -1,5 +1,7 @@
-export const knownAbis = {
-  genesis: [
+import { KnownTokenName } from "./known-token-name";
+
+export const knownAbis: { [key in KnownTokenName]: string[] } = {
+  [KnownTokenName.genesis]: [
     "constructor()",
     "error ApprovalCallerNotOwnerNorApproved()",
     "error ApprovalQueryForNonexistentToken()",
@@ -86,7 +88,7 @@ export const knownAbis = {
     "function withdraw()",
     "function withdrawTo(address to, uint256 amount)"
   ],
-  mosaic: [
+  [KnownTokenName.mosaic]: [
     "constructor()",
     "error ApprovalCallerNotOwnerNorApproved()",
     "error ApprovalQueryForNonexistentToken()",
@@ -173,7 +175,7 @@ export const knownAbis = {
     "function withdraw()",
     "function withdrawTo(address to, uint256 amount)"
   ],
-  sea: [
+  [KnownTokenName.sea]: [
     "constructor()",
     "error ApprovalCallerNotOwnerNorApproved()",
     "error ApprovalQueryForNonexistentToken()",
@@ -250,7 +252,7 @@ export const knownAbis = {
     "function withdraw()",
     "function withdrawTo(address to, uint256 amount)"
   ],
-  art: [
+  [KnownTokenName.art]: [
     "constructor()",
     "error ApprovalCallerNotOwnerNorApproved()",
     "error ApprovalQueryForNonexistentToken()",
@@ -327,7 +329,7 @@ export const knownAbis = {
     "function withdraw()",
     "function withdrawTo(address to, uint256 amount)"
   ],
-  artist: [
+  [KnownTokenName.artist]: [
     "constructor()",
     "error ApprovalCallerNotOwnerNorApproved()",
     "error ApprovalQueryForNonexistentToken()",
@@ -407,7 +409,7 @@ export const knownAbis = {
     "function withdraw()",
     "function withdrawTo(address to, uint256 amount)"
   ],
-  cube: [
+  [KnownTokenName.cube]: [
     "constructor()",
     "error ApprovalCallerNotOwnerNorApproved()",
     "error ApprovalQueryForNonexistentToken()",

@@ -18,7 +18,7 @@ export interface KnownTokenResponse {
     network: string;
     firstBlockNumber: number;
     implementsMosaics: boolean;
-    etherscanLink: string;
+    explorerLink: string;
     signer: string;
     allowlistEntries: number;
     contractName: string;

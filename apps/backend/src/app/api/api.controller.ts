@@ -140,10 +140,7 @@ export class ApiController {
         network: token.network,
         firstBlockNumber: token.firstBlockNumber,
         implementsMosaics: token.implementsMosaics,
-
-        etherscanLink: (this.configService.get('network') === 'goerli' ?
-          'https://goerli.etherscan.io/address/' :
-          'https://etherscan.io/address/') + token.address,
+        explorerLink: this.configService.get('explorerLink') + token.address,
         signer: getSigner(this.configService.get('signerKey_' + token.name)).address,
         allowlistEntries: this.allowlistService.getMintWallets(token.name).length,
         contractName: (await this.contractService.getContractName(token.name)),

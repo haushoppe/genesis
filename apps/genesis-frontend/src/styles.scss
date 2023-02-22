@@ -32,6 +32,17 @@ a:hover {
   text-decoration: underline;
 }
 
+p, app-alert {
+  a {
+    text-decoration: underline;
+  }
+}
+
+button:disabled {
+  cursor: not-allowed;
+  pointer-events: all !important;
+}
+
 // see http://www.simon-li.com/design-and-code/an-elegant-way-to-break-the-bootstrap-container/
 // .break-out-container {
 //   width: 100vw;

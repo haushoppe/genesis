@@ -1,10 +1,11 @@
-import { KnownTokenName } from "./known-token-name";
+import { KnownNetworkName } from './known-network-name';
+import { KnownTokenName } from './known-token-name';
 
 export interface KnownTokenConfig {
   name: KnownTokenName;
   maximumAllowedMintsPerAddress: number;
   address: string;
-  network: 'hardhat' | 'goerli' | 'mainnet';
+  network: KnownNetworkName;
 
   /**
    * used to limit queries, add the block number where the token was minted

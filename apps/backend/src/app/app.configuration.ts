@@ -1,6 +1,8 @@
 import * as Joi from 'joi';
 
 import { knownTokens } from '../../../shared/known-tokens';
+import { explorerLinks, KnownNetworkName } from '../../../shared/known-network-name';
+
 
 export const configuration = () => {
 
@@ -18,6 +20,7 @@ export const configuration = () => {
     signerKey_cube: process.env.SIGNER_KEY_CUBE,
     network,
     knownTokens: knownTokens.filter(x => x.network === network),
+    explorerLink: explorerLinks[network],
     alchemyKey_goerli: process.env.ALCHEMY_KEY_MAINNET,
     alchemyKey_mainnet: process.env.ALCHEMY_KEY_GOERLI,
   }
@@ -27,7 +30,7 @@ export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production'),
   PORT: Joi.number(),
   MONGODB_URI: Joi.string().required(),
-  NETWORK: Joi.string().valid('hardhat', 'mainnet', 'goerli'),
+  NETWORK: Joi.string().valid(KnownNetworkName.hardhat, KnownNetworkName.goerli, KnownNetworkName.mainnet),
   SIGNER_KEY_GENESIS: Joi.string().required(),
   SIGNER_KEY_MOSAIC: Joi.string().required(),
   SIGNER_KEY_SEA: Joi.string().required(),

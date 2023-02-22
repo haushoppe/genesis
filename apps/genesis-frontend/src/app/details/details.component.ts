@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map, retry, switchMap, tap } from 'rxjs';
 
-import { LoadingIndicatorComponent } from '../loading-indicator/loading-indicator.component';
+import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { ApiService } from '../openapi-client';
 import { ParseMarkdownPipe } from './parse-markdown.pipe';
 import { SafeResourceUrlPipe } from './safe-url.pipe';

@@ -1,12 +1,10 @@
 const webpack = require('webpack')
 
 // see https://onboard.blocknative.com/docs/modules/core#webpack-5
+// see https://nx.dev/packages/angular/executors/webpack-dev-server
 
 module.exports = {
   resolve: {
-    // fallback: {
-    //   path: require.resolve('path-browserify')
-    // },
     alias: {
       assert: 'assert',
       buffer: 'buffer',

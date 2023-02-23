@@ -20,10 +20,6 @@ export class MintService {
 
   constructor(private walletService: WalletService) { }
 
-  checkForWeb3Provider() {
-    return !!window.ethereum;
-  }
-
   async connectWallet() {
 
     this.walletService.connect();

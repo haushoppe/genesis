@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import Onboard, { OnboardAPI } from '@web3-onboard/core';
 
 import injectedModule from '@web3-onboard/injected-wallets';
-import gnosisModule from '@web3-onboard/gnosis'
 import ledgerModule from '@web3-onboard/ledger'
 import trezorModule from '@web3-onboard/trezor'
 import walletConnectModule from '@web3-onboard/walletconnect'
@@ -18,7 +17,6 @@ import { ApiService, StatusResponse } from '../openapi-client';
 import { hideBlocknativeLogo } from './hide-blocknative-logo';
 
 const injected = injectedModule();
-const gnosis = gnosisModule();
 const ledger = ledgerModule();
 const trezor = trezorModule({ email: 'team@haushoppe.art', appUrl: 'https://genesis.haushoppe.art' });
 const walletConnect = walletConnectModule();
@@ -111,7 +109,6 @@ export class WalletService {
       this.onboard = Onboard({
         wallets: [
           injected,
-          gnosis,
           ledger,
           trezor,
           walletConnect,

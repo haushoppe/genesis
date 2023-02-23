@@ -257,11 +257,12 @@ export class ApiController {
   @ApiOkResponse({ type: Metadata })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
   @Header('Cache-Control', 'public, max-age=' + tenMinutesInSeconds + ', immutable')
-  async tokenInfoMosaic(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
-  @Param('tile1', ParseIntPipe) tile1: number,
-  @Param('tile2', ParseIntPipe) tile2: number,
-  @Param('tile3', ParseIntPipe) tile3: number,
-  @Param('tile4', ParseIntPipe) tile4: number
+  async tokenInfoMosaic(
+    @Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
+    @Param('tile1', ParseIntPipe) tile1: number,
+    @Param('tile2', ParseIntPipe) tile2: number,
+    @Param('tile3', ParseIntPipe) tile3: number,
+    @Param('tile4', ParseIntPipe) tile4: number
   ): Promise<Metadata> {
     return this.tokenInfo(tokenName, tokenId)
   }
@@ -313,11 +314,13 @@ export class ApiController {
   @ApiParam({ name: 'tile4', type: 'number' })
   @ApiOkResponse({ type: String })
   @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
-  async tokenAnimationMosaic(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
-  @Param('tile1', ParseIntPipe) tile1: number,
-  @Param('tile2', ParseIntPipe) tile2: number,
-  @Param('tile3', ParseIntPipe) tile3: number,
-  @Param('tile4', ParseIntPipe) tile4: number): Promise<string> {
+  async tokenAnimationMosaic(
+    @Param('tokenName') tokenName: KnownTokenName,
+    @Param('tokenId', ParseIntPipe) tokenId: number,
+    @Param('tile1', ParseIntPipe) tile1: number,
+    @Param('tile2', ParseIntPipe) tile2: number,
+    @Param('tile3', ParseIntPipe) tile3: number,
+    @Param('tile4', ParseIntPipe) tile4: number): Promise<string> {
 
     const allMints = await this.allMints(tokenName);
     const noTiles = tile1 === 0 && tile2 === 0 && tile3 ===  0 && tile4 === 0;

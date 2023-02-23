@@ -83,8 +83,3 @@ img {
 img:hover {
   transform: scale(1.8) rotate(45deg);
 }
-
-.square > .tile > a > img {
-  transition: none;
-  transform: none;
-}

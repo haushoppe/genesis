@@ -1,5 +1,5 @@
 import { AsyncPipe, JsonPipe, NgFor, NgIf } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { map, retry, tap } from 'rxjs';
 import { AlertComponent } from '../layout/alert-danger/alert.component';
 
@@ -21,7 +21,8 @@ import { MintService } from '../shared/mint-service';
       NftDisplayListComponent,
       NgFor,
       NgIf
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StartComponent {
 

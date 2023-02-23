@@ -1,5 +1,5 @@
 {
-  "npmScope": "cube-workspace",
+  "npmScope": "genesis-workspace",
   "affected": {
     "defaultBase": "main"
   },

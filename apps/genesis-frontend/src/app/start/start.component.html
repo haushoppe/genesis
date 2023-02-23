@@ -23,17 +23,10 @@
 
 <p class="mb-5">
 
-  <button *ngIf="mintService.checkForWeb3Provider()"
+  <button
     class="btn btn-lg btn-secondary fw-bold" (click)="mintService.connectWallet()">
     Connect wallet
   </button>
-
-    <button
-      *ngIf="!mintService.checkForWeb3Provider()"
-      disabled
-      class="btn btn-lg btn-secondary fw-bold">
-      Can't connect wallet
-    </button>
 </p>
 
 

@@ -5,7 +5,7 @@
   "prefix": "app",
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:browser",
+      "executor": "@nrwl/angular:webpack-browser",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/genesis-frontend",
@@ -22,7 +22,10 @@
           "node_modules/@fontsource/merriweather/300.css",
           "node_modules/@fontsource/merriweather/400.css",
           "apps/genesis-frontend/src/styles.scss"],
-        "scripts": []
+        "scripts": [],
+        "customWebpackConfig": {
+          "path": "apps/genesis-frontend/webpack.config.js"
+        }
       },
       "configurations": {
         "production": {
@@ -58,7 +61,7 @@
       "defaultConfiguration": "production"
     },
     "serve": {
-      "executor": "@angular-devkit/build-angular:dev-server",
+      "executor": "@nrwl/angular:webpack-dev-server",
       "options": {
         "port": 4201
       },

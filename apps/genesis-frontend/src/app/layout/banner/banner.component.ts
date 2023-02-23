@@ -1,5 +1,5 @@
 import { NgFor } from '@angular/common';
-import { Component, HostBinding } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding } from '@angular/core';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Component({
@@ -7,7 +7,8 @@ import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
   templateUrl: './banner.component.html',
   styleUrls: ['./banner.component.scss'],
   standalone: true,
-  imports: [NgFor]
+  imports: [NgFor],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BannerComponent {
 

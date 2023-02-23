@@ -1,5 +1,5 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map, retry, switchMap, tap } from 'rxjs';
 
@@ -21,7 +21,8 @@ import { SafeResourceUrlPipe } from './safe-url.pipe';
     RouterLink,
     SafeResourceUrlPipe,
     JsonPipe
-  ]
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DetailsComponent {
   loading = false;

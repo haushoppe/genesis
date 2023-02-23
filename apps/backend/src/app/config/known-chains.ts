@@ -1,9 +1,14 @@
 import { KnownNetworkName } from "../../../../shared/known-network-name"
 import { Chain } from "./web3-onboard-chain"
 
+
+// see https://github.com/blocknative/web3-onboard/core/src/utils.ts
+
+
 export const KnownChains: { [key in KnownNetworkName]: Chain } = {
   [KnownNetworkName.hardhat]: {
-    id: '0x1337',
+    // chainId: 1337, see https://hardhat.org/hardhat-network/docs/metamask-issue#metamask-chainid-issue
+    id: `0x${(1337).toString(16)}`,
     token: 'ETH',
     label: 'Hardhat Network',
     rpcUrl: `http://localhost:8545`,

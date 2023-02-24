@@ -1,12 +1,10 @@
 import { AsyncPipe, JsonPipe, NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { map, retry, tap } from 'rxjs';
-import { AlertComponent } from '../layout/alert-danger/alert.component';
 
+import { AlertComponent } from '../layout/loading-indicator/alert/alert.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { NftDisplayListComponent } from '../layout/nft-display-list/nft-display-list.component';
-import { ApiService } from '../openapi-client';
-import { MintService } from '../shared/mint-service';
+import { MintFacade } from '../store/mint.facade';
 
 @Component({
     selector: 'app-start',
@@ -25,15 +23,9 @@ import { MintService } from '../shared/mint-service';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StartComponent {
+  mintFacade = inject(MintFacade);
 
-  mintService = inject(MintService);
-  loading = false;
-
-  latestMints$ = inject(ApiService).allMints('genesis').pipe(
-    tap(() => this.loading = true),
-    map(x => x.reverse()),
-    retry({ delay: 1000 }),
-    tap(() => this.loading = false)
-  );
-
+  constructor() {
+    this.mintFacade.loadMints();
+  }
 }

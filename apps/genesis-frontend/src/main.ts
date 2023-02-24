@@ -1,12 +1,16 @@
 import { provideHttpClient } from '@angular/common/http';
-import { enableProdMode, importProvidersFrom } from '@angular/core';
+import { enableProdMode, importProvidersFrom, isDevMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
+import { provideEffects } from '@ngrx/effects';
+import { provideRouterStore, routerReducer } from '@ngrx/router-store';
+import { provideState, provideStore } from '@ngrx/store';
+import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { AppComponent } from './app/app.component';
-import { DetailsComponent } from './app/details/details.component';
 import { ApiModule, Configuration } from './app/openapi-client';
-import { StartComponent } from './app/start/start.component';
+import { MintEffects } from './app/store/mint.effects';
+import { mintFeature } from './app/store/mint.reducer';
 import { environment } from './environments/environment';
 
 if (environment.production) {
@@ -20,10 +24,27 @@ bootstrapApplication(AppComponent,{
       basePath: environment.api
     }))),
     provideRouter([
-      { path: '', component: StartComponent },
-      { path: 'nft/:tokenId', component: DetailsComponent }
+      { path: '',
+        loadChildren: () => import('./nft.routes').then(m => m.NFT_ROUTES),
+        providers: [
+          provideState(mintFeature),
+          provideEffects(MintEffects)
+      ]}
     ],
-    withInMemoryScrolling({ scrollPositionRestoration: 'top' }))
+    withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
+
+    // NgRx providers
+    provideStore({
+      router: routerReducer,
+    }),
+    provideRouterStore(),
+    provideStoreDevtools({
+      maxAge: 25, // Retains last 25 states
+      logOnly: !isDevMode(), // Restrict extension to log-only mode
+      autoPause: true, // Pauses recording actions and state changes when the extension window is not open
+      trace: false, //  If set to true, will include stack trace for every dispatched action, so you can see it in trace tab jumping directly to that part of code
+      traceLimit: 75, // maximum stack trace frames to be stored (in case trace option was provided as true)
+    })
   ]
 })
 .catch((err) => console.error(err));

@@ -127,11 +127,6 @@ export class WalletService {
     });
   }
 
-  checkForWeb3Provider() {
-    return !!window.ethereum;
-  }
-
-
   async connect() {
 
     if (!this.onboard) {

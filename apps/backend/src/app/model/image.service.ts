@@ -64,7 +64,7 @@ export class ImageService {
   getAnimationHtml(tokenId: number, allMints: Metadata[], level = 1) {
 
     const token = allMints.find(x =>  x.tokenId === tokenId);
-    return `${ '  '.repeat(level) }<div class="tile"><a href="${ token.animation_url }"><img src="${ token.image }" alt="" title="${ token?.name } (Token #${ tokenId })"></a></div>`;
+    return `${ '  '.repeat(level) }<div class="tile"><a href="${ token.external_url }" target="_top"><img src="${ token.image }" alt="" title="${ token?.name } (Token #${ tokenId })"></a></div>`;
   }
 
   getMosaicAnimationHtml(tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, allMints: Metadata[], level = 1) {

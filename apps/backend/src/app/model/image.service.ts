@@ -28,11 +28,11 @@ export class ImageService {
       this.getThumbnail(mosaic.tile4Image as string),
     ]);
 
-    // Create a blank 400x400 PNG image with transparent background
+    // Create a blank 402x402 PNG image with transparent background
     const image = await sharp({
       create: {
-        width: 404,
-        height: 404,
+        width: 402,
+        height: 402,
         channels: 4,
         background: { r: 255, g: 255, b: 255, alpha: 0 }
       }

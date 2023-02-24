@@ -332,7 +332,7 @@ export class ApiController {
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Genesis NFT by HAUS HOPPE → ${ token?.name } (Token #${ tokenId })</title>
+    <title>Genesis by HAUS HOPPE → ${ token?.name } (Token #${ tokenId })</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="/public/logo.svg">
     <link rel="stylesheet" href="/public/style-mosaic.css">

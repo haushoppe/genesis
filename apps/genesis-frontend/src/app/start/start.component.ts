@@ -4,7 +4,7 @@ import { map, retry, tap } from 'rxjs';
 import { AlertComponent } from '../layout/alert-danger/alert.component';
 
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
-import { NftDisplayListComponent } from '../nft-display-list/nft-display-list.component';
+import { NftDisplayListComponent } from '../layout/nft-display-list/nft-display-list.component';
 import { ApiService } from '../openapi-client';
 import { MintService } from '../shared/mint-service';
 

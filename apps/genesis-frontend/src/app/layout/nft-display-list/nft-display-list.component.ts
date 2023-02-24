@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { Metadata } from '../openapi-client';
+import { Metadata } from '../../openapi-client';
 
 @Component({
   selector: 'app-nft-display-list',

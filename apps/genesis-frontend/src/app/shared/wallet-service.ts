@@ -64,7 +64,7 @@ const connect = {
    * Then on init, onboard will try to reconnect to that wallet with
    * no modals displayed
    */
-  autoConnectLastWallet: true // defaults to false
+  autoConnectLastWallet: false // defaults to false
 }
 
 const lightTheme = {

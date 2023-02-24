@@ -1,7 +1,7 @@
-import { HttpClientModule } from '@angular/common/http';
-import { enableProdMode, importProvidersFrom } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { enableProdMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { RouterModule } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { AppComponent } from './app/app.component';
 import { ScalesComponent } from './app/scales/scales.component';
@@ -14,11 +14,12 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent,{
   providers: [
-    importProvidersFrom(HttpClientModule),
-    importProvidersFrom(RouterModule.forRoot([
+    provideHttpClient(),
+    provideRouter([
       { path: '', component: StartComponent },
       { path: 'scales', component: ScalesComponent }
-    ]))
+    ],
+    withInMemoryScrolling({ scrollPositionRestoration: 'top' }))
   ]
 })
 .catch((err) => console.error(err));

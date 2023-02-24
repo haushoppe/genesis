@@ -1,7 +1,7 @@
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { enableProdMode, importProvidersFrom } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { RouterModule } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { AppComponent } from './app/app.component';
 import { DetailsComponent } from './app/details/details.component';
@@ -15,14 +15,15 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent,{
   providers: [
-    importProvidersFrom(HttpClientModule),
+    provideHttpClient(),
     importProvidersFrom(ApiModule.forRoot(() => new Configuration({
       basePath: environment.api
     }))),
-    importProvidersFrom(RouterModule.forRoot([
+    provideRouter([
       { path: '', component: StartComponent },
       { path: 'nft/:tokenId', component: DetailsComponent }
-    ], { scrollPositionRestoration: 'top' }))
+    ],
+    withInMemoryScrolling({ scrollPositionRestoration: 'top' }))
   ]
 })
 .catch((err) => console.error(err));

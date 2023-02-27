@@ -11,8 +11,6 @@ export const MintActions = createActionGroup({
 
     'Load Token Info': props<{ tokenId: number }>(),
     'Load Token Info Success': props<{ tokenInfo: Metadata }>(),
-    'Load Token Info Failure': props<{ error: HttpErrorResponse }>(),
-
-    'Connect Wallet': emptyProps(),
+    'Load Token Info Failure': props<{ error: HttpErrorResponse }>()
   }
 });

@@ -1,11 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { catchError, map, mergeMap, retry, switchMap } from 'rxjs/operators';
+import { catchError, map, retry, switchMap } from 'rxjs/operators';
 
 import { KnownTokenName } from '../../../../shared/known-token-name';
 import { ApiService } from '../openapi-client';
-import { WalletService } from '../services/wallet-service';
 import { MintActions } from './mint.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 
@@ -14,7 +13,6 @@ import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 export class MintEffects {
 
   apiService = inject(ApiService);
-  walletService = inject(WalletService);
 
   loadMintsOnRouting$ = createEffect(() => {
     return inject(Actions).pipe(
@@ -55,13 +53,4 @@ export class MintEffects {
       )
     );
   });
-
-  connectWallet$ = createEffect(() => {
-    return inject(Actions).pipe(
-      ofType(MintActions.connectWallet),
-      mergeMap(() =>
-        this.walletService.connect()
-      )
-    );
-  }, { dispatch: false });
 }

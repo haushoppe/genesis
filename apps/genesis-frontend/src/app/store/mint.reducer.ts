@@ -1,8 +1,8 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 import { Metadata } from '../openapi-client';
 import { MintActions } from './mint.actions';
-import { SubmitStatus } from './submit-status';
-import { initialSubmittableState, SubmittableState } from './submittable-state';
+import { SubmitStatus } from './submittable/submit-status';
+import { initialSubmittableState, SubmittableState } from './submittable/submittable-state';
 
 export interface State {
   allMints: Metadata[];

@@ -5,6 +5,7 @@ import { AlertComponent } from '../layout/loading-indicator/alert/alert.componen
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { NftDisplayListComponent } from '../layout/nft-display-list/nft-display-list.component';
 import { MintFacade } from '../store/mint.facade';
+import { WalletFacade } from '../store/wallet.facade';
 
 @Component({
     selector: 'app-start',
@@ -24,4 +25,5 @@ import { MintFacade } from '../store/mint.facade';
 })
 export class StartComponent {
   mintFacade = inject(MintFacade);
+  walletFacade = inject(WalletFacade);
 }

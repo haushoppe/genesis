@@ -12,6 +12,8 @@ import { ApiModule, Configuration } from './app/openapi-client';
 import { MintEffects } from './app/store/mint.effects';
 import { mintFeature } from './app/store/mint.reducer';
 import { CustomRouteSerializer } from './app/store/utils-ngrx-router/custom-route-serializer';
+import { WalletEffects } from './app/store/wallet.effects';
+import { walletFeature } from './app/store/wallet.reducer';
 import { environment } from './environments/environment';
 
 if (environment.production) {
@@ -29,7 +31,9 @@ bootstrapApplication(AppComponent,{
         loadChildren: () => import('./nft.routes').then(m => m.NFT_ROUTES),
         providers: [
           provideState(mintFeature),
-          provideEffects(MintEffects)
+          provideEffects(MintEffects),
+          provideState(walletFeature),
+          provideEffects(WalletEffects)
       ]}
     ],
     withInMemoryScrolling({ scrollPositionRestoration: 'top' })),

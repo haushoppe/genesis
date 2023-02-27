@@ -1,8 +1,8 @@
 import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { SubmitStatus } from '../../store/submit-status';
-import { initialSubmittableState, SubmittableState } from '../../store/submittable-state';
+import { SubmitStatus } from '../../store/submittable/submit-status';
+import { initialSubmittableState, SubmittableState } from '../../store/submittable/submittable-state';
 import { AlertComponent } from './alert/alert.component';
 
 @Component({

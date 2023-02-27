@@ -11,6 +11,7 @@ import { AppComponent } from './app/app.component';
 import { ApiModule, Configuration } from './app/openapi-client';
 import { MintEffects } from './app/store/mint.effects';
 import { mintFeature } from './app/store/mint.reducer';
+import { CustomRouteSerializer } from './app/store/utils-ngrx-router/custom-route-serializer';
 import { environment } from './environments/environment';
 
 if (environment.production) {
@@ -37,7 +38,9 @@ bootstrapApplication(AppComponent,{
     provideStore({
       router: routerReducer,
     }),
-    provideRouterStore(),
+    provideRouterStore({
+      serializer: CustomRouteSerializer
+    }),
     provideStoreDevtools({
       maxAge: 25, // Retains last 25 states
       logOnly: !isDevMode(), // Restrict extension to log-only mode

@@ -1,10 +1,9 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { map, retry, switchMap, tap } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
-import { ApiService } from '../openapi-client';
+import { MintFacade } from '../store/mint.facade';
 import { ParseMarkdownPipe } from './parse-markdown.pipe';
 import { SafeResourceUrlPipe } from './safe-url.pipe';
 
@@ -25,16 +24,5 @@ import { SafeResourceUrlPipe } from './safe-url.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DetailsComponent {
-  loading = false;
-
-  apiService = inject(ApiService);
-
-  nft$ = inject(ActivatedRoute).paramMap.pipe(
-    map(paramMap => paramMap.get('tokenId') || ''),
-    tap(() => this.loading = true),
-    switchMap(tokenId => this.apiService.tokenInfo('genesis', +tokenId).pipe(
-      retry({ delay: 1000 })
-    )),
-    tap(() => this.loading = false)
-  );
+  mintFacade = inject(MintFacade);
 }

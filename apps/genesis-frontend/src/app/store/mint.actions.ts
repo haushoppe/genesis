@@ -5,9 +5,14 @@ import { Metadata } from '../openapi-client';
 export const MintActions = createActionGroup({
   source: 'Mint',
   events: {
-    'Load Mints': emptyProps(),
-    'Load Mints Success': props<{ mints: Metadata[] }>(),
-    'Load Mints Failure': props<{ error: HttpErrorResponse }>(),
+    'Load All Mints': emptyProps(),
+    'Load All Mints Success': props<{ allMints: Metadata[] }>(),
+    'Load All Mints Failure': props<{ error: HttpErrorResponse }>(),
+
+    'Load Token Info': props<{ tokenId: number }>(),
+    'Load Token Info Success': props<{ tokenInfo: Metadata }>(),
+    'Load Token Info Failure': props<{ error: HttpErrorResponse }>(),
+
     'Connect Wallet': emptyProps(),
   }
 });

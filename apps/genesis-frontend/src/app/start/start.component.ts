@@ -24,8 +24,4 @@ import { MintFacade } from '../store/mint.facade';
 })
 export class StartComponent {
   mintFacade = inject(MintFacade);
-
-  constructor() {
-    this.mintFacade.loadMints();
-  }
 }

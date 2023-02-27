@@ -3,7 +3,7 @@ import * as mintFeature from './mint.reducer';
 
 // test to create other selectors
 export const selectTest = createSelector(
-  mintFeature.selectMints,
-  mintFeature.selectMintsStatus,
+  mintFeature.selectAllMints,
+  mintFeature.selectAllMintsStatus,
   (mints, status) => ({ mints, status })
 );

@@ -1,7 +1,8 @@
-import { inject, Injectable } from "@angular/core";
+import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { selectMints, selectMintsStatus } from "./mint.reducer";
+
 import { MintActions } from './mint.actions';
+import { selectAllMints, selectAllMintsStatus, selectTokenInfo, selectTokenInfoStatus } from './mint.reducer';
 
 
 @Injectable({
@@ -10,12 +11,12 @@ import { MintActions } from './mint.actions';
 export class MintFacade {
 
   store = inject(Store);
-  mints$ = this.store.select(selectMints);
-  status$ = this.store.select(selectMintsStatus);
 
-  loadMints() {
-    this.store.dispatch(MintActions.loadMints());
-  }
+  allMints$ = this.store.select(selectAllMints);
+  allMintsStatus$ = this.store.select(selectAllMintsStatus);
+
+  tokenInfo$ = this.store.select(selectTokenInfo);
+  tokenInfoStatus$ = this.store.select(selectTokenInfoStatus);
 
   connectWallet() {
     this.store.dispatch(MintActions.connectWallet());

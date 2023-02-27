@@ -5,13 +5,19 @@ import { SubmitStatus } from './submit-status';
 import { initialSubmittableState, SubmittableState } from './submittable-state';
 
 export interface State {
-  mints: Metadata[],
-  mintsStatus: SubmittableState
+  allMints: Metadata[];
+  allMintsStatus: SubmittableState;
+
+  tokenInfo: Metadata | undefined;
+  tokenInfoStatus: SubmittableState;
 }
 
 export const initialState: State = {
-  mints: [],
-  mintsStatus: { ...initialSubmittableState }
+  allMints: [],
+  allMintsStatus: { ...initialSubmittableState },
+
+  tokenInfo: undefined,
+  tokenInfoStatus: { ...initialSubmittableState }
 };
 
 
@@ -20,29 +26,62 @@ export const mintFeature = createFeature({
   reducer: createReducer(
     initialState,
 
-    on(MintActions.loadMints, state => ({
+    // Load All Mints
+
+    on(MintActions.loadAllMints, state => ({
       ...state,
-      mintsStatus: {
-        submitStatus: SubmitStatus.Submitting,
-        submitErrorText: ''
+      allMintsStatus: {
+        ...initialSubmittableState,
+        submitStatus: SubmitStatus.Submitting
       }
     })),
 
-    on(MintActions.loadMintsSuccess, (state, { mints }) => ({
+    on(MintActions.loadAllMintsSuccess, (state, { allMints }) => ({
       ...state,
-      mintsStatus: {
+      allMints,
+      allMintsStatus: {
+        ...initialSubmittableState,
         submitStatus: SubmitStatus.Successful,
-        submitErrorText: ''
-      },
-      mints
+      }
     })),
 
-    on(MintActions.loadMintsFailure, (state, { error }) => ({
+    on(MintActions.loadAllMintsFailure, (state, { error }) => ({
       ...state,
-      mintsStatus: {
+      allMintsStatus: {
+        ...initialSubmittableState,
         submitStatus: SubmitStatus.Failure,
         submitErrorText: error.message
-      },
+      }
+    })),
+
+    // Load Token Info
+
+    on(MintActions.loadTokenInfo, state => ({
+      ...state,
+       // reset previous tokenInfo to not show outdated data while loading!
+      tokenInfo: undefined,
+      tokenInfoStatus: {
+        ...initialSubmittableState,
+        submitStatus: SubmitStatus.Submitting
+      }
+    })),
+
+    on(MintActions.loadTokenInfoSuccess, (state, { tokenInfo }) => ({
+      ...state,
+      tokenInfo,
+      tokenInfoStatus: {
+        ...initialSubmittableState,
+        submitStatus: SubmitStatus.Successful,
+      }
+    })),
+
+    on(MintActions.loadTokenInfoFailure, (state, { error }) => ({
+      ...state,
+      tokenInfoStatus: {
+        ...initialSubmittableState,
+        submitStatus: SubmitStatus.Failure,
+        submitErrorText: error.message
+      }
     }))
   )
 });
@@ -51,6 +90,8 @@ export const {
   name, // feature name
   reducer, // feature reducer
   selectMintState, // feature selector
-  selectMints, // selector for `mints` property
-  selectMintsStatus, // selector for `mintsStatus` property
+  selectAllMints, // selector for `allMints` property
+  selectAllMintsStatus, // selector for `allMintsStatus` property
+  selectTokenInfo,
+  selectTokenInfoStatus
 } = mintFeature;

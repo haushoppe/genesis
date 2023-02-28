@@ -1,5 +1,5 @@
 import { NgFor } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostBinding } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostBinding } from '@angular/core';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Component({
@@ -21,15 +21,20 @@ export class BannerComponent {
 
   randomImage = this.pickRandomImage();
 
-
   @HostBinding('attr.style')
   get myStyle(): SafeStyle {
     return this.sanitizer.bypassSecurityTrustStyle(`--banner-image: url("${ this.randomImage }")`);
   }
 
-  constructor(private sanitizer: DomSanitizer) {
-    setInterval(() => this.randomImage = this.pickRandomImage(), 1000 * 10);
-    this.preloadImages();
+  constructor(private sanitizer: DomSanitizer, changeDetector: ChangeDetectorRef) {
+    // setInterval(() => {
+    //   this.randomImage = this.pickRandomImage();
+    //   // console.log('Change image to:', this.randomImage);
+
+    //   // calling detectChanges does not have any effect because host bindings are part of parent view.
+    //   changeDetector.markForCheck();
+    // }, 1000 * 10);
+    // this.preloadImages();
   }
 
   pickRandomImage() {

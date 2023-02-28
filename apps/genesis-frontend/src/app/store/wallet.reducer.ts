@@ -1,6 +1,6 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { StrictWalletState } from './strict-wallet-state';
+import { StrictWalletState } from './helper/strict-wallet-state';
 import {
   getFailureState,
   getSubmittingState,
@@ -42,6 +42,12 @@ export const walletFeature = createFeature({
       ...state,
       wallet: undefined,
       walletStatus: getFailureState('No wallet was connected')
+    })),
+
+    on(WalletActions.disconnectWalletDone, state => ({
+      ...state,
+      wallet: undefined,
+      walletStatus: { ...initialSubmittableState }
     }))
   )
 });

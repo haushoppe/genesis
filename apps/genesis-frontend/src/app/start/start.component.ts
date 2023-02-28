@@ -1,12 +1,17 @@
-import { AsyncPipe, JsonPipe, NgFor, NgIf } from '@angular/common';
+import { JsonPipe, NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { LoadingIndicatorButtonComponent } from '../layout/loading-indicator-button/loading-indicator-button.component';
+import { ForModule } from '@rx-angular/template/for';
+import { LetModule } from '@rx-angular/template/let';
+import { PushModule } from '@rx-angular/template/push';
 
+import { LoadingIndicatorButtonComponent } from '../layout/loading-indicator-button/loading-indicator-button.component';
 import { AlertComponent } from '../layout/loading-indicator/alert/alert.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { NftDisplayListComponent } from '../layout/nft-display-list/nft-display-list.component';
 import { MintFacade } from '../store/mint.facade';
+import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
+
 
 @Component({
     selector: 'app-start',
@@ -14,18 +19,22 @@ import { WalletFacade } from '../store/wallet.facade';
     styleUrls: ['./start.component.scss'],
     standalone: true,
     imports: [
-      AsyncPipe,
       JsonPipe,
       LoadingIndicatorComponent,
       LoadingIndicatorButtonComponent,
       AlertComponent,
       NftDisplayListComponent,
       NgFor,
-      NgIf
+      NgIf,
+      LetModule,
+      ForModule,
+      PushModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StartComponent {
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
+
+  SubmitStatus = SubmitStatus;
 }

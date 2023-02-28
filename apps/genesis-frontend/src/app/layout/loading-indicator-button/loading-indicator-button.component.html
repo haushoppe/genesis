@@ -10,9 +10,10 @@
 
   <ng-container *ngIf="state.submitStatus !== SubmitStatus.Submitting">
 
-    <button class="btn btn-labeled btn-primary" type="button" (click)="buttonClick.emit($event)"
-      [title]="state.submitErrorText"
-      >
+    <button class="btn btn-labeled btn-primary" type="button"
+      [ngClass]="{ 'btn-success': state.submitStatus === SubmitStatus.Successful }"
+      (click)="buttonClick.emit($event)"
+      [title]="state.submitErrorText">
       <span class="btn-label">
         <i *ngIf="state.submitStatus === SubmitStatus.NotSubmitted" [ngClass]="defaultIconClass"></i>
         <i *ngIf="state.submitStatus === SubmitStatus.Failure" class="bi bi-exclamation-triangle"></i>

@@ -17,8 +17,7 @@ export class WalletEffects {
   connectWallet$ = createEffect(() => {
     return inject(Actions).pipe(
       ofType(WalletActions.connectWallet),
-      mergeMap(() => this.walletService.connect()
-      ),
+      mergeMap(() => this.walletService.connect()),
       map(wallet => wallet ?
         WalletActions.connectWalletSuccess({ wallet }) :
         WalletActions.connectWalletFailure())
@@ -29,13 +28,9 @@ export class WalletEffects {
     return inject(Actions).pipe(
       ofType(WalletActions.disconnectWallet),
       withLatestFrom(this.store.select(selectWallet)),
-      map(([_, wallet]) => wallet),
-      mergeMap(wallet => {
-        if (wallet) {
-          return this.walletService.disconnect(wallet.label)
-        }
-        return Promise.resolve()
-      })
-      )
-  }, { dispatch: false });
+      map(([, wallet]) => wallet),
+      mergeMap(wallet => this.walletService.disconnect(wallet?.label)),
+      map(() => WalletActions.disconnectWalletDone())
+    );
+  });
 }

@@ -1,6 +1,8 @@
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LetModule } from '@rx-angular/template/let';
+import { PushModule } from '@rx-angular/template/push';
 
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { MintFacade } from '../store/mint.facade';
@@ -19,7 +21,9 @@ import { SafeResourceUrlPipe } from './safe-url.pipe';
     ParseMarkdownPipe,
     RouterLink,
     SafeResourceUrlPipe,
-    JsonPipe
+    JsonPipe,
+    LetModule,
+    PushModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

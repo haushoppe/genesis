@@ -1,60 +1,49 @@
 import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 
-import { WalletService } from './wallet-service';
-
-declare global {
-  interface Window {
-    ethereum: ethers.providers.ExternalProvider;
-  }
-}
-
-
 
 @Injectable({
   providedIn: 'root'
 })
 export class MintService {
 
-  loggedIn = false;
-
-  constructor(private walletService: WalletService) { }
-
-  async connectWallet() {
-
-    this.walletService.connect();
-  }
-
+  contract?: ethers.Contract;
 
   /**
    * Pop up wallet dialog to get user to sign a message.
    * Check that signature is valid and really was signed by the "signer" account.
    */
-  async signMessage() {
+  async signMessage(provider: ethers.providers.Web3Provider | undefined): Promise<boolean> {
 
-    if (!this.walletService.provider) { console.error('No provider!'); return; }
-    if (!this.walletService.signer) { console.error('No signer!'); return; }
-    if (!this.walletService.contract) { console.error('No Contract!'); return; }
-
-    let walletAddress = await this.walletService.signer.getAddress();
-    const ens_name = await this.walletService.provider.lookupAddress(walletAddress);
-    if (ens_name) {
-      walletAddress = ens_name;
+    if (!provider) {
+      return false;
     }
+
+    const signer = provider.getSigner();
+    const walletAddress = await signer.getAddress();
 
     const message = "Sign this message to prove ownership of account " + walletAddress + "\n\nNo transaction is submitted.";
 
     try {
 
-      // Pop up wallet notification to sign
-      const signature = await this.walletService.signer.signMessage(message);
+      // pop up wallet notification to sign
+      const signature = await signer.signMessage(message);
 
-      // Verify that signature matches wallet address
-      this.loggedIn = ethers.utils.verifyMessage(message, signature) == walletAddress;
+      // verify that signature matches wallet address
+      const validMessage = ethers.utils.verifyMessage(message, signature) == walletAddress;
+      return validMessage;
 
     } catch (error) {
       console.error(error);
     }
+
+    return false;
+  }
+
+  async todo() {
+      // initialize the contract object with a signer to be able to do transactions
+      // this.contract = new ethers.Contract(this.status.knownTokens[0].address, abi, this.signer);
+      // console.log("Token contract address is " + this.contract.address);
   }
 
 

@@ -45,6 +45,7 @@
     "@ngrx/router-store": "^15.3.0",
     "@ngrx/store": "^15.3.0",
     "@ngrx/store-devtools": "^15.3.0",
+    "@rx-angular/template": "^1.0.0",
     "@types/papaparse": "^5.3.7",
     "@web3-onboard/coinbase": "^2.2.0",
     "@web3-onboard/core": "^2.15.2",

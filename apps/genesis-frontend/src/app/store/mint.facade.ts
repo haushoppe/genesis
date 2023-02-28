@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
+import { MintActions } from './mint.actions';
 
 import { selectAllMints, selectAllMintsStatus, selectTokenInfo, selectTokenInfoStatus } from './mint.reducer';
 
@@ -16,4 +17,8 @@ export class MintFacade {
 
   tokenInfo$ = this.store.select(selectTokenInfo);
   tokenInfoStatus$ = this.store.select(selectTokenInfoStatus);
+
+  signMessage() {
+    this.store.dispatch(MintActions.signMessage());
+  }
 }

@@ -1,6 +1,11 @@
 import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 
+import { knownAbis } from '../../../../shared/known-abis';
+import { environment } from '../../environments/environment';
+
+const abi = knownAbis[environment.tokenName];
+
 
 @Injectable({
   providedIn: 'root'

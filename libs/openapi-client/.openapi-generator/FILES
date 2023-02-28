@@ -10,6 +10,7 @@ configuration.ts
 encoder.ts
 git_push.sh
 index.ts
+model/chain.ts
 model/knownTokenResponse.ts
 model/metadata.ts
 model/metatdataAttribute.ts

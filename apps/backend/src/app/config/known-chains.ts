@@ -1,5 +1,5 @@
 import { KnownNetworkName } from "../../../../shared/known-network-name"
-import { Chain } from "./web3-onboard-chain"
+import { Chain } from "./chain"
 
 
 // see https://github.com/blocknative/web3-onboard/core/src/utils.ts

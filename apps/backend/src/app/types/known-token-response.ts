@@ -2,8 +2,19 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { KnownNetworkName } from '../../../../shared/known-network-name';
 import { KnownTokenName } from '../../../../shared/known-token-name';
-import { Chain } from '../config/web3-onboard-chain';
 
+
+export class Chain {
+  @ApiProperty() id: string;
+  @ApiProperty() token: string;
+  @ApiProperty() label: string;
+  @ApiProperty() rpcUrl: string;
+
+  // @ApiProperty({ required: false }) color?: string;
+  // @ApiProperty({ required: false }) icon?: string;
+  @ApiProperty() publicRpcUrl?: string;
+  @ApiProperty() blockExplorerUrl?: string;
+}
 
 export class KnownTokenResponse {
   @ApiProperty() name: KnownTokenName;

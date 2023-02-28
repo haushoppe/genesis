@@ -1,3 +1,4 @@
+// same interface as the @web3-onboard chain interface
 export interface Chain {
   id: string // hex encoded string, eg '0x1' for Ethereum Mainnet
   token: string // the native token symbol, eg ETH, BNB, MATIC

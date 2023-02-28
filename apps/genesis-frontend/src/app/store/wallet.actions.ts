@@ -1,5 +1,7 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
+import { KnownTokenResponse } from '../openapi-client';
 import { StrictWalletState } from './helper/strict-wallet-state';
 
 // some concepts taken from these hooks
@@ -8,10 +10,16 @@ import { StrictWalletState } from './helper/strict-wallet-state';
 export const WalletActions = createActionGroup({
   source: 'Wallet',
   events: {
+    'Load Token Config': emptyProps(),
+    'Load Token Config Success':  props<{ knownToken: KnownTokenResponse }>(),
+    'Load Token Config Failure':  props<{ error: HttpErrorResponse }>(),
+
     'Connect Wallet': emptyProps(),
     'Connect Wallet Success':  props<{ wallet: StrictWalletState }>(),
     'Connect Wallet Failure': emptyProps(),
+
     'State Change': props<{ update: StrictWalletState }>(),
+
     'Disconnect Wallet': emptyProps(),
     'Disconnect Wallet Done': emptyProps()
   }

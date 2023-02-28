@@ -9,6 +9,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { Chain } from './chain';
 
 
 export interface KnownTokenResponse { 
@@ -16,7 +17,7 @@ export interface KnownTokenResponse {
     maximumAllowedMintsPerAddress: number;
     address: string;
     networkName: string;
-    networkConfig: object;
+    networkConfig: Chain;
     firstBlockNumber: number;
     implementsMosaics: boolean;
     explorerLink: string;

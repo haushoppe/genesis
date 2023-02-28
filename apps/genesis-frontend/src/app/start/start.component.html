@@ -31,24 +31,27 @@
   to interact with the <a href="https://ethereum.org/">Ethereum blockchain</a>.
 </app-alert> -->
 
-<p class="mb-5" *rxLet="walletFacade.walletStatus$; let walletStatus">
+<p class="mb-5" *rxLet="walletFacade.knownTokenStatus$; let knownTokenStatus">
+  <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
 
-  <app-loading-indicator-button
-    (buttonClick)="walletFacade.connectWallet()"
-    [state]="walletStatus"
-    [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Wallet connected' : 'Connect wallet'"
-    defaultIconClass="bi bi-wallet2"
-  ></app-loading-indicator-button>
+    <app-loading-indicator-button
+      [disabled]="knownTokenStatus.submitStatus !== SubmitStatus.Successful"
+      (buttonClick)="walletFacade.connectWallet()"
+      [state]="walletStatus"
+      [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Wallet connected' : 'Connect wallet'"
+      defaultIconClass="bi bi-wallet2"
+    ></app-loading-indicator-button>
 
-  <button
-    *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
-    (click)="walletFacade.disconnectWallet()"
-    class="btn btn-secondary ms-2">Disconnect wallet</button>
+    <button
+      *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
+      (click)="walletFacade.disconnectWallet()"
+      class="btn btn-secondary ms-2">Disconnect wallet</button>
 
-  <button
-    *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
-    (click)="mintFacade.signMessage()"
-    class="btn btn-secondary ms-2">Test: Sign Message</button>
+    <button
+      *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
+      (click)="mintFacade.signMessage()"
+      class="btn btn-secondary ms-2">Test: Sign Message</button>
+  </ng-container>
 </p>
 
 

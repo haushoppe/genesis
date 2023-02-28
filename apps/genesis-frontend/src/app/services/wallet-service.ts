@@ -1,21 +1,16 @@
 import { Injectable } from '@angular/core';
+import coinbaseModule from '@web3-onboard/coinbase';
 import Onboard, { OnboardAPI } from '@web3-onboard/core';
-
 import injectedModule from '@web3-onboard/injected-wallets';
-import ledgerModule from '@web3-onboard/ledger'
-import trezorModule from '@web3-onboard/trezor'
-import walletConnectModule from '@web3-onboard/walletconnect'
-import coinbaseModule from '@web3-onboard/coinbase'
-
-
+import ledgerModule from '@web3-onboard/ledger';
+import trezorModule from '@web3-onboard/trezor';
+import walletConnectModule from '@web3-onboard/walletconnect';
 import { ethers } from 'ethers';
-import { retry } from 'rxjs';
 
-import { knownAbis } from '../../../../shared/known-abis';
-import { environment } from '../../environments/environment';
-import { ApiService, StatusResponse } from '../openapi-client';
-import { hideBlocknativeLogo } from './hide-blocknative-logo';
+import { ApiService, Chain, StatusResponse } from '../openapi-client';
 import { toStrictWalletState } from '../store/helper/strict-wallet-state';
+import { hideBlocknativeLogo } from './hide-blocknative-logo';
+
 
 const injected = injectedModule();
 const ledger = ledgerModule();
@@ -23,7 +18,6 @@ const trezor = trezorModule({ email: 'team@haushoppe.art', appUrl: 'https://gene
 const walletConnect = walletConnectModule();
 const coinbase = coinbaseModule();
 
-const abi = knownAbis[environment.tokenName];
 
 // see https://github.com/blocknative/web3-onboard/core/src/utils.ts
 const ethereumIcon = `<svg height="100%" viewBox="0 0 10 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -84,60 +78,52 @@ const lightTheme = {
 })
 export class WalletService {
 
-  backendStatus?: StatusResponse;
   onboard?: OnboardAPI;
-  provider?: ethers.providers.Web3Provider;
 
-  constructor(apiService: ApiService) {
-
-    apiService.status(environment.tokenName).pipe(
-      retry({
-        count: 3,
-        delay: 1000
-      })
-    ).subscribe(backendStatus => {
-
-      this.backendStatus = backendStatus;
-
-      hideBlocknativeLogo();
-
-      const chain = this.backendStatus.knownTokens[0].networkConfig as any;
-
-      this.onboard = Onboard({
-        wallets: [
-          injected,
-          ledger,
-          trezor,
-          walletConnect,
-          coinbase
-        ],
-        chains: [{
-          ...chain,
-          icon: ethereumIcon,
-          // color: ethereumColor
-        }],
-        appMetadata,
-        i18n,
-        connect,
-        theme: lightTheme
-      });
-    });
+  constructor() {
+    hideBlocknativeLogo();
   }
 
-  async connect() {
+  // only connects to one single chain
+  async connect(chain: Chain | undefined) {
 
-    if (!this.onboard) {
-      return null;
+    if(!chain) {
+      return undefined;
     }
+
+    this.onboard = Onboard({
+      wallets: [
+        injected,
+        ledger,
+        trezor,
+        walletConnect,
+        coinbase
+      ],
+      chains: [{
+        ...chain,
+        icon: ethereumIcon,
+        color: ethereumColor
+      }],
+      appMetadata,
+      i18n,
+      connect,
+      theme: lightTheme
+    });
 
     const walletState = await this.onboard.connectWallet();
     if (walletState.length) {
 
       const wallet = walletState[0];
+
+      // unsure that the wallet is connected to the right chain only
+      if (wallet.chains[0].id !== chain.id) {
+        await this.onboard.setChain({ chainId: chain.id })
+      }
+
       return toStrictWalletState(wallet)
     }
 
-    return null;
+    return undefined;
   }
 
   async disconnect(label: string | undefined) {

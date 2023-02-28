@@ -1,3 +1,4 @@
+export * from './chain';
 export * from './knownTokenResponse';
 export * from './metadata';
 export * from './metatdataAttribute';

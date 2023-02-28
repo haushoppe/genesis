@@ -3,7 +3,6 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { catchError, map, retry, switchMap, withLatestFrom } from 'rxjs/operators';
-import { ethers } from 'ethers';
 
 import { KnownTokenName } from '../../../../shared/known-token-name';
 import { ApiService } from '../openapi-client';

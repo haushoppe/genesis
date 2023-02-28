@@ -17,6 +17,7 @@ export class LoadingIndicatorButtonComponent {
 
   SubmitStatus = SubmitStatus;
 
+  @Input() disabled = false;
   @Input() buttonText = 'Send';
   @Input() defaultIconClass = 'bi bi-send';
   @Input() state: SubmittableState | null = { ...initialSubmittableState };

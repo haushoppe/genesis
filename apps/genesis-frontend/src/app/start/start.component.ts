@@ -1,5 +1,6 @@
 import { AsyncPipe, JsonPipe, NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { LoadingIndicatorButtonComponent } from '../layout/loading-indicator-button/loading-indicator-button.component';
 
 import { AlertComponent } from '../layout/loading-indicator/alert/alert.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
@@ -16,6 +17,7 @@ import { WalletFacade } from '../store/wallet.facade';
       AsyncPipe,
       JsonPipe,
       LoadingIndicatorComponent,
+      LoadingIndicatorButtonComponent,
       AlertComponent,
       NftDisplayListComponent,
       NgFor,

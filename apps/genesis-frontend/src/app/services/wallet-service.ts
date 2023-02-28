@@ -15,6 +15,7 @@ import { knownAbis } from '../../../../shared/known-abis';
 import { environment } from '../../environments/environment';
 import { ApiService, StatusResponse } from '../openapi-client';
 import { hideBlocknativeLogo } from './hide-blocknative-logo';
+import { toStrictWalletState } from '../store/strict-wallet-state';
 
 const injected = injectedModule();
 const ledger = ledgerModule();
@@ -130,22 +131,36 @@ export class WalletService {
   async connect() {
 
     if (!this.onboard) {
-      return;
+      return null;
     }
 
+    const walletState = await this.onboard.connectWallet();
+    if (walletState.length) {
 
-    const wallets = await this.onboard.connectWallet();
-    if (wallets[0]) {
+      const wallet = walletState[0];
 
       // create an ethers provider with the last connected wallet provider
-      this.provider = new ethers.providers.Web3Provider(wallets[0].provider, 'any')
+      this.provider = new ethers.providers.Web3Provider(wallet.provider, 'any')
 
       this.signer = this.provider.getSigner();
 
       // initialize the contract object with a signer to be able to do transactions
       // this.contract = new ethers.Contract(this.status.knownTokens[0].address, abi, this.signer);
       // console.log("Token contract address is " + this.contract.address);
+
+      return toStrictWalletState(wallet)
     }
+
+    return null;
+  }
+
+  async disconnect(label: string) {
+
+    if (!this.onboard) {
+      return;
+    }
+
+    await this.onboard.disconnectWallet({ label });
   }
 }
 

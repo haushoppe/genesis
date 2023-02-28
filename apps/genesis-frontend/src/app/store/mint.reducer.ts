@@ -1,8 +1,14 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
+
 import { Metadata } from '../openapi-client';
 import { MintActions } from './mint.actions';
-import { SubmitStatus } from './submittable/submit-status';
-import { initialSubmittableState, SubmittableState } from './submittable/submittable-state';
+import {
+  getFailureState,
+  getSubmittingState,
+  getSuccessfulState,
+  initialSubmittableState,
+  SubmittableState,
+} from './submittable/submittable-state';
 
 export interface State {
   allMints: Metadata[];
@@ -30,28 +36,18 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadAllMints, state => ({
       ...state,
-      allMintsStatus: {
-        ...initialSubmittableState,
-        submitStatus: SubmitStatus.Submitting
-      }
+      allMintsStatus: getSubmittingState()
     })),
 
     on(MintActions.loadAllMintsSuccess, (state, { allMints }) => ({
       ...state,
       allMints,
-      allMintsStatus: {
-        ...initialSubmittableState,
-        submitStatus: SubmitStatus.Successful,
-      }
+      allMintsStatus: getSuccessfulState()
     })),
 
     on(MintActions.loadAllMintsFailure, (state, { error }) => ({
       ...state,
-      allMintsStatus: {
-        ...initialSubmittableState,
-        submitStatus: SubmitStatus.Failure,
-        submitErrorText: error.message
-      }
+      allMintsStatus: getFailureState(error.message)
     })),
 
     // Load Token Info
@@ -60,28 +56,18 @@ export const mintFeature = createFeature({
       ...state,
        // reset previous tokenInfo to not show outdated data while loading!
       tokenInfo: undefined,
-      tokenInfoStatus: {
-        ...initialSubmittableState,
-        submitStatus: SubmitStatus.Submitting
-      }
+      tokenInfoStatus: getSubmittingState()
     })),
 
     on(MintActions.loadTokenInfoSuccess, (state, { tokenInfo }) => ({
       ...state,
       tokenInfo,
-      tokenInfoStatus: {
-        ...initialSubmittableState,
-        submitStatus: SubmitStatus.Successful,
-      }
+      tokenInfoStatus: getSuccessfulState()
     })),
 
     on(MintActions.loadTokenInfoFailure, (state, { error }) => ({
       ...state,
-      tokenInfoStatus: {
-        ...initialSubmittableState,
-        submitStatus: SubmitStatus.Failure,
-        submitErrorText: error.message
-      }
+      tokenInfoStatus: getFailureState(error.message)
     }))
   )
 });

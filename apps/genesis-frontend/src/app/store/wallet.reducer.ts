@@ -1,16 +1,23 @@
-import { createFeature, createReducer } from '@ngrx/store';
+import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { Metadata } from '../openapi-client';
-import { initialSubmittableState, SubmittableState } from './submittable/submittable-state';
+import { StrictWalletState } from './strict-wallet-state';
+import {
+  getFailureState,
+  getSubmittingState,
+  getSuccessfulState,
+  initialSubmittableState,
+  SubmittableState,
+} from './submittable/submittable-state';
+import { WalletActions } from './wallet.actions';
 
 export interface State {
-  allMints: Metadata[];
-  allMintsStatus: SubmittableState;
+  wallet: StrictWalletState | undefined;
+  walletStatus: SubmittableState;
 }
 
 export const initialState: State = {
-  allMints: [],
-  allMintsStatus: { ...initialSubmittableState },
+  wallet: undefined,
+  walletStatus: { ...initialSubmittableState }
 };
 
 
@@ -19,7 +26,23 @@ export const walletFeature = createFeature({
   reducer: createReducer(
     initialState,
 
+    on(WalletActions.connectWallet, state => ({
+      ...state,
+      wallet: undefined,
+      walletStatus: getSubmittingState()
+    })),
 
+    on(WalletActions.connectWalletSuccess, (state, { wallet }) => ({
+      ...state,
+      wallet,
+      walletStatus: getSuccessfulState()
+    })),
+
+    on(WalletActions.connectWalletFailure, state => ({
+      ...state,
+      wallet: undefined,
+      walletStatus: getFailureState('No wallet was connected')
+    }))
   )
 });
 
@@ -27,6 +50,6 @@ export const {
   name, // feature name
   reducer, // feature reducer
   selectWalletState, // feature selector
-  selectAllMints, // selector for `allMints` property
-  selectAllMintsStatus, // selector for `allMintsStatus` property
+  selectWallet, // selector for `wallet` property
+  selectWalletStatus, // selector for `walletStatus` property
 } = walletFeature;

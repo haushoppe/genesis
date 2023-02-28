@@ -54,3 +54,25 @@ button:disabled {
   /* CUSTOMIZE THE ONBOARD COLOR  PALLETTE */
   --onboard-primary-500: #515151;
 }
+
+
+// https://codepen.io/danielmariveles/pen/jPrwxv
+
+.btn-labeled {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.btn-label {
+  position: relative;
+  left: -0.75rem;
+  display: inline-block;
+  padding: 0.5rem 0.60rem 0.275rem 0.60rem;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.btn-label-text {
+  position: relative;
+  top: -1px;
+  display: inline-block;
+}

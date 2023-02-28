@@ -1,0 +1,25 @@
+<ng-container *ngIf="state">
+  <ng-container *ngIf="state.submitStatus === SubmitStatus.Submitting">
+
+    <button class="btn btn-labeled btn-primary" type="button">
+      <span class="btn-label"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></span>
+      <span class="btn-label-text">{{ buttonText }}</span>
+    </button>
+
+  </ng-container>
+
+  <ng-container *ngIf="state.submitStatus !== SubmitStatus.Submitting">
+
+    <button class="btn btn-labeled btn-primary" type="button" (click)="buttonClick.emit($event)"
+      [title]="state.submitErrorText"
+      >
+      <span class="btn-label">
+        <i *ngIf="state.submitStatus === SubmitStatus.NotSubmitted" [ngClass]="defaultIconClass"></i>
+        <i *ngIf="state.submitStatus === SubmitStatus.Failure" class="bi bi-exclamation-triangle"></i>
+        <i *ngIf="state.submitStatus === SubmitStatus.Successful" class="bi bi-check-circle"></i>
+      </span>
+      <span class="btn-label-text">{{ buttonText }}</span>
+    </button>
+
+  </ng-container>
+</ng-container>

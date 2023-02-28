@@ -11,9 +11,11 @@ export function hideBlocknativeLogo() {
             const styleElement = document.createElement('template');
             styleElement.innerHTML = `<style>
               .powered-by-container,
-              .sidebar > div:nth-child(2) {
+              .sidebar > div:nth-child(2) > svg,
+              .sidebar > div:nth-child(3) > svg {
                 display: none !important;
               }
+
             </style>`;
 
 

@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType, OnInitEffects } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { catchError, map, mergeMap, retry, withLatestFrom } from 'rxjs/operators';
+import { catchError, map, mergeMap, retry, tap, withLatestFrom } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ApiService } from '../openapi-client';
 
@@ -31,6 +31,13 @@ export class WalletEffects implements OnInitEffects {
       )
     );
   });
+
+  createOnboardInstance$ = createEffect(() => {
+    return inject(Actions).pipe(
+      ofType(WalletActions.loadTokenConfigSuccess),
+      map(({ knownToken }) => this.walletService.createOnboardInstance(knownToken.networkConfig))
+    );
+  }, { dispatch: false });
 
   connectWallet$ = createEffect(() => {
     return inject(Actions).pipe(

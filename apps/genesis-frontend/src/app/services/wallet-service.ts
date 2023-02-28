@@ -59,7 +59,14 @@ const connect = {
    * Then on init, onboard will try to reconnect to that wallet with
    * no modals displayed
    */
-  autoConnectLastWallet: false // defaults to false
+  autoConnectLastWallet: false, // defaults to false
+  /**
+   * Customize the link for the `I don't have a wallet` flow shown on the
+   * select wallet modal.
+   * Defaults to `https://ethereum.org/en/wallets/find-wallet/#main-content`
+   */
+  // iDontHaveAWalletLink?: string
+  disableUDResolution: true
 }
 
 const lightTheme = {
@@ -72,6 +79,14 @@ const lightTheme = {
 }
 
 
+export function delLocalStore(key: string): void {
+  try {
+    localStorage.removeItem(key)
+  } catch (error) {
+    return
+  }
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -80,16 +95,9 @@ export class WalletService {
 
   onboard?: OnboardAPI;
 
-  constructor() {
+  createOnboardInstance(chain: Chain) {
+
     hideBlocknativeLogo();
-  }
-
-  // only connects to one single chain
-  async connect(chain: Chain | undefined) {
-
-    if(!chain) {
-      return undefined;
-    }
 
     this.onboard = Onboard({
       wallets: [
@@ -110,15 +118,37 @@ export class WalletService {
       theme: lightTheme
     });
 
+    const state = this.onboard.state.select('wallets')
+       const { unsubscribe } = state.subscribe((update) => {
+      console.log('state update: ', update);
+      // JSON.stringify(update)
+    })
+
+  }
+
+  // only connects to one single chain
+  async connect(chain: Chain | undefined) {
+
+    if (!this.onboard) {
+      return undefined
+    }
+
+    if (!chain) {
+      return undefined
+    }
+
     const walletState = await this.onboard.connectWallet();
     if (walletState.length) {
 
       const wallet = walletState[0];
 
-      // unsure that the wallet is connected to the right chain only
+      // ensure that the wallet is connected to the right chain only
       if (wallet.chains[0].id !== chain.id) {
+        // TODO: sometimes the following error is thrown:
+        // MetaMask - RPC Error: The method "eth_selectAccounts" does not exist / is not available.
         await this.onboard.setChain({ chainId: chain.id })
       }
+
 
       return toStrictWalletState(wallet)
     }
@@ -127,6 +157,9 @@ export class WalletService {
   }
 
   async disconnect(label: string | undefined) {
+
+    // bugfix, see https://github.com/blocknative/web3-onboard/issues/1545
+    delLocalStore('onboard.js:last_connected_wallet');
 
     if (!label) {
       return;

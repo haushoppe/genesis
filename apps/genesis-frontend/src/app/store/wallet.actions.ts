@@ -18,9 +18,10 @@ export const WalletActions = createActionGroup({
     'Connect Wallet Success':  props<{ wallet: StrictWalletState }>(),
     'Connect Wallet Failure': emptyProps(),
 
-    'State Change': props<{ update: StrictWalletState }>(),
+    'Wallet State Change': props<{ wallet: StrictWalletState }>(),
 
     'Disconnect Wallet': emptyProps(),
-    'Disconnect Wallet Done': emptyProps()
+    'Disconnect Wallet Done': emptyProps(),
+    'Disconnect Wallet Detected': emptyProps()
   }
 });

@@ -2,7 +2,7 @@ import { NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { SubmitStatus } from '../../store/submittable/submit-status';
-import { initialSubmittableState, SubmittableState } from '../../store/submittable/submittable-state';
+import { getInitialState, SubmittableState } from '../../store/submittable/submittable-state';
 
 @Component({
   selector: 'app-loading-indicator-button',
@@ -20,7 +20,7 @@ export class LoadingIndicatorButtonComponent {
   @Input() disabled = false;
   @Input() buttonText = 'Send';
   @Input() defaultIconClass = 'bi bi-send';
-  @Input() state: SubmittableState | null = { ...initialSubmittableState };
+  @Input() state: SubmittableState | null = getInitialState();
 
   @Output() buttonClick = new EventEmitter<MouseEvent>();
 

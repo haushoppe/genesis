@@ -10,21 +10,25 @@ export const initialSubmittableState: SubmittableState = {
   submitErrorText: ''
 };
 
-export function getSubmittingState () {
+export function getInitialState() {
+  return { ...initialSubmittableState };
+}
+
+export function getSubmittingState() {
   return {
     ...initialSubmittableState,
     submitStatus: SubmitStatus.Submitting
   }
 }
 
-export function getSuccessfulState () {
+export function getSuccessfulState() {
   return {
     ...initialSubmittableState,
     submitStatus: SubmitStatus.Successful,
   }
 }
 
-export function getFailureState (errorText = '') {
+export function getFailureState(errorText = '') {
   return {
     ...initialSubmittableState,
     submitStatus: SubmitStatus.Failure,

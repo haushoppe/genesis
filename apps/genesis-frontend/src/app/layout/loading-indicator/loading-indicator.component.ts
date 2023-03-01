@@ -2,7 +2,7 @@ import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { SubmitStatus } from '../../store/submittable/submit-status';
-import { initialSubmittableState, SubmittableState } from '../../store/submittable/submittable-state';
+import { getInitialState, SubmittableState } from '../../store/submittable/submittable-state';
 import { AlertComponent } from './alert/alert.component';
 
 @Component({
@@ -19,6 +19,6 @@ export class LoadingIndicatorComponent {
   SubmitStatus = SubmitStatus;
 
   @Input() sendDataText = 'Loading…';
-  @Input() state: SubmittableState | null = { ...initialSubmittableState };
+  @Input() state: SubmittableState | null = getInitialState();
 
 }

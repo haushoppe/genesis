@@ -4,6 +4,7 @@ import { Metadata } from '../openapi-client';
 import { MintActions } from './mint.actions';
 import {
   getFailureState,
+  getInitialState,
   getSubmittingState,
   getSuccessfulState,
   initialSubmittableState,
@@ -20,10 +21,10 @@ export interface State {
 
 export const initialState: State = {
   allMints: [],
-  allMintsStatus: { ...initialSubmittableState },
+  allMintsStatus: getInitialState(),
 
   tokenInfo: undefined,
-  tokenInfoStatus: { ...initialSubmittableState }
+  tokenInfoStatus: getInitialState()
 };
 
 

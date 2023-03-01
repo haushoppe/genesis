@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType, OnInitEffects } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { catchError, map, mergeMap, retry, tap, withLatestFrom } from 'rxjs/operators';
+import { catchError, distinctUntilChanged, filter, map, mergeMap, pairwise, retry, tap, withLatestFrom } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ApiService } from '../openapi-client';
 
@@ -60,6 +60,33 @@ export class WalletEffects implements OnInitEffects {
       map(() => WalletActions.disconnectWalletDone())
     );
   });
+
+  walletStateChange$ = createEffect(() => {
+    return this.walletService.walletStateChange$.pipe(
+
+      // emits the current element along with the previous one
+      // see https://thecompetentdev.com/weeklyjstips/tips/44_rxjs_filter_with_prev/
+      pairwise(),
+      // filter out all changes from undefined to wallet, which happens after a connect
+      filter(([prev, element]) => prev !== undefined),
+      map(([prev, element]) => element),
+
+      // and now we also make sure that we don't get identical events
+      distinctUntilChanged((prev, curr) => {
+        return JSON.stringify(prev) === JSON.stringify(curr);
+      }),
+      map(wallet => wallet ?
+        WalletActions.walletStateChange({ wallet }) :
+        WalletActions.disconnectWalletDetected())
+    );
+  });
+
+  cleanupAfterDisconnectWalletDetected$ = createEffect(() => {
+    return inject(Actions).pipe(
+      ofType(WalletActions.disconnectWalletDetected),
+      map(() => this.walletService.cleanupAfterDisconnect())
+    );
+  }, { dispatch: false });
 
   ngrxOnInitEffects() {
     return WalletActions.loadTokenConfig();

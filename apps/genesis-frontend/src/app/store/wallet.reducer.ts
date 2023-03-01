@@ -4,6 +4,7 @@ import { KnownTokenResponse } from '../openapi-client';
 import { StrictWalletState } from './helper/strict-wallet-state';
 import {
   getFailureState,
+  getInitialState,
   getSubmittingState,
   getSuccessfulState,
   initialSubmittableState,
@@ -21,10 +22,10 @@ export interface State {
 
 export const initialState: State = {
   knownToken: undefined,
-  knownTokenStatus:  { ...initialSubmittableState },
+  knownTokenStatus:  getInitialState(),
 
   wallet: undefined,
-  walletStatus: { ...initialSubmittableState }
+  walletStatus: getInitialState()
 };
 
 
@@ -61,7 +62,8 @@ export const walletFeature = createFeature({
       walletStatus: getSubmittingState()
     })),
 
-    on(WalletActions.connectWalletSuccess, (state, { wallet }) => ({
+    on(WalletActions.connectWalletSuccess,
+       WalletActions.walletStateChange, (state, { wallet }) => ({
       ...state,
       wallet,
       walletStatus: getSuccessfulState()
@@ -73,11 +75,12 @@ export const walletFeature = createFeature({
       walletStatus: getFailureState('No wallet was connected')
     })),
 
-    on(WalletActions.disconnectWalletDone, state => ({
+    on(WalletActions.disconnectWalletDone,
+       WalletActions.disconnectWalletDetected, state => ({
       ...state,
       wallet: undefined,
-      walletStatus: { ...initialSubmittableState }
-    }))
+      walletStatus: getInitialState()
+    })),
   )
 });
 

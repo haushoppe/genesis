@@ -1,15 +1,16 @@
-import { Injectable } from '@angular/core';
+import { EventEmitter, Injectable } from '@angular/core';
 import coinbaseModule from '@web3-onboard/coinbase';
 import Onboard, { OnboardAPI } from '@web3-onboard/core';
 import injectedModule from '@web3-onboard/injected-wallets';
 import ledgerModule from '@web3-onboard/ledger';
 import trezorModule from '@web3-onboard/trezor';
 import walletConnectModule from '@web3-onboard/walletconnect';
-import { ethers } from 'ethers';
+import { map } from 'rxjs';
 
-import { ApiService, Chain, StatusResponse } from '../openapi-client';
-import { toStrictWalletState } from '../store/helper/strict-wallet-state';
+import { Chain } from '../openapi-client';
+import { StrictWalletState, toStrictWalletState } from '../store/helper/strict-wallet-state';
 import { hideBlocknativeLogo } from './hide-blocknative-logo';
+import { getLocalStore, setLocalStore } from './local-storage';
 
 
 const injected = injectedModule();
@@ -94,8 +95,9 @@ export function delLocalStore(key: string): void {
 export class WalletService {
 
   onboard?: OnboardAPI;
+  walletStateChange$ = new EventEmitter<StrictWalletState | undefined>()
 
-  createOnboardInstance(chain: Chain) {
+  async createOnboardInstance(chain: Chain) {
 
     hideBlocknativeLogo();
 
@@ -118,12 +120,19 @@ export class WalletService {
       theme: lightTheme
     });
 
-    const state = this.onboard.state.select('wallets')
-       const { unsubscribe } = state.subscribe((update) => {
-      console.log('state update: ', update);
-      // JSON.stringify(update)
-    })
+    this.onboard.state.select('wallets').pipe(
+      map(wallets => !wallets.length ? undefined : wallets[0]),
+      map(wallet => wallet ? toStrictWalletState(wallet) : undefined)
+    ).subscribe(wallet => this.walletStateChange$.next(wallet));
 
+    // same logic as with `autoConnectLastWallet`
+    // https://github.com/blocknative/web3-onboard/blob/8b84fc5dd5362253ee52789a078fd493e54bd9cf/packages/core/src/index.ts#L230-L242
+    const lastConnectedWallet = getLocalStore('LAST_CONNECTED_WALLET');
+    if (lastConnectedWallet) {
+      await this.onboard.connectWallet({
+        autoSelect: { label: lastConnectedWallet, disableModals: true }
+      });
+    }
   }
 
   // only connects to one single chain
@@ -149,7 +158,7 @@ export class WalletService {
         await this.onboard.setChain({ chainId: chain.id })
       }
 
-
+      setLocalStore('LAST_CONNECTED_WALLET', wallet.label)
       return toStrictWalletState(wallet)
     }
 
@@ -157,9 +166,6 @@ export class WalletService {
   }
 
   async disconnect(label: string | undefined) {
-
-    // bugfix, see https://github.com/blocknative/web3-onboard/issues/1545
-    delLocalStore('onboard.js:last_connected_wallet');
 
     if (!label) {
       return;
@@ -170,6 +176,11 @@ export class WalletService {
     }
 
     await this.onboard.disconnectWallet({ label });
+    this.cleanupAfterDisconnect();
+  }
+
+  cleanupAfterDisconnect() {
+    delLocalStore('LAST_CONNECTED_WALLET');
   }
 }
 

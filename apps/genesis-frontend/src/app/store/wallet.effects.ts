@@ -14,12 +14,14 @@ import { selectKnownToken, selectWallet } from './wallet.reducer';
 @Injectable()
 export class WalletEffects implements OnInitEffects {
 
+  actions = inject(Actions);
   apiService = inject(ApiService);
   walletService = inject(WalletService);
   store = inject(Store);
 
+
   loadTokenConfig$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofType(WalletActions.loadTokenConfig),
       mergeMap(() => this.apiService.status(environment.tokenName).pipe(
         retry({
@@ -33,14 +35,14 @@ export class WalletEffects implements OnInitEffects {
   });
 
   createOnboardInstance$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofType(WalletActions.loadTokenConfigSuccess),
       map(({ knownToken }) => this.walletService.createOnboardInstance(knownToken.networkConfig))
     );
   }, { dispatch: false });
 
   connectWallet$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofType(WalletActions.connectWallet),
       withLatestFrom(this.store.select(selectKnownToken)),
       map(([, knownToken]) => knownToken),
@@ -52,7 +54,7 @@ export class WalletEffects implements OnInitEffects {
   });
 
   disconnectWallet$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofType(WalletActions.disconnectWallet),
       withLatestFrom(this.store.select(selectWallet)),
       map(([, wallet]) => wallet),
@@ -61,15 +63,15 @@ export class WalletEffects implements OnInitEffects {
     );
   });
 
-  walletStateChange$ = createEffect(() => {
+  captureWalletStateChange$ = createEffect(() => {
     return this.walletService.walletStateChange$.pipe(
 
       // emits the current element along with the previous one
       // see https://thecompetentdev.com/weeklyjstips/tips/44_rxjs_filter_with_prev/
       pairwise(),
       // filter out all changes from undefined to wallet, which happens after a connect
-      filter(([prev, element]) => prev !== undefined),
-      map(([prev, element]) => element),
+      filter(([prev]) => prev !== undefined),
+      map(([, element]) => element),
 
       // and now we also make sure that we don't get identical events
       distinctUntilChanged((prev, curr) => {
@@ -81,8 +83,9 @@ export class WalletEffects implements OnInitEffects {
     );
   });
 
+
   cleanupAfterDisconnectWalletDetected$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofType(WalletActions.disconnectWalletDetected),
       map(() => this.walletService.cleanupAfterDisconnect())
     );

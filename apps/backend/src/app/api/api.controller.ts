@@ -15,7 +15,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import {
   ApiExcludeEndpoint,
-  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -25,12 +24,15 @@ import {
 } from '@nestjs/swagger';
 import * as express from 'express';
 
+import { KnownTokenName } from '../../../../shared/known-token-name';
 import {
   createFallbackImage,
   createGenesisMosaicMetadata,
   createRawGenesisMetadata,
   genesisRawArtworks,
 } from '../../assets/data/tokendata_genesis';
+import { KnownChains } from '../config/known-chains';
+import { KnownTokenConfig } from '../config/known-token-config';
 import { AllowlistService } from '../model/allowlist.service';
 import { ContractService } from '../model/contract.service';
 import { formatSeconds } from '../model/date-utils';
@@ -38,13 +40,10 @@ import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../mod
 import { ImageService } from '../model/image.service';
 import { MetadataService } from '../model/metadata.service';
 import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
-import { KnownTokenConfig } from '../config/known-token-config';
-import { KnownTokenName } from '../../../../shared/known-token-name';
 import { Metadata } from '../types/metadata';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
 import { StatusResponse } from '../types/status-response';
-import { KnownChains } from '../config/known-chains';
 
 
 @ApiTags('api')
@@ -61,7 +60,7 @@ export class ApiController {
     private imageService: ImageService) { }
 
   /**
-   * Minting via allowlist
+   * Minting via allowlist, or limited mint
    *
    * Allow for minting of tokens up to the maximum allowed for a given address.
    * The address of the sender and the number of mints allowed are hashed and signed
@@ -70,7 +69,7 @@ export class ApiController {
   @Post(['api/mintAllowlist'])
   @ApiOperation({ operationId: 'mintAllowlist' })
   @ApiNotFoundResponse({ description: 'Unkown token name' })
-  @ApiForbiddenResponse({ description: 'The sender is not on the allowlist' })
+  // @ApiForbiddenResponse({ description: 'The sender is not on the allowlist' })
   @ApiOkResponse({
     description: 'The required params to execute the mint',
     type: MintTicket
@@ -91,8 +90,15 @@ export class ApiController {
     }
 
     const mintWallets = this.allowlistService.getMintWallets(tokenName);
-    if (!mintWallets.includes(sender)) {
-      throw new ForbiddenException('The sender is not on the allowlist');
+
+    // there is a allowlist and the sender is not included
+    if (mintWallets.length > 0 && !mintWallets.includes(sender)) {
+      // throw new ForbiddenException('The sender is not on the allowlist');
+      return {
+        messageHash: null,
+        signature: null,
+        maximumAllowedMints: 0
+      };
     }
 
     const privateKey = this.configService.get('signerKey_' + tokenName);

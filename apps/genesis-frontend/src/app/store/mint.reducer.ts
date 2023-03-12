@@ -1,13 +1,12 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { Metadata } from '../openapi-client';
+import { Metadata, MintTicket } from '../openapi-client';
 import { MintActions } from './mint.actions';
 import {
   getFailureState,
   getInitialState,
   getSubmittingState,
   getSuccessfulState,
-  initialSubmittableState,
   SubmittableState,
 } from './submittable/submittable-state';
 
@@ -17,6 +16,9 @@ export interface State {
 
   tokenInfo: Metadata | undefined;
   tokenInfoStatus: SubmittableState;
+
+  mintTicket: MintTicket | undefined;
+  mintTicketStatus: SubmittableState;
 }
 
 export const initialState: State = {
@@ -24,7 +26,10 @@ export const initialState: State = {
   allMintsStatus: getInitialState(),
 
   tokenInfo: undefined,
-  tokenInfoStatus: getInitialState()
+  tokenInfoStatus: getInitialState(),
+
+  mintTicket: undefined,
+  mintTicketStatus: getInitialState()
 };
 
 
@@ -69,6 +74,31 @@ export const mintFeature = createFeature({
     on(MintActions.loadTokenInfoFailure, (state, { error }) => ({
       ...state,
       tokenInfoStatus: getFailureState(error.message)
+    })),
+
+    // Mint Allowlist --> MintTicket
+
+    on(MintActions.loadMintAllowlist, state => ({
+      ...state,
+      // mintTicket: undefined,
+      mintTicketStatus: getSubmittingState()
+    })),
+
+    on(MintActions.loadMintAllowlistSuccess, (state, { mintTicket }) => ({
+      ...state,
+      mintTicket,
+      mintTicketStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.loadMintAllowlistFailure, (state, { error }) => ({
+      ...state,
+      mintTicketStatus: getFailureState(error.message)
+    })),
+
+    on(MintActions.clearMintAllowlist, state => ({
+      ...state,
+      mintTicket: undefined,
+      mintTicketStatus: getInitialState()
     }))
   )
 });
@@ -80,5 +110,7 @@ export const {
   selectAllMints, // selector for `allMints` property
   selectAllMintsStatus, // selector for `allMintsStatus` property
   selectTokenInfo,
-  selectTokenInfoStatus
+  selectTokenInfoStatus,
+  selectMintTicket,
+  selectMintTicketStatus
 } = mintFeature;

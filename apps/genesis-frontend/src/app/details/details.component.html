@@ -1,6 +1,6 @@
 <ng-container *rxLet="mintFacade.tokenInfo$; let nft">
 
-  <h1 class="mt-3">{{ nft?.name }} <small class="text-muted font-weight-light">(Token #{{ nft?.tokenId }})</small></h1>
+  <h1 class="mt-4 mb-3">{{ nft?.name }} <small class="text-muted font-weight-light">(Token #{{ nft?.tokenId }})</small></h1>
 
   <ng-container *ngIf="nft">
     <iframe

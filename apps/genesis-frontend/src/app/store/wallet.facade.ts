@@ -2,7 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 
 import { WalletActions } from './wallet.actions';
-import { selectKnownToken, selectKnownTokenStatus, selectWallet, selectWalletStatus } from './wallet.reducer';
+import { selectKnownToken, selectKnownTokenStatus, selectWalletStatus } from './wallet.reducer';
+import { selectWalletAddress, selectWalletEnsName, selectWalletLabel, selectWalletUnsName } from './wallet.selectors';
 
 
 @Injectable({
@@ -15,8 +16,12 @@ export class WalletFacade {
   knownToken$ = this.store.select(selectKnownToken);
   knownTokenStatus$ = this.store.select(selectKnownTokenStatus);
 
-  wallet$ = this.store.select(selectWallet);
+  // wallet$ = this.store.select(selectWallet);
   walletStatus$ = this.store.select(selectWalletStatus);
+  walletLabel$ = this.store.select(selectWalletLabel);
+  walletEnsName$ = this.store.select(selectWalletEnsName);
+  walletUnsName$ = this.store.select(selectWalletUnsName);
+  walletAddress$ = this.store.select(selectWalletAddress);
 
   connectWallet() {
     this.store.dispatch(WalletActions.connectWallet());

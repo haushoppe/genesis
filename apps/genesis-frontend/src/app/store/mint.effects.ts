@@ -8,27 +8,29 @@ import { KnownTokenName } from '../../../../shared/known-token-name';
 import { ApiService } from '../openapi-client';
 import { MintService } from '../services/mint-service';
 import { MintActions } from './mint.actions';
+import { WalletActions } from './wallet.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
-import { selectProvider } from './wallet.selectors';
+import { selectProvider, selectWalletAddress } from './wallet.selectors';
 
 
 @Injectable()
 export class MintEffects {
 
+  actions = inject(Actions);
   apiService = inject(ApiService);
   mintService = inject(MintService);
   store = inject(Store)
 
 
   loadMintsOnRouting$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofRoute(['']),
       map(() => MintActions.loadAllMints()),
     );
   });
 
   loadMints$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofType(MintActions.loadAllMints),
       switchMap(() =>
         this.apiService.allMints(KnownTokenName.genesis).pipe(
@@ -41,7 +43,7 @@ export class MintEffects {
   });
 
   loadTokenInfoOnRouting$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofRoute(['nft/:tokenId']),
       mapToParam('tokenId'),
       map(tokenId => MintActions.loadTokenInfo({ tokenId: +tokenId })),
@@ -49,7 +51,7 @@ export class MintEffects {
   });
 
   loadTokenInfo$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofType(MintActions.loadTokenInfo),
       switchMap(({ tokenId }) =>
         this.apiService.tokenInfo(KnownTokenName.genesis, tokenId).pipe(
@@ -60,8 +62,37 @@ export class MintEffects {
     );
   });
 
+  triggerLoadMintAllowlistOnWalletChange$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(WalletActions.walletStateChange),
+      map(() => MintActions.loadMintAllowlist())
+    );
+  });
+
+  triggerClearOnWalletDisconnect$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(WalletActions.disconnectWalletDetected),
+      map(() => MintActions.clearMintAllowlist())
+    );
+  });
+
+  loadMintAllowlist$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(MintActions.loadMintAllowlist),
+      withLatestFrom(this.store.select(selectWalletAddress)),
+      map(([, address]) => address || ''),
+      switchMap(address =>
+        this.apiService.mintAllowlist({ sender: address, tokenName: KnownTokenName.genesis }).pipe(
+          retry({ count: 3, delay: 1000 }),
+          map(mintTicket => MintActions.loadMintAllowlistSuccess({ mintTicket })),
+          catchError(error => of(MintActions.loadMintAllowlistFailure({ error }))))
+      )
+    );
+  });
+
+
   signMessage$ = createEffect(() => {
-    return inject(Actions).pipe(
+    return this.actions.pipe(
       ofType(MintActions.signMessage),
       withLatestFrom(this.store.select(selectProvider)),
       map(([, provider]) => provider),

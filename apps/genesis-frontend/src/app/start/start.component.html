@@ -1,4 +1,4 @@
-<h1 class="mt-3">In the beginning</h1>
+<h1 class="mt-4">In the beginning</h1>
 
 <p class="mt-2 text-justify">
   In the beginning, there was nothing but a formless void, shrouded in darkness and silence.
@@ -8,16 +8,17 @@
 
 <button
   (click)="collapsed = !collapsed"
-  class="btn btn-primary mb-4">{{ collapsed ? 'Read more…' : 'Read less…'}}</button>
+  class="btn btn-primary">{{ collapsed ? 'Read more…' : 'Read less…'}}</button>
 
-<p class="mb-2 text-justify" [@collapse]="collapsed">
+<p class="text-justify" [@collapse]="collapsed">
 
+  <br class="mt-4">
   First, God spoke the word <i>"light"</i>, and instantly, a brilliant burst of energy filled the void, illuminating the darkness.<br>
   Then, God spoke the word <i>"water"</i>, and great oceans and rivers sprang forth, glistening in the light.<br>
   Next, God spoke the word <i>"earth"</i>, and the ground took shape, with mountains, valleys, and plains.<br>
   <br>
-  As God continued to speak, more and more elements were created…
-
+  As God continued to speak, more and more elements were created…<br>
+  <br>
   Olaf Hoppe, a renowned artist with a passion for the spiritual and mystical,
   has created an epic collection of woodcuts that reinterpret the timeless story of Genesis.
   Using traditional woodcut techniques, the artist crafted an impressive collection of physical artworks.
@@ -33,56 +34,73 @@
 </p>
 
 
-<h2>Mint your elements</h2>
+<h2 class="mt-5">Mint new elements</h2>
 
 <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
-  <ng-container *rxLet="walletFacade.wallet$; let wallet">
+  <ng-container *rxLet="walletFacade.walletLabel$; let walletLabel">
+    <ng-container *rxLet="walletFacade.walletEnsName$; let walletEnsName">
+      <ng-container *rxLet="walletFacade.walletUnsName$; let walletUnsName">
+        <ng-container *rxLet="walletFacade.walletAddress$; let walletAddress">
 
-    <p *ngIf="walletStatus.submitStatus !== SubmitStatus.Successful">
-      This collection is strictly limited.
-      Please connect your wallet to check if you can mint new elements.
-    </p>
+          <p *ngIf="walletStatus.submitStatus !== SubmitStatus.Successful">
+            This collection is strictly limited.
+            Please connect your wallet to check if you can mint new elements.
+          </p>
 
-    <p *ngIf="walletStatus.submitStatus === SubmitStatus.Successful">
-      You have successfully connected your {{ wallet?.label }} wallet
-      with your account
+          <p *ngIf="walletStatus.submitStatus === SubmitStatus.Successful">
+            You have successfully connected your {{ walletLabel }} wallet with your account
 
-      <ng-container *ngIf="wallet?.accounts?.[0]?.ens || wallet?.accounts?.[0]?.uns; else noDomain">
-        <span [title]="wallet?.accounts?.[0]?.ens?.name || wallet?.accounts?.[0]?.uns?.name">
-          {{ wallet?.accounts?.[0]?.ens?.name || wallet?.accounts?.[0]?.uns?.name | shortenDomain }}.
-        </span>
+            <ng-container *ngIf="walletEnsName || walletUnsName; else noDomain">
+              <span [title]="walletEnsName || walletUnsName">
+                {{ walletEnsName || walletUnsName | shortenDomain }}.
+              </span>
+            </ng-container>
+
+            <ng-template #noDomain>
+              <span [title]="walletAddress">
+                {{ walletAddress | shortenAddress }}.
+              </span>
+            </ng-template>
+
+          </p>
+
+          <p class="mb-2" *rxLet="walletFacade.knownTokenStatus$; let knownTokenStatus">
+
+              <app-loading-indicator-button
+                [disabled]="knownTokenStatus.submitStatus !== SubmitStatus.Successful"
+                (buttonClick)="walletFacade.connectWallet()"
+                [state]="walletStatus"
+                [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Wallet connected' : 'Connect wallet'"
+                defaultIconClass="bi bi-wallet2"
+              ></app-loading-indicator-button>
+
+              <button
+                *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
+                (click)="walletFacade.disconnectWallet()"
+                class="btn btn-secondary ms-2">Disconnect wallet</button>
+
+          </p>
+
+          <ng-container *rxLet="mintFacade.mintTicket$; let mintTicket">
+            <ng-container *ngIf="mintTicket">
+              <p class="mt-3" *ngIf="mintTicket.maximumAllowedMints > 0">
+                You can mint up to {{ mintTicket.maximumAllowedMints }} new elements in total.
+              </p>
+              <p class="mt-3" *ngIf="mintTicket.maximumAllowedMints === 0">
+                Currently you can't acquire new elements with this account.<br>
+                <strong>Please wait until minting is activated for everyone.</strong>
+              </p>
+            </ng-container>
+          </ng-container>
+
+        </ng-container>
       </ng-container>
-
-      <ng-template #noDomain>
-        <span [title]="wallet?.accounts?.[0]?.address">
-        {{ wallet?.accounts?.[0]?.address | shortenAddress }}.
-        </span>
-      </ng-template>
-
-    </p>
-
-    <p class="mb-5" *rxLet="walletFacade.knownTokenStatus$; let knownTokenStatus">
-
-        <app-loading-indicator-button
-          [disabled]="knownTokenStatus.submitStatus !== SubmitStatus.Successful"
-          (buttonClick)="walletFacade.connectWallet()"
-          [state]="walletStatus"
-          [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Wallet connected' : 'Connect wallet'"
-          defaultIconClass="bi bi-wallet2"
-        ></app-loading-indicator-button>
-
-        <button
-          *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
-          (click)="walletFacade.disconnectWallet()"
-          class="btn btn-secondary ms-2">Disconnect wallet</button>
-
-    </p>
-
+    </ng-container>
   </ng-container>
 </ng-container>
 
 
-<h2>All elements</h2>
+<h2 class="mt-5">All elements</h2>
 
 <p class="mb-5">
   Explore all materialised <strong>elements</strong> here.
@@ -106,9 +124,9 @@
 
 
 
-<ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
+<!-- <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
   <button
     *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
     (click)="mintFacade.signMessage()"
     class="btn btn-secondary ms-2">Test: Sign Message</button>
-</ng-container>
+</ng-container> -->

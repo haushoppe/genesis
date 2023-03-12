@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { enableProdMode, importProvidersFrom, isDevMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore, routerReducer } from '@ngrx/router-store';
@@ -23,6 +24,7 @@ if (environment.production) {
 bootstrapApplication(AppComponent,{
   providers: [
     provideHttpClient(),
+    provideAnimations(),
     importProvidersFrom(ApiModule.forRoot(() => new Configuration({
       basePath: environment.api
     }))),

@@ -4,17 +4,15 @@
   In the beginning, there was nothing but a formless void, shrouded in darkness and silence.
   But then, out of this emptiness, a voice spoke. It was the voice of God, the creator of all things.
   And with each word, a new <strong>element</strong> was materialized.<br>
-  <br>
+</p>
+
+<p class="mb-2 text-justify" [@collapse]="collapsed">
+
   First, God spoke the word <i>"light"</i>, and instantly, a brilliant burst of energy filled the void, illuminating the darkness.<br>
   Then, God spoke the word <i>"water"</i>, and great oceans and rivers sprang forth, glistening in the light.<br>
   Next, God spoke the word <i>"earth"</i>, and the ground took shape, with mountains, valleys, and plains.<br>
   <br>
-  As God continued to speak, more and more elements were created...
-</p>
-
-<hr>
-
-<p class="mt-2 mb-4 text-justify">
+  As God continued to speak, more and more elements were created…
 
   Olaf Hoppe, a renowned artist with a passion for the spiritual and mystical,
   has created an epic collection of woodcuts that reinterpret the timeless story of Genesis.
@@ -25,11 +23,10 @@
 </p>
 
 
-<!-- <app-alert *ngIf="!mintService.checkForWeb3Provider()">
-  This browser does not have an Ethereum provider installed.<br>
-  Please install <a href="https://metamask.io/" target="_blank">MetaMask</a> or any other wallet of your choice
-  to interact with the <a href="https://ethereum.org/">Ethereum blockchain</a>.
-</app-alert> -->
+<button
+  (click)="collapsed = !collapsed"
+  class="btn btn-primary">{{ collapsed ? 'Read more…' : 'Read less…'}}</button>
+
 
 <p class="mb-5" *rxLet="walletFacade.knownTokenStatus$; let knownTokenStatus">
   <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">

@@ -1,3 +1,4 @@
+import { animate, AUTO_STYLE, state, style, transition, trigger } from '@angular/animations';
 import { JsonPipe, NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ForModule } from '@rx-angular/template/for';
@@ -12,6 +13,7 @@ import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 
+const expandDuration = 500
 
 @Component({
     selector: 'app-start',
@@ -30,11 +32,20 @@ import { WalletFacade } from '../store/wallet.facade';
       ForModule,
       PushModule
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    animations: [
+      trigger('collapse', [
+        state('false', style({ height: AUTO_STYLE, visibility: AUTO_STYLE })),
+        state('true', style({ height: '0', visibility: 'hidden' })),
+        transition('false => true', animate(expandDuration + 'ms ease-in')),
+        transition('true => false', animate(expandDuration + 'ms ease-out'))
+      ])
+    ]
 })
 export class StartComponent {
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
 
   SubmitStatus = SubmitStatus;
+  collapsed = true;
 }

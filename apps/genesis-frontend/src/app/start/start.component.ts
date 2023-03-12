@@ -12,6 +12,8 @@ import { NftDisplayListComponent } from '../layout/nft-display-list/nft-display-
 import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
+import { ShortenAddressPipe } from './shorten-address.pipe';
+import { ShortenDomainPipe } from './shorten-domain.pipe';
 
 const expandDuration = 500
 
@@ -30,7 +32,9 @@ const expandDuration = 500
       NgIf,
       LetModule,
       ForModule,
-      PushModule
+      PushModule,
+      ShortenDomainPipe,
+      ShortenAddressPipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [

@@ -1,9 +1,0 @@
-{
-  "version": 2,
-  "projects": {
-    "backend": "apps/backend",
-    "genesis-frontend": "apps/genesis-frontend",
-    "scales-dashboard-frontend": "apps/scales-dashboard-frontend"
-  },
-  "$schema": "./node_modules/nx/schemas/workspace-schema.json"
-}

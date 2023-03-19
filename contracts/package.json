@@ -14,9 +14,11 @@
     "@openzeppelin/contracts": "^4.8.0"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@remix-project/remix-tests": "^0.2.21",
     "@remix-project/remixd": "^0.6.9",
     "concurrently": "^7.6.0",
+    "hardhat": "^2.13.0",
     "wait-on": "^7.0.1"
   }
 }

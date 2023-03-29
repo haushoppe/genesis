@@ -84,10 +84,10 @@
           <ng-container *rxLet="mintFacade.mintTicket$; let mintTicket">
             <ng-container *ngIf="mintTicket">
               <p class="mt-3" *ngIf="mintTicket.maximumAllowedMints > 0">
-                You can mint up to {{ mintTicket.maximumAllowedMints }} new elements in total.
+                You can mint up to {{ mintTicket.maximumAllowedMints }} elements in total.
               </p>
               <p class="mt-3" *ngIf="mintTicket.maximumAllowedMints === 0">
-                Currently you can't acquire new elements with this account.<br>
+                Currently you can't acquire elements with this account.<br>
                 <strong>Please wait until minting is activated for everyone.</strong>
               </p>
             </ng-container>

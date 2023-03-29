@@ -76,26 +76,26 @@ export const mintFeature = createFeature({
       tokenInfoStatus: getFailureState(error.message)
     })),
 
-    // Mint Allowlist --> MintTicket
+    // MintTicket
 
-    on(MintActions.loadMintAllowlist, state => ({
+    on(MintActions.loadMintTicket, state => ({
       ...state,
       // mintTicket: undefined,
       mintTicketStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadMintAllowlistSuccess, (state, { mintTicket }) => ({
+    on(MintActions.loadMintTicketSuccess, (state, { mintTicket }) => ({
       ...state,
       mintTicket,
       mintTicketStatus: getSuccessfulState()
     })),
 
-    on(MintActions.loadMintAllowlistFailure, (state, { error }) => ({
+    on(MintActions.loadMintTicketFailure, (state, { error }) => ({
       ...state,
       mintTicketStatus: getFailureState(error.message)
     })),
 
-    on(MintActions.clearMintAllowlist, state => ({
+    on(MintActions.clearMintTicket, state => ({
       ...state,
       mintTicket: undefined,
       mintTicketStatus: getInitialState()

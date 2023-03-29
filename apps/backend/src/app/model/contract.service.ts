@@ -136,4 +136,21 @@ export class ContractService {
 
     return this.cacheService.set(cacheKey, allMints, this.cacheTimeToLive);
   }
+
+  // We want to know which token belongs to whom.
+  // Problem: there could be a huge amount of transfers over time and this could lead to RPC rate limits
+  // Current Solution: We expect a relatively small number of tokens. Therefore, all we need to do is to iterate through all the token ids and see who they belong to right now.
+  async getAllTokenOwners(tokenName: KnownTokenName) {
+
+    const cacheKey = 'allTokenOwners_' + tokenName;
+    if (this.cacheService.has(cacheKey)) {
+      return this.cacheService.get<any[]>(cacheKey);
+    }
+
+    // TODO
+    const allTokenOwerns: any[] = [];
+
+    return this.cacheService.set(cacheKey, allTokenOwerns, this.cacheTimeToLive);
+
+  }
 }

@@ -60,26 +60,26 @@ export class ApiController {
     private imageService: ImageService) { }
 
   /**
-   * Minting via allowlist, or limited mint
+   * Minting via allowlist, or limited mint.
    *
    * Allow for minting of tokens up to the maximum allowed for a given address.
    * The address of the sender and the number of mints allowed are hashed and signed
    * with the server's private key and verified on-chain to prove allowlist status.
    */
-  @Post(['api/mintAllowlist'])
-  @ApiOperation({ operationId: 'mintAllowlist' })
+  @Post(['api/mintTicket'])
+  @ApiOperation({ operationId: 'mintTicket' })
   @ApiNotFoundResponse({ description: 'Unkown token name' })
   // @ApiForbiddenResponse({ description: 'The sender is not on the allowlist' })
   @ApiOkResponse({
     description: 'The required params to execute the mint',
     type: MintTicket
   })
-  async mintAllowlist(@Body() mintRequest: MintRequest): Promise<MintTicket> {
+  async mintTicket(@Body() mintRequest: MintRequest): Promise<MintTicket> {
 
     const tokenName = mintRequest.tokenName;
     const sender = mintRequest.sender.toLowerCase();
 
-    Logger.verbose(`Mint request for token ${tokenName} from sender ${sender}`);
+    Logger.verbose(`Mint ticked requested for token ${tokenName} by sender ${sender}`);
 
     if (!this.knownTokens.map(x => x.name).includes(tokenName)) {
       throw new NotFoundException('Unknown token name');

@@ -10,6 +10,10 @@ import { StrictWalletState } from './helper/strict-wallet-state';
 export const WalletActions = createActionGroup({
   source: 'Wallet',
   events: {
+
+    // first we need to figure out to which network we want to connect
+    // the backend is telling this to us and will also give us a bunch of other helpful data
+    // (like the last known totalSupply)
     'Load Token Config': emptyProps(),
     'Load Token Config Success':  props<{ knownToken: KnownTokenResponse }>(),
     'Load Token Config Failure':  props<{ error: HttpErrorResponse }>(),

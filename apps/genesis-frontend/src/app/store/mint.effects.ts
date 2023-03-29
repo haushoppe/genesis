@@ -62,30 +62,30 @@ export class MintEffects {
     );
   });
 
-  triggerLoadMintAllowlistOnWalletChange$ = createEffect(() => {
+  triggerLoadMintTicketOnWalletChange$ = createEffect(() => {
     return this.actions.pipe(
       ofType(WalletActions.walletStateChange),
-      map(() => MintActions.loadMintAllowlist())
+      map(() => MintActions.loadMintTicket())
     );
   });
 
   triggerClearOnWalletDisconnect$ = createEffect(() => {
     return this.actions.pipe(
       ofType(WalletActions.disconnectWalletDetected),
-      map(() => MintActions.clearMintAllowlist())
+      map(() => MintActions.clearMintTicket())
     );
   });
 
-  loadMintAllowlist$ = createEffect(() => {
+  loadMintTicket$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(MintActions.loadMintAllowlist),
+      ofType(MintActions.loadMintTicket),
       withLatestFrom(this.store.select(selectWalletAddress)),
       map(([, address]) => address || ''),
       switchMap(address =>
-        this.apiService.mintAllowlist({ sender: address, tokenName: KnownTokenName.genesis }).pipe(
+        this.apiService.mintTicket({ sender: address, tokenName: KnownTokenName.genesis }).pipe(
           retry({ count: 3, delay: 1000 }),
-          map(mintTicket => MintActions.loadMintAllowlistSuccess({ mintTicket })),
-          catchError(error => of(MintActions.loadMintAllowlistFailure({ error }))))
+          map(mintTicket => MintActions.loadMintTicketSuccess({ mintTicket })),
+          catchError(error => of(MintActions.loadMintTicketFailure({ error }))))
       )
     );
   });

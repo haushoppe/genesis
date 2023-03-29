@@ -99,7 +99,6 @@ export class ApiService {
 
     /**
      * 
-     * 
      * @param tokenName 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -157,7 +156,6 @@ export class ApiService {
     }
 
     /**
-     * 
      * 
      * @param tokenName 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -217,7 +215,6 @@ export class ApiService {
 
     /**
      * 
-     * 
      * @param tokenName 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -275,17 +272,17 @@ export class ApiService {
 
     /**
      * 
-     * Minting via allowlist  Allow for minting of tokens up to the maximum allowed for a given address. The address of the sender and the number of mints allowed are hashed and signed with the server\&#39;s private key and verified on-chain to prove allowlist status.
+     * Minting via allowlist, or limited mint  Allow for minting of tokens up to the maximum allowed for a given address. The address of the sender and the number of mints allowed are hashed and signed with the server\&#39;s private key and verified on-chain to prove allowlist status.
      * @param mintRequest 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public mintAllowlist(mintRequest: MintRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<MintTicket>;
-    public mintAllowlist(mintRequest: MintRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<MintTicket>>;
-    public mintAllowlist(mintRequest: MintRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<MintTicket>>;
-    public mintAllowlist(mintRequest: MintRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public mintTicket(mintRequest: MintRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<MintTicket>;
+    public mintTicket(mintRequest: MintRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<MintTicket>>;
+    public mintTicket(mintRequest: MintRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<MintTicket>>;
+    public mintTicket(mintRequest: MintRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (mintRequest === null || mintRequest === undefined) {
-            throw new Error('Required parameter mintRequest was null or undefined when calling mintAllowlist.');
+            throw new Error('Required parameter mintRequest was null or undefined when calling mintTicket.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -328,7 +325,7 @@ export class ApiService {
             }
         }
 
-        let localVarPath = `/api/mintAllowlist`;
+        let localVarPath = `/api/mintTicket`;
         return this.httpClient.request<MintTicket>('post', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
@@ -403,7 +400,6 @@ export class ApiService {
 
     /**
      * 
-     * 
      * @param tokenName 
      * @param tokenId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -465,7 +461,6 @@ export class ApiService {
     }
 
     /**
-     * 
      * 
      * @param tokenName 
      * @param tokenId 
@@ -545,7 +540,6 @@ export class ApiService {
 
     /**
      * 
-     * 
      * @param tokenName 
      * @param tokenId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -607,7 +601,6 @@ export class ApiService {
     }
 
     /**
-     * 
      * 
      * @param tokenName 
      * @param tokenId 
@@ -686,7 +679,6 @@ export class ApiService {
     }
 
     /**
-     * 
      * 
      * @param tokenName 
      * @param tokenId 

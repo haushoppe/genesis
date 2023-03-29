@@ -91,7 +91,7 @@ export class ApiController {
 
     const mintWallets = this.allowlistService.getMintWallets(tokenName);
 
-    // there is a allowlist and the sender is not included
+    // there is an allowlist and the sender is not included
     if (mintWallets.length > 0 && !mintWallets.includes(sender)) {
       // throw new ForbiddenException('The sender is not on the allowlist');
       return {
@@ -117,10 +117,11 @@ export class ApiController {
   }
 
   /**
-   * Status of this service
+   * Determines which blockchain network the frontend should connect to,
+   * and provides other helpful data that the backend has already collected
    */
-  @Get(['api/status/:tokenName'])
-  @ApiOperation({ operationId: 'status' })
+  @Get(['api/config/:tokenName'])
+  @ApiOperation({ operationId: 'config' })
   @ApiParam({
     name: 'tokenName',
     description: 'Limits the contract details to one token',
@@ -129,7 +130,7 @@ export class ApiController {
   })
   @ApiResponse({ type: StatusResponse, isArray: true })
   @Header('Cache-Control', 'no-cache')
-  async status(@Param('tokenName') tokenName: 'all' | KnownTokenName): Promise<StatusResponse> {
+  async config(@Param('tokenName') tokenName: 'all' | KnownTokenName): Promise<StatusResponse> {
 
     let knownTokens = this.knownTokens;
 

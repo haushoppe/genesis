@@ -64,10 +64,10 @@
 
           </p>
 
-          <p class="mb-2" *rxLet="walletFacade.knownTokenStatus$; let knownTokenStatus">
+          <p class="mb-2" *rxLet="walletFacade.configStatus$; let configStatus">
 
               <app-loading-indicator-button
-                [disabled]="knownTokenStatus.submitStatus !== SubmitStatus.Successful"
+                [disabled]="configStatus.submitStatus !== SubmitStatus.Successful"
                 (buttonClick)="walletFacade.connectWallet()"
                 [state]="walletStatus"
                 [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Wallet connected' : 'Connect wallet'"

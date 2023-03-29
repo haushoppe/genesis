@@ -157,6 +157,65 @@ export class ApiService {
 
     /**
      * 
+     * Determines which blockchain network the frontend should connect to, and provides other helpful data that the backend has already collected
+     * @param tokenName Limits the contract details to one token
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public config(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<StatusResponse>;
+    public config(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<StatusResponse>>;
+    public config(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<StatusResponse>>;
+    public config(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (tokenName === null || tokenName === undefined) {
+            throw new Error('Required parameter tokenName was null or undefined when calling config.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/config/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}`;
+        return this.httpClient.request<StatusResponse>('get', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * 
      * @param tokenName 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -272,7 +331,7 @@ export class ApiService {
 
     /**
      * 
-     * Minting via allowlist, or limited mint  Allow for minting of tokens up to the maximum allowed for a given address. The address of the sender and the number of mints allowed are hashed and signed with the server\&#39;s private key and verified on-chain to prove allowlist status.
+     * Minting via allowlist, or limited mint.  Allow for minting of tokens up to the maximum allowed for a given address. The address of the sender and the number of mints allowed are hashed and signed with the server\&#39;s private key and verified on-chain to prove allowlist status.
      * @param mintRequest 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -330,65 +389,6 @@ export class ApiService {
             {
                 context: localVarHttpContext,
                 body: mintRequest,
-                responseType: <any>responseType_,
-                withCredentials: this.configuration.withCredentials,
-                headers: localVarHeaders,
-                observe: observe,
-                reportProgress: reportProgress
-            }
-        );
-    }
-
-    /**
-     * 
-     * Status of this service
-     * @param tokenName Limits the contract details to one token
-     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
-     * @param reportProgress flag to report request and response progress.
-     */
-    public status(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<StatusResponse>;
-    public status(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<StatusResponse>>;
-    public status(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<StatusResponse>>;
-    public status(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
-        if (tokenName === null || tokenName === undefined) {
-            throw new Error('Required parameter tokenName was null or undefined when calling status.');
-        }
-
-        let localVarHeaders = this.defaultHeaders;
-
-        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
-        if (localVarHttpHeaderAcceptSelected === undefined) {
-            // to determine the Accept header
-            const httpHeaderAccepts: string[] = [
-                'application/json'
-            ];
-            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
-        }
-        if (localVarHttpHeaderAcceptSelected !== undefined) {
-            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
-        }
-
-        let localVarHttpContext: HttpContext | undefined = options && options.context;
-        if (localVarHttpContext === undefined) {
-            localVarHttpContext = new HttpContext();
-        }
-
-
-        let responseType_: 'text' | 'json' | 'blob' = 'json';
-        if (localVarHttpHeaderAcceptSelected) {
-            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
-                responseType_ = 'text';
-            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
-                responseType_ = 'json';
-            } else {
-                responseType_ = 'blob';
-            }
-        }
-
-        let localVarPath = `/api/status/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}`;
-        return this.httpClient.request<StatusResponse>('get', `${this.configuration.basePath}${localVarPath}`,
-            {
-                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
                 headers: localVarHeaders,

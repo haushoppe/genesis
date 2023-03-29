@@ -8,7 +8,7 @@ import { ApiService } from '../openapi-client';
 
 import { WalletService } from '../services/wallet-service';
 import { WalletActions } from './wallet.actions';
-import { selectKnownToken, selectWallet } from './wallet.reducer';
+import { selectConfig, selectWallet } from './wallet.reducer';
 
 
 @Injectable()
@@ -20,23 +20,23 @@ export class WalletEffects implements OnInitEffects {
   store = inject(Store);
 
 
-  loadTokenConfig$ = createEffect(() => {
+  loadConfig$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(WalletActions.loadTokenConfig),
-      mergeMap(() => this.apiService.status(environment.tokenName).pipe(
+      ofType(WalletActions.loadConfig),
+      mergeMap(() => this.apiService.config(environment.tokenName).pipe(
         retry({
           count: 3,
           delay: 1000
         }),
-        map(backendStatus => WalletActions.loadTokenConfigSuccess({ knownToken: backendStatus.knownTokens[0] })),
-        catchError(error => of(WalletActions.loadTokenConfigFailure({ error }))))
+        map(backendStatus => WalletActions.loadConfigSuccess({ knownToken: backendStatus.knownTokens[0] })),
+        catchError(error => of(WalletActions.loadConfigFailure({ error }))))
       )
     );
   });
 
   createOnboardInstance$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(WalletActions.loadTokenConfigSuccess),
+      ofType(WalletActions.loadConfigSuccess),
       map(({ knownToken }) => this.walletService.createOnboardInstance(knownToken.networkConfig))
     );
   }, { dispatch: false });
@@ -44,7 +44,7 @@ export class WalletEffects implements OnInitEffects {
   connectWallet$ = createEffect(() => {
     return this.actions.pipe(
       ofType(WalletActions.connectWallet),
-      withLatestFrom(this.store.select(selectKnownToken)),
+      withLatestFrom(this.store.select(selectConfig)),
       map(([, knownToken]) => knownToken),
       mergeMap(knownToken => this.walletService.connect(knownToken?.networkConfig)),
       map(wallet => wallet ?
@@ -92,6 +92,6 @@ export class WalletEffects implements OnInitEffects {
   }, { dispatch: false });
 
   ngrxOnInitEffects() {
-    return WalletActions.loadTokenConfig();
+    return WalletActions.loadConfig();
   }
 }

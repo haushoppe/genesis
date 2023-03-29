@@ -7,22 +7,21 @@ import {
   getInitialState,
   getSubmittingState,
   getSuccessfulState,
-  initialSubmittableState,
   SubmittableState,
 } from './submittable/submittable-state';
 import { WalletActions } from './wallet.actions';
 
 export interface State {
-  knownToken: KnownTokenResponse | undefined;
-  knownTokenStatus: SubmittableState;
+  config: KnownTokenResponse | undefined;
+  configStatus: SubmittableState;
 
   wallet: StrictWalletState | undefined;
   walletStatus: SubmittableState;
 }
 
 export const initialState: State = {
-  knownToken: undefined,
-  knownTokenStatus:  getInitialState(),
+  config: undefined,
+  configStatus:  getInitialState(),
 
   wallet: undefined,
   walletStatus: getInitialState()
@@ -34,24 +33,24 @@ export const walletFeature = createFeature({
   reducer: createReducer(
     initialState,
 
-    // Known Token Config
+    // Config
 
-    on(WalletActions.loadTokenConfig, state => ({
+    on(WalletActions.loadConfig, state => ({
       ...state,
-      knownToken: undefined,
-      knownTokenStatus: getSubmittingState()
+      config: undefined,
+      configStatus: getSubmittingState()
     })),
 
-    on(WalletActions.loadTokenConfigSuccess, (state, { knownToken }) => ({
+    on(WalletActions.loadConfigSuccess, (state, { knownToken }) => ({
       ...state,
-      knownToken,
-      knownTokenStatus: getSuccessfulState()
+      config: knownToken,
+      configStatus: getSuccessfulState()
     })),
 
-    on(WalletActions.loadTokenConfigFailure, (state,{ error }) => ({
+    on(WalletActions.loadConfigFailure, (state,{ error }) => ({
       ...state,
-      knownToken: undefined,
-      knownTokenStatus: getFailureState(error.message)
+      config: undefined,
+      configStatus: getFailureState(error.message)
     })),
 
     // Wallet
@@ -88,8 +87,8 @@ export const {
   name, // feature name
   reducer, // feature reducer
   selectWalletState, // feature selector
-  selectKnownToken, // selector for `knownToken` property
-  selectKnownTokenStatus, // selector for `knownTokenStatus` property
+  selectConfig, // selector for `config` property
+  selectConfigStatus, // selector for `configStatus` property
   selectWallet, // selector for `wallet` property
   selectWalletStatus, // selector for `walletStatus` property
 } = walletFeature;

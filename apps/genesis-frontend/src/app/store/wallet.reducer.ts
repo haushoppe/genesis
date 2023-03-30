@@ -1,5 +1,5 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
-import { KnownTokenResponse } from '../openapi-client';
+import { ConfigDetails } from '../openapi-client';
 
 import { StrictWalletState } from './helper/strict-wallet-state';
 import {
@@ -12,7 +12,7 @@ import {
 import { WalletActions } from './wallet.actions';
 
 export interface State {
-  config: KnownTokenResponse | undefined;
+  config: ConfigDetails | undefined;
   configStatus: SubmittableState;
 
   wallet: StrictWalletState | undefined;
@@ -41,9 +41,9 @@ export const walletFeature = createFeature({
       configStatus: getSubmittingState()
     })),
 
-    on(WalletActions.loadConfigSuccess, (state, { knownToken }) => ({
+    on(WalletActions.loadConfigSuccess, (state, { config }) => ({
       ...state,
-      config: knownToken,
+      config,
       configStatus: getSuccessfulState()
     })),
 

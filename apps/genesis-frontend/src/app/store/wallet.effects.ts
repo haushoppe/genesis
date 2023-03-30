@@ -28,7 +28,7 @@ export class WalletEffects implements OnInitEffects {
           count: 3,
           delay: 1000
         }),
-        map(backendStatus => WalletActions.loadConfigSuccess({ knownToken: backendStatus.knownTokens[0] })),
+        map(response => WalletActions.loadConfigSuccess({ config: response.config })),
         catchError(error => of(WalletActions.loadConfigFailure({ error }))))
       )
     );
@@ -37,7 +37,7 @@ export class WalletEffects implements OnInitEffects {
   createOnboardInstance$ = createEffect(() => {
     return this.actions.pipe(
       ofType(WalletActions.loadConfigSuccess),
-      map(({ knownToken }) => this.walletService.createOnboardInstance(knownToken.networkConfig))
+      map(({ config }) => this.walletService.createOnboardInstance(config.networkConfig))
     );
   }, { dispatch: false });
 

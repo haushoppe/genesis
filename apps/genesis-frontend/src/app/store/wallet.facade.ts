@@ -3,7 +3,7 @@ import { Store } from '@ngrx/store';
 
 import { WalletActions } from './wallet.actions';
 import { selectConfig, selectConfigStatus, selectWalletStatus } from './wallet.reducer';
-import { selectWalletAddress, selectWalletEnsName, selectWalletLabel, selectWalletUnsName } from './wallet.selectors';
+import { selectBestWalletName, selectWalletAddress, selectWalletLabel } from './wallet.selectors';
 
 
 @Injectable({
@@ -16,11 +16,9 @@ export class WalletFacade {
   config$ = this.store.select(selectConfig);
   configStatus$ = this.store.select(selectConfigStatus);
 
-  // wallet$ = this.store.select(selectWallet);
   walletStatus$ = this.store.select(selectWalletStatus);
   walletLabel$ = this.store.select(selectWalletLabel);
-  walletEnsName$ = this.store.select(selectWalletEnsName);
-  walletUnsName$ = this.store.select(selectWalletUnsName);
+  bestWalletName$ = this.store.select(selectBestWalletName);
   walletAddress$ = this.store.select(selectWalletAddress);
 
   connectWallet() {

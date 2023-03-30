@@ -19,13 +19,13 @@ import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
 // @ts-ignore
+import { ConfigResponse } from '../model/configResponse';
+// @ts-ignore
 import { Metadata } from '../model/metadata';
 // @ts-ignore
 import { MintRequest } from '../model/mintRequest';
 // @ts-ignore
 import { MintTicket } from '../model/mintTicket';
-// @ts-ignore
-import { StatusResponse } from '../model/statusResponse';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -162,10 +162,10 @@ export class ApiService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public config(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<StatusResponse>;
-    public config(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<StatusResponse>>;
-    public config(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<StatusResponse>>;
-    public config(tokenName: 'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public config(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<ConfigResponse>;
+    public config(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<ConfigResponse>>;
+    public config(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<ConfigResponse>>;
+    public config(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (tokenName === null || tokenName === undefined) {
             throw new Error('Required parameter tokenName was null or undefined when calling config.');
         }
@@ -201,8 +201,8 @@ export class ApiService {
             }
         }
 
-        let localVarPath = `/api/config/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'all' | 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}`;
-        return this.httpClient.request<StatusResponse>('get', `${this.configuration.basePath}${localVarPath}`,
+        let localVarPath = `/api/config/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}`;
+        return this.httpClient.request<ConfigResponse>('get', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

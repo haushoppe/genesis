@@ -25,6 +25,12 @@ export const selectWalletUnsName = createSelector(
   }
 );
 
+export const selectBestWalletName = createSelector(
+  selectWalletEnsName,
+  selectWalletUnsName,
+  (walletEnsName, walletUnsName) => walletEnsName || walletUnsName
+);
+
 export const selectWalletAddress = createSelector(
   selectWallet,
   wallet => {

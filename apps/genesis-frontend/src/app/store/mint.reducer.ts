@@ -17,6 +17,9 @@ export interface State {
   tokenInfo: Metadata | undefined;
   tokenInfoStatus: SubmittableState;
 
+  totalSupply: number | undefined;
+  totalSupplyStatus: SubmittableState;
+
   mintTicket: MintTicket | undefined;
   mintTicketStatus: SubmittableState;
 }
@@ -27,6 +30,9 @@ export const initialState: State = {
 
   tokenInfo: undefined,
   tokenInfoStatus: getInitialState(),
+
+  totalSupply: undefined,
+  totalSupplyStatus: getInitialState(),
 
   mintTicket: undefined,
   mintTicketStatus: getInitialState()
@@ -42,6 +48,7 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadAllMints, state => ({
       ...state,
+      // no reset
       allMintsStatus: getSubmittingState()
     })),
 
@@ -76,11 +83,30 @@ export const mintFeature = createFeature({
       tokenInfoStatus: getFailureState(error.message)
     })),
 
+    // Load Total Supply
+
+    on(MintActions.loadTotalSupply, state => ({
+      ...state,
+      // no reset
+      totalSupplyStatus: getSubmittingState()
+    })),
+
+    on(MintActions.loadTotalSupplySuccess, (state, { totalSupply }) => ({
+      ...state,
+      totalSupply,
+      totalSupplyStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.loadTotalSupplyFailure, (state, { error }) => ({
+      ...state,
+      totalSupplyStatus: getFailureState(error.message)
+    })),
+
     // MintTicket
 
     on(MintActions.loadMintTicket, state => ({
       ...state,
-      // mintTicket: undefined,
+      // no reset
       mintTicketStatus: getSubmittingState()
     })),
 
@@ -111,6 +137,8 @@ export const {
   selectAllMintsStatus, // selector for `allMintsStatus` property
   selectTokenInfo,
   selectTokenInfoStatus,
+  selectTotalSupply,
+  selectTotalSupplyStatus,
   selectMintTicket,
   selectMintTicketStatus
 } = mintFeature;

@@ -9,12 +9,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { KnownTokenResponse } from './knownTokenResponse';
+import { ConfigDetails } from './configDetails';
 
 
-export interface StatusResponse { 
+export interface ConfigResponse { 
     environment: string;
     uptime: string;
-    knownTokens: Array<KnownTokenResponse>;
+    config: ConfigDetails;
 }
 

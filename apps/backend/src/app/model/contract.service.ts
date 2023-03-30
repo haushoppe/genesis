@@ -41,7 +41,7 @@ export class ContractService {
       provider = new ethers.providers.AlchemyProvider(network, apiKey);
     }
 
-    const contract = new ethers.Contract(tokenConfig.address, abi, provider);
+    const contract = new ethers.Contract(tokenConfig.contractAddress, abi, provider);
     return contract;
   }
 

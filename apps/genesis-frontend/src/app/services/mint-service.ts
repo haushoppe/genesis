@@ -45,10 +45,24 @@ export class MintService {
     return false;
   }
 
-  async todo() {
-      // initialize the contract object with a signer to be able to do transactions
-      // this.contract = new ethers.Contract(this.status.knownTokens[0].address, abi, this.signer);
-      // console.log("Token contract address is " + this.contract.address);
+  async totalSupply(provider: ethers.providers.Web3Provider | undefined, contractAddress: string | undefined): Promise<number> {
+
+    if (!provider || !contractAddress) {
+      throw Error('Web3Provider or contractAddress is missing')
+    }
+
+    const contract = this.initContract(provider, contractAddress);
+    const totalSupply = (await contract.totalSupply()).toNumber();
+    return totalSupply;
+  }
+
+  // initialize the contract object with a signer to be able to do transactions
+  private initContract(provider: ethers.providers.Web3Provider, contractAddress: string) {
+
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      console.log("Contract object initialized for address " + contractAddress);
+      return contract;
   }
 
 

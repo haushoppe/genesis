@@ -10,6 +10,7 @@ import {
   selectTokenInfo,
   selectTokenInfoStatus,
 } from './mint.reducer';
+import { selectBestTotalSupply } from './mint.selectors';
 
 
 @Injectable({
@@ -27,6 +28,8 @@ export class MintFacade {
 
   mintTicket$ = this.store.select(selectMintTicket);
   mintTicketStatus$ = this.store.select(selectMintTicketStatus);
+
+  bestTotalSupply$ = this.store.select(selectBestTotalSupply);
 
   signMessage() {
     this.store.dispatch(MintActions.signMessage());

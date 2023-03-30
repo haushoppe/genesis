@@ -11,13 +11,13 @@ encoder.ts
 git_push.sh
 index.ts
 model/chain.ts
-model/knownTokenResponse.ts
+model/configDetails.ts
+model/configResponse.ts
 model/metadata.ts
 model/metatdataAttribute.ts
 model/metatdataAttributeValue.ts
 model/mintRequest.ts
 model/mintTicket.ts
 model/models.ts
-model/statusResponse.ts
 param.ts
 variables.ts

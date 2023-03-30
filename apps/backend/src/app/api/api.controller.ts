@@ -43,7 +43,7 @@ import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { Metadata } from '../types/metadata';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
-import { StatusResponse } from '../types/status-response';
+import { ConfigResponse } from '../types/config-response';
 
 
 @ApiTags('api')
@@ -125,26 +125,26 @@ export class ApiController {
   @ApiParam({
     name: 'tokenName',
     description: 'Limits the contract details to one token',
-    enum: ['all', ...Object.keys(KnownTokenName)],
+    enum: KnownTokenName,
     example: KnownTokenName.genesis,
   })
-  @ApiResponse({ type: StatusResponse, isArray: true })
+  @ApiResponse({ type: ConfigResponse, isArray: true })
   @Header('Cache-Control', 'no-cache')
-  async config(@Param('tokenName') tokenName: 'all' | KnownTokenName): Promise<StatusResponse> {
+  async config(@Param('tokenName') tokenName: KnownTokenName): Promise<ConfigResponse> {
 
-    let knownTokens = this.knownTokens;
-
-    if (tokenName !== 'all') {
-      knownTokens = [knownTokens.find(x => x.name === tokenName)];
+    if (!this.knownTokens.map(x => x.name).includes(tokenName)) {
+      throw new NotFoundException('Unknown token name');
     }
+
+    const token = this.knownTokens.find(x => x.name === tokenName);
 
     return {
       environment: this.configService.get('environment'),
       uptime: formatSeconds(process.uptime()),
-      knownTokens: await Promise.all(knownTokens.map(async token => ({
+      config: {
         name: token.name,
         maximumAllowedMintsPerAddress: token.maximumAllowedMintsPerAddress,
-        address: token.address,
+        contractAddress: token.contractAddress,
         networkName: token.networkName,
         networkConfig: {
           ...KnownChains[token.networkName],
@@ -152,12 +152,12 @@ export class ApiController {
         },
         firstBlockNumber: token.firstBlockNumber,
         implementsMosaics: token.implementsMosaics,
-        explorerLink: KnownChains[token.networkName].blockExplorerUrl + '/address/' + token.address,
+        explorerLink: KnownChains[token.networkName].blockExplorerUrl + '/address/' + token.contractAddress,
         signer: getSigner(this.configService.get('signerKey_' + token.name)).address,
         allowlistEntries: this.allowlistService.getMintWallets(token.name).length,
         contractName: (await this.contractService.getContractName(token.name)),
         totalSupply: (await this.contractService.getTotalSupply(token.name))
-      })))
+      }
     };
   }
 

@@ -12,10 +12,10 @@
 import { Chain } from './chain';
 
 
-export interface KnownTokenResponse { 
+export interface ConfigDetails { 
     name: string;
     maximumAllowedMintsPerAddress: number;
-    address: string;
+    contractAddress: string;
     networkName: string;
     networkConfig: Chain;
     firstBlockNumber: number;

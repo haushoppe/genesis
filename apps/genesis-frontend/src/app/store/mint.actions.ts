@@ -28,8 +28,8 @@ export const MintActions = createActionGroup({
     'Sign Message Failure': emptyProps(),
 
     // via Browsers' Provider
-    'Get Total Supply': emptyProps(),
-    'Get Total Supply Message Success': emptyProps(),
-    'Get Total Supply Message Failure': emptyProps()
+    'Load Total Supply': emptyProps(),
+    'Load Total Supply Success': props<{ totalSupply: number }>(),
+    'Load Total Supply Failure': props<{ error: Error }>(),
   }
 });

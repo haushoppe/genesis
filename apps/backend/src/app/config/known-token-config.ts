@@ -4,7 +4,7 @@ import { KnownTokenName } from '../../../../shared/known-token-name';
 export interface KnownTokenConfig {
   name: KnownTokenName;
   maximumAllowedMintsPerAddress: number;
-  address: string;
+  contractAddress: string;
   networkName: KnownNetworkName;
 
   /**

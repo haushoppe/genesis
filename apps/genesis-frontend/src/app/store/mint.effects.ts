@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { of } from 'rxjs';
-import { catchError, map, retry, switchMap, withLatestFrom } from 'rxjs/operators';
+import { from, of } from 'rxjs';
+import { catchError, map, mergeMap, retry, switchMap, timeout, withLatestFrom } from 'rxjs/operators';
 
 import { KnownTokenName } from '../../../../shared/known-token-name';
 import { ApiService } from '../openapi-client';
@@ -11,6 +11,8 @@ import { MintActions } from './mint.actions';
 import { WalletActions } from './wallet.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 import { selectProvider, selectWalletAddress } from './wallet.selectors';
+import { selectConfig } from './wallet.reducer';
+import { environment } from '../../environments/environment';
 
 
 @Injectable()
@@ -62,10 +64,13 @@ export class MintEffects {
     );
   });
 
-  triggerLoadMintTicketOnWalletChange$ = createEffect(() => {
+  triggerActionsOnWalletChange$ = createEffect(() => {
     return this.actions.pipe(
       ofType(WalletActions.walletStateChange),
-      map(() => MintActions.loadMintTicket())
+      mergeMap(() => [
+        MintActions.loadMintTicket(),
+        MintActions.loadTotalSupply()
+      ])
     );
   });
 
@@ -102,5 +107,17 @@ export class MintEffects {
         MintActions.signMessageFailure()
       )
     );
+  });
+
+  loadTotalSupply$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(MintActions.loadTotalSupply),
+      withLatestFrom(this.store.select(selectProvider), this.store.select(selectConfig)),
+      map(([, provider, config]) => ({ provider, contractAddress: config?.contractAddress })),
+      switchMap(({ provider, contractAddress }) => from(this.mintService.totalSupply(provider, contractAddress)).pipe(
+        map(totalSupply => MintActions.loadTotalSupplySuccess({ totalSupply })),
+        timeout(environment.web3ProviderTimeout),
+        catchError(error => of(MintActions.loadTotalSupplyFailure({ error }))))
+    ));
   });
 }

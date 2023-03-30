@@ -155,8 +155,11 @@ export class ApiController {
         explorerLink: KnownChains[token.networkName].blockExplorerUrl + '/address/' + token.contractAddress,
         signer: getSigner(this.configService.get('signerKey_' + token.name)).address,
         allowlistEntries: this.allowlistService.getMintWallets(token.name).length,
+
         contractName: (await this.contractService.getContractName(token.name)),
-        totalSupply: (await this.contractService.getTotalSupply(token.name))
+        totalSupply: (await this.contractService.getTotalSupply(token.name)),
+        price: (await this.contractService.getPrice(token.name)),
+        priceForMosaic: token.implementsMosaics ? (await this.contractService.getPriceForMosaic(token.name)) : '-1',
       }
     };
   }

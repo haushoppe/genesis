@@ -13,6 +13,7 @@ import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 import { selectProvider, selectWalletAddress } from './wallet.selectors';
 import { selectConfig } from './wallet.reducer';
 import { environment } from '../../environments/environment';
+import { selectMintTicket } from './mint.reducer';
 
 
 @Injectable()
@@ -58,7 +59,7 @@ export class MintEffects {
       switchMap(({ tokenId }) =>
         this.apiService.tokenInfo(KnownTokenName.genesis, tokenId).pipe(
           retry({ count: 3, delay: 1000 }),
-          map(tokenInfo => MintActions.loadTokenInfoSuccess({ tokenInfo  })),
+          map(tokenInfo => MintActions.loadTokenInfoSuccess({ tokenInfo })),
           catchError(error => of(MintActions.loadTokenInfoFailure({ error }))))
       )
     );
@@ -118,6 +119,30 @@ export class MintEffects {
         map(totalSupply => MintActions.loadTotalSupplySuccess({ totalSupply })),
         timeout(environment.web3ProviderTimeout),
         catchError(error => of(MintActions.loadTotalSupplyFailure({ error }))))
-    ));
+      ));
   });
+
+  mintAllowlist$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(MintActions.mintAllowlist),
+      withLatestFrom(this.store.select(selectProvider), this.store.select(selectConfig), this.store.select(selectMintTicket)),
+      map(([action, provider, config, mintTicket]) => ({
+        provider,
+        contractAddress: config?.contractAddress,
+        mintNumber: action.mintNumber,
+        price: config?.price || '0',
+        mintTicket
+      })),
+      switchMap(({ provider, contractAddress, mintNumber, price, mintTicket }) => from(this.mintService.mintAllowlist(
+        provider,
+        contractAddress,
+        mintNumber,
+        price,
+        mintTicket
+      )).pipe(
+        map(() => MintActions.mintAllowlistSuccess()),
+        catchError(error => of(MintActions.mintAllowlistFailure({ error }))))
+      ));
+  });
+
 }

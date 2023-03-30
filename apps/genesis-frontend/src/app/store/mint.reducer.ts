@@ -22,6 +22,8 @@ export interface State {
 
   mintTicket: MintTicket | undefined;
   mintTicketStatus: SubmittableState;
+
+  mintAllowlistStatus: SubmittableState
 }
 
 export const initialState: State = {
@@ -35,7 +37,9 @@ export const initialState: State = {
   totalSupplyStatus: getInitialState(),
 
   mintTicket: undefined,
-  mintTicketStatus: getInitialState()
+  mintTicketStatus: getInitialState(),
+
+  mintAllowlistStatus: getInitialState()
 };
 
 
@@ -60,7 +64,7 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadAllMintsFailure, (state, { error }) => ({
       ...state,
-      allMintsStatus: getFailureState(error.message)
+      allMintsStatus: getFailureState(error)
     })),
 
     // Load Token Info
@@ -80,7 +84,7 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadTokenInfoFailure, (state, { error }) => ({
       ...state,
-      tokenInfoStatus: getFailureState(error.message)
+      tokenInfoStatus: getFailureState(error)
     })),
 
     // Load Total Supply
@@ -99,7 +103,7 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadTotalSupplyFailure, (state, { error }) => ({
       ...state,
-      totalSupplyStatus: getFailureState(error.message)
+      totalSupplyStatus: getFailureState(error)
     })),
 
     // MintTicket
@@ -107,7 +111,10 @@ export const mintFeature = createFeature({
     on(MintActions.loadMintTicket, state => ({
       ...state,
       // no reset
-      mintTicketStatus: getSubmittingState()
+      mintTicketStatus: getSubmittingState(),
+
+      // but reset last allowlist status because a new ticket means a new chance
+      mintAllowlistStatus: getInitialState()
     })),
 
     on(MintActions.loadMintTicketSuccess, (state, { mintTicket }) => ({
@@ -118,14 +125,31 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadMintTicketFailure, (state, { error }) => ({
       ...state,
-      mintTicketStatus: getFailureState(error.message)
+      mintTicketStatus: getFailureState(error)
     })),
 
     on(MintActions.clearMintTicket, state => ({
       ...state,
       mintTicket: undefined,
       mintTicketStatus: getInitialState()
-    }))
+    })),
+
+    // Mints via Allowlist method (with a MintTicket)
+
+    on(MintActions.mintAllowlist, state => ({
+      ...state,
+      mintAllowlistStatus: getSubmittingState()
+    })),
+
+    on(MintActions.mintAllowlistSuccess, state => ({
+      ...state,
+      mintAllowlistStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.mintAllowlistFailure, (state, { error }) => ({
+      ...state,
+      mintAllowlistStatus: getFailureState(error)
+    })),
   )
 });
 
@@ -140,5 +164,6 @@ export const {
   selectTotalSupply,
   selectTotalSupplyStatus,
   selectMintTicket,
-  selectMintTicketStatus
+  selectMintTicketStatus,
+  selectMintAllowlistStatus
 } = mintFeature;

@@ -70,6 +70,30 @@ export class ContractService {
     return this.cacheService.set(cacheKey, totalSupply, this.cacheTimeToLive);
   }
 
+  async getPrice(tokenName: KnownTokenName): Promise<string> {
+
+    const cacheKey = 'price_' + tokenName;
+    if (this.cacheService.has(cacheKey)) {
+      return this.cacheService.get<string>(cacheKey);
+    }
+
+    const contract = this.getContract(tokenName);
+    const price = (await contract.price()).toString();
+    return this.cacheService.set(cacheKey, price, this.cacheTimeToLive);
+  }
+
+  async getPriceForMosaic(tokenName: KnownTokenName): Promise<string> {
+
+    const cacheKey = 'priceForMosaic_' + tokenName;
+    if (this.cacheService.has(cacheKey)) {
+      return this.cacheService.get<string>(cacheKey);
+    }
+
+    const contract = this.getContract(tokenName);
+    const priceForMosaic = (await contract.priceForMosaic()).toString();
+    return this.cacheService.set(cacheKey, priceForMosaic, this.cacheTimeToLive);
+  }
+
   async getAllMints(tokenName: KnownTokenName): Promise<MintInfo[]> {
 
     const cacheKey = 'allMints_' + tokenName;

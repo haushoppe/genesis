@@ -25,5 +25,7 @@ export interface ConfigDetails {
     allowlistEntries: number;
     contractName: string;
     totalSupply: number;
+    price: string;
+    priceForMosaic: string;
 }
 

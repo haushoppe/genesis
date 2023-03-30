@@ -18,4 +18,6 @@ export class ConfigDetails {
   @ApiProperty() allowlistEntries: number;
   @ApiProperty() contractName: string;
   @ApiProperty() totalSupply: number;
+  @ApiProperty() price: string;
+  @ApiProperty() priceForMosaic: string;
 }

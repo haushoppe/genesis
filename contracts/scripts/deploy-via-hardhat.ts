@@ -1,5 +1,8 @@
 import { ethers } from 'hardhat';
 
+/**
+ * Fills the Hardhart test network with a series of transcations that simulate the first mints of the projects.
+ */
 async function main() {
 
   // doing 2x for loops to have the same contract addresses each time, see `known-tokens.ts`
@@ -48,7 +51,19 @@ async function main() {
       await token.mintMosaic(24, 16, 17, 18,
         { value: ethers.utils.parseEther("0.05") });
     }
+
+    // enables/disables minting via allowlist
+    // see also the `.env.example` file
+    await token.setSignerAddress("0xDC11bDf94F8Db09DEA6bdeEDc12cecA406bA4658");
   }
+
+  // last but not least, the poor dev has no money on hardhat, let's send him some huge cash!
+  const johannes = '0x8c11C53F77aD5e91fB13611904f2F59b07Aa7c93';
+  const [owner] = await ethers.getSigners();
+  await owner.sendTransaction({
+    to: johannes,
+    value: ethers.utils.parseEther("10")
+  });
 }
 
 // We recommend this pattern to be able to use async/await everywhere

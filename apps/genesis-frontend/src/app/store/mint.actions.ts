@@ -31,5 +31,10 @@ export const MintActions = createActionGroup({
     'Load Total Supply': emptyProps(),
     'Load Total Supply Success': props<{ totalSupply: number }>(),
     'Load Total Supply Failure': props<{ error: Error }>(),
+
+    // via Browsers' Provider
+    'Mint Allowlist': props<{ mintNumber: number }>(),
+    'Mint Allowlist Success': emptyProps(),
+    'Mint Allowlist Failure': props<{ error: Error }>(),
   }
 });

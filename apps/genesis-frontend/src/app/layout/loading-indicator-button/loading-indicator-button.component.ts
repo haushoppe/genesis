@@ -3,13 +3,14 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { getInitialState, SubmittableState } from '../../store/submittable/submittable-state';
+import { AlertComponent } from '../loading-indicator/alert/alert.component';
 
 @Component({
   selector: 'app-loading-indicator-button',
   templateUrl: './loading-indicator-button.component.html',
   standalone: true,
   imports: [
-    NgIf, NgClass
+    NgIf, NgClass, AlertComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -21,6 +22,7 @@ export class LoadingIndicatorButtonComponent {
   @Input() buttonText = 'Send';
   @Input() defaultIconClass = 'bi bi-send';
   @Input() state: SubmittableState | null = getInitialState();
+  @Input() showAlertOnError = false;
 
   @Output() buttonClick = new EventEmitter<MouseEvent>();
 

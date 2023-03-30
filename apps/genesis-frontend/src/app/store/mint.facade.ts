@@ -5,6 +5,7 @@ import { MintActions } from './mint.actions';
 import {
   selectAllMints,
   selectAllMintsStatus,
+  selectMintAllowlistStatus,
   selectMintTicket,
   selectMintTicketStatus,
   selectTokenInfo,
@@ -31,7 +32,14 @@ export class MintFacade {
 
   bestTotalSupply$ = this.store.select(selectBestTotalSupply);
 
+  mintAllowlistStatus$ = this.store.select(selectMintAllowlistStatus);
+
+
   signMessage() {
     this.store.dispatch(MintActions.signMessage());
+  }
+
+  mintAllowlist(mintNumber: number) {
+    this.store.dispatch(MintActions.mintAllowlist({ mintNumber }));
   }
 }

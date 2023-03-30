@@ -40,13 +40,12 @@
   <ng-container *rxLet="walletFacade.bestWalletName$; let bestWalletName">
     <ng-container *rxLet="walletFacade.walletAddress$; let walletAddress">
 
-      <p *ngIf="walletStatus.submitStatus !== SubmitStatus.Successful">
+      <p *ngIf="walletStatus.submitStatus !== SubmitStatus.Successful" class="mb-0">
         This collection is strictly limited.
-        Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> tokens have been minted.<br>
         Please connect your wallet to check if you can mint new elements.
       </p>
 
-      <p *ngIf="walletStatus.submitStatus === SubmitStatus.Successful">
+      <p *ngIf="walletStatus.submitStatus === SubmitStatus.Successful" class="mb-0">
         You have successfully connected your {{ walletFacade.walletLabel$ | push }} wallet with your account
 
         <ng-container *ngIf="bestWalletName; else noDomain">
@@ -61,6 +60,10 @@
           </span>
         </ng-template>
 
+      </p>
+
+      <p>
+        Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> tokens have been minted.
       </p>
 
       <p class="mb-2" *rxLet="walletFacade.configStatus$; let configStatus">
@@ -84,12 +87,24 @@
         <ng-container *ngIf="mintTicket">
           <p class="mt-3" *ngIf="mintTicket.maximumAllowedMints > 0">
             You can mint up to <strong>{{ mintTicket.maximumAllowedMints }}</strong> elements in total.<br>
-            Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> tokens have been minted.<br>
           </p>
           <p class="mt-3" *ngIf="mintTicket.maximumAllowedMints === 0">
             Currently you can't acquire elements with this account.<br>
             <strong>Please wait until minting is activated for everyone.</strong>
           </p>
+
+          <ng-container *rxLet="mintFacade.mintAllowlistStatus$; let allowlistStatus">
+            <app-loading-indicator-button
+              *ngIf="mintTicket.maximumAllowedMints > 0"
+              [disabled]="walletStatus.submitStatus !== SubmitStatus.Successful"
+              [showAlertOnError]="true"
+              (buttonClick)="mintFacade.mintAllowlist(1)"
+              [state]="allowlistStatus"
+              [buttonText]="allowlistStatus.submitStatus === SubmitStatus.Successful ? 'Minted successfully' : 'Mint a new element'"
+              defaultIconClass="bi bi-star"
+            ></app-loading-indicator-button>
+          </ng-container>
+
         </ng-container>
       </ng-container>
 

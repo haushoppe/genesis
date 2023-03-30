@@ -3,9 +3,9 @@ name: Build Backend
 on:
   push:
     branches: [ main ]
-    # paths:
-    #   - 'apps/backend/**'
-    #   - '*.json'
+    paths:
+      - 'apps/backend/**'
+      - '*.json'
 
 jobs:
 

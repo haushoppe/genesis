@@ -21,6 +21,7 @@ jobs:
         node-version: 16.15.1
 
     - run: npm install
+    - run: npm install @nrwl/nx-linux-x64-gnu #bugfix broken build! 😕
     - run: npm run build:scales-dashboard-frontend:production
     - name: Deploy Frontend to `haushoppe/scales-dashboard-frontend-build` repo
       env:

@@ -3,8 +3,8 @@ name: Build Three.js Test Cube
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'z_extra/prototypes/threejs-test/**'
+    # paths:
+    #   - 'z_extra/prototypes/threejs-test/**'
 
 jobs:
 

@@ -3,10 +3,10 @@ name: Build Genesis Frontend
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'apps/genesis-frontend/**'
-      - 'libs/**'
-      - '*.json'
+    # paths:
+    #   - 'apps/genesis-frontend/**'
+    #   - 'libs/**'
+    #   - '*.json'
 
 jobs:
 

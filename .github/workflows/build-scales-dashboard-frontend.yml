@@ -3,10 +3,10 @@ name: Build Scales Dashboard Frontend
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'apps/scales-dashboard-frontend/**'
-      - 'libs/**'
-      - '*.json'
+    # paths:
+    #   - 'apps/scales-dashboard-frontend/**'
+    #   - 'libs/**'
+    #   - '*.json'
 
 jobs:
 

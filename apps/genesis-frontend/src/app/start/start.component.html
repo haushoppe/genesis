@@ -8,7 +8,7 @@
 
 <button
   (click)="collapsed = !collapsed"
-  class="btn btn-primary">{{ collapsed ? 'Read more…' : 'Read less…'}}</button>
+  class="btn btn-outline-primary">{{ collapsed ? 'Read more…' : 'Read less…'}}</button>
 
 <p class="text-justify" [@collapse]="collapsed">
 
@@ -79,7 +79,7 @@
           <button
             *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
             (click)="walletFacade.disconnectWallet()"
-            class="btn btn-secondary ms-2">Disconnect wallet</button>
+            class="btn btn-outline-secondary ms-2">Disconnect wallet</button>
 
       </p>
 

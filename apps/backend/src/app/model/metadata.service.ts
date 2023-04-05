@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { Metadata } from '../types/metadata';
 
 import { MintInfo } from '../types/mint-info';
-import { PseudoRandom } from './pseudo-random';
 
 
 @Injectable()
@@ -14,6 +13,11 @@ export class MetadataService {
   generateMetadata(
     allMints: MintInfo[],
     rawMetadata: Metadata[],
+    createMetadataFn: (
+      tokenId: number,
+      mint: MintInfo,
+      availableMetadata:
+      Metadata[]) => Metadata,
     createMosaicMetadataFn: (
       tokenId: number,
       mosaicCounter: number,
@@ -23,58 +27,43 @@ export class MetadataService {
       tokenTile4: Metadata,
       environment: string
     ) => Metadata,
-    createFallbackImageFn: (tokenId: number) => Metadata): Metadata[] {
+    createFallbackImageFn: (
+      tokenId: number
+    ) => Metadata): Metadata[] {
 
     const environment = this.configService.get('environment');
-    const availableMetadata = [...rawMetadata];
-    const results: Metadata[] = []; // array index == tokenId!!
+    const availableRawMetadata = [...rawMetadata];
+    const result: Metadata[] = []; // array index == tokenId!!
     let mosaicCounter = 0;
 
     allMints.forEach(mint => {
 
       const tokenId = mint.tokenId;
+      let metadata: Metadata;
 
       if (!mint.isMosaic) {
 
-        if (availableMetadata.length) {
-          const r = new PseudoRandom(mint.transactionHash);
-          const randomIndex = r.randomInt(0, availableMetadata.length - 1);
-          const metadata = {
-            ...getAndRemoveItem(availableMetadata, randomIndex),
-            tokenId
-          };
-          metadata.external_url = metadata.external_url + tokenId
-          metadata.animation_url = metadata.animation_url + tokenId
-          results.push(metadata);
+        if (availableRawMetadata.length) {
+          metadata = createMetadataFn(tokenId, mint, availableRawMetadata);
         } else {
           // we have a problem: we sold too much! :-/
-          results.push(createFallbackImageFn(tokenId));
+          metadata = createFallbackImageFn(tokenId);
         }
 
       } else {
 
         mosaicCounter++;
-        const tokenTile1 = results[mint.mosaics[0]];
-        const tokenTile2 = results[mint.mosaics[1]];
-        const tokenTile3 = results[mint.mosaics[2]];
-        const tokenTile4 = results[mint.mosaics[3]];
-
-        const metadata = createMosaicMetadataFn(tokenId, mosaicCounter, tokenTile1, tokenTile2, tokenTile3, tokenTile4, environment);
-        results.push(metadata);
+        const tokenTile1 = result[mint.mosaics[0]];
+        const tokenTile2 = result[mint.mosaics[1]];
+        const tokenTile3 = result[mint.mosaics[2]];
+        const tokenTile4 = result[mint.mosaics[3]];
+        metadata = createMosaicMetadataFn(tokenId, mosaicCounter, tokenTile1, tokenTile2, tokenTile3, tokenTile4, environment);
       }
+
+      result.push(metadata);
+
     });
 
-    return results;
+    return result;
   }
-}
-
-/**
- * Changes the content of an array by removing the existing elements at the index
- * @param index to remove
- * @returns removed item
- */
-function getAndRemoveItem<T>(arr: Array<T>, index: number): T {
-  const el = arr[index];
-  arr.splice(index, 1);
-  return el;
 }

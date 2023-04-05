@@ -27,10 +27,11 @@ import * as express from 'express';
 import { KnownTokenName } from '../../../../shared/known-token-name';
 import {
   createFallbackImage,
+  createGenesisMetadata,
   createGenesisMosaicMetadata,
   createRawGenesisMetadata,
   genesisRawArtworks,
-} from '../../assets/data/tokendata_genesis';
+} from '../model/metadata.service.genesis';
 import { KnownChains } from '../config/known-chains';
 import { KnownTokenConfig } from '../config/known-token-config';
 import { AllowlistService } from '../model/allowlist.service';
@@ -39,11 +40,12 @@ import { formatSeconds } from '../model/date-utils';
 import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
 import { ImageService } from '../model/image.service';
 import { MetadataService } from '../model/metadata.service';
+import { ConfigResponse } from '../types/config-response';
 import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { Metadata } from '../types/metadata';
+import { MintInfo } from '../types/mint-info';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
-import { ConfigResponse } from '../types/config-response';
 
 
 @ApiTags('api')
@@ -173,7 +175,7 @@ export class ApiController {
   })
   @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
   @Header('Cache-Control', 'no-cache')
-  async debugMints(@Param('tokenName') tokenName: KnownTokenName) {
+  async debugMints(@Param('tokenName') tokenName: KnownTokenName): Promise<MintInfo[]> {
 
     if (this.configService.get('environment') !== 'development') {
       throw new ForbiddenException('This method should not be called on production');
@@ -230,6 +232,7 @@ export class ApiController {
       return this.metadataService.generateMetadata(
         allMints,
         rawMetadata,
+        createGenesisMetadata,
         createGenesisMosaicMetadata,
         createFallbackImage);
     }

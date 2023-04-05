@@ -1,4 +1,6 @@
-import { Metadata } from "../../app/types/metadata";
+import { PseudoRandom } from "./pseudo-random";
+import { Metadata } from "../types/metadata";
+import { MintInfo } from "../types/mint-info";
 
 const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOUNT__ different woodblocks and printed them on top of each other with absolute precision.'
 
@@ -71,6 +73,18 @@ export const genesisRawArtworks: WoodcutDetails[] = [
   //   batch: 1
   // }
 ];
+
+export function createGenesisMetadata(tokenId: number, mint: MintInfo, availableMetadata: Metadata[]) {
+  const r = new PseudoRandom(mint.transactionHash);
+  const randomIndex = r.randomInt(0, availableMetadata.length - 1);
+  const metadata = {
+    ...getAndRemoveItem(availableMetadata, randomIndex),
+    tokenId
+  };
+  metadata.external_url = metadata.external_url + tokenId;
+  metadata.animation_url = metadata.animation_url + tokenId;
+  return metadata;
+}
 
 export function createGenesisMosaicMetadata(
   tokenId: number,
@@ -227,3 +241,15 @@ export function createRawGenesisMetadata(artworks: WoodcutDetails[], environment
 
 }
 
+
+
+/**
+ * Changes the content of an array by removing the existing elements at the index
+ * @param index to remove
+ * @returns removed item
+ */
+function getAndRemoveItem<T>(arr: Array<T>, index: number): T {
+  const el = arr[index];
+  arr.splice(index, 1);
+  return el;
+}

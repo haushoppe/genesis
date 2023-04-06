@@ -12,7 +12,7 @@ export class CacheService {
    * @param key Cache key to check
    * @returns Boolean indicating if the key is cached or not
    */
-  has( key: string): boolean {
+  has(key: string): boolean {
     return this.cache.has(key)
   }
 
@@ -36,5 +36,31 @@ export class CacheService {
    */
   get<T>(key: string): T {
     return this.cache.get(key)
+  }
+
+  /**
+   * Executes the callback, but tries the cache first
+   */
+  async loadCached<T>(cacheKey: string, ttl: number | undefined, loadCallback: () => Promise<T>): Promise<T> {
+
+    if (this.has(cacheKey)) {
+      return this.get<T>(cacheKey);
+    }
+
+    const result = await loadCallback();
+    return this.set(cacheKey, result, ttl);
+  }
+
+  /**
+   * Executes the callback, but tries the cache first
+   */
+  loadCachedSync<T>(cacheKey: string, ttl: number | undefined, loadCallback: () => T): T {
+
+    if (this.has(cacheKey)) {
+      return this.get<T>(cacheKey);
+    }
+
+    const result = loadCallback();
+    return this.set(cacheKey, result, ttl);
   }
 }

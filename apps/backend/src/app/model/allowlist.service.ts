@@ -15,15 +15,11 @@ export class AllowlistService {
   allowlistFolder = path.resolve(__dirname + '/assets/data/');
 
   getMintWallets(tokenName: string): string[] {
+    return this.cacheService.loadCachedSync('mintWallets_' + tokenName, undefined, () => {
 
-    const cacheKey = 'mintWallets_' + tokenName;
-    if (this.cacheService.has(cacheKey)) {
-      return this.cacheService.get<string[]>(cacheKey);
-    }
-
-    const entries = this.parseHeymintCsvFromFile('allowlist_' + tokenName + '.csv');
-    const mintWallets = entries.map(x => x.mintWallet);
-    return this.cacheService.set(cacheKey, mintWallets);
+      const entries = this.parseHeymintCsvFromFile('allowlist_' + tokenName + '.csv');
+      return entries.map(x => x.mintWallet);
+    });
   }
 
   parseHeymintCsvFromFile(filename: string): AllowlistEntry[] {

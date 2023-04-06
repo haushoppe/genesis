@@ -9,12 +9,12 @@ import { CacheService } from './cache.service';
 import { ZERO_ADDRESS } from './ethers-utils';
 import { knownAbis } from '../../../../shared/known-abis';
 
+const ttl = 60 * 5; // 5 minutes
 
 @Injectable()
 export class ContractService {
 
   private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
-  private readonly cacheTimeToLive = 60 * 5; // 5 minutes
 
   constructor(private configService: ConfigService, private cacheService: CacheService) { }
 
@@ -46,119 +46,99 @@ export class ContractService {
   }
 
   async getContractName(tokenName: KnownTokenName): Promise<string> {
+    return await this.cacheService.loadCached('contractName_' + tokenName, ttl, async () => {
 
-    const cacheKey = 'contractName_' + tokenName;
-    if (this.cacheService.has(cacheKey)) {
-      return this.cacheService.get<string>(cacheKey);
-    }
-
-    const contract = this.getContract(tokenName);
-    const contractName = await contract.name();
-
-    return this.cacheService.set(cacheKey, contractName, this.cacheTimeToLive);
+      const contract = this.getContract(tokenName);
+      return await contract.name();
+    });
   }
 
   async getTotalSupply(tokenName: KnownTokenName): Promise<number> {
+    return await this.cacheService.loadCached('totalSupply_' + tokenName, ttl, async () => {
 
-    const cacheKey = 'totalSupply_' + tokenName;
-    if (this.cacheService.has(cacheKey)) {
-      return this.cacheService.get<number>(cacheKey);
-    }
-
-    const contract = this.getContract(tokenName);
-    const totalSupply = (await contract.totalSupply()).toNumber();
-    return this.cacheService.set(cacheKey, totalSupply, this.cacheTimeToLive);
+      const contract = this.getContract(tokenName);
+      return (await contract.totalSupply()).toNumber();
+    });
   }
 
   async getPrice(tokenName: KnownTokenName): Promise<string> {
+    return await this.cacheService.loadCached('price_' + tokenName, ttl, async () => {
 
-    const cacheKey = 'price_' + tokenName;
-    if (this.cacheService.has(cacheKey)) {
-      return this.cacheService.get<string>(cacheKey);
-    }
-
-    const contract = this.getContract(tokenName);
-    const price = (await contract.price()).toString();
-    return this.cacheService.set(cacheKey, price, this.cacheTimeToLive);
+      const contract = this.getContract(tokenName);
+      return (await contract.price()).toString();
+    });
   }
 
   async getPriceForMosaic(tokenName: KnownTokenName): Promise<string> {
+    return await this.cacheService.loadCached('priceForMosaic_' + tokenName, ttl, async () => {
 
-    const cacheKey = 'priceForMosaic_' + tokenName;
-    if (this.cacheService.has(cacheKey)) {
-      return this.cacheService.get<string>(cacheKey);
-    }
-
-    const contract = this.getContract(tokenName);
-    const priceForMosaic = (await contract.priceForMosaic()).toString();
-    return this.cacheService.set(cacheKey, priceForMosaic, this.cacheTimeToLive);
+      const contract = this.getContract(tokenName);
+      return (await contract.priceForMosaic()).toString();
+    });
   }
 
   async getAllMints(tokenName: KnownTokenName): Promise<MintInfo[]> {
+    return await this.cacheService.loadCached('allMints_' + tokenName, ttl, async () => {
 
-    const cacheKey = 'allMints_' + tokenName;
-    if (this.cacheService.has(cacheKey)) {
-      return this.cacheService.get<MintInfo[]>(cacheKey);
-    }
+      const tokenConfig = this.knownTokens.find(x => x.name === tokenName);
+      const contract = this.getContract(tokenName);
 
-    const tokenConfig = this.knownTokens.find(x => x.name === tokenName);
-    const contract = this.getContract(tokenName);
+      // List all token transfers *from* zero address (this is how a lint looks like)
+      const filter = contract.filters.Transfer(ZERO_ADDRESS);
 
-    // List all token transfers *from* zero address (this is how a lint looks like)
-    const filter = contract.filters.Transfer(ZERO_ADDRESS);
+      /* EXAMPLE
+      [
+        {
+          "blockNumber": 16314192,
+          "blockHash": "0x564a59420b079ab4fdcf64ee00a897b761cdc336205c780ad27ee2aa34874d09",
+          "transactionIndex": 102,
+          "removed": false,
+          "address": "0xBF79e5797dd766288F7831689EF943b286f92d86",
+          "data": "0x",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x00000000000000000000000033cf8688b6afc84ea4f1f9464f000ba9b02be356",
+            "0x0000000000000000000000000000000000000000000000000000000000000000"
+          ],
+          "transactionHash": "0xecc1d6e5af231e357160ba7a527b7b1c6bd8ff57f3da6462292b908b3395beaa",
+          "logIndex": 207,
+          "event": "Transfer",
+          "eventSignature": "Transfer(address,address,uint256)",
+          "args": [
+            "0x0000000000000000000000000000000000000000",
+            "0x33CF8688b6aFC84ea4F1F9464f000bA9B02Be356",
+            {
+              "type": "BigNumber",
+              "hex": "0x00"
+            }
+          ]
+        }
+      ]
+      */
+      const events = await contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
 
-    /* EXAMPLE
-    [
-      {
-        "blockNumber": 16314192,
-        "blockHash": "0x564a59420b079ab4fdcf64ee00a897b761cdc336205c780ad27ee2aa34874d09",
-        "transactionIndex": 102,
-        "removed": false,
-        "address": "0xBF79e5797dd766288F7831689EF943b286f92d86",
-        "data": "0x",
-        "topics": [
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-          "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "0x00000000000000000000000033cf8688b6afc84ea4f1f9464f000ba9b02be356",
-          "0x0000000000000000000000000000000000000000000000000000000000000000"
-        ],
-        "transactionHash": "0xecc1d6e5af231e357160ba7a527b7b1c6bd8ff57f3da6462292b908b3395beaa",
-        "logIndex": 207,
-        "event": "Transfer",
-        "eventSignature": "Transfer(address,address,uint256)",
-        "args": [
-          "0x0000000000000000000000000000000000000000",
-          "0x33CF8688b6aFC84ea4F1F9464f000bA9B02Be356",
-          {
-            "type": "BigNumber",
-            "hex": "0x00"
-          }
-        ]
+      let allMints: MintInfo[] = events.map(event => ({
+        mintedBy: event.args[1],
+        tokenId: event.args[2].toNumber(),
+        transactionHash: event.transactionHash,
+        blockNumber: event.blockNumber
+      }));
+
+      if (tokenConfig.implementsMosaics) {
+        allMints = await Promise.all(allMints.map(async mint => ({
+          ...mint,
+          isMosaic: await contract.isMosaic(mint.tokenId)
+        })));
+
+        allMints = await Promise.all(allMints.map(async mint => ({
+          ...mint,
+          mosaics: mint.isMosaic ? (await contract.mosaics(mint.tokenId)).map(x => x.toNumber()) : []
+        })));
       }
-    ]
-    */
-    const events = await contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
 
-    let allMints: MintInfo[] = events.map(event => ({
-      mintedBy: event.args[1],
-      tokenId: event.args[2].toNumber(),
-      transactionHash: event.transactionHash,
-      blockNumber: event.blockNumber
-    }));
-
-    if (tokenConfig.implementsMosaics) {
-      allMints = await Promise.all(allMints.map(async mint => ({
-        ...mint,
-        isMosaic: await contract.isMosaic(mint.tokenId)
-      })));
-
-      allMints = await Promise.all(allMints.map(async mint => ({
-        ...mint,
-        mosaics: mint.isMosaic ? (await contract.mosaics(mint.tokenId)).map(x => x.toNumber()) : []
-      })));
-    }
-
-    return this.cacheService.set(cacheKey, allMints, this.cacheTimeToLive);
+      return allMints;
+    });
   }
 
   // We want to know which token belongs to whom.
@@ -174,7 +154,7 @@ export class ContractService {
     // TODO
     const allTokenOwerns: any[] = [];
 
-    return this.cacheService.set(cacheKey, allTokenOwerns, this.cacheTimeToLive);
+    return this.cacheService.set(cacheKey, allTokenOwerns, ttl);
 
   }
 }

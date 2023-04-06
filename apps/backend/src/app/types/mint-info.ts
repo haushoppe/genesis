@@ -1,5 +1,5 @@
 export interface MintInfo {
-  newOwner: string;
+  mintedBy: string;
   tokenId: number;
   transactionHash: string;
   blockNumber: number;

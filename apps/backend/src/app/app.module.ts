@@ -12,7 +12,7 @@ import { AllowlistService } from './model/allowlist.service';
 import { CacheService } from './model/cache.service';
 import { ContractService } from './model/contract.service';
 import { ImageService } from './model/image.service';
-import { MetadataService } from './model/metadata.service';
+import { MetadataGenesisService } from './model/metadata-genesis.service';
 
 
 @Module({
@@ -41,6 +41,6 @@ import { MetadataService } from './model/metadata.service';
     // })
   ],
   controllers: [AppController, ApiController, ScalesController, CubeController],
-  providers: [AllowlistService, ContractService, MetadataService, ImageService, CacheService],
+  providers: [AllowlistService, ContractService, MetadataGenesisService, ImageService, CacheService],
 })
 export class AppModule { }

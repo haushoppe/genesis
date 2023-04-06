@@ -25,13 +25,6 @@ import {
 import * as express from 'express';
 
 import { KnownTokenName } from '../../../../shared/known-token-name';
-import {
-  createFallbackImage,
-  createGenesisMetadata,
-  createGenesisMosaicMetadata,
-  createRawGenesisMetadata,
-  genesisRawArtworks,
-} from '../model/metadata.service.genesis';
 import { KnownChains } from '../config/known-chains';
 import { KnownTokenConfig } from '../config/known-token-config';
 import { AllowlistService } from '../model/allowlist.service';
@@ -39,7 +32,7 @@ import { ContractService } from '../model/contract.service';
 import { formatSeconds } from '../model/date-utils';
 import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
 import { ImageService } from '../model/image.service';
-import { MetadataService } from '../model/metadata.service';
+import { genesisRawArtworks, MetadataGenesisService } from '../model/metadata-genesis.service';
 import { ConfigResponse } from '../types/config-response';
 import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { Metadata } from '../types/metadata';
@@ -58,7 +51,7 @@ export class ApiController {
     private configService: ConfigService,
     private allowlistService: AllowlistService,
     private contractService: ContractService,
-    private metadataService: MetadataService,
+    private metadataGenesisService: MetadataGenesisService,
     private imageService: ImageService) { }
 
   /**
@@ -202,7 +195,7 @@ export class ApiController {
     let rawMetadata: Metadata[];
 
     if (tokenName === KnownTokenName.genesis) {
-      rawMetadata = createRawGenesisMetadata(genesisRawArtworks, this.configService.get('environment'));
+      rawMetadata = this.metadataGenesisService.generateRawGenesisMetadata();
       return {
         amountOfTokens: rawMetadata.length,
         metadata: rawMetadata
@@ -225,16 +218,8 @@ export class ApiController {
 
     const allMints = await this.contractService.getAllMints(tokenName);
 
-    let rawMetadata: Metadata[];
-
     if (tokenName === KnownTokenName.genesis) {
-      rawMetadata = createRawGenesisMetadata(genesisRawArtworks, this.configService.get('environment'));
-      return this.metadataService.generateMetadata(
-        allMints,
-        rawMetadata,
-        createGenesisMetadata,
-        createGenesisMosaicMetadata,
-        createFallbackImage);
+      return this.metadataGenesisService.generateMetadata(allMints);
     }
 
     throw new NotImplementedException('This token is not ready yet!');

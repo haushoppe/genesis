@@ -140,7 +140,7 @@ export class ContractService {
     const events = await contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
 
     let allMints: MintInfo[] = events.map(event => ({
-      newOwner: event.args[1],
+      mintedBy: event.args[1],
       tokenId: event.args[2].toNumber(),
       transactionHash: event.transactionHash,
       blockNumber: event.blockNumber

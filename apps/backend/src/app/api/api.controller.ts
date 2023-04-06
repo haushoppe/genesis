@@ -32,7 +32,7 @@ import { ContractService } from '../model/contract.service';
 import { formatSeconds } from '../model/date-utils';
 import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
 import { ImageService } from '../model/image.service';
-import { genesisRawArtworks, MetadataGenesisService } from '../model/metadata-genesis.service';
+import { MetadataGenesisService } from '../model/metadata-genesis.service';
 import { ConfigResponse } from '../types/config-response';
 import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { Metadata } from '../types/metadata';
@@ -223,6 +223,21 @@ export class ApiController {
     }
 
     throw new NotImplementedException('This token is not ready yet!');
+  }
+
+  @Get(['api/allTokenOwners/:tokenName'])
+  @ApiOperation({ operationId: 'allTokenOwners  ' })
+  @ApiParam({
+    name: 'tokenName',
+    enum: KnownTokenName,
+    example: KnownTokenName.genesis,
+  })
+  @ApiOkResponse({ type: Metadata, isArray: true })
+  @Header('Cache-Control', 'no-cache')
+  async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
+
+    console.log('*****', tokenName)
+    return await this.contractService.getAllTokenOwners(tokenName);
   }
 
   @Get(['api/tokenInfo/:tokenName/:tokenId'])

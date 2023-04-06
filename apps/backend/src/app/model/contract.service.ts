@@ -141,20 +141,36 @@ export class ContractService {
     });
   }
 
-  // We want to know which token belongs to whom.
-  // Problem: there could be a huge amount of transfers over time and this could lead to RPC rate limits
-  // Current Solution: We expect a relatively small number of tokens. Therefore, all we need to do is to iterate through all the token ids and see who they belong to right now.
+  /**
+   * We want to know which token belongs to whom.
+   * Problem: there could be a huge amount of transfers over time and this could lead to RPC rate limits
+   * Current Solution: We expect a relatively small number of tokens. Therefore, all we need to do is to iterate through all the token ids and see who they belong to right now.
+   */
   async getAllTokenOwners(tokenName: KnownTokenName) {
+    // return await this.cacheService.loadCached('allTokenOwners_' + tokenName, ttl, async () => {
 
-    const cacheKey = 'allTokenOwners_' + tokenName;
-    if (this.cacheService.has(cacheKey)) {
-      return this.cacheService.get<any[]>(cacheKey);
-    }
+      const contract = this.getContract(tokenName);
 
-    // TODO
-    const allTokenOwerns: any[] = [];
+      const totalSupply = (await contract.totalSupply()).toNumber();
 
-    return this.cacheService.set(cacheKey, allTokenOwerns, ttl);
 
+      // Loop through each token ID and get the owner's address
+      const owners = {};
+      for (let i = 0; i < totalSupply; i++) {
+
+        const owner = await contract.ownerOf(i);
+        let lender = await contract.tokenOwnersOnLoan(i);
+        if (lender === ZERO_ADDRESS) {
+          lender = undefined
+        }
+
+        owners[i] =  {
+          owner,
+          lender
+        };
+      }
+
+      return owners;
+    // });
   }
 }

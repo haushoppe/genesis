@@ -136,10 +136,10 @@
 </div>
 
 
-
-<!-- <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
+<!-- just for debugging -->
+<ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
   <button
     *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
     (click)="mintFacade.signMessage()"
     class="btn btn-secondary ms-2">Test: Sign Message</button>
-</ng-container> -->
+</ng-container>

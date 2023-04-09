@@ -1,4 +1,5 @@
 console.info('*** Make sure each contract is compiled and artifacts are generated before execution! ***');
+console.info('*** Warning! This all ethers v5 code, which will break in v6. ***');
 
 async function deployToken(tokenName, owner) {
   const metadata = JSON.parse(await remix.call('fileManager', 'getFile', `artifacts/${tokenName}.json`))
@@ -43,7 +44,7 @@ function getRandomSigner() {
 //
 // example MESSAGE: 0x0000000000000000000000005b38da6a701c568545dcfcb03fcb875f56beddc40000000000000000000000000000000000000000000000000000000000000004
 function encodeMessage(sender, maximumAllowedMints) {
-  
+
   const message = ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [sender, maximumAllowedMints]);
   // console.log('MESSAGE encoded: ' + message);
   return message;
@@ -60,7 +61,7 @@ function encodePackedMessage(sender, maximumAllowedMints) {
   // console.log('MESSAGE encoded + packed: ' + message);
   return message;
 }
-  
+
 
 // hash the message with keccak256
 // as shown here: https://blog.cabala.co/how-to-verify-off-chain-results-and-whitelist-with-ecdsa-in-solidity-using-openzeppelin-ethers-js-ba4c85521711
@@ -68,7 +69,7 @@ function encodePackedMessage(sender, maximumAllowedMints) {
 // Keccak256 is a hashing algorithm that can be used to convert an input into a fixed-size hash.
 // It can then be stored conveniently in the bytes 32 data type.
 function hashMessage(message) {
-  
+
   const hash = ethers.utils.solidityKeccak256(["bytes"], [message]);
   // console.log('HASH: ' + hash);
   return hash;

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ethers } from 'ethers';
+import { EventLog, ethers } from 'ethers';
 
 import { KnownTokenConfig } from '../config/known-token-config';
 import { KnownTokenName } from '../../../../shared/known-token-name';
@@ -22,12 +22,12 @@ export class ContractService {
     const tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
     const abi = knownAbis[this.tokenName];
     const network = tokenConfig.networkName;
-    let provider: ethers.providers.Provider;
+    let provider: ethers.Provider;
 
     if (network === 'hardhat') {
 
       // Ethers connects to the default `http://localhost:8545`
-      provider = new ethers.providers.JsonRpcProvider();
+      provider = new ethers.JsonRpcProvider();
 
     } else {
       const apiKey = this.configService.get<string>('alchemyKey_' + network);
@@ -37,7 +37,7 @@ export class ContractService {
       //   new ethers.providers.InfuraProvider(NETWORK_NAME, INFURA_KEY),
       // ]);
 
-      provider = new ethers.providers.AlchemyProvider(network, apiKey);
+      provider = new ethers.AlchemyProvider(network, apiKey);
     }
 
     const contract = new ethers.Contract(tokenConfig.contractAddress, abi, provider);
@@ -53,7 +53,7 @@ export class ContractService {
   async getTotalSupply(): Promise<number> {
 
     const contract = this.getContract();
-    return (await contract.totalSupply()).toNumber();
+    return parseInt(await contract.totalSupply());
   }
 
   async getPrice(): Promise<string> {
@@ -76,41 +76,50 @@ export class ContractService {
     // List all token transfers *from* zero address (this is how a lint looks like)
     const filter = contract.filters.Transfer(ZERO_ADDRESS);
 
-    /* EXAMPLE
-    [
-      {
-        "blockNumber": 16314192,
-        "blockHash": "0x564a59420b079ab4fdcf64ee00a897b761cdc336205c780ad27ee2aa34874d09",
-        "transactionIndex": 102,
-        "removed": false,
-        "address": "0xBF79e5797dd766288F7831689EF943b286f92d86",
-        "data": "0x",
-        "topics": [
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-          "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "0x00000000000000000000000033cf8688b6afc84ea4f1f9464f000ba9b02be356",
-          "0x0000000000000000000000000000000000000000000000000000000000000000"
-        ],
-        "transactionHash": "0xecc1d6e5af231e357160ba7a527b7b1c6bd8ff57f3da6462292b908b3395beaa",
-        "logIndex": 207,
-        "event": "Transfer",
-        "eventSignature": "Transfer(address,address,uint256)",
-        "args": [
-          "0x0000000000000000000000000000000000000000",
-          "0x33CF8688b6aFC84ea4F1F9464f000bA9B02Be356",
-          {
-            "type": "BigNumber",
-            "hex": "0x00"
-          }
-        ]
-      }
-    ]
+    /* EXAMPLE (ethers v6 with support for BigInt)
+
+    EventLog {
+      provider: JsonRpcProvider {},
+      transactionHash: '0xf245bc6b75cce5a45a4743aeac632c9c244e535091f7bbf50bdb1d27620c5fc9',
+      blockHash: '0xf26787235b4356a823aa835493594bcae1758bff11083d023a1c0df57ba64f64',
+      blockNumber: 10,
+      removed: false,
+      address: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+      data: '0x',
+      topics: [
+        '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
+        '0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266',
+        '0x0000000000000000000000000000000000000000000000000000000000000000'
+      ],
+      index: 0,
+      transactionIndex: 0,
+      interface: Interface {
+        fragments: [Array],
+        deploy: [ConstructorFragment],
+        fallback: null,
+        receive: false
+      },
+      fragment: EventFragment {
+        type: 'event',
+        inputs: [Array],
+        name: 'Transfer',
+        anonymous: false
+      },
+      args: Result(3) [
+        '0x0000000000000000000000000000000000000000',
+        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+        0n
+      ]
+    }
     */
     const events = await contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
 
-    let allMints: MintInfo[] = events.map(event => ({
+    // console.log(events);
+
+    let allMints: MintInfo[] = events.map((event: EventLog) => ({
       mintedBy: event.args[1],
-      tokenId: event.args[2].toNumber(),
+      tokenId: parseInt(event.args[2]),
       transactionHash: event.transactionHash,
       blockNumber: event.blockNumber
     }));
@@ -123,7 +132,7 @@ export class ContractService {
 
       allMints = await Promise.all(allMints.map(async mint => ({
         ...mint,
-        mosaics: mint.isMosaic ? (await contract.mosaics(mint.tokenId)).map(x => x.toNumber()) : []
+        mosaics: mint.isMosaic ? (await contract.mosaics(mint.tokenId)).map(x => parseInt(x)) : []
       })));
     }
 
@@ -134,7 +143,7 @@ export class ContractService {
 
     const contract = this.getContract();
 
-    const totalSupply = (await contract.totalSupply()).toNumber();
+    const totalSupply = parseInt(await contract.totalSupply());
 
 
     // Loop through each token ID and get the owner's address

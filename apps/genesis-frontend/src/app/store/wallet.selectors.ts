@@ -44,7 +44,8 @@ export const selectProvider = createSelector(
   wallet => {
     if (wallet) {
       const eipProvider = wallet.getProvider();
-      return new ethers.providers.Web3Provider(eipProvider, 'any');
+      const provider = new ethers.BrowserProvider(eipProvider, 'any');
+      return provider;
     }
     return undefined;
   }

@@ -19,13 +19,13 @@ export class MintService {
    * Pop up wallet dialog to get user to sign a message.
    * Check that signature is valid and really was signed by the "signer" account.
    */
-  async signMessage(provider: ethers.providers.Web3Provider | undefined): Promise<boolean> {
+  async signMessage(provider: ethers.BrowserProvider | undefined): Promise<boolean> {
 
     if (!provider) {
       return false;
     }
 
-    const signer = provider.getSigner();
+    const signer = await provider.getSigner();
     const walletAddress = await signer.getAddress();
 
     const message = "Sign this message to prove ownership of account " + walletAddress + "\n\nNo transaction is submitted.";
@@ -34,9 +34,10 @@ export class MintService {
 
       // pop up wallet notification to sign
       const signature = await signer.signMessage(message);
+      console.log(signature)
 
       // verify that signature matches wallet address
-      const validMessage = ethers.utils.verifyMessage(message, signature) == walletAddress;
+      const validMessage = ethers.verifyMessage(message, signature) == walletAddress;
       return validMessage;
 
     } catch (error) {
@@ -46,14 +47,14 @@ export class MintService {
     return false;
   }
 
-  async totalSupply(provider: ethers.providers.Web3Provider | undefined, contractAddress: string | undefined): Promise<number> {
+  async totalSupply(provider: ethers.BrowserProvider | undefined, contractAddress: string | undefined): Promise<number> {
 
     if (!provider || !contractAddress) {
       throw Error('Web3Provider or contractAddress is missing!')
     }
 
-    const contract = this.initContract(provider, contractAddress);
-    const totalSupply = (await contract.totalSupply()).toNumber();
+    const contract = await this.initContract(provider, contractAddress);
+    const totalSupply = (await contract.totalSupply());
     return totalSupply;
   }
 
@@ -64,7 +65,7 @@ export class MintService {
    * with the server's private key and verified here to prove allowlist status.
    */
   async mintAllowlist(
-    provider: ethers.providers.Web3Provider | undefined,
+    provider: ethers.BrowserProvider | undefined,
     contractAddress: string | undefined,
     mintNumber: number,
     price: string,
@@ -74,7 +75,7 @@ export class MintService {
       throw Error('Web3Provider or contractAddress or mintTicket is missing!')
     }
 
-    const contract = this.initContract(provider, contractAddress);
+    const contract = await this.initContract(provider, contractAddress);
     await contract.mintAllowlist(
       mintTicket.messageHash,
       mintTicket.signature,
@@ -85,11 +86,11 @@ export class MintService {
   }
 
   // initialize the contract object with a signer to be able to do transactions
-  private initContract(provider: ethers.providers.Web3Provider, contractAddress: string) {
+  private async initContract(provider: ethers.BrowserProvider, contractAddress: string) {
 
-      const signer = provider.getSigner();
+      const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, abi, signer);
-      console.log("Contract object initialized for address " + contractAddress);
+      // console.log("Contract object initialized for address " + contractAddress);
       return contract;
   }
 }

@@ -24,7 +24,7 @@ export function getSigner(privateKey: string) {
  */
 export function encodePackedMessage(sender: string, maximumAllowedMints: number): string {
 
-  const message = ethers.utils.solidityPack(["address", "uint256"], [sender, maximumAllowedMints]);
+  const message = ethers.solidityPacked(["address", "uint256"], [sender, maximumAllowedMints]);
   // console.log('MESSAGE encoded + packed: ' + message);
   return message;
 }
@@ -38,7 +38,7 @@ export function encodePackedMessage(sender: string, maximumAllowedMints: number)
  */
 export function hashMessage(message: string): string {
 
-  const hash = ethers.utils.solidityKeccak256(["bytes"], [message]);
+  const hash = ethers.solidityPackedKeccak256(["bytes"], [message]);
   // console.log('HASH: ' + hash);
   return hash;
 }
@@ -49,7 +49,7 @@ export function hashMessage(message: string): string {
  */
 export  async function signMessage(signer, message) {
 
-  const signature = await signer.signMessage(ethers.utils.arrayify(message));
+  const signature = await signer.signMessage(ethers.getBytes(message));
   // console.log('SIGNATURE: ' + signature);
   return signature;
 }

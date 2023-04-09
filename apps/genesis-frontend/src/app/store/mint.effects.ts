@@ -5,15 +5,15 @@ import { from, of } from 'rxjs';
 import { catchError, map, mergeMap, retry, switchMap, timeout, withLatestFrom } from 'rxjs/operators';
 
 import { KnownTokenName } from '../../../../shared/known-token-name';
+import { environment } from '../../environments/environment';
 import { ApiService } from '../openapi-client';
 import { MintService } from '../services/mint-service';
 import { MintActions } from './mint.actions';
-import { WalletActions } from './wallet.actions';
-import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
-import { selectProvider, selectWalletAddress } from './wallet.selectors';
-import { selectConfig } from './wallet.reducer';
-import { environment } from '../../environments/environment';
 import { selectMintTicket } from './mint.reducer';
+import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
+import { WalletActions } from './wallet.actions';
+import { selectConfig } from './wallet.reducer';
+import { selectProvider, selectWalletAddress } from './wallet.selectors';
 
 
 @Injectable()
@@ -28,39 +28,39 @@ export class MintEffects {
   loadMintsOnRouting$ = createEffect(() => {
     return this.actions.pipe(
       ofRoute(['']),
-      map(() => MintActions.loadAllMints()),
+      map(() => MintActions.loadAllTokenMetadata()),
     );
   });
 
   loadMints$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(MintActions.loadAllMints),
+      ofType(MintActions.loadAllTokenMetadata),
       switchMap(() =>
-        this.apiService.allMints(KnownTokenName.genesis).pipe(
+        this.apiService.allTokenMetadata(KnownTokenName.genesis).pipe(
           retry({ count: 3, delay: 1000 }),
           map(x => x.reverse()),
-          map(allMints => MintActions.loadAllMintsSuccess({ allMints })),
-          catchError(error => of(MintActions.loadAllMintsFailure({ error }))))
+          map(allTokenMetadata => MintActions.loadAllTokenMetadataSuccess({ allTokenMetadata })),
+          catchError(error => of(MintActions.loadAllTokenMetadataFailure({ error }))))
       )
     );
   });
 
-  loadTokenInfoOnRouting$ = createEffect(() => {
+  loadTokenMetadataOnRouting$ = createEffect(() => {
     return this.actions.pipe(
       ofRoute(['nft/:tokenId']),
       mapToParam('tokenId'),
-      map(tokenId => MintActions.loadTokenInfo({ tokenId: +tokenId })),
+      map(tokenId => MintActions.loadTokenMetadata({ tokenId: +tokenId })),
     );
   });
 
-  loadTokenInfo$ = createEffect(() => {
+  loadTokenMetadata$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(MintActions.loadTokenInfo),
+      ofType(MintActions.loadTokenMetadata),
       switchMap(({ tokenId }) =>
-        this.apiService.tokenInfo(KnownTokenName.genesis, tokenId).pipe(
+        this.apiService.tokenMetadata(KnownTokenName.genesis, tokenId).pipe(
           retry({ count: 3, delay: 1000 }),
-          map(tokenInfo => MintActions.loadTokenInfoSuccess({ tokenInfo })),
-          catchError(error => of(MintActions.loadTokenInfoFailure({ error }))))
+          map(tokenMetadata => MintActions.loadTokenMetadataSuccess({ tokenMetadata })),
+          catchError(error => of(MintActions.loadTokenMetadataFailure({ error }))))
       )
     );
   });

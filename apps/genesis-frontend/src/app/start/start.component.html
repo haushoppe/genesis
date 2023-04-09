@@ -124,12 +124,12 @@
 
 <div class="row">
 
-  <div *rxFor="let nft of mintFacade.allMints$" class="col-6 col-md-4 col-lg-3">
+  <div *rxFor="let nft of mintFacade.allTokenMetadata$" class="col-6 col-md-4 col-lg-3">
     <app-nft-display-list [nft]="nft"></app-nft-display-list>
   </div>
 
   <app-loading-indicator
-    [state]="mintFacade.allMintsStatus$ | push" class="mb-5"
+    [state]="mintFacade.allTokenMetadataStatus$ | push" class="mb-5"
     sendDataText="Loading latest mints…"
   ></app-loading-indicator>
 

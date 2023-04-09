@@ -15,6 +15,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import {
   ApiExcludeEndpoint,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -39,6 +40,7 @@ import { Metadata } from '../types/metadata';
 import { MintInfo } from '../types/mint-info';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
+import { TokenOwner } from '../types/token-owner';
 
 
 @ApiTags('api')
@@ -64,7 +66,7 @@ export class ApiController {
   @Post(['api/mintTicket'])
   @ApiOperation({ operationId: 'mintTicket' })
   @ApiNotFoundResponse({ description: 'Unkown token name' })
-  // @ApiForbiddenResponse({ description: 'The sender is not on the allowlist' })
+  @ApiForbiddenResponse({ description: 'The zero address is not a valid sender' })
   @ApiOkResponse({
     description: 'The required params to execute the mint',
     type: MintTicket
@@ -88,7 +90,6 @@ export class ApiController {
 
     // there is an allowlist and the sender is not included
     if (mintWallets.length > 0 && !mintWallets.includes(sender)) {
-      // throw new ForbiddenException('The sender is not on the allowlist');
       return {
         messageHash: null,
         signature: null,
@@ -159,8 +160,8 @@ export class ApiController {
     };
   }
 
-  @Get(['api/debugMints/:tokenName'])
-  @ApiOperation({ operationId: 'debugMints' })
+  @Get(['api/debugAllMints/:tokenName'])
+  @ApiOperation({ operationId: 'debugAllMints' })
   @ApiParam({
     name: 'tokenName',
     enum: KnownTokenName,
@@ -168,7 +169,7 @@ export class ApiController {
   })
   @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
   @Header('Cache-Control', 'no-cache')
-  async debugMints(@Param('tokenName') tokenName: KnownTokenName): Promise<MintInfo[]> {
+  async debugAllMints(@Param('tokenName') tokenName: KnownTokenName): Promise<MintInfo[]> {
 
     if (this.configService.get('environment') !== 'development') {
       throw new ForbiddenException('This method should not be called on production');
@@ -205,8 +206,8 @@ export class ApiController {
     throw new NotImplementedException('This token is not ready yet!');
   }
 
-  @Get(['api/allMints/:tokenName'])
-  @ApiOperation({ operationId: 'allMints' })
+  @Get(['api/allTokenMetadata/:tokenName'])
+  @ApiOperation({ operationId: 'allTokenMetadata' })
   @ApiParam({
     name: 'tokenName',
     enum: KnownTokenName,
@@ -214,7 +215,7 @@ export class ApiController {
   })
   @ApiOkResponse({ type: Metadata, isArray: true })
   @Header('Cache-Control', 'no-cache')
-  async allMints(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
+  async allTokenMetadata(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
     const allMints = await this.contractService.getAllMints(tokenName);
 
@@ -225,31 +226,16 @@ export class ApiController {
     throw new NotImplementedException('This token is not ready yet!');
   }
 
-  @Get(['api/allTokenOwners/:tokenName'])
-  @ApiOperation({ operationId: 'allTokenOwners  ' })
-  @ApiParam({
-    name: 'tokenName',
-    enum: KnownTokenName,
-    example: KnownTokenName.genesis,
-  })
-  @ApiOkResponse({ type: Metadata, isArray: true })
-  @Header('Cache-Control', 'no-cache')
-  async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
-
-    console.log('*****', tokenName)
-    return await this.contractService.getAllTokenOwners(tokenName);
-  }
-
-  @Get(['api/tokenInfo/:tokenName/:tokenId'])
-  @ApiOperation({ operationId: 'tokenInfo' })
+  @Get(['api/tokenMetadata/:tokenName/:tokenId'])
+  @ApiOperation({ operationId: 'tokenMetadata' })
   @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
   @ApiParam({ name: 'tokenId', type: 'number' })
   @ApiOkResponse({ type: Metadata })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
   @Header('Cache-Control', 'public, max-age=' + tenMinutesInSeconds + ', immutable')
-  async tokenInfo(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<Metadata> {
+  async tokenMetadata(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<Metadata> {
 
-    const allMints = await this.allMints(tokenName);
+    const allMints = await this.allTokenMetadata(tokenName);
     const token = allMints.find(x =>  x.tokenId === tokenId);
 
     if (!token) {
@@ -259,8 +245,8 @@ export class ApiController {
     return token;
   }
 
-  @Get(['api/tokenInfo/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
-  @ApiOperation({ operationId: 'tokenInfoMosaic' })
+  @Get(['api/tokenMetadata/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
+  @ApiOperation({ operationId: 'tokenMetadataMosaic' })
   @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
   @ApiParam({ name: 'tokenId', type: 'number' })
   @ApiParam({ name: 'tile1', type: 'number' })
@@ -270,14 +256,14 @@ export class ApiController {
   @ApiOkResponse({ type: Metadata })
   @ApiNotFoundResponse({ description: 'Unknown tokenId' })
   @Header('Cache-Control', 'public, max-age=' + tenMinutesInSeconds + ', immutable')
-  async tokenInfoMosaic(
+  async tokenMetadataMosaic(
     @Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number,
     @Param('tile1', ParseIntPipe) tile1: number,
     @Param('tile2', ParseIntPipe) tile2: number,
     @Param('tile3', ParseIntPipe) tile3: number,
     @Param('tile4', ParseIntPipe) tile4: number
   ): Promise<Metadata> {
-    return this.tokenInfo(tokenName, tokenId)
+    return this.tokenMetadata(tokenName, tokenId)
   }
 
   @Get(['api/tokenPreview/:tokenName/:tokenId'])
@@ -289,7 +275,7 @@ export class ApiController {
   @Header('Cache-Control', 'public, max-age=' + oneWeekInSeconds + ', immutable')
   async tokenPreview(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number, @Res() response: express.Response) {
 
-    const allMints = await this.allMints(tokenName);
+    const allMints = await this.allTokenMetadata(tokenName);
     const mosaic = allMints.find(x =>  x.tokenId === tokenId);
 
     if (!mosaic) {
@@ -335,7 +321,7 @@ export class ApiController {
     @Param('tile3', ParseIntPipe) tile3: number,
     @Param('tile4', ParseIntPipe) tile4: number): Promise<string> {
 
-    const allMints = await this.allMints(tokenName);
+    const allMints = await this.allTokenMetadata(tokenName);
     const noTiles = tile1 === 0 && tile2 === 0 && tile3 ===  0 && tile4 === 0;
 
     // token can be also null, then we are in preview mode
@@ -362,6 +348,38 @@ ${
   </body>
 </html>
 `;
+  }
+
+  // @Get(['api/allTokenOwners/:tokenName'])
+  // @ApiOperation({ operationId: 'allTokenOwners  ' })
+  // @ApiParam({
+  //   name: 'tokenName',
+  //   enum: KnownTokenName,
+  //   example: KnownTokenName.genesis,
+  // })
+  // @ApiOkResponse({ type: Metadata, isArray: true })
+  // @Header('Cache-Control', 'no-cache')
+  // async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
+  //   return await this.contractService.getAllTokenOwners(tokenName);
+  // }
+
+  @Get(['api/tokenOwner/:tokenName/:tokenId'])
+  @ApiOperation({ operationId: 'tokenOwner' })
+  @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
+  @ApiParam({ name: 'tokenId', type: 'number' })
+  @ApiOkResponse({ type: TokenOwner })
+  @ApiNotFoundResponse({ description: 'Unknown tokenId' })
+  @Header('Cache-Control', 'no-cache')
+  async tokenOwner(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<TokenOwner> {
+
+    const allTokenOwners = await this.contractService.getAllTokenOwners(tokenName);
+    const tokenOwner = allTokenOwners[tokenId];
+
+    if (!tokenOwner) {
+      throw new NotFoundException('Unknown tokenId');
+    }
+
+    return tokenOwner;
   }
 }
 

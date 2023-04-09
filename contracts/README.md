@@ -71,8 +71,8 @@ For all tokens:
 
 Later:
 
-1. call `setBaseURI("https://backend.haushoppe.art/api/tokenInfo/genesis/")`
-1. call `setBaseURIForMosaic("https://backend.haushoppe.art/api/tokenInfo/genesis/")`
+1. call `setBaseURI("https://backend.haushoppe.art/api/tokenMetadata/genesis/")`
+1. call `setBaseURIForMosaic("https://backend.haushoppe.art/api/tokenMetadata/genesis/")`
 
 
 ## IDE for contract development

@@ -8,6 +8,7 @@ import { MintInfo } from '../types/mint-info';
 import { CacheService } from './cache.service';
 import { ZERO_ADDRESS } from './ethers-utils';
 import { knownAbis } from '../../../../shared/known-abis';
+import { TokenOwner } from '../types/token-owner';
 
 const ttl = 60 * 5; // 5 minutes
 
@@ -141,12 +142,7 @@ export class ContractService {
     });
   }
 
-  /**
-   * We want to know which token belongs to whom.
-   * Problem: there could be a huge amount of transfers over time and this could lead to RPC rate limits
-   * Current Solution: We expect a relatively small number of tokens. Therefore, all we need to do is to iterate through all the token ids and see who they belong to right now.
-   */
-  async getAllTokenOwners(tokenName: KnownTokenName) {
+  async getAllTokenOwners(tokenName: KnownTokenName): Promise<{ [tokenId: string]: TokenOwner }> {
     // return await this.cacheService.loadCached('allTokenOwners_' + tokenName, ttl, async () => {
 
       const contract = this.getContract(tokenName);
@@ -169,6 +165,13 @@ export class ContractService {
           lender
         };
       }
+
+      contract.on('Transfer', (from, to, tokenId) => {
+        console.log(`NFT token ID ${tokenId} transferred from ${from} to ${to}`);
+
+        // Update the owners object
+        owners[tokenId] = to;
+      });
 
       return owners;
     // });

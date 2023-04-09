@@ -3,13 +3,13 @@ import { Store } from '@ngrx/store';
 
 import { MintActions } from './mint.actions';
 import {
-  selectAllMints,
-  selectAllMintsStatus,
+  selectAllTokenMetadata,
+  selectAllTokenMetadataStatus,
   selectMintAllowlistStatus,
   selectMintTicket,
   selectMintTicketStatus,
-  selectTokenInfo,
-  selectTokenInfoStatus,
+  selectTokenMetadata,
+  selectTokenMetadataStatus,
 } from './mint.reducer';
 import { selectBestTotalSupply } from './mint.selectors';
 
@@ -21,11 +21,11 @@ export class MintFacade {
 
   store = inject(Store);
 
-  allMints$ = this.store.select(selectAllMints);
-  allMintsStatus$ = this.store.select(selectAllMintsStatus);
+  allTokenMetadata$ = this.store.select(selectAllTokenMetadata);
+  allTokenMetadataStatus$ = this.store.select(selectAllTokenMetadataStatus);
 
-  tokenInfo$ = this.store.select(selectTokenInfo);
-  tokenInfoStatus$ = this.store.select(selectTokenInfoStatus);
+  tokenMetadata$ = this.store.select(selectTokenMetadata);
+  tokenMetadataStatus$ = this.store.select(selectTokenMetadataStatus);
 
   mintTicket$ = this.store.select(selectMintTicket);
   mintTicketStatus$ = this.store.select(selectMintTicketStatus);

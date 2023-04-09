@@ -7,14 +7,14 @@ export const MintActions = createActionGroup({
   events: {
 
     // from Backend
-    'Load All Mints': emptyProps(),
-    'Load All Mints Success': props<{ allMints: Metadata[] }>(),
-    'Load All Mints Failure': props<{ error: HttpErrorResponse }>(),
+    'Load All Token Metadata': emptyProps(),
+    'Load All Token Metadata Success': props<{ allTokenMetadata: Metadata[] }>(),
+    'Load All Token Metadata Failure': props<{ error: HttpErrorResponse }>(),
 
     // from Backend
-    'Load Token Info': props<{ tokenId: number }>(),
-    'Load Token Info Success': props<{ tokenInfo: Metadata }>(),
-    'Load Token Info Failure': props<{ error: HttpErrorResponse }>(),
+    'Load Token Metadata': props<{ tokenId: number }>(),
+    'Load Token Metadata Success': props<{ tokenMetadata: Metadata }>(),
+    'Load Token Metadata Failure': props<{ error: HttpErrorResponse }>(),
 
     // from Backend
     'Load Mint Ticket': emptyProps,

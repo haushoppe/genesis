@@ -2,7 +2,6 @@ import { ApiProperty } from "@nestjs/swagger";
 
 export class MintTicket {
 
-  // string ???
   @ApiProperty({
     description: 'The hashed message, which contains msg.sender + maximumAllowedMints'
   })

@@ -11,11 +11,11 @@ import {
 } from './submittable/submittable-state';
 
 export interface State {
-  allMints: Metadata[];
-  allMintsStatus: SubmittableState;
+  allTokenMetadata: Metadata[];
+  allTokenMetadataStatus: SubmittableState;
 
-  tokenInfo: Metadata | undefined;
-  tokenInfoStatus: SubmittableState;
+  tokenMetadata: Metadata | undefined;
+  tokenMetadataStatus: SubmittableState;
 
   totalSupply: number | undefined;
   totalSupplyStatus: SubmittableState;
@@ -27,11 +27,11 @@ export interface State {
 }
 
 export const initialState: State = {
-  allMints: [],
-  allMintsStatus: getInitialState(),
+  allTokenMetadata: [],
+  allTokenMetadataStatus: getInitialState(),
 
-  tokenInfo: undefined,
-  tokenInfoStatus: getInitialState(),
+  tokenMetadata: undefined,
+  tokenMetadataStatus: getInitialState(),
 
   totalSupply: undefined,
   totalSupplyStatus: getInitialState(),
@@ -50,41 +50,41 @@ export const mintFeature = createFeature({
 
     // Load All Mints
 
-    on(MintActions.loadAllMints, state => ({
+    on(MintActions.loadAllTokenMetadata, state => ({
       ...state,
       // no reset
-      allMintsStatus: getSubmittingState()
+      allTokenMetadataStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadAllMintsSuccess, (state, { allMints }) => ({
+    on(MintActions.loadAllTokenMetadataSuccess, (state, { allTokenMetadata }) => ({
       ...state,
-      allMints,
-      allMintsStatus: getSuccessfulState()
+      allTokenMetadata,
+      allTokenMetadataStatus: getSuccessfulState()
     })),
 
-    on(MintActions.loadAllMintsFailure, (state, { error }) => ({
+    on(MintActions.loadAllTokenMetadataFailure, (state, { error }) => ({
       ...state,
-      allMintsStatus: getFailureState(error)
+      allTokenMetadataStatus: getFailureState(error)
     })),
 
     // Load Token Info
 
-    on(MintActions.loadTokenInfo, state => ({
+    on(MintActions.loadTokenMetadata, state => ({
       ...state,
-       // reset previous tokenInfo to not show outdated data while loading!
-      tokenInfo: undefined,
-      tokenInfoStatus: getSubmittingState()
+       // reset previous tokenMetadata to not show outdated data while loading!
+      tokenMetadata: undefined,
+      tokenMetadataStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadTokenInfoSuccess, (state, { tokenInfo }) => ({
+    on(MintActions.loadTokenMetadataSuccess, (state, { tokenMetadata }) => ({
       ...state,
-      tokenInfo,
-      tokenInfoStatus: getSuccessfulState()
+      tokenMetadata,
+      tokenMetadataStatus: getSuccessfulState()
     })),
 
-    on(MintActions.loadTokenInfoFailure, (state, { error }) => ({
+    on(MintActions.loadTokenMetadataFailure, (state, { error }) => ({
       ...state,
-      tokenInfoStatus: getFailureState(error)
+      tokenMetadataStatus: getFailureState(error)
     })),
 
     // Load Total Supply
@@ -157,10 +157,10 @@ export const {
   name, // feature name
   reducer, // feature reducer
   selectMintState, // feature selector
-  selectAllMints, // selector for `allMints` property
-  selectAllMintsStatus, // selector for `allMintsStatus` property
-  selectTokenInfo,
-  selectTokenInfoStatus,
+  selectAllTokenMetadata,
+  selectAllTokenMetadataStatus,
+  selectTokenMetadata,
+  selectTokenMetadataStatus,
   selectTotalSupply,
   selectTotalSupplyStatus,
   selectMintTicket,

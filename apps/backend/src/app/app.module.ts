@@ -10,7 +10,6 @@ import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
 import { AllowlistService } from './model/allowlist.service';
 import { CacheService } from './model/cache.service';
-import { ContractService } from './model/contract.service';
 import { ImageService } from './model/image.service';
 import { MetadataGenesisService } from './model/metadata-genesis.service';
 
@@ -41,6 +40,10 @@ import { MetadataGenesisService } from './model/metadata-genesis.service';
     // })
   ],
   controllers: [AppController, ApiController, ScalesController, CubeController],
-  providers: [AllowlistService, ContractService, MetadataGenesisService, ImageService, CacheService],
+  providers: [AllowlistService,
+    MetadataGenesisService,
+    ImageService,
+    CacheService
+  ],
 })
 export class AppModule { }

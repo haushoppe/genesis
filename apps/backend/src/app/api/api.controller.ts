@@ -48,13 +48,18 @@ import { TokenOwner } from '../types/token-owner';
 export class ApiController {
 
   private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
+  private contractServices = { } as { [tokenName in KnownTokenName.genesis]: ContractService };
 
   constructor(
     private configService: ConfigService,
     private allowlistService: AllowlistService,
-    private contractService: ContractService,
     private metadataGenesisService: MetadataGenesisService,
-    private imageService: ImageService) { }
+    private imageService: ImageService) {
+
+      for (const tokenName in KnownTokenName) {
+        this.contractServices[tokenName] = new ContractService(configService, tokenName as KnownTokenName);
+      }
+    }
 
   /**
    * Minting via allowlist, or limited mint.
@@ -132,6 +137,8 @@ export class ApiController {
       throw new NotFoundException('Unknown token name');
     }
 
+    const contractService = this.contractServices[tokenName];
+
     const token = this.knownTokens.find(x => x.name === tokenName);
 
     return {
@@ -152,10 +159,10 @@ export class ApiController {
         signer: getSigner(this.configService.get('signerKey_' + token.name)).address,
         allowlistEntries: this.allowlistService.getMintWallets(token.name).length,
 
-        contractName: (await this.contractService.getContractName(token.name)),
-        totalSupply: (await this.contractService.getTotalSupply(token.name)),
-        price: (await this.contractService.getPrice(token.name)),
-        priceForMosaic: token.implementsMosaics ? (await this.contractService.getPriceForMosaic(token.name)) : '-1',
+        contractName: (await contractService.getContractName(token.name)),
+        totalSupply: (await contractService.getTotalSupply(token.name)),
+        price: (await contractService.getPrice(token.name)),
+        priceForMosaic: token.implementsMosaics ? (await contractService.getPriceForMosaic(token.name)) : '-1',
       }
     };
   }
@@ -175,7 +182,8 @@ export class ApiController {
       throw new ForbiddenException('This method should not be called on production');
     }
 
-    return await this.contractService.getAllMints(tokenName);
+    const contractService = this.contractServices[tokenName];
+    return await contractService.getAllMints(tokenName);
   }
 
   @Get(['api/debugRawMetadata/:tokenName'])
@@ -217,7 +225,8 @@ export class ApiController {
   @Header('Cache-Control', 'no-cache')
   async allTokenMetadata(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
-    const allMints = await this.contractService.getAllMints(tokenName);
+    const contractService = this.contractServices[tokenName];
+    const allMints = await contractService.getAllMints(tokenName);
 
     if (tokenName === KnownTokenName.genesis) {
       return this.metadataGenesisService.generateMetadata(allMints);
@@ -350,18 +359,19 @@ ${
 `;
   }
 
-  // @Get(['api/allTokenOwners/:tokenName'])
-  // @ApiOperation({ operationId: 'allTokenOwners  ' })
-  // @ApiParam({
-  //   name: 'tokenName',
-  //   enum: KnownTokenName,
-  //   example: KnownTokenName.genesis,
-  // })
-  // @ApiOkResponse({ type: Metadata, isArray: true })
-  // @Header('Cache-Control', 'no-cache')
-  // async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
-  //   return await this.contractService.getAllTokenOwners(tokenName);
-  // }
+  @Get(['api/allTokenOwners/:tokenName'])
+  @ApiOperation({ operationId: 'allTokenOwners  ' })
+  @ApiParam({
+    name: 'tokenName',
+    enum: KnownTokenName,
+    example: KnownTokenName.genesis,
+  })
+  @ApiResponse({ type: TokenOwner, isArray: true })
+  @Header('Cache-Control', 'no-cache')
+  async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
+    const contractService = this.contractServices[tokenName];
+    return await contractService.getAllTokenOwners(tokenName);
+  }
 
   @Get(['api/tokenOwner/:tokenName/:tokenId'])
   @ApiOperation({ operationId: 'tokenOwner' })
@@ -372,7 +382,8 @@ ${
   @Header('Cache-Control', 'no-cache')
   async tokenOwner(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<TokenOwner> {
 
-    const allTokenOwners = await this.contractService.getAllTokenOwners(tokenName);
+    const contractService = this.contractServices[tokenName];
+    const allTokenOwners = await contractService.getAllTokenOwners(tokenName);
     const tokenOwner = allTokenOwners[tokenId];
 
     if (!tokenOwner) {

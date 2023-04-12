@@ -8,6 +8,8 @@ import { MintInfo } from '../types/mint-info';
 import { ZERO_ADDRESS } from './ethers-utils';
 import { knownAbis } from '../../../../shared/known-abis';
 import { TokenOwner } from '../types/token-owner';
+import { CacheService } from './cache.service';
+import { lookup } from 'dns';
 
 
 @Injectable()
@@ -15,12 +17,14 @@ export class ContractService {
 
   private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
 
-  constructor(private configService: ConfigService, private tokenName: KnownTokenName) { }
+  constructor(
+    private configService: ConfigService,
+    private tokenName: KnownTokenName,
+    private cacheService: CacheService) { }
 
-  getContract() {
+  getProvider() {
 
     const tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
-    const abi = knownAbis[this.tokenName];
     const network = tokenConfig.networkName;
     let provider: ethers.Provider;
 
@@ -39,6 +43,15 @@ export class ContractService {
 
       provider = new ethers.AlchemyProvider(network, apiKey);
     }
+
+    return provider;
+  }
+
+  getContract() {
+
+    const tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
+    const abi = knownAbis[this.tokenName];
+    const provider = this.getProvider();
 
     const contract = new ethers.Contract(tokenConfig.contractAddress, abi, provider);
     return contract;
@@ -151,15 +164,18 @@ export class ContractService {
     for (let tokenId = 0; tokenId < totalSupply; tokenId++) {
 
       const owner = await contract.ownerOf(tokenId);
+
       let lender = await contract.tokenOwnersOnLoan(tokenId);
       if (lender === ZERO_ADDRESS) {
-        lender = undefined
+        lender = undefined;
       }
 
       tokenOwners.push({
         tokenId,
         owner,
-        lender
+        ownerDomain: await this.lookupAddress(owner),
+        lender,
+        lenderDomain: await this.lookupAddress(lender)
       });
     }
 
@@ -175,10 +191,29 @@ export class ContractService {
       tokenOwners[tokenId] = {
         tokenId,
         owner: to,
-        lender
+        ownerDomain: await this.lookupAddress(to),
+        lender,
+        lenderDomain: await this.lookupAddress(lender)
       };
     });
 
     return tokenOwners;
+  }
+
+  async lookupAddress(address: string | null) {
+
+
+    if (!address) {
+      return null;
+    }
+
+    console.log('ENS lookup: ' +  address)
+
+    return this.cacheService.loadCachedSync('domain_' + address, undefined, () => {
+
+      const provider = this.getProvider();
+      const domain = provider.lookupAddress(address);
+      return domain;
+    });
   }
 }

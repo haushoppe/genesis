@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { from, of } from 'rxjs';
+import { forkJoin, from, of } from 'rxjs';
 import { catchError, map, mergeMap, retry, switchMap, timeout, withLatestFrom } from 'rxjs/operators';
 
 import { KnownTokenName } from '../../../../shared/known-token-name';
@@ -57,9 +57,13 @@ export class MintEffects {
     return this.actions.pipe(
       ofType(MintActions.loadTokenMetadata),
       switchMap(({ tokenId }) =>
-        this.apiService.tokenMetadata(KnownTokenName.genesis, tokenId).pipe(
+        forkJoin([
+          this.apiService.tokenMetadata(KnownTokenName.genesis, tokenId),
+          this.apiService.tokenOwner(KnownTokenName.genesis, tokenId)
+        ]).pipe(
+          map(([metadata, owner]) => ({ metadata, owner })),
           retry({ count: 3, delay: 1000 }),
-          map(tokenMetadata => MintActions.loadTokenMetadataSuccess({ tokenMetadata })),
+          map(tokenMetadataAndOwner => MintActions.loadTokenMetadataSuccess({ tokenMetadataAndOwner })),
           catchError(error => of(MintActions.loadTokenMetadataFailure({ error }))))
       )
     );

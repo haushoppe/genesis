@@ -1,6 +1,6 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { Metadata, MintTicket } from '../openapi-client';
+import { Metadata, MintTicket, TokenOwner } from '../openapi-client';
 import { MintActions } from './mint.actions';
 import {
   getFailureState,
@@ -14,8 +14,8 @@ export interface State {
   allTokenMetadata: Metadata[];
   allTokenMetadataStatus: SubmittableState;
 
-  tokenMetadata: Metadata | undefined;
-  tokenMetadataStatus: SubmittableState;
+  tokenMetadataAndOwner: { metadata: Metadata, owner: TokenOwner } | undefined;
+  tokenMetadataAndOwnerStatus: SubmittableState;
 
   totalSupply: number | undefined;
   totalSupplyStatus: SubmittableState;
@@ -30,8 +30,8 @@ export const initialState: State = {
   allTokenMetadata: [],
   allTokenMetadataStatus: getInitialState(),
 
-  tokenMetadata: undefined,
-  tokenMetadataStatus: getInitialState(),
+  tokenMetadataAndOwner: undefined,
+  tokenMetadataAndOwnerStatus: getInitialState(),
 
   totalSupply: undefined,
   totalSupplyStatus: getInitialState(),
@@ -71,20 +71,20 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadTokenMetadata, state => ({
       ...state,
-       // reset previous tokenMetadata to not show outdated data while loading!
-      tokenMetadata: undefined,
-      tokenMetadataStatus: getSubmittingState()
+       // reset previous tokenMetadataAndOwner to not show outdated data while loading!
+      tokenMetadataAndOwner: undefined,
+      tokenMetadataAndOwnerStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadTokenMetadataSuccess, (state, { tokenMetadata }) => ({
+    on(MintActions.loadTokenMetadataSuccess, (state, { tokenMetadataAndOwner }) => ({
       ...state,
-      tokenMetadata,
-      tokenMetadataStatus: getSuccessfulState()
+      tokenMetadataAndOwner,
+      tokenMetadataAndOwnerStatus: getSuccessfulState()
     })),
 
     on(MintActions.loadTokenMetadataFailure, (state, { error }) => ({
       ...state,
-      tokenMetadataStatus: getFailureState(error)
+      tokenMetadataAndOwnerStatus: getFailureState(error)
     })),
 
     // Load Total Supply
@@ -159,8 +159,8 @@ export const {
   selectMintState, // feature selector
   selectAllTokenMetadata,
   selectAllTokenMetadataStatus,
-  selectTokenMetadata,
-  selectTokenMetadataStatus,
+  selectTokenMetadataAndOwner,
+  selectTokenMetadataAndOwnerStatus,
   selectTotalSupply,
   selectTotalSupplyStatus,
   selectMintTicket,

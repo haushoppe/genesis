@@ -41,6 +41,7 @@ import { MintInfo } from '../types/mint-info';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
 import { TokenOwner } from '../types/token-owner';
+import { CacheService } from '../model/cache.service';
 
 
 @ApiTags('api')
@@ -54,10 +55,14 @@ export class ApiController {
     private configService: ConfigService,
     private allowlistService: AllowlistService,
     private metadataGenesisService: MetadataGenesisService,
-    private imageService: ImageService) {
+    private imageService: ImageService,
+    private cacheService: CacheService) {
 
       for (const tokenName in KnownTokenName) {
-        this.contractServices[tokenName] = new ContractService(configService, tokenName as KnownTokenName);
+        this.contractServices[tokenName] = new ContractService(
+          configService,
+          tokenName as KnownTokenName,
+          this.cacheService);
       }
     }
 

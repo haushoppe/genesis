@@ -8,8 +8,8 @@ import {
   selectMintAllowlistStatus,
   selectMintTicket,
   selectMintTicketStatus,
-  selectTokenMetadata,
-  selectTokenMetadataStatus,
+  selectTokenMetadataAndOwner,
+  selectTokenMetadataAndOwnerStatus,
 } from './mint.reducer';
 import { selectBestTotalSupply } from './mint.selectors';
 
@@ -24,8 +24,8 @@ export class MintFacade {
   allTokenMetadata$ = this.store.select(selectAllTokenMetadata);
   allTokenMetadataStatus$ = this.store.select(selectAllTokenMetadataStatus);
 
-  tokenMetadata$ = this.store.select(selectTokenMetadata);
-  tokenMetadataStatus$ = this.store.select(selectTokenMetadataStatus);
+  tokenMetadataAndOwner$ = this.store.select(selectTokenMetadataAndOwner);
+  tokenMetadataAndOwnerStatus$ = this.store.select(selectTokenMetadataAndOwnerStatus);
 
   mintTicket$ = this.store.select(selectMintTicket);
   mintTicketStatus$ = this.store.select(selectMintTicketStatus);

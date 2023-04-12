@@ -1,17 +1,24 @@
-<ng-container *rxLet="mintFacade.tokenMetadata$; let nft">
+<ng-container *rxLet="mintFacade.tokenMetadataAndOwner$; let nft">
 
-  <h1 class="mt-4 mb-3">{{ nft?.name }} <small class="text-muted font-weight-light">(Token #{{ nft?.tokenId }})</small></h1>
+  <h1 class="mt-4 mb-0">{{ nft?.metadata?.name }}
+    <small class="text-muted font-weight-light">(Token #{{ nft?.metadata?.tokenId }})</small><br>
+  </h1>
+  <div class="mb-4">
+    <small class="text-muted">Owned by {{ nft?.owner?.owner }}</small>
+    <small class="text-muted" *ngIf="nft?.owner?.lender">Lended by {{ nft?.owner?.lender }}</small>
+  </div>
+
 
   <ng-container *ngIf="nft">
     <iframe
-      *ngIf="nft.animation_url"
-      [src]="nft.animation_url | safeResourceUrl"
+      *ngIf="nft.metadata.animation_url"
+      [src]="nft.metadata.animation_url | safeResourceUrl"
     ></iframe>
 
-    <img *ngIf="!nft.animation_url" [src]="nft.image">
+    <img *ngIf="!nft.metadata.animation_url" [src]="nft.metadata.image">
   </ng-container>
 
-  <p class="mt-4" [innerHTML]="(nft?.description || '') | parseMarkdown"></p>
+  <p class="mt-4" [innerHTML]="(nft?.metadata?.description || '') | parseMarkdown"></p>
 
   <!-- {{ nft | json }} -->
 

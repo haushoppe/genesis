@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
-import { Metadata, MintTicket } from '../openapi-client';
+import { Metadata, MintTicket, TokenOwner } from '../openapi-client';
 
 export const MintActions = createActionGroup({
   source: 'Mint',
@@ -13,7 +13,7 @@ export const MintActions = createActionGroup({
 
     // from Backend
     'Load Token Metadata': props<{ tokenId: number }>(),
-    'Load Token Metadata Success': props<{ tokenMetadata: Metadata }>(),
+    'Load Token Metadata Success': props<{ tokenMetadataAndOwner: { metadata: Metadata, owner: TokenOwner } }>(),
     'Load Token Metadata Failure': props<{ error: HttpErrorResponse }>(),
 
     // from Backend

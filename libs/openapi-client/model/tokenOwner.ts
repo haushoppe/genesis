@@ -14,6 +14,8 @@
 export interface TokenOwner { 
     tokenId: number;
     owner: string;
+    ownerName: string;
     lender: string;
+    lenderName: string;
 }
 

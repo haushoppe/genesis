@@ -173,9 +173,9 @@ export class ContractService {
       tokenOwners.push({
         tokenId,
         owner,
-        ownerDomain: await this.lookupAddress(owner),
+        ownerName: await this.lookupAddress(owner),
         lender,
-        lenderDomain: await this.lookupAddress(lender)
+        lenderName: await this.lookupAddress(lender)
       });
     }
 
@@ -191,9 +191,9 @@ export class ContractService {
       tokenOwners[tokenId] = {
         tokenId,
         owner: to,
-        ownerDomain: await this.lookupAddress(to),
+        ownerName: await this.lookupAddress(to),
         lender,
-        lenderDomain: await this.lookupAddress(lender)
+        lenderName: await this.lookupAddress(lender)
       };
     });
 
@@ -202,18 +202,23 @@ export class ContractService {
 
   async lookupAddress(address: string | null) {
 
-
     if (!address) {
       return null;
     }
 
-    console.log('ENS lookup: ' +  address)
+    // console.log('ENS lookup: ' +  address)
 
-    return this.cacheService.loadCachedSync('domain_' + address, undefined, () => {
+    return this.cacheService.loadCachedSync('name_' + address, 60 * 60 * 12, async () => {
 
-      const provider = this.getProvider();
-      const domain = provider.lookupAddress(address);
-      return domain;
+      try {
+        const provider = this.getProvider();
+        const domain = await provider.lookupAddress(address);
+        return domain;
+
+      } catch (ex) {
+        console.info('Catched ENS lookup for ' + address + '.\nException: ' +  ex.message);
+      }
+      return null;
     });
   }
 }

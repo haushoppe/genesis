@@ -29,6 +29,12 @@ But this is optional:
 npm install -g nx
 ```
 
+If you want to test out the GitHub Actions build locally, install the command line tool `jq`:
+
+```
+brew install jq
+```
+
 
 ## Assets
 

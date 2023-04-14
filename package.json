@@ -10,7 +10,7 @@
     "start:backend": "nx serve --project=backend",
     "start:hardhat": "cd contracts && npm run hardhat:start-localhost-network",
     "build:backend": "nx build --project=backend",
-    "build:backend:production": "nx build --project=backend --configuration=production && cp package-backend-compiled.json dist/apps/backend/package.json",
+    "build:backend:production": "nx build --project=backend --configuration=production && cp package* dist/apps/backend/ && jq '.scripts = { start: \"node main.js\" }' dist/apps/backend/package.json > tmp && mv tmp dist/apps/backend/package.json",
     "test:backend": "nx test --project=backend",
     "start:genesis-frontend": "nx serve --project=genesis-frontend",
     "build:genesis-frontend": "nx build --project=genesis-frontend",
@@ -21,6 +21,9 @@
     "build:scales-dashboard-frontend:production": "nx build --project=scales-dashboard-frontend --configuration=production",
     "test:scales-dashboard-frontend": "nx test --project=scales-dashboard-frontend",
     "postinstall": "ngcc --properties es2020 browser module main && cd contracts && npm install"
+  },
+  "engines": {
+    "node": "16.x"
   },
   "private": true,
   "dependencies": {

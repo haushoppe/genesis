@@ -13,7 +13,7 @@ import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 import { ShortenAddressPipe } from './shorten-address.pipe';
-import { ShortenDomainPipe } from './shorten-domain.pipe';
+import { ShortenNamePipe } from './shorten-domain.pipe';
 
 const expandDuration = 500
 
@@ -33,7 +33,7 @@ const expandDuration = 500
       LetModule,
       ForModule,
       PushModule,
-      ShortenDomainPipe,
+      ShortenNamePipe,
       ShortenAddressPipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,

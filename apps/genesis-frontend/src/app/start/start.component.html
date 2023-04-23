@@ -48,17 +48,10 @@
       <p *ngIf="walletStatus.submitStatus === SubmitStatus.Successful" class="mb-0">
         You have successfully connected your {{ walletFacade.walletLabel$ | push }} wallet with your account
 
-        <ng-container *ngIf="bestWalletName; else noDomain">
-          <span [title]="bestWalletName">
-            {{ bestWalletName | shortenName }}.
-          </span>
-        </ng-container>
-
-        <ng-template #noDomain>
-          <span [title]="walletAddress">
-            {{ walletAddress | shortenAddress }}.
-          </span>
-        </ng-template>
+        <app-address-display
+          [name]="bestWalletName"
+          [address]="walletAddress"
+        />
 
       </p>
 

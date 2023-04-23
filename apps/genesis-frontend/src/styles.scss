@@ -77,3 +77,11 @@ button:disabled {
   top: -1px;
   display: inline-block;
 }
+
+.blocky-inline-ml {
+  width: 1.1em;
+  border-radius: 50% !important;
+  vertical-align: middle;
+  display: inline-block;
+  margin-bottom: 0.1em;
+}

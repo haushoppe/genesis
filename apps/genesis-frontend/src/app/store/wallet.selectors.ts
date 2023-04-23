@@ -12,7 +12,13 @@ export const selectWalletLabel = createSelector(
 export const selectWalletEnsName = createSelector(
   selectWallet,
   wallet => {
-    const name = wallet?.accounts?.[0]?.ens?.name;
+    let name = wallet?.accounts?.[0]?.ens?.name;
+
+    // just for debugging, can be removed later on
+    if (wallet?.accounts?.[0]?.address === '0x8c11c53f77ad5e91fb13611904f2f59b07aa7c93') {
+
+      name = 'johanneshoppe.eth'
+    }
     return name || undefined;
   }
 );

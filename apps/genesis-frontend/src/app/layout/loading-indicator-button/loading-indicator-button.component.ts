@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { getInitialState, SubmittableState } from '../../store/submittable/submittable-state';
-import { AlertComponent } from '../loading-indicator/alert/alert.component';
+import { AlertComponent } from '../alert/alert.component';
 
 @Component({
   selector: 'app-loading-indicator-button',

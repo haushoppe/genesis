@@ -8,6 +8,7 @@ import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-i
 import { MintFacade } from '../store/mint.facade';
 import { ParseMarkdownPipe } from './parse-markdown.pipe';
 import { SafeResourceUrlPipe } from './safe-url.pipe';
+import { AddressDisplayComponent } from '../layout/address-display/address-display.component';
 
 @Component({
   selector: 'app-details',
@@ -23,7 +24,8 @@ import { SafeResourceUrlPipe } from './safe-url.pipe';
     SafeResourceUrlPipe,
     JsonPipe,
     LetModule,
-    PushModule
+    PushModule,
+    AddressDisplayComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

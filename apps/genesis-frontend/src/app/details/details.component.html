@@ -3,11 +3,23 @@
   <h1 class="mt-4 mb-0">{{ nft?.metadata?.name }}
     <small class="text-muted font-weight-light">(Token #{{ nft?.metadata?.tokenId }})</small><br>
   </h1>
-  <div class="mb-4">
-    <small class="text-muted">Owned by {{ nft?.owner?.owner }}</small>
-    <small class="text-muted" *ngIf="nft?.owner?.lender">Lended by {{ nft?.owner?.lender }}</small>
-  </div>
 
+  <div class="mb-4">
+    <small class="text-muted">
+      Owned by
+      <app-address-display
+        [name]="nft?.owner?.ownerName"
+        [address]="nft?.owner?.owner"
+      />
+    </small>
+    <small class="text-muted" *ngIf="nft?.owner?.lender">
+      Lended by
+      <app-address-display
+        [name]="nft?.owner?.lenderName"
+        [address]="nft?.owner?.lender"
+      />
+    </small>
+  </div>
 
   <ng-container *ngIf="nft">
     <iframe

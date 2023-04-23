@@ -1,0 +1,16 @@
+<app-blocky-identicon
+  [address]="address"
+  class="blocky-inline-ml"
+/>
+
+<ng-container *ngIf="name; else noName">
+  <span [title]="name">
+    {{ name | shortenName }}.
+  </span>
+</ng-container>
+
+<ng-template #noName>
+  <span [title]="address">
+    {{ address | shortenAddress }}.
+  </span>
+</ng-template>

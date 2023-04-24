@@ -1,14 +1,14 @@
 import { Directive, HostListener, inject } from "@angular/core";
 import { Router } from "@angular/router";
 
-@Directive({
-  selector: "[appLinkify]",
-  standalone: true
-})
 
 /**
  *  Apply Angular Routing behavior for own host
  */
+@Directive({
+  selector: "[appLinkify]",
+  standalone: true
+})
 export class LinkifyDirective {
 
   router = inject(Router);

@@ -30,7 +30,7 @@
     <img *ngIf="!nft.metadata.animation_url" [src]="nft.metadata.image">
   </ng-container>
 
-  <p class="mt-4" [innerHTML]="(nft?.metadata?.description || '') | parseMarkdown"></p>
+  <p class="mt-4" [innerHTML]="(nft?.metadata?.description || '') | parseMarkdown" appLinkify></p>
 
   <!-- {{ nft | json }} -->
 

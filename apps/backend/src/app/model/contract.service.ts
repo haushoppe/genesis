@@ -9,20 +9,25 @@ import { ZERO_ADDRESS } from './ethers-utils';
 import { knownAbis } from '../../../../shared/known-abis';
 import { TokenOwner } from '../types/token-owner';
 import { CacheService } from './cache.service';
-import { lookup } from 'dns';
-
 
 @Injectable()
 export class ContractService {
 
   private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
+  private provider: ethers.Provider;
+  private contract: ethers.Contract;
 
   constructor(
     private configService: ConfigService,
     private tokenName: KnownTokenName,
-    private cacheService: CacheService) { }
+    private cacheService: CacheService) {
 
-  getProvider() {
+      this.provider = this.getProvider();
+      this.contract = this.getContract();
+
+  }
+
+  private getProvider() {
 
     const tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
     const network = tokenConfig.networkName;
@@ -47,47 +52,41 @@ export class ContractService {
     return provider;
   }
 
-  getContract() {
+  private getContract() {
 
     const tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
     const abi = knownAbis[this.tokenName];
-    const provider = this.getProvider();
 
-    const contract = new ethers.Contract(tokenConfig.contractAddress, abi, provider);
+    const contract = new ethers.Contract(tokenConfig.contractAddress, abi, this.provider);
     return contract;
   }
 
   async getContractName(): Promise<string> {
 
-    const contract = this.getContract();
-    return await contract.name();
+    return await this.contract.name();
   }
 
   async getTotalSupply(): Promise<number> {
 
-    const contract = this.getContract();
-    return parseInt(await contract.totalSupply());
+    return parseInt(await this.contract.totalSupply());
   }
 
   async getPrice(): Promise<string> {
 
-    const contract = this.getContract();
-    return (await contract.price()).toString();
+    return (await this.contract.price()).toString();
   }
 
   async getPriceForMosaic(): Promise<string> {
 
-    const contract = this.getContract();
-    return (await contract.priceForMosaic()).toString();
+    return (await this.contract.priceForMosaic()).toString();
   }
 
   async getAllMints(): Promise<MintInfo[]> {
 
     const tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
-    const contract = this.getContract();
 
     // List all token transfers *from* zero address (this is how a lint looks like)
-    const filter = contract.filters.Transfer(ZERO_ADDRESS);
+    const filter = this.contract.filters.Transfer(ZERO_ADDRESS);
 
     /* EXAMPLE (ethers v6 with support for BigInt)
 
@@ -126,7 +125,7 @@ export class ContractService {
       ]
     }
     */
-    const events = await contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
+    const events = await this.contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
 
     // console.log(events);
 
@@ -140,12 +139,12 @@ export class ContractService {
     if (tokenConfig.implementsMosaics) {
       allMints = await Promise.all(allMints.map(async mint => ({
         ...mint,
-        isMosaic: await contract.isMosaic(mint.tokenId)
+        isMosaic: await this.contract.isMosaic(mint.tokenId)
       })));
 
       allMints = await Promise.all(allMints.map(async mint => ({
         ...mint,
-        mosaics: mint.isMosaic ? (await contract.mosaics(mint.tokenId)).map(x => parseInt(x)) : []
+        mosaics: mint.isMosaic ? (await this.contract.mosaics(mint.tokenId)).map((x: string) => parseInt(x)) : []
       })));
     }
 
@@ -154,18 +153,16 @@ export class ContractService {
 
   async getAllTokenOwners(): Promise<TokenOwner[]> {
 
-    const contract = this.getContract();
-
-    const totalSupply = parseInt(await contract.totalSupply());
+    const totalSupply = parseInt(await this.contract.totalSupply());
 
 
     // Loop through each token ID and get the owner's address
     const tokenOwners: TokenOwner[] = [];
     for (let tokenId = 0; tokenId < totalSupply; tokenId++) {
 
-      const owner = await contract.ownerOf(tokenId);
+      const owner = await this.contract.ownerOf(tokenId);
 
-      let lender = await contract.tokenOwnersOnLoan(tokenId);
+      let lender = await this.contract.tokenOwnersOnLoan(tokenId);
       if (lender === ZERO_ADDRESS) {
         lender = undefined;
       }
@@ -179,10 +176,10 @@ export class ContractService {
       });
     }
 
-    contract.on('Transfer', async (from: string, to: string, tokenId: number) => {
+    this.contract.on('Transfer', async (from: string, to: string, tokenId: number) => {
       Logger.verbose(`NFT token ID ${tokenId} transferred from ${from} to ${to}`);
 
-      let lender = await contract.tokenOwnersOnLoan(tokenId);
+      let lender = await this.contract.tokenOwnersOnLoan(tokenId);
       if (lender === ZERO_ADDRESS) {
         lender = undefined
       }

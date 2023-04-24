@@ -4,11 +4,11 @@ import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
 
+import { AddressDisplayComponent } from '../layout/address-display/address-display.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { MintFacade } from '../store/mint.facade';
 import { ParseMarkdownPipe } from './parse-markdown.pipe';
 import { SafeResourceUrlPipe } from './safe-url.pipe';
-import { AddressDisplayComponent } from '../layout/address-display/address-display.component';
 
 @Component({
   selector: 'app-details',

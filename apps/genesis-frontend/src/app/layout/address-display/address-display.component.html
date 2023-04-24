@@ -5,12 +5,12 @@
 
 <ng-container *ngIf="name; else noName">
   <span [title]="name">
-    {{ name | shortenName }}.
+    {{ name | shortenName }}
   </span>
 </ng-container>
 
 <ng-template #noName>
   <span [title]="address">
-    {{ address | shortenAddress }}.
+    {{ address | shortenAddress }}
   </span>
 </ng-template>

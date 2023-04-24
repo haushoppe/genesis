@@ -246,7 +246,7 @@ export class MetadataGenesisService {
     const animationMosaicBaseUrl = this.environment === 'development' ? animationMosaicBaseUrlLocalhost : animationMosaicBaseUrlLive;
 
     const metadata: Metadata = {
-      name: 'Mosaic #' + mosaicCounter,
+      name: 'Genesis Mosaic #' + mosaicCounter,
       description:
         `A mosaic of four tiles:  \n`  // Markdown style linebreaks
         + `[${tokenTile1.name} (Token #${tokenTile1.tokenId})](${tokenTile1.external_url})  \n`

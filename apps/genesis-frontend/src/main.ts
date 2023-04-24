@@ -38,7 +38,10 @@ bootstrapApplication(AppComponent,{
           provideEffects(WalletEffects)
       ]}
     ],
-    withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
+    withInMemoryScrolling({
+      scrollPositionRestoration: 'enabled',
+      // anchorScrolling: 'enabled'
+    })),
 
     // NgRx providers
     provideStore({

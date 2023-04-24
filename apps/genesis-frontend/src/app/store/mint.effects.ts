@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { forkJoin, from, of } from 'rxjs';
-import { catchError, map, mergeMap, retry, switchMap, timeout, withLatestFrom } from 'rxjs/operators';
+import { catchError, concatMap, map, mergeMap, retry, switchMap, timeout, withLatestFrom } from 'rxjs/operators';
 
 import { KnownTokenName } from '../../../../shared/known-token-name';
 import { environment } from '../../environments/environment';
@@ -14,6 +14,7 @@ import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 import { WalletActions } from './wallet.actions';
 import { selectConfig } from './wallet.reducer';
 import { selectProvider, selectWalletAddress } from './wallet.selectors';
+import { PageActions } from './page.actions';
 
 
 @Injectable()
@@ -39,7 +40,10 @@ export class MintEffects {
         this.apiService.allTokenMetadata(KnownTokenName.genesis).pipe(
           retry({ count: 3, delay: 1000 }),
           map(x => x.reverse()),
-          map(allTokenMetadata => MintActions.loadAllTokenMetadataSuccess({ allTokenMetadata })),
+          concatMap(allTokenMetadata => [
+            MintActions.loadAllTokenMetadataSuccess({ allTokenMetadata }),
+            PageActions.ready()
+          ]),
           catchError(error => of(MintActions.loadAllTokenMetadataFailure({ error }))))
       )
     );
@@ -63,7 +67,10 @@ export class MintEffects {
         ]).pipe(
           map(([metadata, owner]) => ({ metadata, owner })),
           retry({ count: 3, delay: 1000 }),
-          map(tokenMetadataAndOwner => MintActions.loadTokenMetadataSuccess({ tokenMetadataAndOwner })),
+          concatMap(tokenMetadataAndOwner => [
+            MintActions.loadTokenMetadataSuccess({ tokenMetadataAndOwner }),
+            PageActions.ready()
+          ]),
           catchError(error => of(MintActions.loadTokenMetadataFailure({ error }))))
       )
     );

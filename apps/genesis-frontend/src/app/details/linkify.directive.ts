@@ -27,7 +27,7 @@ export class LinkifyDirective {
       const currentPort = window.location.port;
       const portPattern = currentPort ? `:${currentPort}` : '';
 
-      const urlPattern = new RegExp(`^(?:https?:\\/\\/)?${currentHostname.replace(/\./g, '\\.')}${portPattern}(\/.*)$`, 'i');
+      const urlPattern = new RegExp(`^(?:https?:\\/\\/)?${currentHostname.replace(/\./g, '\\.')}${portPattern}(/.*)$`, 'i');
       const match = url.match(urlPattern)
 
       if (match && match[1]) {

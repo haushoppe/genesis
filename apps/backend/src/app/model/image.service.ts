@@ -17,57 +17,59 @@ export class ImageService {
   async getMosiacPreview(tokenName: string, tokenId: number, mosaic: Metadata): Promise<Buffer> {
 
     const cacheKey = 'mosiacPreview_' + tokenName + '_' + tokenId;
-    if (this.cacheService.has(cacheKey)) {
-      return this.cacheService.get<Buffer>(cacheKey);
-    }
+    return this.cacheService.loadCached(cacheKey, async () => {
 
-    const allImages = await Promise.all([
-      this.getThumbnail(mosaic.tile1Image as string),
-      this.getThumbnail(mosaic.tile2Image as string),
-      this.getThumbnail(mosaic.tile3Image as string),
-      this.getThumbnail(mosaic.tile4Image as string),
-    ]);
+      const allImages = await Promise.all([
+        this.getThumbnail(mosaic.tile1Image as string),
+        this.getThumbnail(mosaic.tile2Image as string),
+        this.getThumbnail(mosaic.tile3Image as string),
+        this.getThumbnail(mosaic.tile4Image as string),
+      ]);
 
-    // Create a blank 402x402 PNG image with transparent background
-    const image = await sharp({
-      create: {
-        width: 402,
-        height: 402,
-        channels: 4,
-        background: { r: 255, g: 255, b: 255, alpha: 0 }
-      }
-    })
-    /*
-    Result:
+      // Create a blank 402x402 PNG image with transparent background
+      const image = await sharp({
+        create: {
+          width: 402,
+          height: 402 ,
+          channels: 4,
+          background: { r: 255, g: 255, b: 255, alpha: 0 }
+        }
+      })
+      /*
+      Result:
 
-    1  2
-    3  4
-    */
-    .composite([
-      { input: allImages[0], gravity: 'northwest' }, // 1
-      { input: allImages[1], gravity: 'northeast' }, // 2
-      { input: allImages[2], gravity: 'southwest' }, // 3
-      { input: allImages[3], gravity: 'southeast' }, // 4
-    ])
-    .png()
-    .toBuffer()
+      1  2
+      3  4
+      */
+      .composite([
+        { input: allImages[0], gravity: 'northwest' }, // 1
+        { input: allImages[1], gravity: 'northeast' }, // 2
+        { input: allImages[2], gravity: 'southwest' }, // 3
+        { input: allImages[3], gravity: 'southeast' }, // 4
+      ])
+      .png()
+      .toBuffer();
 
-    return this.cacheService.set(cacheKey, image);
+      return image;
+    });
   }
 
-  async getThumbnail(imagUrl: string) {
-    const response = await axios.get(imagUrl, { responseType: 'arraybuffer' })
-    const buffer = Buffer.from(response.data);
-    return await sharp(buffer).resize({ width: 200, height: 200 }).toBuffer();
+  async getThumbnail(imagUrl: string): Promise<Buffer> {
+    return this.cacheService.loadCached('thumbnail_' + imagUrl, async () => {
+
+      const response = await axios.get(imagUrl, { responseType: 'arraybuffer' })
+      const buffer = Buffer.from(response.data);
+      return await sharp(buffer).resize({ width: 200, height: 200 }).toBuffer();
+    });
   }
 
-  getAnimationHtml(tokenId: number, allMints: Metadata[], level = 1) {
+  getAnimationHtml(tokenId: number, allMints: Metadata[], level = 1): string {
 
     const token = allMints.find(x =>  x.tokenId === tokenId);
     return `${ '  '.repeat(level) }<div class="tile"><a href="${ token.external_url }" target="_top"><img src="${ token.image }" alt="" title="${ token?.name } (Token #${ tokenId })"></a></div>`;
   }
 
-  getMosaicAnimationHtml(tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, allMints: Metadata[], level = 1) {
+  getMosaicAnimationHtml(tokenId: number, tile1: number, tile2: number, tile3: number, tile4: number, allMints: Metadata[], level = 1): string {
 
       // token can be also null!
       const token = allMints.find(x =>  x.tokenId === tokenId);

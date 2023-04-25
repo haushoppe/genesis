@@ -14,17 +14,13 @@ import { CacheService } from './cache.service';
 export class ContractService {
 
   private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
-  private provider: ethers.Provider;
-  private contract: ethers.Contract;
+  private provider: ethers.Provider = this.getProvider();
+  private contract: ethers.Contract = this.getContract();
 
   constructor(
     private configService: ConfigService,
     private tokenName: KnownTokenName,
     private cacheService: CacheService) {
-
-      this.provider = this.getProvider();
-      this.contract = this.getContract();
-
   }
 
   private getProvider() {
@@ -61,6 +57,7 @@ export class ContractService {
     return contract;
   }
 
+  private _contractName
   async getContractName(): Promise<string> {
 
     return await this.contract.name();
@@ -170,9 +167,9 @@ export class ContractService {
       tokenOwners.push({
         tokenId,
         owner,
-        ownerName: await this.lookupAddress(owner),
+        ownerName: await this.lookupName(owner),
         lender,
-        lenderName: await this.lookupAddress(lender)
+        lenderName: await this.lookupName(lender)
       });
     }
 
@@ -188,16 +185,17 @@ export class ContractService {
       tokenOwners[tokenId] = {
         tokenId,
         owner: to,
-        ownerName: await this.lookupAddress(to),
+        ownerName: await this.lookupName(to),
         lender,
-        lenderName: await this.lookupAddress(lender)
+        lenderName: await this.lookupName(lender)
       };
     });
 
     return tokenOwners;
   }
 
-  async lookupAddress(address: string | null) {
+  // this response is shared between all services
+  async lookupName(address: string | null) {
 
     if (!address) {
       return null;
@@ -205,17 +203,17 @@ export class ContractService {
 
     // console.log('ENS lookup: ' +  address)
 
-    return this.cacheService.loadCachedSync('name_' + address, 60 * 60 * 12, async () => {
+    return this.cacheService.loadCachedSync('name_' + address, async () => {
 
       try {
         const provider = this.getProvider();
-        const domain = await provider.lookupAddress(address);
-        return domain;
+        const name = await provider.lookupAddress(address);
+        return name;
 
       } catch (ex) {
         console.info('Catched ENS lookup for ' + address + '.\nException: ' +  ex.message);
       }
       return null;
-    });
+    }, 60 * 60 * 12);
   }
 }

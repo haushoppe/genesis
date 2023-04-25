@@ -15,7 +15,7 @@ export class AllowlistService {
   allowlistFolder = path.resolve(__dirname + '/assets/data/');
 
   getMintWallets(tokenName: string): string[] {
-    return this.cacheService.loadCachedSync('mintWallets_' + tokenName, undefined, () => {
+    return this.cacheService.loadCachedSync('mintWallets_' + tokenName, () => {
 
       const entries = this.parseHeymintCsvFromFile('allowlist_' + tokenName + '.csv');
       return entries.map(x => x.mintWallet);

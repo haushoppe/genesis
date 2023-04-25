@@ -41,7 +41,7 @@ export class CacheService {
   /**
    * Executes the callback, but tries the cache first
    */
-  async loadCached<T>(cacheKey: string, ttl: number | undefined, loadCallback: () => Promise<T>): Promise<T> {
+  async loadCached<T>(cacheKey: string, loadCallback: () => Promise<T>, ttl: number | undefined = undefined): Promise<T> {
 
     if (this.has(cacheKey)) {
       return this.get<T>(cacheKey);
@@ -54,7 +54,7 @@ export class CacheService {
   /**
    * Executes the callback, but tries the cache first
    */
-  loadCachedSync<T>(cacheKey: string, ttl: number | undefined, loadCallback: () => T): T {
+  loadCachedSync<T>(cacheKey: string, loadCallback: () => T, ttl: number | undefined = undefined): T {
 
     if (this.has(cacheKey)) {
       return this.get<T>(cacheKey);

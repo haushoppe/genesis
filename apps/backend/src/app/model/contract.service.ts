@@ -57,10 +57,19 @@ export class ContractService {
     return contract;
   }
 
-  private _contractName
+  private _contractName?: string;
   async getContractName(): Promise<string> {
+    return this._contractName || (this._contractName = await this.contract.name());
+  }
 
-    return await this.contract.name();
+  private _price?: string;
+  async getPrice(): Promise<string> {
+    return this._price || (this._price = (await this.contract.price()).toString());
+  }
+
+  private _priceForMosaic?: string;
+  async getPriceForMosaic(): Promise<string> {
+    return this._priceForMosaic || (this._priceForMosaic = (await this.contract.priceForMosaic()).toString());
   }
 
   async getTotalSupply(): Promise<number> {
@@ -68,15 +77,6 @@ export class ContractService {
     return parseInt(await this.contract.totalSupply());
   }
 
-  async getPrice(): Promise<string> {
-
-    return (await this.contract.price()).toString();
-  }
-
-  async getPriceForMosaic(): Promise<string> {
-
-    return (await this.contract.priceForMosaic()).toString();
-  }
 
   async getAllMints(): Promise<MintInfo[]> {
 

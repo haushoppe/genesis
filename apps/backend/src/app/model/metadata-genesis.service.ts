@@ -5,7 +5,17 @@ import { Metadata } from '../types/metadata';
 import { MintInfo } from '../types/mint-info';
 import { PseudoRandom } from './pseudo-random';
 
-const genericDescription = 'For this masterpiece artist Olaf Hoppe carved __AMOUNT__ different woodblocks and printed them on top of each other with absolute precision.'
+const descriptionNormalToken = 'The Genesis collection is a series of woodcut artworks inspired by the spiritual '
+  + 'and mystical elements of the biblical creation story. Crafted using traditional techniques, the final woodcuts '
+  + 'and all stages in the printing process have been transformed into digital collectibles.  \n'
+  + '  \n'
+  + 'This is a unique digital representation of a physical original. For this masterpiece artist Olaf Hoppe carved **__AMOUNT__ different woodblocks** and printed them on top of each other with absolute precision.'
+
+const descriptionMosaicToken = 'The Genesis collection is a series of woodcut artworks inspired by the spiritual '
+  + 'and mystical elements of the biblical creation story. Crafted using traditional techniques, the final woodcuts '
+  + 'and all stages in the printing process have been transformed into digital collectibles.  \n'
+  + '  \n'
+  + 'This is a mosaic that has been assembled from four other elements from the collection:  \n'
 
 const externalUrlLive = 'https://genesis.haushoppe.art/nft/';
 const externalUrlLocalhost = 'http://localhost:4201/nft/';
@@ -99,7 +109,7 @@ export class MetadataGenesisService {
 
       const template: Metadata = {
         name: '?',
-        description: genericDescription.replace('__AMOUNT__', artwork.amountOfColors + ''),
+        description: descriptionNormalToken.replace('__AMOUNT__', artwork.amountOfColors + ''),
         external_url: externalUrl,
         animation_url: animationBaseUrl,
         image: '?',
@@ -151,7 +161,7 @@ export class MetadataGenesisService {
         const metatdata: Metadata = {
           ...template,
           name: artwork.name + ` – ${i} Colors` + (finalPiece ? ' (Final piece)' : ''),
-          description: template.description + (finalPiece ? ' Here you can see the final artwork, with all the wooden blocks printed on top of each other.' : ' Here you can see a multi-layer color print where the different wood blocks are printed on top of each other.'),
+          description: template.description + (finalPiece ? ' Here you can see the final artwork, with all the wooden blocks printed on top of each other.' : ' Here you can see the multi-layer color print where the different wood blocks are printed on top of each other.'),
           attributes: [
             ...template.attributes,
             {
@@ -247,8 +257,7 @@ export class MetadataGenesisService {
 
     const metadata: Metadata = {
       name: 'Genesis Mosaic #' + mosaicCounter,
-      description:
-        `A mosaic of four tiles:  \n`  // Markdown style linebreaks
+      description: descriptionMosaicToken
         + `[${tokenTile1.name} (Token #${tokenTile1.tokenId})](${tokenTile1.external_url})  \n`
         + `[${tokenTile2.name} (Token #${tokenTile2.tokenId})](${tokenTile2.external_url})  \n`
         + `[${tokenTile3.name} (Token #${tokenTile3.tokenId})](${tokenTile3.external_url})  \n`

@@ -231,7 +231,7 @@ export class ApiController {
   async allTokenMetadata(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
     const contractService = this.contractServices[tokenName];
-    const allMints = await contractService.getAllMints(tokenName);
+    const allMints = await contractService.getAllCurrentMints(tokenName);
 
     if (tokenName === KnownTokenName.genesis) {
       return this.metadataGenesisService.generateMetadata(allMints);
@@ -375,7 +375,7 @@ ${
   @Header('Cache-Control', 'no-cache')
   async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
     const contractService = this.contractServices[tokenName];
-    return await contractService.getAllTokenOwners(tokenName);
+    return await contractService.getAllCurrentTokenOwners(tokenName);
   }
 
   @Get(['api/tokenOwner/:tokenName/:tokenId'])
@@ -388,7 +388,7 @@ ${
   async tokenOwner(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<TokenOwner> {
 
     const contractService = this.contractServices[tokenName];
-    const allTokenOwners = await contractService.getAllTokenOwners(tokenName);
+    const allTokenOwners = await contractService.getAllCurrentTokenOwners(tokenName);
     const tokenOwner = allTokenOwners[tokenId];
 
     if (!tokenOwner) {

@@ -9,13 +9,15 @@ import { ZERO_ADDRESS } from './ethers-utils';
 import { knownAbis } from '../../../../shared/known-abis';
 import { TokenOwner } from '../types/token-owner';
 import { CacheService } from './cache.service';
+import { createFilledArray } from './contract.service.helper';
 
 @Injectable()
 export class ContractService {
 
-  private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
-  private provider: ethers.Provider = this.getProvider();
-  private contract: ethers.Contract = this.getContract();
+  private readonly knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
+  private readonly tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
+  private readonly provider: ethers.Provider = this.getProvider();
+  private readonly contract: ethers.Contract = this.getContract();
 
   constructor(
     private configService: ConfigService,
@@ -25,8 +27,7 @@ export class ContractService {
 
   private getProvider() {
 
-    const tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
-    const network = tokenConfig.networkName;
+    const network = this.tokenConfig.networkName;
     let provider: ethers.Provider;
 
     if (network === 'hardhat') {
@@ -73,105 +74,61 @@ export class ContractService {
   }
 
   async getTotalSupply(): Promise<number> {
-
     return parseInt(await this.contract.totalSupply());
   }
 
 
-  async getAllMints(): Promise<MintInfo[]> {
+  /**
+   * Retrieves all current mints by querying all token transfers from 0x0 to the new owner
+   * This method is supposed to recreate the in-memory list of mints after a server restart
+   */
+  async getAllCurrentMints(): Promise<MintInfo[]> {
 
-    const tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
-
-    // List all token transfers *from* zero address (this is how a lint looks like)
+    // List all token transfers *from* zero address!
     const filter = this.contract.filters.Transfer(ZERO_ADDRESS);
+    const events = await this.contract.queryFilter(filter, this.tokenConfig.firstBlockNumber, 'latest');
 
-    /* EXAMPLE (ethers v6 with support for BigInt)
+    return await Promise.all(
+      events.map(async (e: EventLog) => await this.extractMintInfo(e)));
+  }
 
-    EventLog {
-      provider: JsonRpcProvider {},
-      transactionHash: '0xf245bc6b75cce5a45a4743aeac632c9c244e535091f7bbf50bdb1d27620c5fc9',
-      blockHash: '0xf26787235b4356a823aa835493594bcae1758bff11083d023a1c0df57ba64f64',
-      blockNumber: 10,
-      removed: false,
-      address: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-      data: '0x',
-      topics: [
-        '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-        '0x000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266',
-        '0x0000000000000000000000000000000000000000000000000000000000000000'
-      ],
-      index: 0,
-      transactionIndex: 0,
-      interface: Interface {
-        fragments: [Array],
-        deploy: [ConstructorFragment],
-        fallback: null,
-        receive: false
-      },
-      fragment: EventFragment {
-        type: 'event',
-        inputs: [Array],
-        name: 'Transfer',
-        anonymous: false
-      },
-      args: Result(3) [
-        '0x0000000000000000000000000000000000000000',
-        '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-        0n
-      ]
-    }
-    */
-    const events = await this.contract.queryFilter(filter, tokenConfig.firstBlockNumber, 'latest');
+  private async extractMintInfo(event: EventLog): Promise<MintInfo> {
 
-    // console.log(events);
-
-    let allMints: MintInfo[] = events.map((event: EventLog) => ({
+    const mintInfo: MintInfo = {
       mintedBy: event.args[1],
       tokenId: parseInt(event.args[2]),
       transactionHash: event.transactionHash,
       blockNumber: event.blockNumber
-    }));
-
-    if (tokenConfig.implementsMosaics) {
-      allMints = await Promise.all(allMints.map(async mint => ({
-        ...mint,
-        isMosaic: await this.contract.isMosaic(mint.tokenId)
-      })));
-
-      allMints = await Promise.all(allMints.map(async mint => ({
-        ...mint,
-        mosaics: mint.isMosaic ? (await this.contract.mosaics(mint.tokenId)).map((x: string) => parseInt(x)) : []
-      })));
     }
 
-    return allMints;
+    // proprietary extra: IMosaic
+    if (this.tokenConfig.implementsMosaics) {
+
+      const isMosaic = await this.contract.isMosaic(mintInfo.tokenId)
+      if (isMosaic) {
+        mintInfo.isMosaic = true
+        mintInfo.mosaics = (await this.contract.mosaics(mintInfo.tokenId)).map((x: string) => parseInt(x));
+      }
+    }
+
+    return mintInfo;
   }
 
-  async getAllTokenOwners(): Promise<TokenOwner[]> {
+  /**
+   * Loops through each token ID and get the owner's address + lender address
+   * This method is supposed to recreate the in-memory list of mints after a server restart
+   * It does not uses token transfers to build the list, because there might be a huge amout of past transfers
+   *
+   * WARNING: this code only works if the first token starts with number 0!
+   */
+  async getAllCurrentTokenOwners(): Promise<TokenOwner[]> {
 
     const totalSupply = parseInt(await this.contract.totalSupply());
 
+    return await Promise.all(
+      createFilledArray(totalSupply).map(async (tokenId: number) => await this.extractTokenOwner(tokenId)));
 
-    // Loop through each token ID and get the owner's address
-    const tokenOwners: TokenOwner[] = [];
-    for (let tokenId = 0; tokenId < totalSupply; tokenId++) {
-
-      const owner = await this.contract.ownerOf(tokenId);
-
-      let lender = await this.contract.tokenOwnersOnLoan(tokenId);
-      if (lender === ZERO_ADDRESS) {
-        lender = undefined;
-      }
-
-      tokenOwners.push({
-        tokenId,
-        owner,
-        ownerName: await this.lookupName(owner),
-        lender,
-        lenderName: await this.lookupName(lender)
-      });
-    }
+      /*
 
     this.contract.on('Transfer', async (from: string, to: string, tokenId: number) => {
       Logger.verbose(`NFT token ID ${tokenId} transferred from ${from} to ${to}`);
@@ -191,17 +148,46 @@ export class ContractService {
       };
     });
 
-    return tokenOwners;
+    return tokenOwners;*/
   }
 
-  // this response is shared between all services
-  async lookupName(address: string | null) {
+  private async extractTokenOwner(tokenId: number): Promise<TokenOwner> {
+    console.log(tokenId)
+
+    const owner$: Promise<string> = this.contract.ownerOf(tokenId);
+    const lender$: Promise<string> = (this.tokenConfig.implementsLendable) ? this.contract.tokenOwnersOnLoan(tokenId) : Promise.resolve(ZERO_ADDRESS);
+
+    const [owner, lender] = await Promise.all([owner$, lender$]);
+
+    const ownerName$ = this.lookupName(owner);
+    const lenderName$ = (lender !== ZERO_ADDRESS) ? this.lookupName(lender) : Promise.resolve(null);
+
+    const [ownerName, lenderName] = await Promise.all([ownerName$, lenderName$]);
+
+    const tokenOwner: TokenOwner = {
+      tokenId,
+      owner,
+      ownerName
+    }
+
+    if (lender !== ZERO_ADDRESS) {
+      tokenOwner.lender = lender;
+      tokenOwner.lenderName = lenderName;
+    }
+
+
+    return tokenOwner;
+  }
+
+  /**
+   * Resolves to the ENS name associated for the address or null if the primary name is not configured.
+   * (this response is shared/cached between all services)
+  */
+  private async lookupName(address: string | null) {
 
     if (!address) {
       return null;
     }
-
-    // console.log('ENS lookup: ' +  address)
 
     return this.cacheService.loadCachedSync('name_' + address, async () => {
 
@@ -211,7 +197,7 @@ export class ContractService {
         return name;
 
       } catch (ex) {
-        console.info('Catched ENS lookup for ' + address + '.\nException: ' +  ex.message);
+        Logger.warn('Catched Exception - ENS lookup for ' + address + '.\nException: ' +  ex.message);
       }
       return null;
     }, 60 * 60 * 12);

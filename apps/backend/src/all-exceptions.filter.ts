@@ -1,4 +1,4 @@
-import { Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import { Request, Response } from 'express';
 
@@ -22,6 +22,10 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
       path: request.url,
       message: message,
     };
+
+    if (status === 500) {
+      Logger.error('Internal Server Error', { path: request.url, message });
+    }
 
     response.status(status).json(errorResponse);
   }

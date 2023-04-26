@@ -13,6 +13,11 @@ export interface KnownTokenConfig {
   firstBlockNumber: number;
 
   /**
+   * implements ILendabke
+   */
+  implementsLendable?: boolean;
+
+  /**
    * implements IMosaic
    */
   implementsMosaics?: boolean;

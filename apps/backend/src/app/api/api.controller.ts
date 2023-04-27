@@ -42,6 +42,7 @@ import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
 import { TokenOwner } from '../types/token-owner';
 import { CacheService } from '../model/cache.service';
+import { ModuleRef } from '@nestjs/core';
 
 
 @ApiTags('api')
@@ -49,22 +50,22 @@ import { CacheService } from '../model/cache.service';
 export class ApiController {
 
   private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
-  private contractServices = { } as { [tokenName in KnownTokenName.genesis]: ContractService };
+  // private contractServices = { } as { [tokenName in KnownTokenName.genesis]: ContractService };
 
   constructor(
     private configService: ConfigService,
     private allowlistService: AllowlistService,
     private metadataGenesisService: MetadataGenesisService,
     private imageService: ImageService,
-    private cacheService: CacheService) {
+    private moduleRef: ModuleRef) {
 
-      for (const tokenName in KnownTokenName) {
-        this.contractServices[tokenName] = new ContractService(
-          configService,
-          tokenName as KnownTokenName,
-          this.cacheService);
-      }
-    }
+      // for (const tokenName in KnownTokenName) {
+      //   this.contractServices[tokenName] = new ContractService(
+      //     configService,
+      //     tokenName as KnownTokenName,
+      //     this.cacheService);
+      // }
+  }
 
   /**
    * Minting via allowlist, or limited mint.
@@ -142,7 +143,7 @@ export class ApiController {
       throw new NotFoundException('Unknown token name');
     }
 
-    const contractService = this.contractServices[tokenName];
+    const contractService = this.moduleRef.get<ContractService>(tokenName);
 
     const token = this.knownTokens.find(x => x.name === tokenName);
 
@@ -164,10 +165,10 @@ export class ApiController {
         signer: getSigner(this.configService.get('signerKey_' + token.name)).address,
         allowlistEntries: this.allowlistService.getMintWallets(token.name).length,
 
-        contractName: (await contractService.getContractName(token.name)),
-        totalSupply: (await contractService.getTotalSupply(token.name)),
-        price: (await contractService.getPrice(token.name)),
-        priceForMosaic: token.implementsMosaics ? (await contractService.getPriceForMosaic(token.name)) : '-1',
+        contractName: (await contractService.getContractName()),
+        totalSupply: (await contractService.getTotalSupply()),
+        price: (await contractService.getPrice()),
+        priceForMosaic: token.implementsMosaics ? (await contractService.getPriceForMosaic()) : '-1',
       }
     };
   }
@@ -187,8 +188,8 @@ export class ApiController {
       throw new ForbiddenException('This method should not be called on production');
     }
 
-    const contractService = this.contractServices[tokenName];
-    return await contractService.getAllMints(tokenName);
+    const contractService = this.moduleRef.get<ContractService>(tokenName);
+    return await contractService.getAllCurrentMints();
   }
 
   @Get(['api/debugRawMetadata/:tokenName'])
@@ -230,8 +231,8 @@ export class ApiController {
   @Header('Cache-Control', 'no-cache')
   async allTokenMetadata(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
-    const contractService = this.contractServices[tokenName];
-    const allMints = await contractService.getAllCurrentMints(tokenName);
+    const contractService = this.moduleRef.get<ContractService>(tokenName);
+    const allMints = await contractService.getAllCurrentMints();
 
     if (tokenName === KnownTokenName.genesis) {
       return this.metadataGenesisService.generateMetadata(allMints);
@@ -374,8 +375,8 @@ ${
   @ApiResponse({ type: TokenOwner, isArray: true })
   @Header('Cache-Control', 'no-cache')
   async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
-    const contractService = this.contractServices[tokenName];
-    return await contractService.getAllCurrentTokenOwners(tokenName);
+    const contractService = this.moduleRef.get<ContractService>(tokenName);
+    return await contractService.getAllCurrentTokenOwners();
   }
 
   @Get(['api/tokenOwner/:tokenName/:tokenId'])
@@ -387,8 +388,8 @@ ${
   @Header('Cache-Control', 'no-cache')
   async tokenOwner(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<TokenOwner> {
 
-    const contractService = this.contractServices[tokenName];
-    const allTokenOwners = await contractService.getAllCurrentTokenOwners(tokenName);
+    const contractService = this.moduleRef.get<ContractService>(tokenName);
+    const allTokenOwners = await contractService.getAllCurrentTokenOwners();
     const tokenOwner = allTokenOwners[tokenId];
 
     if (!tokenOwner) {

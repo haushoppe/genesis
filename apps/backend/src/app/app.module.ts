@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -12,6 +12,8 @@ import { AllowlistService } from './model/allowlist.service';
 import { CacheService } from './model/cache.service';
 import { ImageService } from './model/image.service';
 import { MetadataGenesisService } from './model/metadata-genesis.service';
+import { KnownTokenName, allKnownTokenNames } from '../../../shared/known-token-name';
+import { ContractService } from './model/contract.service';
 
 
 @Module({
@@ -40,10 +42,23 @@ import { MetadataGenesisService } from './model/metadata-genesis.service';
     // })
   ],
   controllers: [AppController, ApiController, ScalesController, CubeController],
-  providers: [AllowlistService,
+  providers: [
+    AllowlistService,
     MetadataGenesisService,
     ImageService,
-    CacheService
+    CacheService,
+    ...allKnownTokenNames.map((tokenName: KnownTokenName) => ({
+      provide: tokenName,
+      useFactory: (
+        configService: ConfigService,
+        cacheService: CacheService
+      ) => {
+        return new ContractService(configService, tokenName, cacheService);
+      },
+      inject: [ConfigService, CacheService]
+    }))
   ],
 })
 export class AppModule { }
+
+

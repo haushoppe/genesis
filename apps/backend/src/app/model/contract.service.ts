@@ -12,7 +12,7 @@ import { CacheService } from './cache.service';
 import { createFilledArray } from './contract.service.helper';
 
 @Injectable()
-export class ContractService {
+export class ContractService  {
 
   private readonly knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
   private readonly tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
@@ -23,6 +23,14 @@ export class ContractService {
     private configService: ConfigService,
     private tokenName: KnownTokenName,
     private cacheService: CacheService) {
+  }
+
+  /**
+   * Performing async tasks before controllers are available
+   */
+  async onModuleInit() {
+    await new Promise(resolve => setTimeout(resolve, 1));
+    Logger.log('ContractService initialized for ' + this.tokenName);
   }
 
   private getProvider() {
@@ -152,7 +160,6 @@ export class ContractService {
   }
 
   private async extractTokenOwner(tokenId: number): Promise<TokenOwner> {
-    console.log(tokenId)
 
     const owner$: Promise<string> = this.contract.ownerOf(tokenId);
     const lender$: Promise<string> = (this.tokenConfig.implementsLendable) ? this.contract.tokenOwnersOnLoan(tokenId) : Promise.resolve(ZERO_ADDRESS);

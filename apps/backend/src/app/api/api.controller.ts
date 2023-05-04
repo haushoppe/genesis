@@ -168,7 +168,7 @@ export class ApiController {
         contractName: (await contractService.getContractName()),
         totalSupply: (await contractService.getTotalSupply()),
         price: (await contractService.getPrice()),
-        priceForMosaic: token.implementsMosaics ? (await contractService.getPriceForMosaic()) : '-1',
+        priceForMosaic: (await contractService.getPriceForMosaic()),
       }
     };
   }

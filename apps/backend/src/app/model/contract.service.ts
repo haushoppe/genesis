@@ -9,10 +9,10 @@ import { ZERO_ADDRESS } from './ethers-utils';
 import { knownAbis } from '../../../../shared/known-abis';
 import { TokenOwner } from '../types/token-owner';
 import { CacheService } from './cache.service';
-import { createFilledArray } from './contract.service.helper';
+import { createFilledArray, extractMintInfo, extractTokenOwner } from './contract.service.helper';
 
 @Injectable()
-export class ContractService  {
+export class ContractService {
 
   private readonly knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
   private readonly tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
@@ -30,7 +30,18 @@ export class ContractService  {
    */
   async onModuleInit() {
     await new Promise(resolve => setTimeout(resolve, 1));
-    Logger.log('ContractService initialized for ' + this.tokenName);
+    Logger.log('Initializing ContractService', this.tokenName);
+
+    Logger.log('Contract Name: ' + await this.getContractName(), this.tokenName);
+    Logger.log('Price: ' + ethers.formatEther(await this.getPrice()) + ' ETH', this.tokenName);
+
+    if (this.tokenConfig.implementsMosaics) {
+      Logger.log('Price for Mosaic: ' + ethers.formatEther(await this.getPriceForMosaic()) + ' ETH', this.tokenName);
+    }
+
+    await this.getAllCurrentMints();
+    await this.getAllCurrentTokenOwners();
+
   }
 
   private getProvider() {
@@ -78,6 +89,9 @@ export class ContractService  {
 
   private _priceForMosaic?: string;
   async getPriceForMosaic(): Promise<string> {
+    if (!this.tokenConfig.implementsMosaics) {
+      return '-1';
+    }
     return this._priceForMosaic || (this._priceForMosaic = (await this.contract.priceForMosaic()).toString());
   }
 
@@ -97,30 +111,15 @@ export class ContractService  {
     const events = await this.contract.queryFilter(filter, this.tokenConfig.firstBlockNumber, 'latest');
 
     return await Promise.all(
-      events.map(async (e: EventLog) => await this.extractMintInfo(e)));
+      events.map(async (event: EventLog) => await extractMintInfo(
+        event,
+        this.tokenConfig.implementsMosaics,
+        this.contract)
+      )
+    );
   }
 
-  private async extractMintInfo(event: EventLog): Promise<MintInfo> {
 
-    const mintInfo: MintInfo = {
-      mintedBy: event.args[1],
-      tokenId: parseInt(event.args[2]),
-      transactionHash: event.transactionHash,
-      blockNumber: event.blockNumber
-    }
-
-    // proprietary extra: IMosaic
-    if (this.tokenConfig.implementsMosaics) {
-
-      const isMosaic = await this.contract.isMosaic(mintInfo.tokenId)
-      if (isMosaic) {
-        mintInfo.isMosaic = true
-        mintInfo.mosaics = (await this.contract.mosaics(mintInfo.tokenId)).map((x: string) => parseInt(x));
-      }
-    }
-
-    return mintInfo;
-  }
 
   /**
    * Loops through each token ID and get the owner's address + lender address
@@ -134,9 +133,16 @@ export class ContractService  {
     const totalSupply = parseInt(await this.contract.totalSupply());
 
     return await Promise.all(
-      createFilledArray(totalSupply).map(async (tokenId: number) => await this.extractTokenOwner(tokenId)));
+      createFilledArray(totalSupply).map(async (tokenId: number) => await extractTokenOwner(
+        tokenId,
+        this.tokenConfig.implementsLendable,
+        this.lookupName.bind(this),
+        this.contract
+        )
+      )
+    );
 
-      /*
+    /*
 
     this.contract.on('Transfer', async (from: string, to: string, tokenId: number) => {
       Logger.verbose(`NFT token ID ${tokenId} transferred from ${from} to ${to}`);
@@ -159,38 +165,13 @@ export class ContractService  {
     return tokenOwners;*/
   }
 
-  private async extractTokenOwner(tokenId: number): Promise<TokenOwner> {
 
-    const owner$: Promise<string> = this.contract.ownerOf(tokenId);
-    const lender$: Promise<string> = (this.tokenConfig.implementsLendable) ? this.contract.tokenOwnersOnLoan(tokenId) : Promise.resolve(ZERO_ADDRESS);
-
-    const [owner, lender] = await Promise.all([owner$, lender$]);
-
-    const ownerName$ = this.lookupName(owner);
-    const lenderName$ = (lender !== ZERO_ADDRESS) ? this.lookupName(lender) : Promise.resolve(null);
-
-    const [ownerName, lenderName] = await Promise.all([ownerName$, lenderName$]);
-
-    const tokenOwner: TokenOwner = {
-      tokenId,
-      owner,
-      ownerName
-    }
-
-    if (lender !== ZERO_ADDRESS) {
-      tokenOwner.lender = lender;
-      tokenOwner.lenderName = lenderName;
-    }
-
-
-    return tokenOwner;
-  }
 
   /**
    * Resolves to the ENS name associated for the address or null if the primary name is not configured.
    * (this response is shared/cached between all services)
   */
-  private async lookupName(address: string | null) {
+  private async lookupName(address: string | null): Promise<string> {
 
     if (!address) {
       return null;
@@ -204,7 +185,7 @@ export class ContractService  {
         return name;
 
       } catch (ex) {
-        Logger.warn('Catched Exception - ENS lookup for ' + address + '.\nException: ' +  ex.message);
+        Logger.warn('Catched Exception - ENS lookup for ' + address + '.\nException: ' + ex.message);
       }
       return null;
     }, 60 * 60 * 12);

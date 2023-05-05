@@ -2,6 +2,7 @@ import { EventLog, ethers } from "ethers";
 import { MintInfo } from "../types/mint-info";
 import { TokenOwner } from "../types/token-owner";
 import { ZERO_ADDRESS } from "./ethers-utils";
+import { Logger } from "@nestjs/common";
 
 /**
  * Creates an array with incrementing numbers.
@@ -11,11 +12,21 @@ import { ZERO_ADDRESS } from "./ethers-utils";
  */
 export const createFilledArray = (n: number): number[] => [...Array(n).keys()];
 
-
+/**
+ * Extracts mint information for a given token ID from an Ethereum contract,
+ * and if the contract implements the IMosaic functionality, it also retrieves the mosaic information.
+ * @param {EventLog} event - The EventLog object containing minting information.
+ * @param {boolean} implementsMosaics - A flag indicating whether the contract implements the IMosaic functionality.
+ * @param {ethers.Contract} contract - The Ethereum contract instance.
+ * @returns {Promise<MintInfo>} A Promise that resolves to a MintInfo object containing the minting information and, if applicable, the mosaic information.
+*/
 export async function extractMintInfo(
   event: EventLog,
   implementsMosaics: boolean,
+  tokenName: string,
   contract: ethers.Contract): Promise<MintInfo> {
+
+  Logger.verbose(`Transfer: #${parseInt(event.args[2])} from ${event.args[0]} to ${event.args[1]}`, tokenName);
 
   const mintInfo: MintInfo = {
     mintedBy: event.args[1],
@@ -38,13 +49,13 @@ export async function extractMintInfo(
 }
 
 /**
- * This function extracts the token owner and, if applicable, the lender information for a given token ID from an Ethereum contract.
+ * Extracts the token owner and, if applicable, the lender information for a given token ID from an Ethereum contract.
  * If the contract implements lendable functionality, the lender information will be included in the returned TokenOwner object.
  *
- * @param tokenId - The ID of the token for which to extract owner and lender information.
- * @param implementsLendable - A flag indicating whether the contract implements lendable functionality. (ILendable)
- * @param contract - The Ethereum contract instance.
- * @returns A Promise that resolves to a TokenOwner object containing the token owner and lender information.
+ * @param {number} tokenId - The ID of the token for which to extract owner and lender information.
+ * @param {boolean} implementsLendable - A flag indicating whether the contract implements lendable functionality.
+ * @param {ethers.Contract} contract - The Ethereum contract instance.
+ * @returns {Promise<TokenOwner>} A Promise that resolves to a TokenOwner object containing the token owner and lender information.
  */
 export async function extractTokenOwner(
   tokenId: number,

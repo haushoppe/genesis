@@ -19,6 +19,9 @@ export class ContractService {
   private readonly provider: ethers.Provider = this.getProvider();
   private readonly contract: ethers.Contract = this.getContract();
 
+  private allMints: MintInfo[] = [];
+  private allTokenOwners: TokenOwner[] = [];
+
   constructor(
     private configService: ConfigService,
     private tokenName: KnownTokenName,
@@ -29,6 +32,10 @@ export class ContractService {
    * Performing async tasks before controllers are available
    */
   async onModuleInit() {
+    if (this.tokenName != KnownTokenName.genesis) {
+      return
+    }
+
     await new Promise(resolve => setTimeout(resolve, 1));
     Logger.log('Initializing ContractService', this.tokenName);
 
@@ -39,9 +46,14 @@ export class ContractService {
       Logger.log('Price for Mosaic: ' + ethers.formatEther(await this.getPriceForMosaic()) + ' ETH', this.tokenName);
     }
 
-    await this.getAllCurrentMints();
-    await this.getAllCurrentTokenOwners();
+    this.allMints = await this.getAllCurrentMints();
+    Logger.log('Amount of Mints: ' + this.allMints.length, this.tokenName);
 
+    this.allTokenOwners = await this.getAllCurrentTokenOwners();
+    Logger.log('Amount of Token Owners: ' + this.allTokenOwners.length, this.tokenName);
+
+    Logger.log('Everything set up. Now watching for new transfers...', this.tokenName);
+    this.watchForTransfers();
   }
 
   private getProvider() {
@@ -82,29 +94,35 @@ export class ContractService {
     return this._contractName || (this._contractName = await this.contract.name());
   }
 
-  private _price?: string;
+  private price?: string;
   async getPrice(): Promise<string> {
-    return this._price || (this._price = (await this.contract.price()).toString());
+    return this.price || (this.price = (await this.contract.price()).toString());
   }
 
-  private _priceForMosaic?: string;
+  private priceForMosaic?: string;
   async getPriceForMosaic(): Promise<string> {
     if (!this.tokenConfig.implementsMosaics) {
       return '-1';
     }
-    return this._priceForMosaic || (this._priceForMosaic = (await this.contract.priceForMosaic()).toString());
+    return this.priceForMosaic || (this.priceForMosaic = (await this.contract.priceForMosaic()).toString());
   }
 
   async getTotalSupply(): Promise<number> {
     return parseInt(await this.contract.totalSupply());
   }
 
+  /**
+   * Retrieves all known mints
+   */
+  async getAllMints(): Promise<MintInfo[]> {
+    return Promise.resolve(this.allMints)
+  }
 
   /**
    * Retrieves all current mints by querying all token transfers from 0x0 to the new owner
    * This method is supposed to recreate the in-memory list of mints after a server restart
    */
-  async getAllCurrentMints(): Promise<MintInfo[]> {
+  private async getAllCurrentMints(): Promise<MintInfo[]> {
 
     // List all token transfers *from* zero address!
     const filter = this.contract.filters.Transfer(ZERO_ADDRESS);
@@ -114,12 +132,18 @@ export class ContractService {
       events.map(async (event: EventLog) => await extractMintInfo(
         event,
         this.tokenConfig.implementsMosaics,
+        this.tokenName,
         this.contract)
       )
     );
   }
 
-
+  /**
+   * Retrieves all token owners
+   */
+  async getAllTokenOwners(): Promise<TokenOwner[]> {
+    return Promise.resolve(this.allTokenOwners)
+  }
 
   /**
    * Loops through each token ID and get the owner's address + lender address
@@ -128,7 +152,7 @@ export class ContractService {
    *
    * WARNING: this code only works if the first token starts with number 0!
    */
-  async getAllCurrentTokenOwners(): Promise<TokenOwner[]> {
+  private async getAllCurrentTokenOwners(): Promise<TokenOwner[]> {
 
     const totalSupply = parseInt(await this.contract.totalSupply());
 
@@ -141,11 +165,12 @@ export class ContractService {
         )
       )
     );
+  }
 
-    /*
+  private async watchForTransfers() {
 
     this.contract.on('Transfer', async (from: string, to: string, tokenId: number) => {
-      Logger.verbose(`NFT token ID ${tokenId} transferred from ${from} to ${to}`);
+      Logger.verbose(`Transfer: #${tokenId} from ${from} to ${to}`, this.tokenName);
 
       let lender = await this.contract.tokenOwnersOnLoan(tokenId);
       if (lender === ZERO_ADDRESS) {
@@ -153,19 +178,15 @@ export class ContractService {
       }
 
       // Update the owners object
-      tokenOwners[tokenId] = {
-        tokenId,
-        owner: to,
-        ownerName: await this.lookupName(to),
-        lender,
-        lenderName: await this.lookupName(lender)
-      };
+      // tokenOwners[tokenId] = {
+      //   tokenId,
+      //   owner: to,
+      //   ownerName: await this.lookupName(to),
+      //   lender,
+      //   lenderName: await this.lookupName(lender)
+      // };
     });
-
-    return tokenOwners;*/
   }
-
-
 
   /**
    * Resolves to the ENS name associated for the address or null if the primary name is not configured.

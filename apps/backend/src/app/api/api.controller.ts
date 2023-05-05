@@ -87,7 +87,7 @@ export class ApiController {
     const tokenName = mintRequest.tokenName;
     const sender = mintRequest.sender.toLowerCase();
 
-    Logger.verbose(`Mint ticked requested for token ${tokenName} by sender ${sender}`);
+    Logger.verbose(`Mint ticked requested by sender ${sender}`, tokenName);
 
     if (!this.knownTokens.map(x => x.name).includes(tokenName)) {
       throw new NotFoundException('Unknown token name');
@@ -189,7 +189,7 @@ export class ApiController {
     }
 
     const contractService = this.moduleRef.get<ContractService>(tokenName);
-    return await contractService.getAllCurrentMints();
+    return await contractService.getAllMints();
   }
 
   @Get(['api/debugRawMetadata/:tokenName'])
@@ -232,7 +232,7 @@ export class ApiController {
   async allTokenMetadata(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
     const contractService = this.moduleRef.get<ContractService>(tokenName);
-    const allMints = await contractService.getAllCurrentMints();
+    const allMints = await contractService.getAllMints();
 
     if (tokenName === KnownTokenName.genesis) {
       return this.metadataGenesisService.generateMetadata(allMints);
@@ -376,7 +376,7 @@ ${
   @Header('Cache-Control', 'no-cache')
   async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
     const contractService = this.moduleRef.get<ContractService>(tokenName);
-    return await contractService.getAllCurrentTokenOwners();
+    return await contractService.getAllTokenOwners();
   }
 
   @Get(['api/tokenOwner/:tokenName/:tokenId'])
@@ -389,7 +389,7 @@ ${
   async tokenOwner(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number): Promise<TokenOwner> {
 
     const contractService = this.moduleRef.get<ContractService>(tokenName);
-    const allTokenOwners = await contractService.getAllCurrentTokenOwners();
+    const allTokenOwners = await contractService.getAllTokenOwners();
     const tokenOwner = allTokenOwners[tokenId];
 
     if (!tokenOwner) {

@@ -23,14 +23,14 @@ export const createFilledArray = (n: number): number[] => [...Array(n).keys()];
 export async function extractMintInfo(
   event: EventLog,
   implementsMosaics: boolean,
-  tokenName: string,
   contract: ethers.Contract): Promise<MintInfo> {
 
-  Logger.verbose(`Transfer: #${parseInt(event.args[2])} from ${event.args[0]} to ${event.args[1]}`, tokenName);
+  const [, to, tokenId_ ] = event.args;
+  const tokenId = parseInt(tokenId_);
 
   const mintInfo: MintInfo = {
-    mintedBy: event.args[1],
-    tokenId: parseInt(event.args[2]),
+    mintedBy: to,
+    tokenId,
     transactionHash: event.transactionHash,
     blockNumber: event.blockNumber
   }
@@ -49,7 +49,7 @@ export async function extractMintInfo(
 }
 
 /**
- * Extracts the token owner and, if applicable, the lender information for a given token ID from an Ethereum contract.
+ * Extracts the token owner ADDRESS AND NAME and, if applicable, the lender information for a given token ID from an Ethereum contract.
  * If the contract implements lendable functionality, the lender information will be included in the returned TokenOwner object.
  *
  * @param {number} tokenId - The ID of the token for which to extract owner and lender information.
@@ -67,6 +67,45 @@ export async function extractTokenOwner(
   const lender$: Promise<string> = implementsLendable ? contract.tokenOwnersOnLoan(tokenId) : Promise.resolve(ZERO_ADDRESS);
 
   const [owner, lender] = await Promise.all([owner$, lender$]);
+
+  const ownerName$ = lookupNameCallback(owner);
+  const lenderName$ = (lender !== ZERO_ADDRESS) ? lookupNameCallback(lender) : Promise.resolve(null);
+
+  const [ownerName, lenderName] = await Promise.all([ownerName$, lenderName$]);
+
+  const tokenOwner: TokenOwner = {
+    tokenId,
+    owner,
+    ownerName
+  }
+
+  if (lender !== ZERO_ADDRESS) {
+    tokenOwner.lender = lender;
+    tokenOwner.lenderName = lenderName;
+  }
+
+  return tokenOwner;
+}
+
+/**
+ * Extracts the token owner NAME and, if applicable, the lender information for a given token ID from an Ethereum contract.
+ * If the contract implements lendable functionality, the lender information will be included in the returned TokenOwner object.
+ *
+ * @param {number} tokenId - The ID of the token for which to extract owner and lender information.
+ * @param {string} owner - The already known address of the new token owner
+ * @param {boolean} implementsLendable - A flag indicating whether the contract implements lendable functionality.
+ * @param {ethers.Contract} contract - The Ethereum contract instance.
+ * @returns {Promise<TokenOwner>} A Promise that resolves to a TokenOwner object containing the token owner and lender information.
+ */
+export async function extractSimpleTokenOwner(
+  tokenId: number,
+  owner: string,
+  implementsLendable: boolean,
+  lookupNameCallback: (address: string | null) => Promise<string>,
+  contract: ethers.Contract): Promise<TokenOwner> {
+
+  const lender$: Promise<string> = implementsLendable ? contract.tokenOwnersOnLoan(tokenId) : Promise.resolve(ZERO_ADDRESS);
+  const lender = await lender$;
 
   const ownerName$ = lookupNameCallback(owner);
   const lenderName$ = (lender !== ZERO_ADDRESS) ? lookupNameCallback(lender) : Promise.resolve(null);

@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventLog, ethers } from 'ethers';
+import { ethers, EventLog } from 'ethers';
 
-import { KnownTokenConfig } from '../config/known-token-config';
-import { KnownTokenName } from '../../../../shared/known-token-name';
-import { MintInfo } from '../types/mint-info';
-import { ZERO_ADDRESS } from './ethers-utils';
 import { knownAbis } from '../../../../shared/known-abis';
+import { KnownTokenName } from '../../../../shared/known-token-name';
+import { KnownTokenConfig } from '../config/known-token-config';
+import { MintInfo } from '../types/mint-info';
 import { TokenOwner } from '../types/token-owner';
 import { CacheService } from './cache.service';
-import { createFilledArray, extractMintInfo, extractTokenOwner } from './contract.service.helper';
+import { createFilledArray, extractMintInfo, extractSimpleTokenOwner, extractTokenOwner } from './contract.service.helper';
+import { ZERO_ADDRESS } from './ethers-utils';
 
 @Injectable()
 export class ContractService {
@@ -50,10 +50,10 @@ export class ContractService {
     Logger.log('Amount of Mints: ' + this.allMints.length, this.tokenName);
 
     this.allTokenOwners = await this.getAllCurrentTokenOwners();
-    Logger.log('Amount of Token Owners: ' + this.allTokenOwners.length, this.tokenName);
+    Logger.log('Amount of Token Owner Records: ' + this.allTokenOwners.length, this.tokenName);
 
     Logger.log('Everything set up. Now watching for new transfers...', this.tokenName);
-    this.watchForTransfers();
+    this.listenForNewTransferEvents();
   }
 
   private getProvider() {
@@ -129,12 +129,16 @@ export class ContractService {
     const events = await this.contract.queryFilter(filter, this.tokenConfig.firstBlockNumber, 'latest');
 
     return await Promise.all(
-      events.map(async (event: EventLog) => await extractMintInfo(
-        event,
-        this.tokenConfig.implementsMosaics,
-        this.tokenName,
-        this.contract)
-      )
+      events.map(async (event: EventLog) => {
+
+        const [from, to, tokenId_] = event.args;
+        Logger.verbose(`Transfer: #${parseInt(tokenId_)} from ${from} to ${to}`, this.tokenName);
+
+        return await extractMintInfo(
+          event,
+          this.tokenConfig.implementsMosaics,
+          this.contract);
+      })
     );
   }
 
@@ -162,29 +166,65 @@ export class ContractService {
         this.tokenConfig.implementsLendable,
         this.lookupName.bind(this),
         this.contract
-        )
+      )
       )
     );
   }
 
-  private async watchForTransfers() {
+  /**
+   * Listens for new Transfer events from the contract and updates the state accordingly.
+   * This method should be called once to start listening for events.
+   * Handles new mint events, normal token transfers, and checks for duplicated events.
+   *
+   * Hint: duplicated events could be related to this:
+   * https://github.com/ethers-io/ethers.js/issues/4013
+   */
+  private async listenForNewTransferEvents() {
 
-    this.contract.on('Transfer', async (from: string, to: string, tokenId: number) => {
+    const filter = this.contract.filters.Transfer(null, null, null);
+    this.contract.on(filter, async (event: EventLog) => {
+
+      const [from, to, tokenId_] = event.args;
+      const tokenId = parseInt(tokenId_);
       Logger.verbose(`Transfer: #${tokenId} from ${from} to ${to}`, this.tokenName);
 
-      let lender = await this.contract.tokenOwnersOnLoan(tokenId);
-      if (lender === ZERO_ADDRESS) {
-        lender = undefined
-      }
+      // new mint
+      if (from == ZERO_ADDRESS) {
 
-      // Update the owners object
-      // tokenOwners[tokenId] = {
-      //   tokenId,
-      //   owner: to,
-      //   ownerName: await this.lookupName(to),
-      //   lender,
-      //   lenderName: await this.lookupName(lender)
-      // };
+        if (this.allMints.find(m => m.tokenId === tokenId)) {
+          Logger.verbose(`Duplicated mint event detected! Skipping.`);
+        } else {
+
+          const mint = await extractMintInfo(
+            event,
+            this.tokenConfig.implementsMosaics,
+            this.contract);
+
+          this.allMints = [...this.allMints, mint];
+        }
+
+        // normal token transfer
+      } else {
+
+        const oldTokenOwner = this.allTokenOwners.find(t => t.tokenId === tokenId);
+        if (!oldTokenOwner) {
+          throw new Error(`Non-consistent state detected. There is no token owner record for the token #${tokenId} for collection #${this.tokenName}!`);
+        }
+
+        if (oldTokenOwner.owner === to) {
+          Logger.verbose(`Duplicated transfer event detected! Skipping.`);
+        } else {
+
+          const newTokenOwner = await extractSimpleTokenOwner(
+            tokenId,
+            to,
+            this.tokenConfig.implementsLendable,
+            this.lookupName.bind(this),
+            this.contract
+          )
+          this.allTokenOwners = this.allTokenOwners.map(t => t.tokenId === tokenId ? newTokenOwner : t);
+        }
+      }
     });
   }
 

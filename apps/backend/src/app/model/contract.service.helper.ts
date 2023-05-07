@@ -1,8 +1,8 @@
-import { EventLog, ethers } from "ethers";
-import { MintInfo } from "../types/mint-info";
-import { TokenOwner } from "../types/token-owner";
-import { ZERO_ADDRESS } from "./ethers-utils";
-import { Logger } from "@nestjs/common";
+import { ethers, EventLog } from 'ethers';
+
+import { MintInfo } from '../types/mint-info';
+import { TokenOwner } from '../types/token-owner';
+import { ZERO_ADDRESS } from './ethers-utils';
 
 /**
  * Creates an array with incrementing numbers.

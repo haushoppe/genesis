@@ -181,6 +181,15 @@ export class ContractService {
    */
   private async listenForNewTransferEvents() {
 
+    // waiting for this to get released!
+    // Did the 'error' event listener get removed in v6, like provider.on('error', () => {})? #3970
+    //
+    // https://github.com/ethers-io/ethers.js/issues/3970
+    // https://github.com/ethers-io/ethers.js/commit/af0291c01639674658f5049343da88a84da763a1
+    // this.provider.on('error', (event) => {
+    //   console.log(event)
+    // })
+
     const filter = this.contract.filters.Transfer(null, null, null);
     this.contract.on(filter, async (event: EventLog) => {
 

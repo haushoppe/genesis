@@ -54,8 +54,8 @@ export class MintService {
     }
 
     const contract = await this.initContract(provider, contractAddress);
-    const totalSupply = (await contract.totalSupply());
-    return totalSupply;
+    const totalSupply = (await contract.totalSupply()); // BigInt!
+    return parseInt(totalSupply);
   }
 
   /**

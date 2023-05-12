@@ -1,4 +1,4 @@
-import { JsonPipe, NgIf } from '@angular/common';
+import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { SubmitStatus } from '../../store/submittable/submit-status';

@@ -12,5 +12,35 @@
     <meta name="theme-color" content="#ffffff">
 
   </head>
-  <body>Loading...</body>
+  <body>
+
+    <style>
+
+      .center-child {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        text-align: center;
+      }
+
+      @keyframes blink {
+        0% {opacity: 1;}
+        50% {opacity: 0;}
+        100% {opacity: 1;}
+      }
+
+      .blinking-text {
+        animation: blink 1s linear infinite;
+      }
+    </style>
+
+    <div class="center-child">
+      <div>
+        <h3>Genesis by HAUS HOPPE</h3>
+        <span class="blinking-text">Loading app ...</span>
+      </div>
+    </div>
+
+  </body>
 </html>

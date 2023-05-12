@@ -251,6 +251,12 @@ export class ContractService {
 
       try {
         const provider = this.getProvider();
+        // ENS does not enforce the accuracy of reverse records
+        // - for instance, anyone may claim that the name for their address is 'alice.eth'.
+        // To be certain that the claim is accurate, you must always perform a forward resolution
+        // for the returned name and check it matches the original address.
+        // --> ethers.js automatically checks that the forward resolution matches!
+        // (and returns null in that case)
         const name = await provider.lookupAddress(address);
         return name;
 

@@ -25,7 +25,7 @@ export class BlockyIdenticonComponent implements AfterViewInit {
   }
 
   @Input()
-  class?: string;
+  blockyClass?: string;
 
   ngAfterViewInit() {
     this.render();

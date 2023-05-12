@@ -57,3 +57,13 @@ export const selectProvider = createSelector(
   }
 );
 
+export function addressIsCurrentWallet(address: string | undefined) {
+
+  return createSelector(
+    selectWalletAddress,
+    walletAddress => {
+      if (!walletAddress || !address) { return false; }
+      return walletAddress.toLowerCase() === address.toLowerCase();
+    }
+  );
+}

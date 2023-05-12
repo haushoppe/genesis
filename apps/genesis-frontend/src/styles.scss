@@ -1,9 +1,25 @@
 /* You can add global styles to this file, and also import other style files */
 
+// bootstrap
 $primary: rgb(98, 98, 98);
 $enable-rounded: false;
 $enable-negative-margins: true;
-@import "bootstrap/scss/bootstrap.scss";
+
+@import "styles-bootstrap.scss";
+
+// kendo
+$kendo-font-weight-normal: 300;
+$kendo-font-size: 19.2px;
+$kendo-utils-border-radius: 0;
+$kendo-enable-rounded: false;
+
+.k-input-inner {
+  font-weight: 300 !important;
+}
+
+
+//@import "@progress/kendo-theme-default/scss/all.scss";
+@import "styles-kendo.scss";
 
 body {
   font-family: "Yantramanav", sans-serif;

@@ -1,4 +1,4 @@
-import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
+import { AsyncPipe, JsonPipe, KeyValuePipe, NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
@@ -27,7 +27,9 @@ import { LinkifyDirective } from './linkify.directive';
     LetModule,
     PushModule,
     AddressDisplayComponent,
-    LinkifyDirective
+    LinkifyDirective,
+    NgFor,
+    KeyValuePipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

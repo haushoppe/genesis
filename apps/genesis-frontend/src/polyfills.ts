@@ -51,6 +51,8 @@ import 'zone.js'; // Included with Angular CLI.
  * APPLICATION IMPORTS
  */
 
+import '@angular/localize/init'
+
 // Fixes:
 // ReferenceError: global is not defined
 // caused by the web3-onboard wallet modules

@@ -88,7 +88,8 @@ export class MintEffects {
 
   triggerClearOnWalletDisconnect$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(WalletActions.disconnectWalletDetected),
+      ofType(WalletActions.disconnectWallet,
+             WalletActions.disconnectWalletDetected),
       map(() => MintActions.clearMintTicket())
     );
   });

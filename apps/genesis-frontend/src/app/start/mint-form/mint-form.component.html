@@ -1,0 +1,79 @@
+<ng-container  *rxLet="walletFacade.configStatus$; let configStatus">
+  <ng-container  *rxLet="walletFacade.config$; let config">
+    <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
+      <ng-container *rxLet="mintFacade.mintTicket$; let mintTicket">
+        <ng-container *rxLet="mintFacade.mintAllowlistStatus$; let allowlistStatus">
+
+          <form *ngIf="mintTicket && mintTicket.maximumAllowedMints > 0 || walletStatus.submitStatus !== SubmitStatus.Successful"
+            (ngSubmit)="mintAllowlist()"
+            [formGroup]="form"
+            class="bg-light ms-2 p-3 mt-4 shadow border"
+            [ngClass]="{ formWithError: allowlistStatus.submitStatus === SubmitStatus.Failure }">
+            <div class="form-group row">
+              <label for="amount" class="col-4 col-form-label">Amount:</label>
+              <div class="col-8">
+
+                <kendo-numerictextbox
+                  format="n0"
+                  [min]="1"
+                  [max]="mintTicket ? mintTicket.maximumAllowedMints : 4"
+                  [formControl]="c.amount"
+                />
+
+              </div>
+            </div>
+            <div class="form-group row">
+              <label class="col-4 col-form-label">Price:</label>
+              <div class="col-8">
+
+                <strong class="d-block mt-2">
+                  {{ multiply(config?.price, c.amount.value) || '?' }} ETH
+                </strong>
+
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <div class="col text-center pt-2 pb-1">
+
+                <app-loading-indicator-button
+                  *ngIf="walletStatus.submitStatus !== SubmitStatus.Successful"
+                  [disabled]="configStatus.submitStatus !== SubmitStatus.Successful"
+                  (buttonClick)="walletFacade.connectWallet()"
+                  [state]="walletStatus"
+                  buttonText="Connect wallet"
+                  defaultIconClass="bi bi-wallet2"
+                />
+
+                <ng-container *rxLet="mintFacade.mintTicket$; let mintTicket">
+                  <ng-container *ngIf="mintTicket">
+
+                    <app-loading-indicator-button
+                      [disabled]="walletStatus.submitStatus !== SubmitStatus.Successful || form.invalid"
+                      [showAlertOnError]="true"
+                      (buttonClick)="mintAllowlist()"
+                      [state]="allowlistStatus"
+                      [buttonText]="allowlistStatus.submitStatus === SubmitStatus.Successful ? 'Mint successfully submitted' : puralisedMintText"
+                      defaultIconClass="bi bi-star"
+                    />
+
+                  </ng-container>
+                </ng-container>
+
+              </div>
+            </div>
+          </form>
+
+
+          <button
+            *ngIf="mintTicket && mintTicket.maximumAllowedMints === 0"
+            (click)="walletFacade.disconnectWallet()"
+            class="btn btn-secondary">Disconnect wallet<br><small>(and try another one)</small></button>
+
+
+        </ng-container>
+      </ng-container>
+    </ng-container>
+  </ng-container>
+</ng-container>
+

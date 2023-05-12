@@ -1,22 +1,81 @@
-.nav-masthead {
+// .nav-masthead {
 
-  .nav-link {
-    color: darkgray;
-    border-bottom: .25rem solid transparent;
-    + {
-      .nav-link {
-        margin-left: 1rem;
-      }
-    }
+//   .nav-link {
+//     color: darkgray;
+//     border-bottom: .25rem solid transparent;
+//     + {
+//       .nav-link {
+//         margin-left: 1rem;
+//       }
+//     }
+//   }
+
+//   .active {
+//     color: darkgray;
+//     ;
+//   }
+// }
+
+
+
+app-loading-indicator-button {
+  z-index: 2;
+  position: fixed;
+  top: 0;
+  right: 0;
+  margin-top: 16px;
+  margin-right: 16px;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 16px 0px
+}
+
+
+// X-Small devices (portrait phones, less than 576px)
+@media (min-width: 0) {
+  .logo-container {
+    width: 210px;
+    margin-top: 8px;
+    margin-left: 16px;
   }
 
-  .active {
-    color: darkgray;
-    ;
+  .logo {
+    width: 200px;
+    height: 24px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+  }
+
+  .presents {
+    display: none;
   }
 }
 
-.presents {
-  font-weight: 500;
-  color: #6c757d;
+
+// Medium devices (tablets, 768px and up)
+@media (min-width: 768px) {
+
+  .logo-container {
+    width: 420px;
+    text-align: center;
+    margin-right: auto !important;
+    margin-left: auto !important;
+  }
+
+  .logo {
+    width: 400px;
+    height: 48px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-right: 20px;
+  }
+
+  .presents {
+    display: inline;
+    font-weight: 500;
+    color: #6c757d;
+  }
+
+  app-loading-indicator-button {
+    margin-top: 24px;
+    margin-right: 24px;
+  }
 }

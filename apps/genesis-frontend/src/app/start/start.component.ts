@@ -13,6 +13,7 @@ import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 import { AddressDisplayComponent } from '../layout/address-display/address-display.component';
+import { MintFormComponent } from './mint-form/mint-form.component';
 
 
 const expandDuration = 500
@@ -33,7 +34,8 @@ const expandDuration = 500
       NgIf,
       LetModule,
       ForModule,
-      PushModule
+      PushModule,
+      MintFormComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [

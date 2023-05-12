@@ -119,13 +119,13 @@ export class MetadataGenesisService {
             value: artwork.year
           },
           {
-            trait_type: 'Amount of colors',
-            value: artwork.amountOfColors,
-            display_type: 'number'
+            trait_type: 'Artwork main color',
+            value: artwork.mainColor
           },
           {
-            trait_type: 'Main color',
-            value: artwork.mainColor
+            trait_type: 'Final colors',
+            value: artwork.amountOfColors,
+            display_type: 'number'
           }
         ]
       }

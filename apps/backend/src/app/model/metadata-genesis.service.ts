@@ -23,14 +23,11 @@ const externalUrlLocalhost = 'http://localhost:4201/nft/';
 const assetsBaseUrlLive = 'https://assets.haushoppe.art/genesis/';
 const assetsBaseUrlLocalhost = 'http://localhost:8080/genesis/';
 
-const mosaicBaseUrlLive = 'https://backend.haushoppe.art/api/tokenPreview/genesis/';
-const mosaicBaseUrlLocalhost = 'http://localhost:3333/api/tokenPreview/genesis/';
+const tokenPreviewBaseUrlLive = 'https://backend.haushoppe.art/api/tokenPreview/genesis/';
+const tokenPreviewBaseUrlLocalhost = 'http://localhost:3333/api/tokenPreview/genesis/';
 
 const animationBaseUrlLive = 'https://backend.haushoppe.art/api/tokenAnimation/genesis/';
 const animationBaseUrlLocalhost = 'http://localhost:3333/api/tokenAnimation/genesis/';
-
-const animationMosaicBaseUrlLive = 'https://backend.haushoppe.art/api/tokenAnimation/genesis/';
-const animationMosaicBaseUrlLocalhost = 'http://localhost:3333/api/tokenAnimation/genesis/';
 
 const fallbackImage = "https://genesis.haushoppe.art/assets/question-mark.svg";
 
@@ -80,7 +77,7 @@ export const genesisRawArtworks: WoodcutDetails[] = [
   // ,{
   //   name: 'The Closed Door',
   //   path: 'closed-door',
-  //   year: 2015,
+  //   year: '2015',
   //   amountOfColors: 9,
   //   mainColor: 'Orange',
   //   batch: 1
@@ -101,6 +98,7 @@ export class MetadataGenesisService {
 
     const externalUrl = this.environment === 'development' ? externalUrlLocalhost : externalUrlLive;
     const animationBaseUrl = this.environment === 'development' ? animationBaseUrlLocalhost : animationBaseUrlLive;
+    const tokenPreviewBaseUrl = this.environment === 'development' ? tokenPreviewBaseUrlLocalhost : tokenPreviewBaseUrlLive;
     const assetsBaseUrl = this.environment === 'development' ? assetsBaseUrlLocalhost : assetsBaseUrlLive;
 
     const results: Metadata[] = [];
@@ -112,7 +110,7 @@ export class MetadataGenesisService {
         description: descriptionNormalToken.replace('__AMOUNT__', artwork.amountOfColors + ''),
         external_url: externalUrl,
         animation_url: animationBaseUrl,
-        image: '?',
+        image: tokenPreviewBaseUrl,
         attributes: [
           {
             trait_type: 'Year',
@@ -148,7 +146,7 @@ export class MetadataGenesisService {
               trait_type: 'Type',
               value: 'Single print',
             }],
-          image: assetsBaseUrl + artwork.path + `/woodcut${i}.jpg`
+          rawImage: assetsBaseUrl + artwork.path + `/woodcut${i}.jpg`
         };
 
         results.push(metadata);
@@ -173,7 +171,7 @@ export class MetadataGenesisService {
               trait_type: 'Type',
               value: 'Multilayer print',
             }],
-          image: assetsBaseUrl + artwork.path + `/${i}colors.jpg`
+          rawImage: assetsBaseUrl + artwork.path + `/${i}colors.jpg`
         }
 
         if (finalPiece) {
@@ -239,6 +237,7 @@ export class MetadataGenesisService {
       tokenId
     };
     metadata.external_url = metadata.external_url + tokenId;
+    metadata.image = metadata.image + tokenId;
     metadata.animation_url = metadata.animation_url + tokenId;
     return metadata;
   }
@@ -252,8 +251,8 @@ export class MetadataGenesisService {
     tokenTile4: Metadata): Metadata {
 
     const externalUrl = this.environment === 'development' ? externalUrlLocalhost : externalUrlLive;
-    const mosaicBaseUrl = this.environment === 'development' ? mosaicBaseUrlLocalhost : mosaicBaseUrlLive;
-    const animationMosaicBaseUrl = this.environment === 'development' ? animationMosaicBaseUrlLocalhost : animationMosaicBaseUrlLive;
+    const tokenPreviewBaseUrl = this.environment === 'development' ? tokenPreviewBaseUrlLocalhost : tokenPreviewBaseUrlLive;
+    const animationBaseUrl = this.environment === 'development' ? animationBaseUrlLocalhost : animationBaseUrlLive;
 
     const metadata: Metadata = {
       name: 'Genesis Mosaic #' + mosaicCounter,
@@ -263,18 +262,14 @@ export class MetadataGenesisService {
         + `[${tokenTile3.name} (Token #${tokenTile3.tokenId})](${tokenTile3.external_url})  \n`
         + `[${tokenTile4.name} (Token #${tokenTile4.tokenId})](${tokenTile4.external_url})`,
       external_url: externalUrl + tokenId,
-      animation_url: `${animationMosaicBaseUrl}${tokenId}/${tokenTile1.tokenId}/${tokenTile2.tokenId}/${tokenTile3.tokenId}/${tokenTile4.tokenId}`,
-      image: mosaicBaseUrl + tokenId,
+      animation_url: `${animationBaseUrl}${tokenId}/${tokenTile1.tokenId}/${tokenTile2.tokenId}/${tokenTile3.tokenId}/${tokenTile4.tokenId}`,
+      image: tokenPreviewBaseUrl + tokenId,
 
       tile1TokenId: tokenTile1.tokenId,
       tile2TokenId: tokenTile2.tokenId,
       tile3TokenId: tokenTile3.tokenId,
       tile4TokenId: tokenTile4.tokenId,
 
-      tile1Image: tokenTile1.image,
-      tile2Image: tokenTile2.image,
-      tile3Image: tokenTile3.image,
-      tile4Image: tokenTile4.image,
       attributes: [
         {
           trait_type: 'Special trait',

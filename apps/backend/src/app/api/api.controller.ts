@@ -291,17 +291,14 @@ export class ApiController {
   async tokenPreview(@Param('tokenName') tokenName: KnownTokenName, @Param('tokenId', ParseIntPipe) tokenId: number, @Res() response: express.Response) {
 
     const allMints = await this.allTokenMetadata(tokenName);
-    const mosaic = allMints.find(x =>  x.tokenId === tokenId);
+    const token = allMints.find(x =>  x.tokenId === tokenId);
 
-    if (!mosaic) {
+    if (!token) {
       throw new NotFoundException('Unknown tokenId');
     }
 
-    if (!mosaic.isMosaic) {
-      throw new NotFoundException('This token is not a mosaic');
-    }
+    const imageBuffer = await this.imageService.getPreview(allMints, tokenName, tokenId);
 
-    const imageBuffer = await this.imageService.getMosiacPreview(tokenName, tokenId, mosaic);
     response.setHeader('Content-Type', 'image/png',);
     return response.send(imageBuffer);
   }

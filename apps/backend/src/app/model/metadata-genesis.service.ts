@@ -15,7 +15,7 @@ const descriptionMosaicToken = 'The Genesis collection is a series of woodcut ar
   + 'and mystical elements of the biblical creation story. Crafted using traditional techniques, the final woodcuts '
   + 'and all stages in the printing process have been transformed into digital collectibles.  \n'
   + '  \n'
-  + 'This is a mosaic that has been assembled from four other elements from the collection:  \n'
+  + 'This is a mosaic that has been assembled from four other elements:  \n'
 
 const externalUrlLive = 'https://genesis.haushoppe.art/nft/';
 const externalUrlLocalhost = 'http://localhost:4201/nft/';

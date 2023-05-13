@@ -59,9 +59,10 @@ export class WalletEffects implements OnInitEffects {
       withLatestFrom(this.store.select(selectWallet)),
       map(([, wallet]) => wallet),
       mergeMap(wallet => this.walletService.disconnect(wallet?.label)),
-      map(() => WalletActions.disconnectWalletDone())
+      // we will use disconnectWalletDetected which is always triggered
+      // map(() => WalletActions.disconnectWalletDone())
     );
-  });
+  }, { dispatch: false });
 
   captureWalletStateChange$ = createEffect(() => {
     return this.walletService.walletStateChange$.pipe(

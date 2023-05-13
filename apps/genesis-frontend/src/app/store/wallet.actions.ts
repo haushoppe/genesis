@@ -22,7 +22,7 @@ export const WalletActions = createActionGroup({
     'Wallet State Change': props<{ wallet: StrictWalletState }>(),
 
     'Disconnect Wallet': emptyProps(),
-    'Disconnect Wallet Done': emptyProps(),
+    // 'Disconnect Wallet Done': emptyProps(),
     'Disconnect Wallet Detected': emptyProps()
   }
 });

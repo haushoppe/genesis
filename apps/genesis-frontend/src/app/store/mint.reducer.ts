@@ -14,6 +14,7 @@ export interface State {
   allTokenMetadata: Metadata[];
   allTokenMetadataStatus: SubmittableState;
 
+  // info about one single token, used for the details page
   tokenMetadataAndOwner: { metadata: Metadata, owner: TokenOwner } | undefined;
   tokenMetadataAndOwnerStatus: SubmittableState;
 

@@ -74,7 +74,7 @@ export const walletFeature = createFeature({
       walletStatus: getFailureState({ message: 'No wallet was connected' })
     })),
 
-    on(WalletActions.disconnectWalletDone,
+    on(// WalletActions.disconnectWalletDone,
        WalletActions.disconnectWalletDetected, state => ({
       ...state,
       wallet: undefined,

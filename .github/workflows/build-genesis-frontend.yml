@@ -20,8 +20,8 @@ jobs:
       with:
         node-version: 18
 
-    - run: npm install
-    - run: npm install @nrwl/nx-linux-x64-gnu #bugfix broken build! 😕
+    - run: npm install --force
+    - run: npm install @nrwl/nx-linux-x64-gnu  --force #bugfix broken build! 😕
     - run: npx kendo-ui-license activate
       env:
         KENDO_UI_LICENSE: ${{ secrets.KENDO_UI_LICENSE }}

@@ -19,8 +19,8 @@ jobs:
       with:
         node-version: 18
 
-    - run: npm install
-    - run: npm install @nrwl/nx-linux-x64-gnu #bugfix broken build! 😕
+    - run: npm install --force
+    - run: npm install @nrwl/nx-linux-x64-gnu --force #bugfix broken build! 😕
     - run: npm run build:backend:production
     - name: Deploy Backend to `haushoppe/backend-build` repo
       env:

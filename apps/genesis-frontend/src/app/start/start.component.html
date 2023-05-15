@@ -46,7 +46,7 @@
 
         <br class="d-none d-lg-block">
 
-        Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> tokens have been minted.
+        Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> elements have been minted.
       </p>
 
       <p *ngIf="walletStatus.submitStatus === SubmitStatus.Successful" class="mb-0">
@@ -60,7 +60,7 @@
 
         <br class="d-none d-lg-block">
 
-        Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> tokens have been minted.
+        Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> elements have been minted.
 
         <ng-container *rxLet="mintFacade.mintTicket$; let mintTicket">
           <ng-container *ngIf="mintTicket && mintTicket.maximumAllowedMints > 0">
@@ -82,9 +82,52 @@
 </ng-container>
 
 
+<ng-container *rxLet="mintFacade.allTokenMetadataOfWallet$; let allTokenMetadataOfWallet">
+  <ng-container *ngIf="allTokenMetadataOfWallet.owned.length > 0">
+    <h2 class="mt-5">Your elements</h2>
+
+    <p class="mb-3">
+      Here they are - the elements that belong to you and only you.
+      Don't stop now, dive further into the world of Genesis.
+      With just four of these tokens, you can craft a Mosaic, another piece of the puzzle.
+      But that's not all. You can safely lend out your tokens, or maybe borrow some, and assemble new mosaic masterpieces!
+    </p>
+
+    <div class="row">
+
+      <div *rxFor="let nft of allTokenMetadataOfWallet.owned" class="col-6 col-md-4 col-lg-3">
+        <app-nft-display-list [nft]="nft"></app-nft-display-list>
+      </div>
+
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="allTokenMetadataOfWallet.lended.length > 0">
+    <h2 class="mt-5">Your borrowed elements</h2>
+
+    <p class="mb-3">
+      You have been generous and have lent out these tokens.
+      Whenever you desire, you can retrieve them.
+    </p>
+
+    <div class="row">
+
+      <div *rxFor="let nft of allTokenMetadataOfWallet.lended" class="col-6 col-md-4 col-lg-3">
+        <app-nft-display-list [nft]="nft"></app-nft-display-list>
+      </div>
+
+    </div>
+  </ng-container>
+
+</ng-container>
+
+
+
+
+
 <h2 class="mt-5">All elements</h2>
 
-<p class="mb-5">
+<p class="mb-3">
   Explore all materialised <strong>elements</strong> here.
   Which element will appear here next? We don't know!
   The transaction hash will determine which work is unlocked.

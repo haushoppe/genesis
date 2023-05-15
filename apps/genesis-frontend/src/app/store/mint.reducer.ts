@@ -1,6 +1,6 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { Metadata, MintTicket, TokenOwner } from '../openapi-client';
+import { ListOfOwnedTokens, Metadata, MintTicket, TokenOwner } from '../openapi-client';
 import { MintActions } from './mint.actions';
 import {
   getFailureState,
@@ -13,6 +13,10 @@ import {
 export interface State {
   allTokenMetadata: Metadata[];
   allTokenMetadataStatus: SubmittableState;
+
+  // all the collections' tokens that the current wallet owns or has borrowed
+  allTokenMetadataOfWallet: ListOfOwnedTokens;
+  allTokenMetadataOfWalletStatus: SubmittableState;
 
   // info about one single token, used for the details page
   tokenMetadataAndOwner: { metadata: Metadata, owner: TokenOwner } | undefined;
@@ -30,6 +34,9 @@ export interface State {
 export const initialState: State = {
   allTokenMetadata: [],
   allTokenMetadataStatus: getInitialState(),
+
+  allTokenMetadataOfWallet: { owned: [], lended: [] },
+  allTokenMetadataOfWalletStatus: getInitialState(),
 
   tokenMetadataAndOwner: undefined,
   tokenMetadataAndOwnerStatus: getInitialState(),
@@ -66,6 +73,25 @@ export const mintFeature = createFeature({
     on(MintActions.loadAllTokenMetadataFailure, (state, { error }) => ({
       ...state,
       allTokenMetadataStatus: getFailureState(error)
+    })),
+
+    // Load all token of the current wallet (polling)
+
+    on(MintActions.loadAllTokenMetadataOfWalletSuccess, (state, { allTokenMetadataOfWallet }) => ({
+      ...state,
+      allTokenMetadataOfWallet,
+      allTokenMetadataOfWalletStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.loadAllTokenMetadataOfWalletFailure, (state, { error }) => ({
+      ...state,
+      allTokenMetadataOfWalletStatus: getFailureState(error)
+    })),
+
+    on(MintActions.clearAllTokenMetadataOfWallet, state => ({
+      ...state,
+      allTokenMetadataOfWallet: { owned: [], lended: [] },
+      allTokenMetadataOfWalletStatus: getInitialState()
     })),
 
     // Load Token Info
@@ -155,11 +181,13 @@ export const mintFeature = createFeature({
 });
 
 export const {
-  name, // feature name
-  reducer, // feature reducer
-  selectMintState, // feature selector
+  name,
+  reducer,
+  selectMintState,
   selectAllTokenMetadata,
   selectAllTokenMetadataStatus,
+  selectAllTokenMetadataOfWallet,
+  selectAllTokenMetadataOfWalletStatus,
   selectTokenMetadataAndOwner,
   selectTokenMetadataAndOwnerStatus,
   selectTotalSupply,

@@ -13,6 +13,7 @@ index.ts
 model/chain.ts
 model/configDetails.ts
 model/configResponse.ts
+model/listOfOwnedTokens.ts
 model/metadata.ts
 model/metatdataAttribute.ts
 model/metatdataAttributeValue.ts

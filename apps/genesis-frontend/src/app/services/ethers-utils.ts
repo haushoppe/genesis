@@ -1,5 +1,3 @@
-import { ethers } from "ethers";
-
 /**
  * Multiplies a price given in wei with a multiplier.
  *

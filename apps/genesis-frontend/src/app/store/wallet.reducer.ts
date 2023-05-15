@@ -84,9 +84,9 @@ export const walletFeature = createFeature({
 });
 
 export const {
-  name, // feature name
-  reducer, // feature reducer
-  selectWalletState, // feature selector
+  name,
+  reducer,
+  selectWalletState,
   selectConfig, // selector for `config` property
   selectConfigStatus, // selector for `configStatus` property
   selectWallet, // selector for `wallet` property

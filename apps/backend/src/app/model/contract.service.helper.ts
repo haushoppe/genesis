@@ -125,3 +125,26 @@ export async function extractSimpleTokenOwner(
 
   return tokenOwner;
 }
+
+/**
+ * Converts token owner infos that are well-known after mint (no lending possible)
+ *
+ * @param {number} tokenId - The ID of the token.
+ * @param {string} owner - The already known address of the new token owner
+ * @returns {Promise<TokenOwner>} A Promise that resolves to a TokenOwner object containing the token owner information.
+ */
+export async function extractSimpleTokenOwnerAfterMint(
+  tokenId: number,
+  owner: string,
+  lookupNameCallback: (address: string | null) => Promise<string>): Promise<TokenOwner> {
+
+  const ownerName = await lookupNameCallback(owner);
+
+  const tokenOwner: TokenOwner = {
+    tokenId,
+    owner,
+    ownerName
+  }
+
+  return tokenOwner;
+}

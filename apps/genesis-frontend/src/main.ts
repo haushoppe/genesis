@@ -16,6 +16,7 @@ import { CustomRouteSerializer } from './app/store/utils-ngrx-router/custom-rout
 import { WalletEffects } from './app/store/wallet.effects';
 import { walletFeature } from './app/store/wallet.reducer';
 import { environment } from './environments/environment';
+import { NotificationModule } from '@progress/kendo-angular-notification';
 
 if (environment.production) {
   enableProdMode();
@@ -28,6 +29,7 @@ bootstrapApplication(AppComponent,{
     importProvidersFrom(ApiModule.forRoot(() => new Configuration({
       basePath: environment.api
     }))),
+    importProvidersFrom(NotificationModule),
     provideRouter([
       { path: '',
         loadChildren: () => import('./nft.routes').then(m => m.NFT_ROUTES),

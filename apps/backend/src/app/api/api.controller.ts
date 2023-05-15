@@ -13,6 +13,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ModuleRef } from '@nestjs/core';
 import {
   ApiExcludeEndpoint,
   ApiForbiddenResponse,
@@ -31,18 +32,16 @@ import { KnownTokenConfig } from '../config/known-token-config';
 import { AllowlistService } from '../model/allowlist.service';
 import { ContractService } from '../model/contract.service';
 import { formatSeconds } from '../model/date-utils';
-import { encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
+import { ZERO_ADDRESS, encodePackedMessage, getSigner, hashMessage, signMessage } from '../model/ethers-utils';
 import { ImageService } from '../model/image.service';
-import { MetadataGenesisService } from '../model/metadata-genesis.service';
 import { ConfigResponse } from '../types/config-response';
 import { oneWeekInSeconds, tenMinutesInSeconds } from '../types/constants';
+import { ListOfOwnedTokens } from '../types/list-of-owned-tokens';
 import { Metadata } from '../types/metadata';
 import { MintInfo } from '../types/mint-info';
 import { MintRequest } from '../types/mint-request';
 import { MintTicket } from '../types/mint-ticket';
 import { TokenOwner } from '../types/token-owner';
-import { CacheService } from '../model/cache.service';
-import { ModuleRef } from '@nestjs/core';
 
 
 @ApiTags('api')
@@ -50,22 +49,12 @@ import { ModuleRef } from '@nestjs/core';
 export class ApiController {
 
   private knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
-  // private contractServices = { } as { [tokenName in KnownTokenName.genesis]: ContractService };
 
   constructor(
     private configService: ConfigService,
     private allowlistService: AllowlistService,
-    private metadataGenesisService: MetadataGenesisService,
     private imageService: ImageService,
-    private moduleRef: ModuleRef) {
-
-      // for (const tokenName in KnownTokenName) {
-      //   this.contractServices[tokenName] = new ContractService(
-      //     configService,
-      //     tokenName as KnownTokenName,
-      //     this.cacheService);
-      // }
-  }
+    private moduleRef: ModuleRef) { }
 
   /**
    * Minting via allowlist, or limited mint.
@@ -93,7 +82,7 @@ export class ApiController {
       throw new NotFoundException('Unknown token name');
     }
 
-    if (sender === '0x0000000000000000000000000000000000000000') {
+    if (sender === ZERO_ADDRESS) {
       throw new ForbiddenException('The zero address is not a valid sender');
     }
 
@@ -110,7 +99,7 @@ export class ApiController {
 
     const privateKey = this.configService.get('signerKey_' + tokenName);
     const signer = getSigner(privateKey);
-    const maximumAllowedMints = 4;
+    const maximumAllowedMints = 16;
 
     const message = encodePackedMessage(sender, maximumAllowedMints);
     const messageHash = hashMessage(message);
@@ -192,34 +181,9 @@ export class ApiController {
     return await contractService.getAllMints();
   }
 
-  @Get(['api/debugRawMetadata/:tokenName'])
-  @ApiOperation({ operationId: 'debugRawMetadata' })
-  @ApiParam({
-    name: 'tokenName',
-    enum: KnownTokenName,
-    example: KnownTokenName.genesis,
-  })
-  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-  @Header('Cache-Control', 'no-cache')
-  debugRawMetadata(@Param('tokenName') tokenName: KnownTokenName) {
-
-    if (this.configService.get('environment') !== 'development') {
-      throw new ForbiddenException('This method should not be called on production');
-    }
-
-    let rawMetadata: Metadata[];
-
-    if (tokenName === KnownTokenName.genesis) {
-      rawMetadata = this.metadataGenesisService.generateRawGenesisMetadata();
-      return {
-        amountOfTokens: rawMetadata.length,
-        metadata: rawMetadata
-      }
-    }
-
-    throw new NotImplementedException('This token is not ready yet!');
-  }
-
+  /**
+   * Returns the token metedata of all tokens of the collection
+   */
   @Get(['api/allTokenMetadata/:tokenName'])
   @ApiOperation({ operationId: 'allTokenMetadata' })
   @ApiParam({
@@ -232,15 +196,42 @@ export class ApiController {
   async allTokenMetadata(@Param('tokenName') tokenName: KnownTokenName): Promise<Metadata[]> {
 
     const contractService = this.moduleRef.get<ContractService>(tokenName);
-    const allMints = await contractService.getAllMints();
-
-    if (tokenName === KnownTokenName.genesis) {
-      return this.metadataGenesisService.generateMetadata(allMints);
-    }
-
-    throw new NotImplementedException('This token is not ready yet!');
+    return await contractService.getAllTokenMetadata()
   }
 
+  /**
+   * Returns the token metadata of all tokens of a given owner address
+   */
+    @Get(['api/allTokenMetadata/:tokenName/:ownerAddress'])
+    @ApiOperation({ operationId: 'allTokenMetadataOfOwner' })
+    @ApiParam({
+      name: 'tokenName',
+      enum: KnownTokenName,
+      example: KnownTokenName.genesis,
+    })
+    @ApiParam({ name: 'ownerAddress', type: 'string', example: ZERO_ADDRESS })
+    @ApiOkResponse({ type: ListOfOwnedTokens })
+    @Header('Cache-Control', 'no-cache')
+    async allTokenMetadataOfOwner(@Param('tokenName') tokenName: KnownTokenName, @Param('ownerAddress') ownerAddress: string): Promise<ListOfOwnedTokens> {
+
+      ownerAddress = ownerAddress.toLowerCase();
+
+      const allMints = await this.allTokenMetadata(tokenName);
+      const allTokenOwners = await this.allTokenOwners(tokenName);
+
+      const allTokensIdsWhereOwner = allTokenOwners.filter(x => x.owner.toLowerCase() === ownerAddress).map(x => x.tokenId);
+      const allTokensIdsWhereLender = allTokenOwners.filter(x => x.lender && x.lender.toLowerCase() === ownerAddress).map(x => x.tokenId);
+
+
+      const owned = allMints.filter(x => allTokensIdsWhereOwner.find(tokenId => x.tokenId === tokenId));
+      const lended = allMints.filter(x => allTokensIdsWhereLender.find(tokenId => x.tokenId === tokenId));
+
+      return { owned, lended }
+    }
+
+  /**
+   * Returns the token metedata (target of the tokenURI function of the ERC721 contract)
+   */
   @Get(['api/tokenMetadata/:tokenName/:tokenId'])
   @ApiOperation({ operationId: 'tokenMetadata' })
   @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
@@ -260,6 +251,9 @@ export class ApiController {
     return token;
   }
 
+  /**
+   * Returns the token metedata of a mosaic (target of the tokenURI function of the ERC721 contract)
+   */
   @Get(['api/tokenMetadata/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
   @ApiOperation({ operationId: 'tokenMetadataMosaic' })
   @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
@@ -281,6 +275,9 @@ export class ApiController {
     return this.tokenMetadata(tokenName, tokenId)
   }
 
+  /**
+   * Returns the preview image of a token
+   */
   @Get(['api/tokenPreview/:tokenName/:tokenId'])
   @ApiOperation({ operationId: 'tokenPreview' })
   @ApiParam({ name: 'tokenName', enum: [KnownTokenName.genesis, KnownTokenName.mosaic], example: KnownTokenName.genesis })
@@ -303,6 +300,9 @@ export class ApiController {
     return response.send(imageBuffer);
   }
 
+  /**
+   * Returns the HTML page that is used for the animation_url of the token (for a normal token)
+   */
   @Get(['api/tokenAnimation/:tokenName/:tokenId'])
   @ApiOperation({ operationId: 'tokenAnimation' })
   @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
@@ -315,6 +315,9 @@ export class ApiController {
     return this.tokenAnimationMosaic(tokenName, tokenId, 0 , 0, 0, 0)
   }
 
+  /**
+   * Returns the HTML page that is used for the animation_url of the token (for a mosaic)
+   */
   @Get(['api/tokenAnimation/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
   @ApiOperation({ operationId: 'tokenAnimationMosaic' })
   @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
@@ -362,6 +365,9 @@ ${
 `;
   }
 
+  /**
+   * Returns the token owners (current owner and lender) of all tokens of the collection
+   */
   @Get(['api/allTokenOwners/:tokenName'])
   @ApiOperation({ operationId: 'allTokenOwners  ' })
   @ApiParam({
@@ -371,11 +377,14 @@ ${
   })
   @ApiResponse({ type: TokenOwner, isArray: true })
   @Header('Cache-Control', 'no-cache')
-  async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<object> {
+  async allTokenOwners(@Param('tokenName') tokenName: KnownTokenName): Promise<TokenOwner[]> {
     const contractService = this.moduleRef.get<ContractService>(tokenName);
     return await contractService.getAllTokenOwners();
   }
 
+  /**
+   * Returns the token owners (current owner and lender) of a token
+   */
   @Get(['api/tokenOwner/:tokenName/:tokenId'])
   @ApiOperation({ operationId: 'tokenOwner' })
   @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })

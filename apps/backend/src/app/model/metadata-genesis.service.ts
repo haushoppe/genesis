@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Metadata } from '../types/metadata';
 import { MintInfo } from '../types/mint-info';
 import { PseudoRandom } from './pseudo-random';
+import { MetadataService } from './metadata-service';
 
 const descriptionNormalToken = 'The Genesis collection is a series of woodcut artworks inspired by the spiritual '
   + 'and mystical elements of the biblical creation story. Crafted using traditional techniques, the final woodcuts '
@@ -85,7 +86,7 @@ export const genesisRawArtworks: WoodcutDetails[] = [
 ];
 
 @Injectable()
-export class MetadataGenesisService {
+export class MetadataGenesisService implements MetadataService {
 
   private environment = this.configService.get('environment');
 
@@ -94,7 +95,7 @@ export class MetadataGenesisService {
   /**
    * This function generates the unassigned metatdata via the genesisRawArtworks array
    */
-  generateRawGenesisMetadata() {
+  private generateRawGenesisMetadata() {
 
     const externalUrl = this.environment === 'development' ? externalUrlLocalhost : externalUrlLive;
     const animationBaseUrl = this.environment === 'development' ? animationBaseUrlLocalhost : animationBaseUrlLive;
@@ -229,7 +230,7 @@ export class MetadataGenesisService {
     return result;
   }
 
-  createMetadataForNormalToken(tokenId: number, mint: MintInfo, availableMetadata: Metadata[]) {
+  private createMetadataForNormalToken(tokenId: number, mint: MintInfo, availableMetadata: Metadata[]) {
     const r = new PseudoRandom(mint.transactionHash);
     const randomIndex = r.randomInt(0, availableMetadata.length - 1);
     const metadata = {
@@ -242,7 +243,7 @@ export class MetadataGenesisService {
     return metadata;
   }
 
-  createMetadataForMosaicToken(
+  private createMetadataForMosaicToken(
     tokenId: number,
     mosaicCounter: number,
     tokenTile1: Metadata,
@@ -283,7 +284,7 @@ export class MetadataGenesisService {
     return metadata
   }
 
-  createFallbackImage(tokenId: number) {
+  private createFallbackImage(tokenId: number) {
     const metadata: Metadata = {
       name: 'Unrevealed #' + tokenId,
       description: 'Please stay tuned!',

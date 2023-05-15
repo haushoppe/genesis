@@ -21,6 +21,8 @@ import { Observable }                                        from 'rxjs';
 // @ts-ignore
 import { ConfigResponse } from '../model/configResponse';
 // @ts-ignore
+import { ListOfOwnedTokens } from '../model/listOfOwnedTokens';
+// @ts-ignore
 import { Metadata } from '../model/metadata';
 // @ts-ignore
 import { MintRequest } from '../model/mintRequest';
@@ -101,6 +103,7 @@ export class ApiService {
 
     /**
      * 
+     * Returns the token metedata of all tokens of the collection
      * @param tokenName 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -159,13 +162,77 @@ export class ApiService {
 
     /**
      * 
+     * Returns the token metadata of all tokens of a given owner address
+     * @param tokenName 
+     * @param ownerAddress 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public allTokenMetadataOfOwner(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', ownerAddress: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<ListOfOwnedTokens>;
+    public allTokenMetadataOfOwner(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', ownerAddress: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<ListOfOwnedTokens>>;
+    public allTokenMetadataOfOwner(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', ownerAddress: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<ListOfOwnedTokens>>;
+    public allTokenMetadataOfOwner(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', ownerAddress: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (tokenName === null || tokenName === undefined) {
+            throw new Error('Required parameter tokenName was null or undefined when calling allTokenMetadataOfOwner.');
+        }
+        if (ownerAddress === null || ownerAddress === undefined) {
+            throw new Error('Required parameter ownerAddress was null or undefined when calling allTokenMetadataOfOwner.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/allTokenMetadata/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}/${this.configuration.encodeParam({name: "ownerAddress", value: ownerAddress, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        return this.httpClient.request<ListOfOwnedTokens>('get', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * 
+     * Returns the token owners (current owner and lender) of all tokens of the collection
      * @param tokenName 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public allTokenOwners(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<object>;
-    public allTokenOwners(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<object>>;
-    public allTokenOwners(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<object>>;
+    public allTokenOwners(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<TokenOwner>>;
+    public allTokenOwners(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<TokenOwner>>>;
+    public allTokenOwners(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<TokenOwner>>>;
     public allTokenOwners(tokenName: 'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
         if (tokenName === null || tokenName === undefined) {
             throw new Error('Required parameter tokenName was null or undefined when calling allTokenOwners.');
@@ -203,7 +270,7 @@ export class ApiService {
         }
 
         let localVarPath = `/api/allTokenOwners/${this.configuration.encodeParam({name: "tokenName", value: tokenName, in: "path", style: "simple", explode: false, dataType: "'genesis' | 'mosaic' | 'sea' | 'art' | 'artist' | 'cube'", dataFormat: undefined})}`;
-        return this.httpClient.request<object>('get', `${this.configuration.basePath}${localVarPath}`,
+        return this.httpClient.request<Array<TokenOwner>>('get', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,
@@ -460,6 +527,7 @@ export class ApiService {
 
     /**
      * 
+     * Returns the HTML page that is used for the animation_url of the token (for a normal token)
      * @param tokenName 
      * @param tokenId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -522,6 +590,7 @@ export class ApiService {
 
     /**
      * 
+     * Returns the HTML page that is used for the animation_url of the token (for a mosaic)
      * @param tokenName 
      * @param tokenId 
      * @param tile1 
@@ -600,6 +669,7 @@ export class ApiService {
 
     /**
      * 
+     * Returns the token metedata (target of the tokenURI function of the ERC721 contract)
      * @param tokenName 
      * @param tokenId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -662,6 +732,7 @@ export class ApiService {
 
     /**
      * 
+     * Returns the token metedata of a mosaic (target of the tokenURI function of the ERC721 contract)
      * @param tokenName 
      * @param tokenId 
      * @param tile1 
@@ -740,6 +811,7 @@ export class ApiService {
 
     /**
      * 
+     * Returns the token owners (current owner and lender) of a token
      * @param tokenName 
      * @param tokenId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -802,6 +874,7 @@ export class ApiService {
 
     /**
      * 
+     * Returns the preview image of a token
      * @param tokenName 
      * @param tokenId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

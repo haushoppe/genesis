@@ -14,6 +14,7 @@ import { ImageService } from './model/image.service';
 import { MetadataGenesisService } from './model/metadata-genesis.service';
 import { KnownTokenName, allKnownTokenNames } from '../../../shared/known-token-name';
 import { ContractService } from './model/contract.service';
+import { MetadataService } from './model/metadata-service';
 
 
 @Module({
@@ -53,7 +54,13 @@ import { ContractService } from './model/contract.service';
         configService: ConfigService,
         cacheService: CacheService
       ) => {
-        return new ContractService(configService, tokenName, cacheService);
+
+        let metadataService: MetadataService = { generateMetadata: () => [] };
+        if (tokenName === KnownTokenName.genesis) {
+          metadataService = new MetadataGenesisService(configService);
+        }
+
+        return new ContractService(configService, tokenName, metadataService, cacheService);
       },
       inject: [ConfigService, CacheService]
     }))

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ethers, EventLog } from 'ethers';
+import { ContractEventPayload, ethers, EventLog } from 'ethers';
 
 import { knownAbis } from '../../../../shared/known-abis';
 import { KnownTokenName } from '../../../../shared/known-token-name';
@@ -8,8 +8,10 @@ import { KnownTokenConfig } from '../config/known-token-config';
 import { MintInfo } from '../types/mint-info';
 import { TokenOwner } from '../types/token-owner';
 import { CacheService } from './cache.service';
-import { createFilledArray, extractMintInfo, extractSimpleTokenOwner, extractTokenOwner } from './contract.service.helper';
+import { createFilledArray, extractMintInfo, extractSimpleTokenOwner, extractSimpleTokenOwnerAfterMint, extractTokenOwner } from './contract.service.helper';
 import { ZERO_ADDRESS } from './ethers-utils';
+import { Metadata } from '../types/metadata';
+import { MetadataService } from './metadata-service';
 
 @Injectable()
 export class ContractService {
@@ -20,11 +22,13 @@ export class ContractService {
   private readonly contract: ethers.Contract = this.getContract();
 
   private allMints: MintInfo[] = [];
+  private allTokenMetadata: Metadata[] = [];
   private allTokenOwners: TokenOwner[] = [];
 
   constructor(
     private configService: ConfigService,
     private tokenName: KnownTokenName,
+    private metadataService: MetadataService,
     private cacheService: CacheService) {
   }
 
@@ -48,6 +52,8 @@ export class ContractService {
 
     this.allMints = await this.getAllCurrentMints();
     Logger.log('Amount of Mints: ' + this.allMints.length, this.tokenName);
+
+    this.allTokenMetadata = this.metadataService.generateMetadata(this.allMints);
 
     this.allTokenOwners = await this.getAllCurrentTokenOwners();
     Logger.log('Amount of Token Owner Records: ' + this.allTokenOwners.length, this.tokenName);
@@ -112,11 +118,19 @@ export class ContractService {
   }
 
   /**
-   * Retrieves all known mints
+   * Retrieves all known raw mints
    */
   async getAllMints(): Promise<MintInfo[]> {
     return Promise.resolve(this.allMints)
   }
+
+  /**
+   * Retrieves all known mints, with additional meta data
+   */
+  async getAllTokenMetadata(): Promise<Metadata[]> {
+    return Promise.resolve(this.allTokenMetadata)
+  }
+
 
   /**
    * Retrieves all current mints by querying all token transfers from 0x0 to the new owner
@@ -191,7 +205,7 @@ export class ContractService {
     // })
 
     const filter = this.contract.filters.Transfer(null, null, null);
-    this.contract.on(filter, async (event: EventLog) => {
+    this.contract.on(filter, async (event: ContractEventPayload) => {
 
       const [from, to, tokenId_] = event.args;
       const tokenId = parseInt(tokenId_);
@@ -205,11 +219,19 @@ export class ContractService {
         } else {
 
           const mint = await extractMintInfo(
-            event,
+            event.log,
             this.tokenConfig.implementsMosaics,
             this.contract);
 
           this.allMints = [...this.allMints, mint];
+          this.allTokenMetadata = this.metadataService.generateMetadata(this.allMints);
+
+          const newTokenOwner = await extractSimpleTokenOwnerAfterMint(
+            tokenId,
+            to,
+            this.lookupName.bind(this)
+          )
+          this.allTokenOwners = [...this.allTokenOwners, newTokenOwner];
         }
 
         // normal token transfer

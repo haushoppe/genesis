@@ -4,6 +4,8 @@ import { Store } from '@ngrx/store';
 import { MintActions } from './mint.actions';
 import {
   selectAllTokenMetadata,
+  selectAllTokenMetadataOfWallet,
+  selectAllTokenMetadataOfWalletStatus,
   selectAllTokenMetadataStatus,
   selectMintAllowlistStatus,
   selectMintTicket,
@@ -23,6 +25,9 @@ export class MintFacade {
 
   allTokenMetadata$ = this.store.select(selectAllTokenMetadata);
   allTokenMetadataStatus$ = this.store.select(selectAllTokenMetadataStatus);
+
+  allTokenMetadataOfWallet$ = this.store.select(selectAllTokenMetadataOfWallet);
+  allTokenMetadataOfWalletStatus$ = this.store.select(selectAllTokenMetadataOfWalletStatus);
 
   tokenMetadataAndOwner$ = this.store.select(selectTokenMetadataAndOwner);
   tokenMetadataAndOwnerStatus$ = this.store.select(selectTokenMetadataAndOwnerStatus);

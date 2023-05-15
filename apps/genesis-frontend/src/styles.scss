@@ -1,25 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
 
 // bootstrap
-$primary: rgb(98, 98, 98);
-$enable-rounded: false;
-$enable-negative-margins: true;
-
-@import "styles-bootstrap.scss";
+@import "_adjust-bootstrap.scss";
+@import "_include-bootstrap.scss";
 
 // kendo
-$kendo-font-weight-normal: 300;
-$kendo-font-size: 19.2px;
-$kendo-utils-border-radius: 0;
-$kendo-enable-rounded: false;
-
-.k-input-inner {
-  font-weight: 300 !important;
-}
-
-
-//@import "@progress/kendo-theme-default/scss/all.scss";
-@import "styles-kendo.scss";
+@import "_adjust-kendo.scss";
+@import "_include-kendo.scss";
 
 body {
   font-family: "Yantramanav", sans-serif;
@@ -59,13 +46,6 @@ button:disabled {
   cursor: not-allowed;
   pointer-events: all !important;
 }
-
-// see http://www.simon-li.com/design-and-code/an-elegant-way-to-break-the-bootstrap-container/
-// .break-out-container {
-//   width: 100vw;
-//   position: relative;
-//   left: calc(-1 * (100vw - 100%) / 2);
-// }
 
 :root {
   /* CUSTOMIZE THE ONBOARD COLOR  PALLETTE */

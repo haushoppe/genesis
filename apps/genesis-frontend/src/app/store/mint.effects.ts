@@ -1,21 +1,38 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { EMPTY, forkJoin, from, interval, of } from 'rxjs';
-import { catchError, concatMap, exhaustMap, map, mergeMap, retry, switchMap, takeUntil, timeout, withLatestFrom } from 'rxjs/operators';
+import { NotificationService } from '@progress/kendo-angular-notification';
+import { forkJoin, from, interval, of } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  exhaustMap,
+  filter,
+  map,
+  mergeMap,
+  retry,
+  switchMap,
+  takeUntil,
+  tap,
+  timeout,
+  withLatestFrom,
+} from 'rxjs/operators';
 
 import { KnownTokenName } from '../../../../shared/known-token-name';
 import { environment } from '../../environments/environment';
 import { ApiService } from '../openapi-client';
+import { multiplyWeiPrice } from '../services/ethers-utils';
 import { MintService } from '../services/mint-service';
+import { deepEqual } from './helper/deep-equal';
 import { MintActions } from './mint.actions';
-import { selectMintTicket } from './mint.reducer';
+import { selectAllTokenMetadataOfWallet, selectAllTokenMetadataOfWalletStatus, selectMintTicket } from './mint.reducer';
+import { PageActions } from './page.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 import { WalletActions } from './wallet.actions';
 import { selectConfig } from './wallet.reducer';
 import { selectProvider, selectWalletAddress } from './wallet.selectors';
-import { PageActions } from './page.actions';
-import { multiplyWeiPrice } from '../services/ethers-utils';
+import { detectTokenChanges } from './helper/detect-token-changes';
+import { SubmitStatus } from './submittable/submit-status';
 
 
 @Injectable()
@@ -25,7 +42,7 @@ export class MintEffects {
   apiService = inject(ApiService);
   mintService = inject(MintService);
   store = inject(Store)
-
+  notificationService = inject(NotificationService)
 
   loadMintsOnRouting$ = createEffect(() => {
     return this.actions.pipe(
@@ -90,7 +107,10 @@ export class MintEffects {
   triggerClearOnWalletDisconnect$ = createEffect(() => {
     return this.actions.pipe(
       ofType(WalletActions.disconnectWalletDetected),
-      map(() => MintActions.clearMintTicket())
+      concatMap(() => [
+        MintActions.clearMintTicket(),
+        MintActions.clearAllTokenMetadataOfWallet()
+      ])
     );
   });
 
@@ -156,27 +176,34 @@ export class MintEffects {
       ));
   });
 
-  startPolling$ = createEffect(() => {
+  startWalletPolling$ = createEffect(() => {
     return this.actions.pipe(
       ofType(WalletActions.walletStateChange),
       exhaustMap(() =>  // Start polling when startPolling action is dispatched. Ignore new startPolling actions until the current polling completes.
-        interval(2000).pipe(  // Emit a value every 2 seconds.
+        interval(2000).pipe(
           takeUntil(this.actions.pipe(ofType((WalletActions.disconnectWalletDetected)))),  // Stop polling when stopPolling action is dispatched.
-          withLatestFrom(this.store.select(selectWalletAddress)),
-          map(([, address]) => address || ''),
-          exhaustMap(address =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
+          withLatestFrom(
+            this.store.select(selectWalletAddress),
+            this.store.select(selectAllTokenMetadataOfWallet),
+            this.store.select(selectAllTokenMetadataOfWalletStatus)
+          ),
+          map(([, address, prevState, prevStatus]) => ({
+            address: address || '',
+            prevState,
+            prevSubmitStatus: prevStatus.submitStatus
+          })),
+          exhaustMap(({ address, prevState, prevSubmitStatus }) =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
             this.apiService.allTokenMetadataOfOwner(KnownTokenName.genesis, address).pipe(
-              map(allTokenMetadataOfOwner => {
-                // // Check for a special result and dispatch a new action
-                // if (data['specialResult']) {
-                //   return actions.processHttpResult({ data });
-                // } else {
-                //   // If the result isn't special, just return an empty action
-                //   return { type: 'NO_ACTION' };
-                // }
-                return MintActions.ownedTokensChanged({ allTokenMetadataOfOwner })
-              }),
-              catchError(error => EMPTY),  // Handle errors to avoid stopping the polling.
+              map(newState => ({
+                owned: newState.owned.reverse(),
+                lended: newState.lended.reverse()
+              })),
+              filter(newState => !deepEqual(prevState, newState)),
+              concatMap(newState => [
+                ...(prevSubmitStatus !== SubmitStatus.NotSubmitted ?  detectTokenChanges(prevState, newState) : []),
+                MintActions.loadAllTokenMetadataOfWalletSuccess({ allTokenMetadataOfWallet: newState })
+              ]),
+              catchError(error => of(MintActions.loadAllTokenMetadataOfWalletFailure({ error })))
             )
           )
         )
@@ -184,4 +211,53 @@ export class MintEffects {
     )
   });
 
+  showNotification$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(
+        MintActions.tokensMintedOrBought,
+        MintActions.tokensSentOrSold,
+        MintActions.tokensLoaned,
+        MintActions.loanedTokensRetrieved
+      ),
+      tap(action => {
+        let message = '';
+
+        const pluralize = (amount: number, adjective = ''): string => {
+          switch (amount) {
+            case 1: return `one ${ adjective }element`;
+            case 2: return `two ${ adjective }elements`;
+            case 3: return `three ${ adjective }elements`;
+            case 4: return `four ${ adjective }elements`;
+            default: return `${ amount } ${ adjective }elements`;
+          }
+        }
+
+        const amount = action.tokens.length;
+
+        switch (action.type) {
+          case MintActions.tokensMintedOrBought.type:
+            message = `You minted (or bought) ${ pluralize(amount) }!`;
+            break;
+          case MintActions.tokensSentOrSold.type:
+            message = `You sent (or sold) ${ pluralize(amount) }.`;
+            break;
+          case MintActions.tokensLoaned.type:
+            message = `You loaned out ${ pluralize(amount) }`;
+            break;
+          case MintActions.loanedTokensRetrieved.type:
+            message = `You retrieved ${ pluralize(amount, 'loaned ') }.`;
+            break;
+        }
+
+        this.notificationService.show({
+          content: message,
+          hideAfter: 10000,
+          position: { horizontal: 'center', vertical: 'top' },
+          animation: { type: 'slide', duration: 400 },
+          type: { style: 'success', icon: true },
+          // closable: true
+        });
+      })
+    )
+  }, { dispatch: false });
 }

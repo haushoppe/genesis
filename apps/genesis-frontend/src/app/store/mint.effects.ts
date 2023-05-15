@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, NgZone } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
@@ -33,6 +33,7 @@ import { selectConfig } from './wallet.reducer';
 import { selectProvider, selectWalletAddress } from './wallet.selectors';
 import { detectTokenChanges } from './helper/detect-token-changes';
 import { SubmitStatus } from './submittable/submit-status';
+import { confettiFirework } from './helper/confetti-firework';
 
 
 @Injectable()
@@ -41,8 +42,9 @@ export class MintEffects {
   actions = inject(Actions);
   apiService = inject(ApiService);
   mintService = inject(MintService);
-  store = inject(Store)
-  notificationService = inject(NotificationService)
+  store = inject(Store);
+  notificationService = inject(NotificationService);
+  ngZone = inject(NgZone);
 
   loadMintsOnRouting$ = createEffect(() => {
     return this.actions.pipe(
@@ -198,7 +200,7 @@ export class MintEffects {
                 owned: newState.owned.reverse(),
                 lended: newState.lended.reverse()
               })),
-              filter(newState => !deepEqual(prevState, newState)),
+              filter(newState => !deepEqual(prevState, newState) || prevSubmitStatus === SubmitStatus.NotSubmitted),
               concatMap(newState => [
                 ...(prevSubmitStatus !== SubmitStatus.NotSubmitted ?  detectTokenChanges(prevState, newState) : []),
                 MintActions.loadAllTokenMetadataOfWalletSuccess({ allTokenMetadataOfWallet: newState })
@@ -236,10 +238,10 @@ export class MintEffects {
 
         switch (action.type) {
           case MintActions.tokensMintedOrBought.type:
-            message = `You minted (or bought) ${ pluralize(amount) }!`;
+            message = `You successfully collected ${ pluralize(amount) }!`;
             break;
           case MintActions.tokensSentOrSold.type:
-            message = `You sent (or sold) ${ pluralize(amount) }.`;
+            message = `You successfully transferred ${ pluralize(amount) }.`;
             break;
           case MintActions.tokensLoaned.type:
             message = `You loaned out ${ pluralize(amount) }`;
@@ -257,6 +259,10 @@ export class MintEffects {
           type: { style: 'success', icon: true },
           // closable: true
         });
+
+        if (action.type === MintActions.tokensMintedOrBought.type) {
+          this.ngZone.runOutsideAngular(() => confettiFirework());
+        }
       })
     )
   }, { dispatch: false });

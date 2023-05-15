@@ -99,7 +99,7 @@ export class ApiController {
 
     const privateKey = this.configService.get('signerKey_' + tokenName);
     const signer = getSigner(privateKey);
-    const maximumAllowedMints = 16;
+    const maximumAllowedMints = 8;
 
     const message = encodePackedMessage(sender, maximumAllowedMints);
     const messageHash = hashMessage(message);

@@ -12,6 +12,7 @@ import { createFilledArray, extractMintInfo, extractSimpleTokenOwner, extractSim
 import { ZERO_ADDRESS } from './ethers-utils';
 import { Metadata } from '../types/metadata';
 import { MetadataService } from './metadata-service';
+import { error } from 'console';
 
 @Injectable()
 export class ContractService {
@@ -70,7 +71,7 @@ export class ContractService {
   private async handleLongRunningConnection() {
 
     this.provider.on('error', async (event) => {
-      Logger.error('Provider error detected!' +  event,  this.tokenName);
+      Logger.error('Provider error detected! ' +  event, this.tokenName);
       Logger.error('Restarting....',  this.tokenName);
 
       // removes all listeners and releases any resources, sockets, etc.
@@ -83,6 +84,18 @@ export class ContractService {
       // we may want to wait a bit before attempting to reconnect
       setTimeout(async () => { await this.onModuleInit() }, 1000);
     });
+
+    const _consoleLog = console.log;
+    const _provider = this.provider
+    console.log = function(...args) {
+
+      if (args[0].includes('@TODO')) {
+        Logger.error('*** Error handling the dirty way ***' + args[1], this.tokenName);
+        _provider.emit('error', 'Error handling the dirty way', args[1]);
+      } else {
+        _consoleLog(...args)
+      }
+    };
   }
 
   private getProvider() {

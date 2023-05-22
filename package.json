@@ -73,7 +73,7 @@
     "bootstrap": "^5.2.3",
     "bootstrap-icons": "^1.10.3",
     "canvas-confetti": "^1.6.0",
-    "ethers": "^6.3.0",
+    "ethers": "^6.4.0",
     "joi": "^17.7.0",
     "marked": "^4.2.12",
     "mongodb": "^4.13.0",

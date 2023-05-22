@@ -18,8 +18,8 @@ export class ContractService {
 
   private readonly knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
   private readonly tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
-  private readonly provider: ethers.Provider = this.getProvider();
-  private readonly contract: ethers.Contract = this.getContract();
+  private provider: ethers.Provider;
+  private contract: ethers.Contract;
 
   private allMints: MintInfo[] = [];
   private allTokenMetadata: Metadata[] = [];
@@ -37,8 +37,11 @@ export class ContractService {
    */
   async onModuleInit() {
     if (this.tokenName != KnownTokenName.genesis) {
-      return
+      return;
     }
+
+    this.provider = this.getProvider();
+    this.contract = this.getContract();
 
     await new Promise(resolve => setTimeout(resolve, 1));
     Logger.log('Initializing ContractService', this.tokenName);
@@ -60,6 +63,26 @@ export class ContractService {
 
     Logger.log('Everything set up. Now watching for new transfers...', this.tokenName);
     this.listenForNewTransferEvents();
+
+    this.handleLongRunningConnection();
+  }
+
+  private async handleLongRunningConnection() {
+
+    this.provider.on('error', async (event) => {
+      Logger.error('Provider error detected!' +  event,  this.tokenName);
+      Logger.error('Restarting....',  this.tokenName);
+
+      // removes all listeners and releases any resources, sockets, etc.
+      this.provider.destroy();
+
+      // just to sure
+      this.provider = undefined;
+      this.contract = undefined;
+
+      // we may want to wait a bit before attempting to reconnect
+      setTimeout(async () => { await this.onModuleInit() }, 1000);
+    });
   }
 
   private getProvider() {
@@ -131,7 +154,6 @@ export class ContractService {
     return Promise.resolve(this.allTokenMetadata)
   }
 
-
   /**
    * Retrieves all current mints by querying all token transfers from 0x0 to the new owner
    * This method is supposed to recreate the in-memory list of mints after a server restart
@@ -194,15 +216,6 @@ export class ContractService {
    * https://github.com/ethers-io/ethers.js/issues/4013
    */
   private async listenForNewTransferEvents() {
-
-    // waiting for this to get released!
-    // Did the 'error' event listener get removed in v6, like provider.on('error', () => {})? #3970
-    //
-    // https://github.com/ethers-io/ethers.js/issues/3970
-    // https://github.com/ethers-io/ethers.js/commit/af0291c01639674658f5049343da88a84da763a1
-    // this.provider.on('error', (event) => {
-    //   console.log(event)
-    // })
 
     const filter = this.contract.filters.Transfer(null, null, null);
     this.contract.on(filter, async (event: ContractEventPayload) => {

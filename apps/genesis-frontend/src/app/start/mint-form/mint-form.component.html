@@ -10,7 +10,7 @@
             class="bg-light ms-2 p-3 mt-4 shadow border"
             [ngClass]="{ formWithError: allowlistStatus.submitStatus === SubmitStatus.Failure }">
             <div class="form-group row">
-              <label for="amount" class="col-4 col-form-label">Amount:</label>
+              <label [for]="amount" class="col-4 col-form-label">Amount:</label>
               <div class="col-8">
 
                 <kendo-numerictextbox
@@ -18,17 +18,19 @@
                   [min]="1"
                   [max]="mintTicket ? mintTicket.maximumAllowedMints : 4"
                   [formControl]="c.amount"
+                  #amount
                 />
 
               </div>
             </div>
             <div class="form-group row">
-              <label class="col-4 col-form-label">Price:</label>
+              <label for="price" class="col-4 col-form-label">Price:</label>
               <div class="col-8">
 
                 <strong class="d-block mt-2">
                   {{ multiply(config?.price, c.amount.value) || '?' }} ETH
                 </strong>
+                <input class="d-none" id="price">
 
               </div>
             </div>

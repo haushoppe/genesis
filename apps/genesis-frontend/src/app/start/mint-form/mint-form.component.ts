@@ -1,7 +1,8 @@
-import { JsonPipe, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators, AbstractControl} from '@angular/forms';
-import { NumericTextBoxModule } from '@progress/kendo-angular-inputs';
+import { NgClass, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NumericTextBoxModule as KendoNumericTextBoxModule } from '@progress/kendo-angular-inputs';
+import { LabelModule as KendoLabelModule } from '@progress/kendo-angular-label';
 import { LetModule } from '@rx-angular/template/let';
 import { ethers } from 'ethers';
 
@@ -19,7 +20,8 @@ import { WalletFacade } from '../../store/wallet.facade';
   imports: [
     NgIf,
     LoadingIndicatorButtonComponent,
-    NumericTextBoxModule,
+    KendoNumericTextBoxModule,
+    KendoLabelModule,
     ReactiveFormsModule,
     LetModule,
     NgClass

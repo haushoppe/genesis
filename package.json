@@ -56,6 +56,7 @@
     "@progress/kendo-angular-inputs": "^12.0.1",
     "@progress/kendo-angular-intl": "^12.0.1",
     "@progress/kendo-angular-l10n": "^12.0.1",
+    "@progress/kendo-angular-label": "^12.0.1",
     "@progress/kendo-angular-notification": "^12.0.1",
     "@progress/kendo-angular-popup": "^12.0.1",
     "@progress/kendo-drawing": "^1.17.5",

@@ -13,10 +13,7 @@ import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 export class BannerComponent {
 
   bannerImages = [
-    'https://assets.haushoppe.art/genesis/genesis1/7colors.jpg',
-    'https://assets.haushoppe.art/genesis/genesis2/5colors.jpg',
-    'https://assets.haushoppe.art/genesis/genesis3/6colors.jpg',
-    'https://assets.haushoppe.art/genesis/genesis4/5colors.jpg'
+    '/assets/cubes.jpg'
   ];
 
   randomImage = this.pickRandomImage();

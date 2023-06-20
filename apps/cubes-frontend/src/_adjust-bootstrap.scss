@@ -1,3 +1,37 @@
-$primary: rgb(98, 98, 98);
+@import "bootstrap/scss/functions";
+
+$bitcoin: #FF9900;
+
+// Define your custom colors here
+$black: #000;
+$white: #fff;
+$dark: #343a40;
+$light: #f8f9fa;
+$primary: $bitcoin;
+$secondary: #6c757d;
+$success: #28a745;
+$info: #17a2b8;
+$warning: #ffc107;
+$danger: #dc3545;
+$light-gray: #e9ecef;
+$dark-gray: #6c757d;
+
+// Customize Bootstrap colors for dark mode
+$body-bg: $dark;
+$body-color: $light;
+
+$theme-colors: (
+  "primary": $primary,
+  "secondary": $dark-gray,
+  "success": $success,
+  "info": $info,
+  "warning": $warning,
+  "danger": $danger,
+  "light": $light,
+  "dark": $black
+);
+
 $enable-rounded: false;
 $enable-negative-margins: true;
+
+

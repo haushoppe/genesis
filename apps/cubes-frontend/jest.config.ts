@@ -4,7 +4,7 @@ export default {
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   globals: {},
-  coverageDirectory: '../../coverage/apps/genesis-frontend',
+  coverageDirectory: '../../coverage/apps/cubes-frontend',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',

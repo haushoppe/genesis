@@ -64,7 +64,8 @@
     "serve": {
       "executor": "@nrwl/angular:webpack-dev-server",
       "options": {
-        "port": 4201
+        "port": 4203,
+        "proxyConfig": "apps/cubes-frontend/src/proxy.conf.json"
       },
       "configurations": {
         "production": {

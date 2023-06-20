@@ -1,0 +1,56 @@
+h1 small {
+  font-weight: 300;
+  font-size: 0.6em;
+}
+
+// X-Small devices (portrait phones, less than 576px)
+@media (min-width: 0) {
+  iframe, img {
+    height: 90vw;
+    width: 90vw;
+
+    display: block;
+    margin: auto;
+  }
+}
+
+// Small devices (landscape phones, 576px and up)
+// @media (min-width: 576px) {
+//   iframe, img {
+//   }
+// }
+
+// Medium devices (tablets, 768px and up)
+@media (min-width: 768px) {
+  iframe, img {
+    height: 70vw;
+    width: 70vw;
+
+    display: inline;
+    margin: 0;
+  }
+}
+
+// Large devices (desktops, 992px and up)
+@media (min-width: 992px) {
+  iframe, img {
+    height: 60vw;
+    width: 60vw;
+  }
+}
+
+// X-Large devices (large desktops, 1200px and up)
+@media (min-width: 1200px) {
+  iframe, img {
+    height: 40vw;
+    width: 40vw;
+  }
+}
+
+// XX-Large devices (larger desktops, 1400px and up)
+// @media (min-width: 1400px) {
+//   iframe, img {
+//     height: 40vw;
+//     width: 40vw;
+//   }
+// }

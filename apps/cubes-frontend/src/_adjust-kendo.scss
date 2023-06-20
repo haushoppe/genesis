@@ -1,0 +1,31 @@
+// kendo
+$kendo-font-weight-normal: 300;
+$kendo-font-size: 19.2px;
+$kendo-utils-border-radius: 0;
+$kendo-enable-rounded: false;
+
+
+$kendo-color-primary: $primary;
+$kendo-color-secondary: $secondary;
+// $kendo-color-tertiary: // ???
+$kendo-color-info: $info;
+$kendo-color-success: $success;
+$kendo-color-warning: $warning;
+$kendo-color-error: $danger;
+$kendo-color-dark: $dark;
+$kendo-color-light: $light;
+
+$kendo-notification-font-size: 19.2px;
+$kendo-notification-padding-x: 8px;
+$kendo-notification-padding-y: 8px;
+
+
+$kendo-popup-shadow:  rgba(0, 0, 0, 0.2) 0px 4px 16px 0px;
+
+.k-input-inner {
+  font-weight: 300 !important;
+}
+
+.k-notification-container {
+  margin-top: 16px !important;
+}

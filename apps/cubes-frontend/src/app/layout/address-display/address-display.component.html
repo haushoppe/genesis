@@ -1,0 +1,13 @@
+<span class="text-nowrap">
+  <app-blocky-identicon
+    [address]="address"
+    blockyClass="blocky-inline-ml me-1"
+  />
+  <span *ngIf="name" [title]="name">{{ name | shortenName }}</span>
+  <span *ngIf="!name" [title]="address">{{ address | shortenAddress }}</span>
+  <ng-container *ngIf="showAddressIsCurrentWallet">
+    <span *ngIf="isCurrentWallet$ | push" [title]="'You are connected with this wallet: ' + address">
+      (you)
+    </span>
+  </ng-container>
+</span>

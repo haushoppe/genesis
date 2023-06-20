@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend",
+    "start": "nx run-many --target=serve --projects=backend,genesis-frontend,cubes-frontend,scales-dashboard-frontend",
     "start:all": "concurrently --raw \"nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend\" \"npm run start:hardhat\"",
     "build": "nx run-many --target=build --projects=backend,genesis-frontend,scales-dashboard-frontend",
     "test": "nx run-many --target=test --projects=backend,genesis-frontend,scales-dashboard-frontend",
@@ -12,14 +12,22 @@
     "build:backend": "nx build --project=backend",
     "build:backend:production": "nx build --project=backend --configuration=production && cp package* dist/apps/backend/ && jq '.scripts = { start: \"node main.js\" }' dist/apps/backend/package.json > tmp && mv tmp dist/apps/backend/package.json",
     "test:backend": "nx test --project=backend",
+
     "start:genesis-frontend": "nx serve --project=genesis-frontend",
     "build:genesis-frontend": "nx build --project=genesis-frontend",
     "build:genesis-frontend:production": "nx build --project=genesis-frontend --configuration=production",
     "test:genesis-frontend": "nx test --project=genesis-frontend",
+
+    "start:cubes-frontend": "nx serve --project=cubes-frontend",
+    "build:cubes-frontend": "nx build --project=cubes-frontend",
+    "build:cubes-frontend:production": "nx build --project=cubes-frontend --configuration=production",
+    "test:cubes-frontend": "nx test --project=cubes-frontend",
+
     "start:scales-dashboard-frontend": "nx serve --project=scales-dashboard-frontend",
     "build:scales-dashboard-frontend": "nx build --project=scales-dashboard-frontend",
     "build:scales-dashboard-frontend:production": "nx build --project=scales-dashboard-frontend --configuration=production",
     "test:scales-dashboard-frontend": "nx test --project=scales-dashboard-frontend",
+
     "postinstall": "ngcc --properties es2020 browser module main && cd contracts && npm install"
   },
   "engines": {

@@ -81,6 +81,12 @@ Only start Genesis Frontend (Angular App) in dev mode:
 npm run start:genesis-frontend
 ``` 
 
+Only start Cubes Frontend (Angular App) in dev mode:
+
+```
+npm run start:cubes-frontend
+``` 
+
 
 ## Infrastructure
 

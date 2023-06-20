@@ -1,0 +1,52 @@
+<ng-container *rxLet="mintFacade.tokenMetadataAndOwner$; let nft">
+
+  <h1 class="mt-4 mb-0 lh-1">{{ nft?.metadata?.name || 'Genesis' }}
+    <small class="text-muted font-weight-light">(Token&nbsp;#{{ nft?.metadata?.tokenId }})</small><br>
+  </h1>
+
+  <div class="mt-1 mb-4">
+    <small class="text-muted">
+      Owned by
+      <app-address-display
+        [name]="nft?.owner?.ownerName"
+        [address]="nft?.owner?.owner"
+      />
+    </small>
+    <small class="text-muted" *ngIf="nft?.owner?.lender">
+      Lended by
+      <app-address-display
+        [name]="nft?.owner?.lenderName"
+        [address]="nft?.owner?.lender"
+      />
+    </small>
+  </div>
+
+  <ng-container *ngIf="nft">
+    <iframe
+      *ngIf="nft.metadata.animation_url"
+      [src]="nft.metadata.animation_url | safeResourceUrl"
+    ></iframe>
+
+    <img *ngIf="!nft.metadata.animation_url" [src]="nft.metadata.image">
+  </ng-container>
+
+  <p class="mt-4" [innerHTML]="(nft?.metadata?.description || '') | parseMarkdown" appLinkify></p>
+
+
+  <h4>Traits</h4>
+
+  <table>
+    <tr *ngFor="let item of nft?.metadata?.attributes | keyvalue">
+      <td>{{ $any(item.value).trait_type }}:</td><td class="ps-2">{{ $any(item.value).value }}</td>
+    </tr>
+  </table>
+
+</ng-container>
+
+<app-loading-indicator
+  [state]="mintFacade.tokenMetadataAndOwnerStatus$ | push"
+  sendDataText="Loading token details…"
+></app-loading-indicator>
+
+<a routerLink="/" class="btn btn btn-primary fw-bold mt-4 mb-4" >« Back</a>
+

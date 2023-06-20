@@ -1,0 +1,101 @@
+{
+  "name": "cubes-frontend",
+  "projectType": "application",
+  "sourceRoot": "apps/cubes-frontend/src",
+  "prefix": "app",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/angular:webpack-browser",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/cubes-frontend",
+        "index": "apps/cubes-frontend/src/index.html",
+        "main": "apps/cubes-frontend/src/main.ts",
+        "polyfills": "apps/cubes-frontend/src/polyfills.ts",
+        "tsConfig": "apps/cubes-frontend/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": ["apps/cubes-frontend/src/assets", "apps/cubes-frontend/src/x"],
+        "styles": [
+          "node_modules/@fontsource/yantramanav/300.css",
+          "node_modules/@fontsource/yantramanav/500.css",
+          "node_modules/@fontsource/yantramanav/700.css",
+          "node_modules/@fontsource/merriweather/300.css",
+          "node_modules/@fontsource/merriweather/400.css",
+          "node_modules/bootstrap-icons/font/bootstrap-icons.css",
+          "apps/cubes-frontend/src/styles.scss"],
+        "scripts": [],
+        "customWebpackConfig": {
+          "path": "apps/cubes-frontend/webpack.config.js"
+        }
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "3mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ],
+          "fileReplacements": [
+            {
+              "replace": "apps/cubes-frontend/src/environments/environment.ts",
+              "with": "apps/cubes-frontend/src/environments/environment.prod.ts"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "buildOptimizer": false,
+          "optimization": false,
+          "vendorChunk": true,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "namedChunks": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@nrwl/angular:webpack-dev-server",
+      "options": {
+        "port": 4201
+      },
+      "configurations": {
+        "production": {
+          "browserTarget": "cubes-frontend:build:production"
+        },
+        "development": {
+          "browserTarget": "cubes-frontend:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "browserTarget": "cubes-frontend:build"
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": ["apps/cubes-frontend/**/*.ts", "apps/cubes-frontend/**/*.html"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/cubes-frontend"],
+      "options": {
+        "jestConfig": "apps/cubes-frontend/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}

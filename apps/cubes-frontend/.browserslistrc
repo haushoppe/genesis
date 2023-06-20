@@ -1,0 +1,24 @@
+# This file is used by the build system to adjust CSS and JS output to support the specified browsers below.
+# For additional information regarding the format and rule options, please see:
+# https://github.com/browserslist/browserslist#queries
+
+# For the full list of supported browsers by the Angular framework, please see:
+# https://angular.io/guide/browser-support
+
+# You can see what browsers were selected by your queries by running:
+#   npx browserslist
+
+last 1 Chrome version
+last 1 Firefox version
+last 2 Edge major versions
+#last 2 Safari major versions
+#last 2 iOS major versions
+
+# see https://github.com/ethers-io/ethers.js/issues/3910#issuecomment-1485165071
+# if I target last 2 Chrome versions, last 2 Safari major versions (Safari 15+) if produces more complex non working code without private class field
+# if I target last 2 Chrome versions, last 1 Safari major versions (Safari 16+) it generates working code by using private class field.
+
+last 1 Safari major versions
+last 1 iOS major versions
+
+Firefox ESR

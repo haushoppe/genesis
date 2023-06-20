@@ -14,40 +14,21 @@ export interface State {
   allTokenMetadata: Metadata[];
   allTokenMetadataStatus: SubmittableState;
 
-  // all the collections' tokens that the current wallet owns or has borrowed
-  allTokenMetadataOfWallet: ListOfOwnedTokens;
-  allTokenMetadataOfWalletStatus: SubmittableState;
-
   // info about one single token, used for the details page
   tokenMetadataAndOwner: { metadata: Metadata, owner: TokenOwner } | undefined;
   tokenMetadataAndOwnerStatus: SubmittableState;
 
-  totalSupply: number | undefined;
-  totalSupplyStatus: SubmittableState;
-
-  mintTicket: MintTicket | undefined;
-  mintTicketStatus: SubmittableState;
-
-  mintAllowlistStatus: SubmittableState
+  mintStatus: SubmittableState;
 }
 
 export const initialState: State = {
   allTokenMetadata: [],
   allTokenMetadataStatus: getInitialState(),
 
-  allTokenMetadataOfWallet: { owned: [], lended: [] },
-  allTokenMetadataOfWalletStatus: getInitialState(),
-
   tokenMetadataAndOwner: undefined,
   tokenMetadataAndOwnerStatus: getInitialState(),
 
-  totalSupply: undefined,
-  totalSupplyStatus: getInitialState(),
-
-  mintTicket: undefined,
-  mintTicketStatus: getInitialState(),
-
-  mintAllowlistStatus: getInitialState()
+  mintStatus: getInitialState(),
 };
 
 
@@ -75,25 +56,6 @@ export const mintFeature = createFeature({
       allTokenMetadataStatus: getFailureState(error)
     })),
 
-    // Load all token of the current wallet (polling)
-
-    on(MintActions.loadAllTokenMetadataOfWalletSuccess, (state, { allTokenMetadataOfWallet }) => ({
-      ...state,
-      allTokenMetadataOfWallet,
-      allTokenMetadataOfWalletStatus: getSuccessfulState()
-    })),
-
-    on(MintActions.loadAllTokenMetadataOfWalletFailure, (state, { error }) => ({
-      ...state,
-      allTokenMetadataOfWalletStatus: getFailureState(error)
-    })),
-
-    on(MintActions.clearAllTokenMetadataOfWallet, state => ({
-      ...state,
-      allTokenMetadataOfWallet: { owned: [], lended: [] },
-      allTokenMetadataOfWalletStatus: getInitialState()
-    })),
-
     // Load Token Info
 
     on(MintActions.loadTokenMetadata, state => ({
@@ -114,69 +76,22 @@ export const mintFeature = createFeature({
       tokenMetadataAndOwnerStatus: getFailureState(error)
     })),
 
-    // Load Total Supply
+    // Mint!
 
-    on(MintActions.loadTotalSupply, state => ({
+    on(MintActions.mint, state => ({
       ...state,
-      // no reset
-      totalSupplyStatus: getSubmittingState()
+      mintStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadTotalSupplySuccess, (state, { totalSupply }) => ({
+    on(MintActions.mintSuccess, (state) => ({
       ...state,
-      totalSupply,
-      totalSupplyStatus: getSuccessfulState()
+      mintStatus: getSuccessfulState()
     })),
 
-    on(MintActions.loadTotalSupplyFailure, (state, { error }) => ({
+    on(MintActions.mintFailure, (state, { error }) => ({
       ...state,
-      totalSupplyStatus: getFailureState(error)
-    })),
-
-    // MintTicket
-
-    on(MintActions.loadMintTicket, state => ({
-      ...state,
-      // no reset
-      mintTicketStatus: getSubmittingState(),
-
-      // but reset last allowlist status because a new ticket means a new chance
-      mintAllowlistStatus: getInitialState()
-    })),
-
-    on(MintActions.loadMintTicketSuccess, (state, { mintTicket }) => ({
-      ...state,
-      mintTicket,
-      mintTicketStatus: getSuccessfulState()
-    })),
-
-    on(MintActions.loadMintTicketFailure, (state, { error }) => ({
-      ...state,
-      mintTicketStatus: getFailureState(error)
-    })),
-
-    on(MintActions.clearMintTicket, state => ({
-      ...state,
-      mintTicket: undefined,
-      mintTicketStatus: getInitialState()
-    })),
-
-    // Mints via Allowlist method (with a MintTicket)
-
-    on(MintActions.mintAllowlist, state => ({
-      ...state,
-      mintAllowlistStatus: getSubmittingState()
-    })),
-
-    on(MintActions.mintAllowlistSuccess, state => ({
-      ...state,
-      mintAllowlistStatus: getSuccessfulState()
-    })),
-
-    on(MintActions.mintAllowlistFailure, (state, { error }) => ({
-      ...state,
-      mintAllowlistStatus: getFailureState(error)
-    })),
+      mintStatus: getFailureState(error)
+    }))
   )
 });
 
@@ -186,13 +101,7 @@ export const {
   selectMintState,
   selectAllTokenMetadata,
   selectAllTokenMetadataStatus,
-  selectAllTokenMetadataOfWallet,
-  selectAllTokenMetadataOfWalletStatus,
   selectTokenMetadataAndOwner,
   selectTokenMetadataAndOwnerStatus,
-  selectTotalSupply,
-  selectTotalSupplyStatus,
-  selectMintTicket,
-  selectMintTicketStatus,
-  selectMintAllowlistStatus
+  selectMintStatus
 } = mintFeature;

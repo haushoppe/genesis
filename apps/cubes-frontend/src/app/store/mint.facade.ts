@@ -4,16 +4,11 @@ import { Store } from '@ngrx/store';
 import { MintActions } from './mint.actions';
 import {
   selectAllTokenMetadata,
-  selectAllTokenMetadataOfWallet,
-  selectAllTokenMetadataOfWalletStatus,
   selectAllTokenMetadataStatus,
-  selectMintAllowlistStatus,
-  selectMintTicket,
-  selectMintTicketStatus,
+  selectMintStatus,
   selectTokenMetadataAndOwner,
   selectTokenMetadataAndOwnerStatus,
 } from './mint.reducer';
-import { selectBestTotalSupply } from './mint.selectors';
 
 
 @Injectable({
@@ -26,25 +21,12 @@ export class MintFacade {
   allTokenMetadata$ = this.store.select(selectAllTokenMetadata);
   allTokenMetadataStatus$ = this.store.select(selectAllTokenMetadataStatus);
 
-  allTokenMetadataOfWallet$ = this.store.select(selectAllTokenMetadataOfWallet);
-  allTokenMetadataOfWalletStatus$ = this.store.select(selectAllTokenMetadataOfWalletStatus);
-
   tokenMetadataAndOwner$ = this.store.select(selectTokenMetadataAndOwner);
   tokenMetadataAndOwnerStatus$ = this.store.select(selectTokenMetadataAndOwnerStatus);
 
-  mintTicket$ = this.store.select(selectMintTicket);
-  mintTicketStatus$ = this.store.select(selectMintTicketStatus);
+  mintStatus$ = this.store.select(selectMintStatus);
 
-  bestTotalSupply$ = this.store.select(selectBestTotalSupply);
-
-  mintAllowlistStatus$ = this.store.select(selectMintAllowlistStatus);
-
-
-  signMessage() {
-    this.store.dispatch(MintActions.signMessage());
-  }
-
-  mintAllowlist(mintNumber: number) {
-    this.store.dispatch(MintActions.mintAllowlist({ mintNumber }));
+  mint(inscriptionIds: string[], receiveAddress: string) {
+    this.store.dispatch(MintActions.mint({ inscriptionIds, receiveAddress }));
   }
 }

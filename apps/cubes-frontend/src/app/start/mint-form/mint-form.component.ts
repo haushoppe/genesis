@@ -1,16 +1,14 @@
 import { NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NumericTextBoxModule as KendoNumericTextBoxModule } from '@progress/kendo-angular-inputs';
-import { LabelModule as KendoLabelModule } from '@progress/kendo-angular-label';
 import { LetModule } from '@rx-angular/template/let';
-import { ethers } from 'ethers';
 
 import { LoadingIndicatorButtonComponent } from '../../layout/loading-indicator-button/loading-indicator-button.component';
-import { multiplyWeiPrice } from '../../services/ethers-utils';
 import { MintFacade } from '../../store/mint.facade';
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
+import { InscriptionIdValidator } from './inscription-id.validator';
+import { TrimValueAccessorDirective } from './trim-value-accessor.directive';
 
 @Component({
   selector: 'app-mint-form',
@@ -20,11 +18,10 @@ import { WalletFacade } from '../../store/wallet.facade';
   imports: [
     NgIf,
     LoadingIndicatorButtonComponent,
-    KendoNumericTextBoxModule,
-    KendoLabelModule,
     ReactiveFormsModule,
     LetModule,
-    NgClass
+    NgClass,
+    TrimValueAccessorDirective
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -35,57 +32,33 @@ export class MintFormComponent {
   SubmitStatus = SubmitStatus;
 
   form = new FormGroup({
-    amount: new FormControl(1, {
-      nonNullable: true,
-      validators: [
-        Validators.required
-      ]
-    })
-  } );
+    inscriptionId1: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
+    inscriptionId2: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
+    inscriptionId3: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
+    inscriptionId4: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
+    inscriptionId5: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
+    inscriptionId6: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
+    receiveAddress: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+  }
+  );
 
   c = this.form.controls;
 
-  mintAllowlist() {
-    const amount = this.c.amount.value;
-    if (amount) {
-      this.mintFacade.mintAllowlist(amount);
-    }
-  }
+  mint() {
+    const inscriptionIds = [
+      this.c.inscriptionId1.value.toLowerCase(),
+      this.c.inscriptionId2.value.toLowerCase(),
+      this.c.inscriptionId3.value.toLowerCase(),
+      this.c.inscriptionId4.value.toLowerCase(),
+      this.c.inscriptionId5.value.toLowerCase(),
+      this.c.inscriptionId6.value.toLowerCase(),
+    ];
+    const receiveAddress = this.c.receiveAddress.value.toLowerCase();
 
-  get puralisedMintText() {
-    const amount = this.c.amount.value;
+    console.log('Minting: ')
 
-    if (this.form.invalid) {
-      return 'Please enter a valid amount!'
-    }
+    this.mintFacade.mint(inscriptionIds, receiveAddress);
 
-    switch (amount) {
-      case 1: return 'Mint a new element';
-      case 2: return 'Mint two new elements';
-      case 3: return 'Mint three new elements';
-      case 4: return 'Mint four new elements';
-      default: return `Mint ${ amount } new elements`
-    }
-  }
-
-  /**
-   * Multiplies a price given in wei with a multiplier.
-   *
-   * @param {string} priceWeiString The price in wei as a string.
-   * @param {number} multiplier The multiplier.
-   * @returns {string} The result of the multiplication as a string.
-   */
-  multiply(priceInWei: string | undefined, multiplier: number | null): string {
-
-    if (!priceInWei) {
-      return '0';
-    }
-
-    if (!multiplier) {
-      multiplier = 1;
-    }
-
-    const newPriceInWei = multiplyWeiPrice(priceInWei, multiplier)
-    return ethers.formatEther(newPriceInWei);
   }
 }
+

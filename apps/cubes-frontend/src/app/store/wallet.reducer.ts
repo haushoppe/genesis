@@ -1,7 +1,5 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
-import { ConfigDetails } from '../openapi-client';
 
-import { StrictWalletState } from './helper/strict-wallet-state';
 import {
   getFailureState,
   getInitialState,
@@ -12,17 +10,11 @@ import {
 import { WalletActions } from './wallet.actions';
 
 export interface State {
-  config: ConfigDetails | undefined;
-  configStatus: SubmittableState;
-
-  wallet: StrictWalletState | undefined;
+  wallet: string | undefined;
   walletStatus: SubmittableState;
 }
 
 export const initialState: State = {
-  config: undefined,
-  configStatus:  getInitialState(),
-
   wallet: undefined,
   walletStatus: getInitialState()
 };
@@ -33,26 +25,6 @@ export const walletFeature = createFeature({
   reducer: createReducer(
     initialState,
 
-    // Config
-
-    on(WalletActions.loadConfig, state => ({
-      ...state,
-      config: undefined,
-      configStatus: getSubmittingState()
-    })),
-
-    on(WalletActions.loadConfigSuccess, (state, { config }) => ({
-      ...state,
-      config,
-      configStatus: getSuccessfulState()
-    })),
-
-    on(WalletActions.loadConfigFailure, (state,{ error }) => ({
-      ...state,
-      config: undefined,
-      configStatus: getFailureState(error)
-    })),
-
     // Wallet
 
     on(WalletActions.connectWallet, state => ({
@@ -61,8 +33,7 @@ export const walletFeature = createFeature({
       walletStatus: getSubmittingState()
     })),
 
-    on(WalletActions.connectWalletSuccess,
-       WalletActions.walletStateChange, (state, { wallet }) => ({
+    on(WalletActions.connectWalletSuccess, (state, { wallet }) => ({
       ...state,
       wallet,
       walletStatus: getSuccessfulState()
@@ -74,8 +45,7 @@ export const walletFeature = createFeature({
       walletStatus: getFailureState({ message: 'No wallet was connected' })
     })),
 
-    on(// WalletActions.disconnectWalletDone,
-       WalletActions.disconnectWalletDetected, state => ({
+    on(WalletActions.disconnectWallet, state => ({
       ...state,
       wallet: undefined,
       walletStatus: getInitialState()
@@ -87,8 +57,6 @@ export const {
   name,
   reducer,
   selectWalletState,
-  selectConfig, // selector for `config` property
-  selectConfigStatus, // selector for `configStatus` property
   selectWallet, // selector for `wallet` property
   selectWalletStatus, // selector for `walletStatus` property
 } = walletFeature;

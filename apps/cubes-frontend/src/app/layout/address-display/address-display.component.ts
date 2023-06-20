@@ -30,6 +30,6 @@ export class AddressDisplayComponent {
   walletFacade = inject(WalletFacade);
 
   get isCurrentWallet$() {
-    return this.walletFacade.addressIsCurrentWallet(this.address)
+    return false;
   }
 }

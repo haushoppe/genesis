@@ -1,81 +1,74 @@
-<ng-container  *rxLet="walletFacade.configStatus$; let configStatus">
-  <ng-container  *rxLet="walletFacade.config$; let config">
-    <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
-      <ng-container *rxLet="mintFacade.mintTicket$; let mintTicket">
-        <ng-container *rxLet="mintFacade.mintAllowlistStatus$; let allowlistStatus">
+<form
+  (ngSubmit)="mint()"
+  [formGroup]="form"
+  class="bg-dark ms-2 p-3 mt-4 shadow border">
 
-          <form *ngIf="mintTicket && mintTicket.maximumAllowedMints > 0 || walletStatus.submitStatus !== SubmitStatus.Successful"
-            (ngSubmit)="mintAllowlist()"
-            [formGroup]="form"
-            class="bg-light ms-2 p-3 mt-4 shadow border"
-            [ngClass]="{ formWithError: allowlistStatus.submitStatus === SubmitStatus.Failure }">
-            <div class="form-group row">
-              <label [for]="amount" class="col-4 col-form-label">Amount:</label>
-              <div class="col-8">
+  <div class="form-group row">
+    <label for="inscriptionId1" class="col-4 col-form-label">1st Id:</label>
+    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId1" class="form-control" id="inscriptionId1" aria-describedby="emailHelp" placeholder="First Inscription ID (TXIDiN)"></div>
+  </div>
 
-                <kendo-numerictextbox
-                  format="n0"
-                  [min]="1"
-                  [max]="mintTicket ? mintTicket.maximumAllowedMints : 4"
-                  [formControl]="c.amount"
-                  #amount
-                />
+  <div class="form-group row">
+    <label for="inscriptionId2" class="col-4 col-form-label">2nd Id:</label>
+    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId2" class="form-control" id="inscriptionId2" aria-describedby="emailHelp" placeholder="Second Inscription ID (TXIDiN)"></div>
+  </div>
 
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="price" class="col-4 col-form-label">Price:</label>
-              <div class="col-8">
+  <div class="form-group row">
+    <label for="inscriptionId3" class="col-4 col-form-label">3rd Id:</label>
+    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId3" class="form-control" id="inscriptionId3" aria-describedby="emailHelp" placeholder="Third Inscription ID (TXIDiN)"></div>
+  </div>
 
-                <strong class="d-block mt-2">
-                  {{ multiply(config?.price, c.amount.value) || '?' }} ETH
-                </strong>
-                <input class="d-none" id="price">
+  <div class="form-group row">
+    <label for="inscriptionId4" class="col-4 col-form-label">4th Id:</label>
+    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId4" class="form-control" id="inscriptionId4" aria-describedby="emailHelp" placeholder="Fourth Inscription ID (TXIDiN)"></div>
+  </div>
 
-              </div>
-            </div>
+  <div class="form-group row">
+    <label for="inscriptionId5" class="col-4 col-form-label">5th Id:</label>
+    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId5" class="form-control" id="inscriptionId5" aria-describedby="emailHelp" placeholder="Fifth Inscription ID (TXIDiN)"></div>
+  </div>
 
-            <div class="form-group row">
-              <div class="col text-center pt-2 pb-1">
+  <div class="form-group row">
+    <label for="inscriptionId6" class="col-4 col-form-label">6th Id:</label>
+    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId6"class="form-control" id="inscriptionId6" aria-describedby="emailHelp" placeholder="Sixth Inscription ID (TXIDiN)"></div>
+  </div>
 
-                <app-loading-indicator-button
-                  *ngIf="walletStatus.submitStatus !== SubmitStatus.Successful"
-                  [disabled]="configStatus.submitStatus !== SubmitStatus.Successful"
-                  (buttonClick)="walletFacade.connectWallet()"
-                  [state]="walletStatus"
-                  buttonText="Connect wallet"
-                  defaultIconClass="bi bi-wallet2"
-                />
-
-                <ng-container *rxLet="mintFacade.mintTicket$; let mintTicket">
-                  <ng-container *ngIf="mintTicket">
-
-                    <app-loading-indicator-button
-                      [disabled]="walletStatus.submitStatus !== SubmitStatus.Successful || form.invalid"
-                      [showAlertOnError]="true"
-                      (buttonClick)="mintAllowlist()"
-                      [state]="allowlistStatus"
-                      [buttonText]="allowlistStatus.submitStatus === SubmitStatus.Successful ? 'Mint successfully submitted' : puralisedMintText"
-                      defaultIconClass="bi bi-star"
-                    />
-
-                  </ng-container>
-                </ng-container>
-
-              </div>
-            </div>
-          </form>
+  <div class="form-group row">
+    <label for="receiveAddress" class="col-4 col-form-label">Address:</label>
+    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.receiveAddress" class="form-control" id="receiveAddress" aria-describedby="emailHelp" placeholder="BTC receive address"></div>
+  </div>
 
 
-          <button
-            *ngIf="mintTicket && mintTicket.maximumAllowedMints === 0"
-            (click)="walletFacade.disconnectWallet()"
-            class="btn btn-secondary">Disconnect wallet<br><small>(and try another one)</small></button>
 
+  <div class="form-group row">
+    <label for="price" class="col-4 col-form-label">Price:</label>
+    <div class="col-8">
 
-        </ng-container>
+      <strong class="d-block mt-2">
+        {{ 1000 }} sats
+      </strong>
+      <input class="d-none" id="price">
+
+    </div>
+  </div>
+
+  <div class="form-group row">
+    <div class="col text-center pt-2 pb-1">
+
+      <ng-container *rxLet="mintFacade.mintStatus$; let mintStatus">
+
+        <app-loading-indicator-button
+          [disabled]="form.invalid"
+          [showAlertOnError]="true"
+          (buttonClick)="mint()"
+          [state]="mintStatus"
+          [buttonText]="mintStatus.submitStatus === SubmitStatus.Successful ? 'Mint successfully submitted' : 'Mint your cube!'"
+          defaultIconClass="bi bi-lightning-charge-fill"
+        />
+
       </ng-container>
-    </ng-container>
-  </ng-container>
-</ng-container>
+
+    </div>
+  </div>
+</form>
 

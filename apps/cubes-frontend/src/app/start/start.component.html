@@ -1,9 +1,7 @@
-<h1 class="mt-4">In the beginning</h1>
+<h1 class="mt-4">Recursive Inscription Cubes</h1>
 
 <p class="mt-2 text-justify">
-  In the beginning, there was nothing but a formless void, shrouded in darkness and silence.
-  But then, out of this emptiness, a voice spoke. It was the voice of God, the creator of all things.
-  And with each word, a new <strong>element</strong> was materialized.<br>
+  This is a digital art experiment on the Bitcoin blockchain.
 </p>
 
 <button
@@ -13,132 +11,32 @@
 <p class="text-justify" [@collapse]="collapsed">
 
   <br class="mt-4">
-  First, God spoke the word <i>"light"</i>, and instantly, a brilliant burst of energy filled the void, illuminating the darkness.<br>
-  Then, God spoke the word <i>"water"</i>, and great oceans and rivers sprang forth, glistening in the light.<br>
-  Next, God spoke the word <i>"earth"</i>, and the ground took shape, with mountains, valleys, and plains.<br>
-  <br>
-  As God continued to speak, more and more elements were created…<br>
-  <br>
-  Olaf Hoppe, a renowned artist with a passion for the spiritual and mystical,
-  has created an epic collection of woodcuts that reinterpret the timeless story of Genesis.
-  Using traditional woodcut techniques, the artist crafted an impressive collection of physical artworks.
-  Under the engineering of his son Johannes Hoppe, all works in the Genesis collection and rare special prints are now available as digital collectables.<br>
-  <br>
-  <strong>Explore how the multi colored woodblocks were put together and continue the story of Genesis on the Ethereum blockchain.</strong>
-  <br>
-  <br>
-  Genesis, a digital collection by
-  <br>
-  <img src="assets/signature_olaf_hoppe.jpg" width="300">
-  <img src="assets/signature_johannes_hoppe.jpg" width="300">
+  Through ordinals and recursive inscriptions, entirely new forms of expression will emerge, and this is one of them. Mint your inscription by combining other images from the chain and enjoy this unique 3D experiment. There is no copyright, no collection, no provenance, no roadmap. <strong>Only immutable art.</strong>
 </p>
 
 
-<h2 class="mt-5">Mint new elements</h2>
+<h2 class="mt-5">Mint a cube</h2>
 
-<ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
-  <ng-container *rxLet="walletFacade.bestWalletName$; let bestWalletName">
-    <ng-container *rxLet="walletFacade.walletAddress$; let walletAddress">
+<p class="mb-0">
+  Enter six Inscription IDs in the TXID<strong>i</strong>N format <small>(eg. 2dbdf9ebbec6be793fd16ae9b797c7cf968ab2427166aaf390b90b71778266ab<strong>i</strong>0)</small> and your receive address (preferably a taproot address which starts with <strong>bc1p</strong>).
+  We will display an invoice that you can pay directly via 🟧 Bitcoin or ⚡️ Lightning (faster).<br>
+  After that, we will automatically inscribe your cube and send it to you. It's that simple.
+</p>
 
-      <p *ngIf="walletStatus.submitStatus !== SubmitStatus.Successful" class="mb-0">
-        This collection is strictly limited.
-        Please connect your wallet to check if you can mint new elements.
-
-        <br class="d-none d-lg-block">
-
-        Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> elements have been minted.
-      </p>
-
-      <p *ngIf="walletStatus.submitStatus === SubmitStatus.Successful" class="mb-0">
-        You have successfully connected your {{ walletFacade.walletLabel$ | push }} wallet with your account
-
-        <app-address-display
-          [name]="bestWalletName"
-          [address]="walletAddress"
-          [showAddressIsCurrentWallet]="false"
-        />.
-
-        <br class="d-none d-lg-block">
-
-        Already <strong>{{ mintFacade.bestTotalSupply$ | push }}</strong> elements have been minted.
-
-        <ng-container *rxLet="mintFacade.mintTicket$; let mintTicket">
-          <ng-container *ngIf="mintTicket && mintTicket.maximumAllowedMints > 0">
-              You can mint up to <strong>{{ mintTicket.maximumAllowedMints }}</strong> elements in total.<br>
-          </ng-container>
-
-          <p class="mt-3" *ngIf="mintTicket && mintTicket.maximumAllowedMints === 0">
-            Currently you can't acquire elements with this account.<br>
-            <strong>Please wait until minting is activated for everyone.</strong>
-          </p>
-
-        </ng-container>
-      </p>
-
-      <app-mint-form />
-
-    </ng-container>
-  </ng-container>
-</ng-container>
+<app-mint-form />
 
 
-<ng-container *rxLet="mintFacade.allTokenMetadataOfWallet$; let allTokenMetadataOfWallet">
-  <ng-container *ngIf="allTokenMetadataOfWallet.owned.length > 0">
-    <h2 class="mt-5">Your elements</h2>
-
-    <p class="mb-3">
-      Here they are - the elements that belong to you and only you.
-      Don't stop now, dive further into the world of Genesis.
-      With just four of these tokens, you can craft a Mosaic, another piece of the puzzle.
-      But that's not all. You can safely lend out your tokens, or maybe borrow some, and assemble new mosaic masterpieces!
-    </p>
-
-    <div class="row">
-
-      <div *rxFor="let nft of allTokenMetadataOfWallet.owned" class="col-6 col-md-4 col-lg-3">
-        <app-nft-display-list [nft]="nft"></app-nft-display-list>
-      </div>
-
-    </div>
-  </ng-container>
-
-  <ng-container *ngIf="allTokenMetadataOfWallet.lended.length > 0">
-    <h2 class="mt-5">Your borrowed elements</h2>
-
-    <p class="mb-3">
-      You have been generous and have lent out these tokens.
-      Whenever you desire, you can retrieve them.
-    </p>
-
-    <div class="row">
-
-      <div *rxFor="let nft of allTokenMetadataOfWallet.lended" class="col-6 col-md-4 col-lg-3">
-        <app-nft-display-list [nft]="nft"></app-nft-display-list>
-      </div>
-
-    </div>
-  </ng-container>
-
-</ng-container>
-
-
-
-
-
-<h2 class="mt-5">All elements</h2>
+<h2 class="mt-5">Latest cubes</h2>
 
 <p class="mb-3">
-  Explore all materialised <strong>elements</strong> here.
-  Which element will appear here next? We don't know!
-  The transaction hash will determine which work is unlocked.
-  And by <strong>composing elements to mosaics</strong>, only the owner of an element can determine which combinations will emerge next!
+  Here you see a selection of cubes that have been inscribed in the recent blocks. If this experiment becomes successful, we would be happy to provide a complete list.
 </p>
 
 <div class="row">
 
-  <div *rxFor="let nft of mintFacade.allTokenMetadata$" class="col-6 col-md-4 col-lg-3">
+  <!-- <div *rxFor="let nft of mintFacade.allTokenMetadata$" class="col-6 col-md-4 col-lg-3">
     <app-nft-display-list [nft]="nft"></app-nft-display-list>
-  </div>
+  </div> -->
 
   <app-loading-indicator
     [state]="mintFacade.allTokenMetadataStatus$ | push" class="mb-5"
@@ -146,12 +44,3 @@
   ></app-loading-indicator>
 
 </div>
-
-
-<!-- just for debugging -->
-<!-- <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
-  <button
-    *ngIf="walletStatus.submitStatus === SubmitStatus.Successful"
-    (click)="mintFacade.signMessage()"
-    class="btn btn-secondary ms-2">Test: Sign Message</button>
-</ng-container> -->

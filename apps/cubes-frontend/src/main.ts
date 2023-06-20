@@ -27,7 +27,7 @@ bootstrapApplication(AppComponent,{
     provideHttpClient(),
     provideAnimations(),
     importProvidersFrom(ApiModule.forRoot(() => new Configuration({
-      basePath: environment.api
+      basePath: environment.mintApi
     }))),
     importProvidersFrom(NotificationModule),
     provideRouter([

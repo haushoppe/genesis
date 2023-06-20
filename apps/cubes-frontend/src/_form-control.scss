@@ -1,0 +1,38 @@
+.form-control.ng-touched {
+  &.ng-valid {
+    @extend .is-valid;
+  }
+
+  &.ng-invalid {
+    @extend .is-invalid;
+    @extend .text-danger;
+  }
+}
+
+.form-group {
+  @extend .mb-3;
+  label {
+    font-weight: 500;
+    margin-bottom: 0.1em;
+  }
+}
+
+.feedback {
+  &-error,
+  &-red {
+    @extend .small;
+    @extend .mt-1;
+    @extend .text-danger;
+  }
+
+  &-success,
+  &-green {
+    @extend .small;
+    @extend .mt-1;
+    @extend .text-success;
+  }
+}
+
+.form-group {
+  margin-bottom: 0.1em !important;
+}

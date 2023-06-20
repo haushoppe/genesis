@@ -3,10 +3,7 @@
 // bootstrap
 @import "_adjust-bootstrap.scss";
 @import "_include-bootstrap.scss";
-
-// kendo
-@import "_adjust-kendo.scss";
-@import "_include-kendo.scss";
+@import "_form-control.scss";
 
 body {
   font-family: "Yantramanav", sans-serif;
@@ -47,11 +44,6 @@ button:disabled {
   pointer-events: all !important;
 }
 
-:root {
-  /* CUSTOMIZE THE ONBOARD COLOR  PALLETTE */
-  --onboard-primary-500: #515151;
-}
-
 
 // https://codepen.io/danielmariveles/pen/jPrwxv
 
@@ -65,7 +57,8 @@ button:disabled {
   left: -0.75rem;
   display: inline-block;
   padding: 0.5rem 0.60rem 0.275rem 0.60rem;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0);
+  color: $primary;
 }
 
 .btn-label-text {

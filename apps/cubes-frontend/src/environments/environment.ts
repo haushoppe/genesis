@@ -2,17 +2,9 @@
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
-import { KnownTokenName } from "../../../shared/known-token-name";
-
 export const environment = {
   production: false,
-  api: 'http://localhost:3333',
-  tokenName: KnownTokenName.genesis,
-  // You cannot set a timeout directly on a Web3Provider,
-  // because there is not necessarily an underlying network connection.
-  // For example, MetaMask is not something that can timeout, since it is an injected object.
-  // see https://github.com/ethers-io/ethers.js/discussions/2349#discussioncomment-1722695
-  web3ProviderTimeout: 30 * 1000
+  mintApi: 'https://signet.ordinalsbot.com/api'
 };
 
 /*

@@ -1,10 +1,11 @@
 import { animate, AUTO_STYLE, state, style, transition, trigger } from '@angular/animations';
-import { JsonPipe, NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ForModule } from '@rx-angular/template/for';
 import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
 
+import { AddressDisplayComponent } from '../layout/address-display/address-display.component';
 import { AlertComponent } from '../layout/alert/alert.component';
 import { LoadingIndicatorButtonComponent } from '../layout/loading-indicator-button/loading-indicator-button.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
@@ -12,7 +13,6 @@ import { NftDisplayListComponent } from '../layout/nft-display-list/nft-display-
 import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
-import { AddressDisplayComponent } from '../layout/address-display/address-display.component';
 import { MintFormComponent } from './mint-form/mint-form.component';
 
 
@@ -24,7 +24,6 @@ const expandDuration = 500
     styleUrls: ['./start.component.scss'],
     standalone: true,
     imports: [
-      JsonPipe,
       LoadingIndicatorComponent,
       LoadingIndicatorButtonComponent,
       AlertComponent,

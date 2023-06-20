@@ -1,10 +1,11 @@
-import { JsonPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
-import { ShortenNamePipe } from './shorten-name.pipe';
-import { ShortenAddressPipe } from './shorten-address.pipe';
-import { BlockyIdenticonComponent } from './blocky/blocky-identicon.component';
-import { WalletFacade } from '../../store/wallet.facade';
+import { NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
 import { PushModule } from '@rx-angular/template/push';
+
+import { WalletFacade } from '../../store/wallet.facade';
+import { BlockyIdenticonComponent } from './blocky/blocky-identicon.component';
+import { ShortenAddressPipe } from './shorten-address.pipe';
+import { ShortenNamePipe } from './shorten-name.pipe';
 
 @Component({
   selector: 'app-address-display',
@@ -13,7 +14,6 @@ import { PushModule } from '@rx-angular/template/push';
   standalone: true,
   imports: [
     NgIf,
-    JsonPipe,
     ShortenNamePipe,
     ShortenAddressPipe,
     BlockyIdenticonComponent,

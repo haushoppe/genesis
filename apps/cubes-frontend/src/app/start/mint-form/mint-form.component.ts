@@ -1,5 +1,5 @@
-import { NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { JsonPipe, NgClass, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LetModule } from '@rx-angular/template/let';
 
@@ -9,6 +9,7 @@ import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
 import { InscriptionIdValidator } from './inscription-id.validator';
 import { TrimValueAccessorDirective } from './trim-value-accessor.directive';
+import { CubePreviewComponent } from '../../layout/cube-preview/cube-preview.component';
 
 @Component({
   selector: 'app-mint-form',
@@ -21,11 +22,12 @@ import { TrimValueAccessorDirective } from './trim-value-accessor.directive';
     ReactiveFormsModule,
     LetModule,
     NgClass,
-    TrimValueAccessorDirective
+    TrimValueAccessorDirective,
+    CubePreviewComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MintFormComponent {
+export class MintFormComponent implements OnInit {
 
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
@@ -39,26 +41,39 @@ export class MintFormComponent {
     inscriptionId5: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
     inscriptionId6: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
     receiveAddress: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-  }
-  );
+  });
 
   c = this.form.controls;
 
+  ngOnInit() {
+    return;
+  //   if (!environment.production) {
+  //     this.form.patchValue({
+  //       inscriptionId1: '6761724cd0a42d465efc3ea3ece3cb8790b47fd0f19799d0c257d6df80fcf642i0',
+  //       inscriptionId2: 'ec6d1d7f5b8413355c63b23d8f5b8dde5f0e01dd89a38385b04918a24d8966d2i0',
+  //       inscriptionId3: 'b43908f4c8458b7b3c797a6df42950ffcdd7008744aff0ca399e2b77fea4355ei0',
+  //       inscriptionId4: '992f6822b6c3c34eb3297cd0d9923bd159c4d77efc0ce3dd1fe78a7be2898182i0',
+  //       inscriptionId5: 'ee05f2605c99cf0059472674ceb499f90327f39b50c34b8725e772b70631ce32i0',
+  //       inscriptionId6: '01911182a249543b3db1fd92b6f61c8f14487c2f3e780e19b83cd836a3d98f1fi0',
+  //     })
+  //   }
+  }
+
+  getInscriptionIds() {
+    return {
+      inscriptionId1: this.c.inscriptionId1.value.toLowerCase(),
+      inscriptionId2: this.c.inscriptionId2.value.toLowerCase(),
+      inscriptionId3: this.c.inscriptionId3.value.toLowerCase(),
+      inscriptionId4: this.c.inscriptionId4.value.toLowerCase(),
+      inscriptionId5: this.c.inscriptionId5.value.toLowerCase(),
+      inscriptionId6: this.c.inscriptionId6.value.toLowerCase()
+    };
+  }
+
   mint() {
-    const inscriptionIds = [
-      this.c.inscriptionId1.value.toLowerCase(),
-      this.c.inscriptionId2.value.toLowerCase(),
-      this.c.inscriptionId3.value.toLowerCase(),
-      this.c.inscriptionId4.value.toLowerCase(),
-      this.c.inscriptionId5.value.toLowerCase(),
-      this.c.inscriptionId6.value.toLowerCase(),
-    ];
+    const inscriptionIds = this.getInscriptionIds()
     const receiveAddress = this.c.receiveAddress.value.toLowerCase();
-
-    console.log('Minting: ')
-
     this.mintFacade.mint(inscriptionIds, receiveAddress);
-
   }
 }
 

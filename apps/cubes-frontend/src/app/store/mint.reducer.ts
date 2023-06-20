@@ -10,6 +10,15 @@ import {
   SubmittableState,
 } from './submittable/submittable-state';
 
+export interface SixInscriptionIds {
+  inscriptionId1?: string;
+  inscriptionId2?: string;
+  inscriptionId3?: string;
+  inscriptionId4?: string;
+  inscriptionId5?: string;
+  inscriptionId6?: string;
+}
+
 export interface State {
   allTokenMetadata: Metadata[];
   allTokenMetadataStatus: SubmittableState;

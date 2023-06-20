@@ -1,6 +1,9 @@
 {
-  "/content/": {
-    "target": "https://ordinals.com/content/",
-    "secure": false
+  "/content/*": {
+    "target": "https://ordinals.com/",
+    "x-target": "https://www.ord.io/",
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true
   }
 }

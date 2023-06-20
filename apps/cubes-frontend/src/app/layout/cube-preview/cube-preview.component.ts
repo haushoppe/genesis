@@ -1,10 +1,10 @@
-import { NgIf } from '@angular/common';
+import { JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
 import { PushModule } from '@rx-angular/template/push';
 
-import { WalletFacade } from '../../store/wallet.facade';
-import { ShortenAddressPipe } from './shorten-address.pipe';
-import { ShortenNamePipe } from './shorten-name.pipe';
+import { SafeHtmlPipe } from '../../safe-html.pipe';
+import { MintService } from '../../services/mint-service';
+import { SixInscriptionIds } from '../../store/mint.reducer';
 
 @Component({
   selector: 'app-cube-preview',
@@ -13,21 +13,15 @@ import { ShortenNamePipe } from './shorten-name.pipe';
   standalone: true,
   imports: [
     NgIf,
-    ShortenNamePipe,
-    ShortenAddressPipe,
-    PushModule
+    PushModule,
+    SafeHtmlPipe,
+    JsonPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AddressDisplayComponent {
+export class CubePreviewComponent {
 
-  @Input() name?: string;
-  @Input() address?: string;
-  @Input() showAddressIsCurrentWallet = true;
+  @Input() inscriptionIds: SixInscriptionIds = { };
 
-  walletFacade = inject(WalletFacade);
-
-  get isCurrentWallet$() {
-    return false;
-  }
+  mintService = inject(MintService);
 }

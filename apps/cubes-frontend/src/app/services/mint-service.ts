@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { environment } from '../../environments/environment';
-
-
+import { SixInscriptionIds } from '../store/mint.reducer';
 
 
 @Injectable({
@@ -10,7 +8,57 @@ import { environment } from '../../environments/environment';
 })
 export class MintService {
 
-  async mint(inscriptionIds: string[]): Promise<void> {
+  readonly template1 = `<html>TEST<!-- cubes.haushoppe.art --><body><script>t='`;
+  readonly template2 = `'</script><script src="/content/9475aa8df559d569f7284ce59e97014f28be758e832e212fdbba0202699dd035i0"></script>`;
+
+  readonly dummyInscriptionIds = [
+    '09da2c75de72d006e2f24dac29a27976963a5723abe110cf2c29d1cf9225fb36i0', // #944
+    'ce1e4fd0f31f802d2348ab27eeec9385f4e58e5f81606cd94200fcd05c622a37i0', // #945
+    'dfcf3fc4aec42d2c0bdb3b6d26a4dac4ea7893b70f6b42ae9e5ac883621c6537i0', // #946
+    '519bca4c2adec9c41f3de0099202d495ddf66c664fa801c14fc723a836938550i0', // #947
+    '93125728223d2a2014ed1df0ff5f50d83573718964b71c48286f88775829c45ci0', // #948
+    'f1ac3821de11c8fe7eabe39027915806662bc6e87a236e90f088cc3b371eaa80i0', // #949
+    'f44905aeb2bdb5ac3e71999d6648b6425018656898c8c55fd7a3b7df7ab79ac2i0'  // #950
+  ]
+
+  getCubeHtml(inscriptionIds: SixInscriptionIds | undefined) {
+
+    inscriptionIds = inscriptionIds || {};
+
+    return this.template1
+      + (inscriptionIds.inscriptionId1 || this.dummyInscriptionIds[0]) + '|'
+      + (inscriptionIds.inscriptionId2 || this.dummyInscriptionIds[1]) + '|'
+      + (inscriptionIds.inscriptionId3 || this.dummyInscriptionIds[2]) + '|'
+      + (inscriptionIds.inscriptionId4 || this.dummyInscriptionIds[3]) + '|'
+      + (inscriptionIds.inscriptionId5 || this.dummyInscriptionIds[4]) + '|'
+      + (inscriptionIds.inscriptionId6 || this.dummyInscriptionIds[5])
+      + this.template2;
+  }
+
+  getCubeHtmlAsDataUrl(inscriptionIds: SixInscriptionIds) {
+
+    const htmlString = this.getCubeHtml(inscriptionIds);
+
+    // Convert the HTML string to a base64 encoded string
+    const encodedHtml = btoa(unescape(encodeURIComponent(htmlString)));
+
+    // Create a data URL
+    const dataUrl = 'data:text/html;base64,' + encodedHtml;
+
+    return dataUrl;
+}
+
+  async mint(inscriptionIds: SixInscriptionIds): Promise<void> {
+
+    if (!inscriptionIds.inscriptionId1 ||
+        !inscriptionIds.inscriptionId2 ||
+        !inscriptionIds.inscriptionId3 ||
+        !inscriptionIds.inscriptionId4 ||
+        !inscriptionIds.inscriptionId5 ||
+        !inscriptionIds.inscriptionId6) {
+      throw 'InscriptionId is missing!'
+    }
+
 
     return Promise.reject();
   }

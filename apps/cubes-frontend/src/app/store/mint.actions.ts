@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
-import { Metadata, MintTicket, TokenOwner } from '../openapi-client';
+import { Metadata, TokenOwner } from '../openapi-client';
+import { SixInscriptionIds } from './mint.reducer';
 
 export const MintActions = createActionGroup({
   source: 'Mint',
@@ -16,7 +17,7 @@ export const MintActions = createActionGroup({
 
     // Inscription IDs are of the form TXIDiN, where TXID is the transaction ID of the reveal transaction,
     // and N is the index of the inscription in the reveal transaction.
-    'Mint': props<{ inscriptionIds: string[], receiveAddress: string}>(),
+    'Mint': props<{ inscriptionIds: SixInscriptionIds, receiveAddress: string}>(),
     'Mint Success': props<{ invoice: string }>(),
     'Mint Failure': props<{ error: HttpErrorResponse }>(),
   }

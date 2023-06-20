@@ -23,12 +23,12 @@ export class MintEffects {
   notificationService = inject(NotificationService);
   ngZone = inject(NgZone);
 
-  loadMintsOnRouting$ = createEffect(() => {
-    return this.actions.pipe(
-      ofRoute(['']),
-      map(() => MintActions.loadAllTokenMetadata()),
-    );
-  });
+  // loadMintsOnRouting$ = createEffect(() => {
+  //   return this.actions.pipe(
+  //     ofRoute(['']),
+  //     map(() => MintActions.loadAllTokenMetadata()),
+  //   );
+  // });
 
   loadMints$ = createEffect(() => {
     return this.actions.pipe(

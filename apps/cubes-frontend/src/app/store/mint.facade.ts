@@ -8,6 +8,7 @@ import {
   selectMintStatus,
   selectTokenMetadataAndOwner,
   selectTokenMetadataAndOwnerStatus,
+  SixInscriptionIds,
 } from './mint.reducer';
 
 
@@ -26,7 +27,7 @@ export class MintFacade {
 
   mintStatus$ = this.store.select(selectMintStatus);
 
-  mint(inscriptionIds: string[], receiveAddress: string) {
+  mint(inscriptionIds: SixInscriptionIds, receiveAddress: string) {
     this.store.dispatch(MintActions.mint({ inscriptionIds, receiveAddress }));
   }
 }

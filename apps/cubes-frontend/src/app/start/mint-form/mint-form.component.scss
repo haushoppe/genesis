@@ -6,10 +6,44 @@ form.formWithError {
   max-width: 600px;
 }
 
-kendo-numerictextbox {
-  max-width: 100px;
-}
-
 .col-4 {
   max-width: 90px;
+}
+
+$orange: #ff9900; // #944
+$green:  #1c6b4c; // #945
+$red:    #f44336; // #946
+$blue:   #2196f3; // #947
+// $yellow: #ffeb3b; // #948
+$indigo: #3f51b5; // #949
+$violet: #9c27b0; // #950
+
+.inscriptionId1 {
+  label { color: $orange; }
+  input { border-color: $orange; }
+}
+
+.inscriptionId2 {
+  label { color: $green; }
+  input { border-color: $green; }
+}
+
+.inscriptionId3 {
+  label { color: $red; }
+  input { border-color: $red; }
+}
+
+.inscriptionId4 {
+  label { color: $blue; }
+  input { border-color: $blue; }
+}
+
+.inscriptionId5 {
+  label { color: $indigo; }
+  input { border-color: $indigo; }
+}
+
+.inscriptionId6 {
+  label { color: $violet; }
+  input { border-color: $violet; }
 }

@@ -1,15 +1,15 @@
-import { JsonPipe, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { NgClass, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LetModule } from '@rx-angular/template/let';
 
+import { CubePreviewComponent } from '../../layout/cube-preview/cube-preview.component';
 import { LoadingIndicatorButtonComponent } from '../../layout/loading-indicator-button/loading-indicator-button.component';
 import { MintFacade } from '../../store/mint.facade';
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
 import { InscriptionIdValidator } from './inscription-id.validator';
 import { TrimValueAccessorDirective } from './trim-value-accessor.directive';
-import { CubePreviewComponent } from '../../layout/cube-preview/cube-preview.component';
 
 @Component({
   selector: 'app-mint-form',

@@ -12,22 +12,18 @@
     "build:backend": "nx build --project=backend",
     "build:backend:production": "nx build --project=backend --configuration=production && cp package* dist/apps/backend/ && jq '.scripts = { start: \"node main.js\" }' dist/apps/backend/package.json > tmp && mv tmp dist/apps/backend/package.json",
     "test:backend": "nx test --project=backend",
-
     "start:genesis-frontend": "nx serve --project=genesis-frontend",
     "build:genesis-frontend": "nx build --project=genesis-frontend",
     "build:genesis-frontend:production": "nx build --project=genesis-frontend --configuration=production",
     "test:genesis-frontend": "nx test --project=genesis-frontend",
-
     "start:cubes-frontend": "nx serve --project=cubes-frontend",
     "build:cubes-frontend": "nx build --project=cubes-frontend",
     "build:cubes-frontend:production": "nx build --project=cubes-frontend --configuration=production",
     "test:cubes-frontend": "nx test --project=cubes-frontend",
-
     "start:scales-dashboard-frontend": "nx serve --project=scales-dashboard-frontend",
     "build:scales-dashboard-frontend": "nx build --project=scales-dashboard-frontend",
     "build:scales-dashboard-frontend:production": "nx build --project=scales-dashboard-frontend --configuration=production",
     "test:scales-dashboard-frontend": "nx test --project=scales-dashboard-frontend",
-
     "postinstall": "ngcc --properties es2020 browser module main && cd contracts && npm install"
   },
   "engines": {
@@ -79,6 +75,7 @@
     "@web3-onboard/trezor": "^2.3.3",
     "@web3-onboard/walletconnect": "^2.2.2",
     "axios": "^0.27.2",
+    "bitcoinjs-lib": "^6.1.3",
     "bootstrap": "^5.2.3",
     "bootstrap-icons": "^1.10.3",
     "canvas-confetti": "^1.6.0",

@@ -10,6 +10,7 @@ import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
 import { InscriptionIdValidator } from './inscription-id.validator';
 import { TrimValueAccessorDirective } from './trim-value-accessor.directive';
+import { BtcAddressValidator } from './btc-address.validator';
 
 @Component({
   selector: 'app-mint-form',
@@ -40,7 +41,7 @@ export class MintFormComponent implements OnInit {
     inscriptionId4: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
     inscriptionId5: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
     inscriptionId6: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
-    receiveAddress: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    receiveAddress: new FormControl('', { nonNullable: true, validators: [Validators.required, BtcAddressValidator()] }),
   });
 
   c = this.form.controls;
@@ -61,18 +62,18 @@ export class MintFormComponent implements OnInit {
 
   getInscriptionIds() {
     return {
-      inscriptionId1: this.c.inscriptionId1.value.toLowerCase(),
-      inscriptionId2: this.c.inscriptionId2.value.toLowerCase(),
-      inscriptionId3: this.c.inscriptionId3.value.toLowerCase(),
-      inscriptionId4: this.c.inscriptionId4.value.toLowerCase(),
-      inscriptionId5: this.c.inscriptionId5.value.toLowerCase(),
-      inscriptionId6: this.c.inscriptionId6.value.toLowerCase()
+      inscriptionId1: this.c.inscriptionId1.value,
+      inscriptionId2: this.c.inscriptionId2.value,
+      inscriptionId3: this.c.inscriptionId3.value,
+      inscriptionId4: this.c.inscriptionId4.value,
+      inscriptionId5: this.c.inscriptionId5.value,
+      inscriptionId6: this.c.inscriptionId6.value
     };
   }
 
   mint() {
     const inscriptionIds = this.getInscriptionIds()
-    const receiveAddress = this.c.receiveAddress.value.toLowerCase();
+    const receiveAddress = this.c.receiveAddress.value;
     this.mintFacade.mint(inscriptionIds, receiveAddress);
   }
 }

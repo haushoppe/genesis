@@ -1,10 +1,10 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 
+import { OrdinalsService } from '../openapi-client';
+import { OrderResponse } from '../ordinalsbot';
 import { SixInscriptionIds } from '../store/mint.reducer';
 import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
-import { OrdinalsService } from '../openapi-client';
-import { Observable } from 'rxjs';
-import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 
 
 @Injectable({

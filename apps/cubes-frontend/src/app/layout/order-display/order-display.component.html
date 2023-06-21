@@ -1,0 +1,73 @@
+<div class="row ps-3 pr-3 mb-4">
+  <div *ngIf="order" class="bg-dark p-3 mt-4 border col-lg-8 mx-auto">
+
+    <h3>Order <span class="badge" [ngClass]="getPaymentStatusBadge()">{{ order.charge.status }}</span></h3>
+
+    Order ID: <strong>#{{ order.charge.id }}</strong>
+
+    <p>
+      {{ paymentStatusMessage() }}<span class="blinking-text">...</span>
+    </p>
+
+
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link"
+          [ngClass]="{
+            'active text-white': !showLightning,
+            'not-active': showLightning
+          }" href="javascript:void(0)"
+          (click)="showLightning = false">Pay on chain BTC</a>
+      </li>
+      <li class="nav-item"><strong class="nav-link fake-nav">or</strong></li>
+      <li class="nav-item">
+        <a class="nav-link"
+          [ngClass]="{
+            'active text-white': showLightning,
+            'not-active': !showLightning }" href="javascript:void(0)"
+          (click)="showLightning = true">Pay with Lightning</a>
+      </li>
+    </ul>
+
+    <div class="tab-pane p-3 nav-link">
+
+      <div class="input-group mb-3">
+        <input class="form-control" type="text" [value]="order.charge.chain_invoice.address" readonly>
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary" type="button" (click)="copyChainAddressToClipboard()">
+            Copy
+            <i class="bi bi-check2" *ngIf="copyChainSuccessfull === true"></i>
+            <i class="bi bi-x" *ngIf="copyChainSuccessfull === false"></i>
+
+
+          </button>
+
+
+        </div>
+      </div>
+
+      Fee Rate: {{ order.fee }} sats/byte<br>
+      Total Amount: <strong>{{ order.charge.amount / 100000000 }} BTC</strong> ({{ order.charge.amount }} sats)
+      <!-- which equals to {{ order.charge.fiat_value }} USD -->
+    </div>
+
+    <br *ngIf="getPaymentPending()">
+    <app-loading-indicator
+      *ngIf="getPaymentPending()"
+      [state]="submittingState"
+      sendDataText="Order is pending…"
+    />
+
+
+    <p  class="mt-4">
+      <small>
+      Please retain your order ID for future reference. It will be essential in assisting you should any issues arise.<br>
+      You may visit the following page to secure the number or process the payment:
+      <a [href]="order.charge.hosted_checkout_url" target="_blank">Opennode Checkout</a>
+      </small>
+    </p>
+
+
+  </div>
+</div>
+

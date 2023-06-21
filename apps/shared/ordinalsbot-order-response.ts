@@ -1,10 +1,13 @@
+import { ChargeStatus } from './ordinalsbot-charge-status'
+
+
 /*
 RESPONSE of POST https://api2.ordinalsbot.com/order
 AND
 RESPONSE of GET https://api2.ordinalsbot.com/order?id=da418953-225b-4cba-99f9-1c5f826704b0
+*/
 
-
-{
+export const exampleUnpaidResponse = {
     "status": "ok",
     "files": [
         {
@@ -56,13 +59,19 @@ RESPONSE of GET https://api2.ordinalsbot.com/order?id=da418953-225b-4cba-99f9-1c
         ".sv": "timestamp"
     }
 }
-*/
+
+
+
+// see https://developers.opennode.com/reference/create-charge
+// see https://developers.opennode.com/docs/charge-lifecycle
 
 export interface OrderResponse {
   fee: number;   // choosen fee rate in sats/byte
   charge: {
 
     id: string;      // save this to poll against https://api2.ordinalsbot.com/order?id=XXX
+
+    status: ChargeStatus;
     amount: number;  // amount to pay in satoshis
     hosted_checkout_url: string;
 
@@ -75,6 +84,7 @@ export interface OrderResponse {
       payreq: string
     },
     fiat_value: number; // amount in USD
+    ttl: number; // TTL (time to live) in minutes. Min: 10, Max: 1440 (24H), Default: 1440
   }
 }
 

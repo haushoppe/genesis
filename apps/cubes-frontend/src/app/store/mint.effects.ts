@@ -2,13 +2,12 @@ import { inject, Injectable, NgZone } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
-import { concat, from, of } from 'rxjs';
+import { from, of } from 'rxjs';
 import { catchError, concatMap, map, retry, switchMap } from 'rxjs/operators';
 
 import { MintService } from '../services/mint-service';
 import { MintActions } from './mint.actions';
 import { PageActions } from './page.actions';
-import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 
 
 @Injectable()

@@ -5,10 +5,6 @@ import BitcoinEsploraApiProvider from '../api/esplora/esploraAPiProvider';
 import { ORDINALS_URL, XVERSE_API_BASE_URL } from '../constant';
 import { BtcOrdinal, NetworkType, UTXO } from '../types';
 
-import { OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
-import { createInscriptionRequestForHtml } from '../../../../../shared/ordinalsbot';
-
-
 export function parseOrdinalTextContentData(content: string): string {
   try {
     const contentData = JSON.parse(content);

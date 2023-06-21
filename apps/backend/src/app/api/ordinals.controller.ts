@@ -30,14 +30,12 @@ export class OrdinalsController {
       contentB64
     );
 
-    const { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = orderResponseFull.charge;
+    // const { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = orderResponseFull.charge;
+    // const orderResponseShort = {
+    //   fee: orderResponseFull.fee,
+    //   charge: { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value }
+    // }
 
-    // hide all unessary data
-    const orderResponseShort = {
-      fee: orderResponseFull.fee,
-      charge: { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value }
-    }
-
-    return orderResponseShort;
+    return orderResponseFull;
   }
 }

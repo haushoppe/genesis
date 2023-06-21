@@ -1,5 +1,4 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
-import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 
 import { MintActions } from './mint.actions';
 import {
@@ -9,6 +8,7 @@ import {
   getSuccessfulState,
   SubmittableState,
 } from './submittable/submittable-state';
+import { exampleUnpaidResponse, OrderResponse } from '../ordinalsbot';
 
 export interface SixInscriptionIds {
   inscriptionId1?: string;
@@ -38,7 +38,8 @@ export const initialState: State = {
   // tokenMetadataAndOwner: undefined,
   // tokenMetadataAndOwnerStatus: getInitialState(),
 
-  mintOrderResponse: undefined,
+  // mintOrderResponse: undefined,
+  mintOrderResponse: exampleUnpaidResponse as OrderResponse,
   mintStatus: getInitialState(),
 };
 
@@ -115,7 +116,6 @@ export const {
   selectMintState,
   selectAllTokenMetadata,
   selectAllTokenMetadataStatus,
-  // selectTokenMetadataAndOwner,
-  // selectTokenMetadataAndOwnerStatus,
+  selectMintOrderResponse,
   selectMintStatus
 } = mintFeature;

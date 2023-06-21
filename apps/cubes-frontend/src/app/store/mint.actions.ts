@@ -1,7 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
+
+import { OrderResponse } from '../ordinalsbot';
 import { SixInscriptionIds } from './mint.reducer';
-import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 
 export const MintActions = createActionGroup({
   source: 'Mint',

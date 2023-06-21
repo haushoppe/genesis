@@ -5,7 +5,6 @@ import { ForModule } from '@rx-angular/template/for';
 import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
 
-import { AddressDisplayComponent } from '../layout/address-display/address-display.component';
 import { AlertComponent } from '../layout/alert/alert.component';
 import { LoadingIndicatorButtonComponent } from '../layout/loading-indicator-button/loading-indicator-button.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
@@ -14,6 +13,7 @@ import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
+import { OrderDisplayComponent } from '../layout/order-display/order-display.component';
 
 
 const expandDuration = 500
@@ -28,13 +28,13 @@ const expandDuration = 500
       LoadingIndicatorButtonComponent,
       AlertComponent,
       NftDisplayListComponent,
-      AddressDisplayComponent,
       NgFor,
       NgIf,
       LetModule,
       ForModule,
       PushModule,
-      MintFormComponent
+      MintFormComponent,
+      OrderDisplayComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [

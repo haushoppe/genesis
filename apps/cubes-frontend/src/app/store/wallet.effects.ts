@@ -2,7 +2,6 @@ import { inject, Injectable } from '@angular/core';
 import { Actions } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 
-import { ApiService } from '../openapi-client';
 import { WalletService } from '../services/wallet-service';
 
 
@@ -10,7 +9,6 @@ import { WalletService } from '../services/wallet-service';
 export class WalletEffects {
 
   actions = inject(Actions);
-  apiService = inject(ApiService);
   walletService = inject(WalletService);
   store = inject(Store);
 

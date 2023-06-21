@@ -1,6 +1,5 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { ListOfOwnedTokens, Metadata, MintTicket, TokenOwner } from '../openapi-client';
 import { MintActions } from './mint.actions';
 import {
   getFailureState,
@@ -20,12 +19,12 @@ export interface SixInscriptionIds {
 }
 
 export interface State {
-  allTokenMetadata: Metadata[];
+  allTokenMetadata: any;
   allTokenMetadataStatus: SubmittableState;
 
   // info about one single token, used for the details page
-  tokenMetadataAndOwner: { metadata: Metadata, owner: TokenOwner } | undefined;
-  tokenMetadataAndOwnerStatus: SubmittableState;
+  // tokenMetadataAndOwner: any | undefined;
+  // tokenMetadataAndOwnerStatus: SubmittableState;
 
   mintStatus: SubmittableState;
 }
@@ -34,8 +33,8 @@ export const initialState: State = {
   allTokenMetadata: [],
   allTokenMetadataStatus: getInitialState(),
 
-  tokenMetadataAndOwner: undefined,
-  tokenMetadataAndOwnerStatus: getInitialState(),
+  // tokenMetadataAndOwner: undefined,
+  // tokenMetadataAndOwnerStatus: getInitialState(),
 
   mintStatus: getInitialState(),
 };
@@ -54,9 +53,9 @@ export const mintFeature = createFeature({
       allTokenMetadataStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadAllTokenMetadataSuccess, (state, { allTokenMetadata }) => ({
+    on(MintActions.loadAllTokenMetadataSuccess, (state) => ({
       ...state,
-      allTokenMetadata,
+      // allTokenMetadata,
       allTokenMetadataStatus: getSuccessfulState()
     })),
 
@@ -67,23 +66,23 @@ export const mintFeature = createFeature({
 
     // Load Token Info
 
-    on(MintActions.loadTokenMetadata, state => ({
-      ...state,
-       // reset previous tokenMetadataAndOwner to not show outdated data while loading!
-      tokenMetadataAndOwner: undefined,
-      tokenMetadataAndOwnerStatus: getSubmittingState()
-    })),
+    // on(MintActions.loadTokenMetadata, state => ({
+    //   ...state,
+    //    // reset previous tokenMetadataAndOwner to not show outdated data while loading!
+    //   tokenMetadataAndOwner: undefined,
+    //   tokenMetadataAndOwnerStatus: getSubmittingState()
+    // })),
 
-    on(MintActions.loadTokenMetadataSuccess, (state, { tokenMetadataAndOwner }) => ({
-      ...state,
-      tokenMetadataAndOwner,
-      tokenMetadataAndOwnerStatus: getSuccessfulState()
-    })),
+    // on(MintActions.loadTokenMetadataSuccess, (state) => ({
+    //   ...state,
+    //   // tokenMetadataAndOwner,
+    //   tokenMetadataAndOwnerStatus: getSuccessfulState()
+    // })),
 
-    on(MintActions.loadTokenMetadataFailure, (state, { error }) => ({
-      ...state,
-      tokenMetadataAndOwnerStatus: getFailureState(error)
-    })),
+    // on(MintActions.loadTokenMetadataFailure, (state, { error }) => ({
+    //   ...state,
+    //   tokenMetadataAndOwnerStatus: getFailureState(error)
+    // })),
 
     // Mint!
 
@@ -110,7 +109,7 @@ export const {
   selectMintState,
   selectAllTokenMetadata,
   selectAllTokenMetadataStatus,
-  selectTokenMetadataAndOwner,
-  selectTokenMetadataAndOwnerStatus,
+  // selectTokenMetadataAndOwner,
+  // selectTokenMetadataAndOwnerStatus,
   selectMintStatus
 } = mintFeature;

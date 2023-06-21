@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { Metadata } from '../../openapi-client';
 import { NgOptimizedImage } from '@angular/common';
 
 @Component({
@@ -17,5 +16,5 @@ import { NgOptimizedImage } from '@angular/common';
 })
 export class NftDisplayListComponent {
 
-  @Input() nft?: Metadata
+  @Input() nft?: any
 }

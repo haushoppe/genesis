@@ -6,8 +6,8 @@ import {
   selectAllTokenMetadata,
   selectAllTokenMetadataStatus,
   selectMintStatus,
-  selectTokenMetadataAndOwner,
-  selectTokenMetadataAndOwnerStatus,
+  // selectTokenMetadataAndOwner,
+  // selectTokenMetadataAndOwnerStatus,
   SixInscriptionIds,
 } from './mint.reducer';
 
@@ -22,8 +22,8 @@ export class MintFacade {
   allTokenMetadata$ = this.store.select(selectAllTokenMetadata);
   allTokenMetadataStatus$ = this.store.select(selectAllTokenMetadataStatus);
 
-  tokenMetadataAndOwner$ = this.store.select(selectTokenMetadataAndOwner);
-  tokenMetadataAndOwnerStatus$ = this.store.select(selectTokenMetadataAndOwnerStatus);
+  // tokenMetadataAndOwner$ = this.store.select(selectTokenMetadataAndOwner);
+  // tokenMetadataAndOwnerStatus$ = this.store.select(selectTokenMetadataAndOwnerStatus);
 
   mintStatus$ = this.store.select(selectMintStatus);
 

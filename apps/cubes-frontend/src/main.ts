@@ -9,7 +9,7 @@ import { provideState, provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { AppComponent } from './app/app.component';
-import { ApiModule, Configuration } from './app/openapi-client';
+// import { ApiModule, Configuration } from './app/openapi-client';
 import { MintEffects } from './app/store/mint.effects';
 import { mintFeature } from './app/store/mint.reducer';
 import { CustomRouteSerializer } from './app/store/utils-ngrx-router/custom-route-serializer';
@@ -26,9 +26,9 @@ bootstrapApplication(AppComponent,{
   providers: [
     provideHttpClient(),
     provideAnimations(),
-    importProvidersFrom(ApiModule.forRoot(() => new Configuration({
-      basePath: environment.mintApi
-    }))),
+    // importProvidersFrom(ApiModule.forRoot(() => new Configuration({
+    //   basePath: environment.mintApi
+    // }))),
     importProvidersFrom(NotificationModule),
     provideRouter([
       { path: '',

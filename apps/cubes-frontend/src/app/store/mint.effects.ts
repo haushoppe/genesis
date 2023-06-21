@@ -2,11 +2,9 @@ import { inject, Injectable, NgZone } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
-import { forkJoin, of } from 'rxjs';
+import { of } from 'rxjs';
 import { catchError, concatMap, map, retry, switchMap } from 'rxjs/operators';
 
-import { KnownTokenName } from '../../../../shared/known-token-name';
-import { ApiService } from '../openapi-client';
 import { MintService } from '../services/mint-service';
 import { MintActions } from './mint.actions';
 import { PageActions } from './page.actions';
@@ -17,7 +15,7 @@ import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 export class MintEffects {
 
   actions = inject(Actions);
-  apiService = inject(ApiService);
+  apiService = { allTokenMetadata: () => of(), tokenMetadata: () => of()  };
   mintService = inject(MintService);
   store = inject(Store);
   notificationService = inject(NotificationService);
@@ -34,11 +32,10 @@ export class MintEffects {
     return this.actions.pipe(
       ofType(MintActions.loadAllTokenMetadata),
       switchMap(() =>
-        this.apiService.allTokenMetadata(KnownTokenName.genesis).pipe(
+        this.apiService.allTokenMetadata().pipe(
           retry({ count: 3, delay: 1000 }),
-          map(x => x.reverse()),
           concatMap(allTokenMetadata => [
-            MintActions.loadAllTokenMetadataSuccess({ allTokenMetadata }),
+            MintActions.loadAllTokenMetadataSuccess(),
             PageActions.ready()
           ]),
           catchError(error => of(MintActions.loadAllTokenMetadataFailure({ error }))))
@@ -46,32 +43,28 @@ export class MintEffects {
     );
   });
 
-  loadTokenMetadataOnRouting$ = createEffect(() => {
-    return this.actions.pipe(
-      ofRoute(['nft/:tokenId']),
-      mapToParam('tokenId'),
-      map(tokenId => MintActions.loadTokenMetadata({ tokenId: +tokenId })),
-    );
-  });
+  // loadTokenMetadataOnRouting$ = createEffect(() => {
+  //   return this.actions.pipe(
+  //     ofRoute(['nft/:tokenId']),
+  //     mapToParam('tokenId'),
+  //     map(tokenId => MintActions.loadTokenMetadata({ tokenId: +tokenId })),
+  //   );
+  // });
 
-  loadTokenMetadata$ = createEffect(() => {
-    return this.actions.pipe(
-      ofType(MintActions.loadTokenMetadata),
-      switchMap(({ tokenId }) =>
-        forkJoin([
-          this.apiService.tokenMetadata(KnownTokenName.genesis, tokenId),
-          this.apiService.tokenOwner(KnownTokenName.genesis, tokenId)
-        ]).pipe(
-          map(([metadata, owner]) => ({ metadata, owner })),
-          retry({ count: 3, delay: 1000 }),
-          concatMap(tokenMetadataAndOwner => [
-            MintActions.loadTokenMetadataSuccess({ tokenMetadataAndOwner }),
-            PageActions.ready()
-          ]),
-          catchError(error => of(MintActions.loadTokenMetadataFailure({ error }))))
-      )
-    );
-  });
+  // loadTokenMetadata$ = createEffect(() => {
+  //   return this.actions.pipe(
+  //     ofType(MintActions.loadTokenMetadata),
+  //     switchMap(() =>
+  //       this.apiService.tokenMetadata().pipe(
+  //         retry({ count: 3, delay: 1000 }),
+  //         concatMap(tokenMetadataAndOwner => [
+  //           MintActions.loadTokenMetadataSuccess(),
+  //           PageActions.ready()
+  //         ]),
+  //         catchError(error => of(MintActions.loadTokenMetadataFailure({ error }))))
+  //     )
+  //   );
+  // });
 
 
 

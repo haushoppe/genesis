@@ -11,6 +11,7 @@ import { WalletFacade } from '../../store/wallet.facade';
 import { InscriptionIdValidator } from './inscription-id.validator';
 import { TrimValueAccessorDirective } from './trim-value-accessor.directive';
 import { BtcAddressValidator } from './btc-address.validator';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-mint-form',
@@ -47,17 +48,17 @@ export class MintFormComponent implements OnInit {
   c = this.form.controls;
 
   ngOnInit() {
-    return;
-  //   if (!environment.production) {
-  //     this.form.patchValue({
-  //       inscriptionId1: '6761724cd0a42d465efc3ea3ece3cb8790b47fd0f19799d0c257d6df80fcf642i0',
-  //       inscriptionId2: 'ec6d1d7f5b8413355c63b23d8f5b8dde5f0e01dd89a38385b04918a24d8966d2i0',
-  //       inscriptionId3: 'b43908f4c8458b7b3c797a6df42950ffcdd7008744aff0ca399e2b77fea4355ei0',
-  //       inscriptionId4: '992f6822b6c3c34eb3297cd0d9923bd159c4d77efc0ce3dd1fe78a7be2898182i0',
-  //       inscriptionId5: 'ee05f2605c99cf0059472674ceb499f90327f39b50c34b8725e772b70631ce32i0',
-  //       inscriptionId6: '01911182a249543b3db1fd92b6f61c8f14487c2f3e780e19b83cd836a3d98f1fi0',
-  //     })
-  //   }
+    if (!environment.production) {
+      this.form.patchValue({
+        inscriptionId1: '6761724cd0a42d465efc3ea3ece3cb8790b47fd0f19799d0c257d6df80fcf642i0',
+        inscriptionId2: 'ec6d1d7f5b8413355c63b23d8f5b8dde5f0e01dd89a38385b04918a24d8966d2i0',
+        inscriptionId3: 'b43908f4c8458b7b3c797a6df42950ffcdd7008744aff0ca399e2b77fea4355ei0',
+        inscriptionId4: '992f6822b6c3c34eb3297cd0d9923bd159c4d77efc0ce3dd1fe78a7be2898182i0',
+        inscriptionId5: 'ee05f2605c99cf0059472674ceb499f90327f39b50c34b8725e772b70631ce32i0',
+        inscriptionId6: '01911182a249543b3db1fd92b6f61c8f14487c2f3e780e19b83cd836a3d98f1fi0',
+        receiveAddress: '???'
+      })
+    }
   }
 
   getInscriptionIds() {

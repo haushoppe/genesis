@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { SixInscriptionIds } from '../store/mint.reducer';
+import { createHtmlInscriptionOrder } from './api';
 
 
 @Injectable({
@@ -37,18 +38,18 @@ export class MintService {
 
   getCubeHtmlAsDataUrl(inscriptionIds: SixInscriptionIds) {
 
-    const htmlString = this.getCubeHtml(inscriptionIds);
+    const html = this.getCubeHtml(inscriptionIds);
 
     // Convert the HTML string to a base64 encoded string
-    const encodedHtml = btoa(unescape(encodeURIComponent(htmlString)));
+    const encodedHtml = btoa(unescape(encodeURIComponent(html)));
 
     // Create a data URL
     const dataUrl = 'data:text/html;base64,' + encodedHtml;
 
     return dataUrl;
-}
+  }
 
-  async mint(inscriptionIds: SixInscriptionIds): Promise<void> {
+  async mint(receiveAddress: string, inscriptionIds: SixInscriptionIds) {
 
     if (!inscriptionIds.inscriptionId1 ||
         !inscriptionIds.inscriptionId2 ||
@@ -59,7 +60,9 @@ export class MintService {
       throw 'InscriptionId is missing!'
     }
 
+    const html = this.getCubeHtml(inscriptionIds);
+    const order = await createHtmlInscriptionOrder(receiveAddress, html);
 
-    return Promise.reject();
+    return order;
   }
 }

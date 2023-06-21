@@ -12,16 +12,19 @@ describe('BtcAddressValidator', () => {
     expect(BtcAddressValidator()(control)).toBeNull();
   });
 
-  it('should validate Bech32 address correctly', () => {
+  it('should validate Bech32 with a length of 3+25 chars address correctly', () => {
     const control = new FormControl('bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
     expect(BtcAddressValidator()(control)).toBeNull();
   });
 
-  // The address '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN' is infact invalid,
-  // but it passes our current validator because it matches the length and starting character of a P2PKH address.
-  it('its ok to pass addresses that do not have a correct checksum', () => {
-    const control = new FormControl('1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN');
+  it('should validate a very long Bech32 address correctly', () => {
+    const control = new FormControl('???');
     expect(BtcAddressValidator()(control)).toBeNull();
+  });
+
+  it('shoud reject P2PKH address without correct checksum', () => {
+    const control = new FormControl('1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN');
+    expect(BtcAddressValidator()(control)).toEqual({ 'invalidBtcAddress': { value: '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN' } });
   });
 
   it('should reject a completely invalid address', () => {
@@ -29,4 +32,3 @@ describe('BtcAddressValidator', () => {
     expect(BtcAddressValidator()(control)).toEqual({ 'invalidBtcAddress': { value: '1BvBMSEYs' } });
   });
 });
-

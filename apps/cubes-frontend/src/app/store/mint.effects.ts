@@ -2,7 +2,7 @@ import { inject, Injectable, NgZone } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
-import { of } from 'rxjs';
+import { from, of } from 'rxjs';
 import { catchError, concatMap, map, retry, switchMap } from 'rxjs/operators';
 
 import { MintService } from '../services/mint-service';
@@ -20,6 +20,19 @@ export class MintEffects {
   store = inject(Store);
   notificationService = inject(NotificationService);
   ngZone = inject(NgZone);
+
+
+  mint$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(MintActions.mint),
+      switchMap(({ receiveAddress, inscriptionIds }) =>
+        from(this.mintService.mint(receiveAddress, inscriptionIds)).pipe(
+          map(inscriptionRequest => MintActions.mintSuccess({ inscriptionRequest })),
+          catchError(error => of(MintActions.mintFailure({ error }))))
+      )
+    );
+  });
+
 
   // loadMintsOnRouting$ = createEffect(() => {
   //   return this.actions.pipe(

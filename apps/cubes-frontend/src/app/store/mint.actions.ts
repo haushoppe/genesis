@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { SixInscriptionIds } from './mint.reducer';
+import { InscriptionRequestResponseAndFeesResponse } from '../services/types';
 
 export const MintActions = createActionGroup({
   source: 'Mint',
@@ -14,8 +15,8 @@ export const MintActions = createActionGroup({
     // 'Load Token Metadata Success': emptyProps(),
     // 'Load Token Metadata Failure': props<{ error: HttpErrorResponse }>(),
 
-    'Mint': props<{ inscriptionIds: SixInscriptionIds, receiveAddress: string}>(),
-    'Mint Success': props<{ invoice: string }>(),
+    'Mint': props<{  receiveAddress: string, inscriptionIds: SixInscriptionIds }>(),
+    'Mint Success': props<{ inscriptionRequest: InscriptionRequestResponseAndFeesResponse }>(),
     'Mint Failure': props<{ error: HttpErrorResponse }>(),
   }
 });

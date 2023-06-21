@@ -75,6 +75,7 @@
     "@web3-onboard/trezor": "^2.3.3",
     "@web3-onboard/walletconnect": "^2.2.2",
     "axios": "^0.27.2",
+    "bitcoin-address-validation": "^2.2.1",
     "bootstrap": "^5.2.3",
     "bootstrap-icons": "^1.10.3",
     "canvas-confetti": "^1.6.0",

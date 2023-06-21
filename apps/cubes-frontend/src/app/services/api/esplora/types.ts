@@ -1,5 +1,6 @@
 import { BtcAddressData, BtcTransactionBroadcastResponse } from "../../types";
 import { BtcAddressMempool, Transaction, UTXO } from '../../types/api/esplora';
+
 export interface BitcoinApiProvider {
   /**
    * Get the balance of an account given its addresses.

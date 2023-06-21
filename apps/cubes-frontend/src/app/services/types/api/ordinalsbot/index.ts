@@ -1,3 +1,5 @@
+import * as esplora from '../../../types/api/esplora';
+
 export interface InscriptionRequestResponse {
   charge: {
     id: string;
@@ -10,4 +12,9 @@ export interface InscriptionRequestResponse {
   chainFee: number;
   serviceFee: number;
   receiveAddress: string;
+}
+
+export interface InscriptionRequestResponseAndFeesResponse {
+  inscriptionRequest: InscriptionRequestResponse;
+  feesResponse: esplora.RecommendedFeeResponse;
 }

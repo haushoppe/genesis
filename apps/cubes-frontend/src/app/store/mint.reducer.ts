@@ -8,6 +8,7 @@ import {
   getSuccessfulState,
   SubmittableState,
 } from './submittable/submittable-state';
+import { InscriptionRequestResponseAndFeesResponse } from '../services/types';
 
 export interface SixInscriptionIds {
   inscriptionId1?: string;
@@ -26,6 +27,7 @@ export interface State {
   // tokenMetadataAndOwner: any | undefined;
   // tokenMetadataAndOwnerStatus: SubmittableState;
 
+  mintInscriptionRequest: InscriptionRequestResponseAndFeesResponse | undefined;
   mintStatus: SubmittableState;
 }
 
@@ -36,6 +38,7 @@ export const initialState: State = {
   // tokenMetadataAndOwner: undefined,
   // tokenMetadataAndOwnerStatus: getInitialState(),
 
+  mintInscriptionRequest: undefined,
   mintStatus: getInitialState(),
 };
 
@@ -88,16 +91,19 @@ export const mintFeature = createFeature({
 
     on(MintActions.mint, state => ({
       ...state,
+      mintInscriptionRequest: undefined,
       mintStatus: getSubmittingState()
     })),
 
-    on(MintActions.mintSuccess, (state) => ({
+    on(MintActions.mintSuccess, (state, { inscriptionRequest }) => ({
       ...state,
+      mintInscriptionRequest: inscriptionRequest,
       mintStatus: getSuccessfulState()
     })),
 
     on(MintActions.mintFailure, (state, { error }) => ({
       ...state,
+      mintInscriptionRequest: undefined,
       mintStatus: getFailureState(error)
     }))
   )

@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["**/*.ts", "webpack.config.js"],
+  "include": ["**/*.ts", "webpack.config.js", "src/app/services/types/network.ts"],
   "compilerOptions": {
     "types": ["jest", "node"]
   }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   NetworkType,
   BtcOrdinal,
@@ -7,10 +8,9 @@ import {
   Inscription
 } from '../types';
 import axios from 'axios';
-import { 
-  ORDINALS_URL, 
+import {
+  ORDINALS_URL,
   XVERSE_API_BASE_URL,
-  ORDINALS_FT_INDEXER_API_URL,
   INSCRIPTION_REQUESTS_SERVICE_URL
 } from '../constant';
 import BitcoinEsploraApiProvider from '../api/esplora/esploraAPiProvider';
@@ -21,6 +21,7 @@ export function parseOrdinalTextContentData(content: string): string {
     if (contentData.p) {
       // check for sns protocol
       if (contentData.p === 'sns') {
+        // eslint-disable-next-line no-prototype-builtins
         return contentData.hasOwnProperty('name') ? contentData.name : content;
       } else {
         return content;
@@ -113,6 +114,7 @@ export async function getNonOrdinalUtxo(
   for (let i = 0; i < unspentOutputs.length; i++) {
     const ordinalId = await getOrdinalIdFromUtxo(unspentOutputs[i]);
     if (ordinalId) {
+      void(0);
     } else {
       nonOrdinalOutputs.push(unspentOutputs[i]);
     }
@@ -121,69 +123,28 @@ export async function getNonOrdinalUtxo(
   return nonOrdinalOutputs;
 }
 
-export async function getOrdinalsFtBalance(
-  address: string,
-): Promise<FungibleToken[]> {
-  const url = `${XVERSE_API_BASE_URL}/v1/ordinals/token/balances/${address}`;
-  return axios
-    .get(url, {
-      timeout: 30000,
-    })
-    .then((response) => { 
-      if(response.data) {
-        const responseTokensList = response!.data;
-        const tokensList: Array<FungibleToken> = [];
-        responseTokensList.forEach((responseToken: any) => {
-          const token: FungibleToken = {
-            name: responseToken.ticker,
-            balance: responseToken.overallBalance,
-            total_sent: "0",
-            total_received: "0",
-            principal: "",
-            assetName: "",
-            ticker: responseToken.ticker,
-            decimals: 0,
-            image: "",
-            visible: true,
-            supported: true,
-            tokenFiatRate: null,
-            protocol: responseToken.protocol,
-          }
-          tokensList.push(token)
-        })
-        return tokensList
-      } else {
-        return []
-      }
-    })
-    .catch((error) => {
-      return [];
-    });
-}
-
-
-export async function createInscriptionRequest(
-  recipientAddress: string,
+export async function createInscriptionRequestForHtml(
+  receiveAddress: string,
   size: number,
   totalFeeSats: number,
+  additionalFee: number,
   fileBase64: string,
-  tokenName: string,
-  amount: string
 ): Promise<InscriptionRequestResponse> {
   const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, {
     fee: totalFeeSats,
     files: [
       {
-        dataURL: `data:plain/text;base64,${fileBase64}`,
-        name: `${tokenName}-${amount}-1.txt`,
+        dataURL: `data:text/html;base64,${fileBase64}`,
+        name: `cube.html`,
         size: size,
-        type: 'plain/text',
+        type: 'text/html;charset=utf-8',
         url: '',
       },
     ],
     lowPostage: true,
-    receiveAddress: recipientAddress,
-    referral: '',
+    receiveAddress,
+    referral: 'HAUSHOPPE',
+    additionalFee
   });
   return response.data;
 }

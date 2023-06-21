@@ -1,8 +1,3 @@
-export type StxBtcCurrencyRate = {
-  symbol: string;
-  price: number;
-};
-
 export type BtcUsdCurrencyRate = {
   data: {
     base: string;

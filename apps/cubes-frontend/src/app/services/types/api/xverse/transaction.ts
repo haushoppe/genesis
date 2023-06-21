@@ -29,59 +29,6 @@ export type TransactionData = {
   assetId?: string;
 };
 
-export type StxTransactionListData = {
-  transactionsList: Array<StxTransactionData>;
-  totalCount: number;
-};
-
-export interface StxTransactionData extends TransactionData {
-  blockHash: string;
-  blockHeight: number;
-  burnBlockTime: number;
-  burnBlockTimeIso: Date;
-  canonical: boolean;
-  fee: BigNumber;
-  nonce: number;
-  postConditionMode: string;
-  senderAddress: string;
-  tokenTransfer?: {
-    recipientAddress: string;
-    amount: BigNumber;
-    memo: string;
-  };
-  sponsored: boolean;
-  txid: string;
-  txIndex: number;
-  txResults: string;
-  txStatus: TransactionStatus;
-  txType: TransactionType;
-  seenTime: Date;
-}
-
-export interface StxMempoolTransactionData extends TransactionData {
-  receiptTime: number;
-  receiptTimeIso: Date;
-  fee: BigNumber;
-  nonce: number;
-  postConditionMode: string;
-  senderAddress: string;
-  tokenTransfer?: {
-    recipientAddress: string;
-    amount: BigNumber;
-    memo: string;
-  };
-  sponsored: boolean;
-  txid: string;
-  txStatus: TransactionStatus;
-  txType: TransactionType;
-  seenTime: Date;
-}
-
-export type StxMempoolTransactionListData = {
-  transactionsList: Array<StxMempoolTransactionData>;
-  totalCount: number;
-};
-
 export type BtcFeeResponse = {
   limits: {
     min: number;

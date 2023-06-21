@@ -2,8 +2,12 @@
 import axios from 'axios';
 
 import BitcoinEsploraApiProvider from '../api/esplora/esploraAPiProvider';
-import { INSCRIPTION_REQUESTS_SERVICE_URL, ORDINALS_URL, XVERSE_API_BASE_URL } from '../constant';
-import { BtcOrdinal, InscriptionRequestResponse, InscriptionRequestResponseAndFeesResponse, NetworkType, UTXO } from '../types';
+import { ORDINALS_URL, XVERSE_API_BASE_URL } from '../constant';
+import { BtcOrdinal, NetworkType, UTXO } from '../types';
+
+import { OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
+import { createInscriptionRequestForHtml } from '../../../../../shared/ordinalsbot';
+
 
 export function parseOrdinalTextContentData(content: string): string {
   try {
@@ -117,44 +121,13 @@ export async function getNonOrdinalUtxo(
   return nonOrdinalOutputs;
 }
 
-export async function createInscriptionRequestForHtml(
-  receiveAddress: string,
-  size: number,
-  totalFeeSats: number,
-  contentB64: string,
-): Promise<InscriptionRequestResponse> {
-
-  const additionalFee = 35000; // 35000 satashis round about 10 USD if BTC 1 = $28,916.07
-
-  const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, {
-    fee: totalFeeSats,
-    files: [
-      {
-        dataURL: `data:text/html;base64,${contentB64}`,
-        name: `cube.html`,
-        size: size,
-        type: 'text/html;charset=utf-8',
-        url: '',
-      },
-    ],
-    lowPostage: true,
-    receiveAddress,
-    referral: 'HAUSHOPPE',
-    additionalFee
-  });
-  return response.data;
-}
-
-export const createHtmlInscriptionOrder = async (
-  receiveAddress: string,
-  htmlString: string
-): Promise<InscriptionRequestResponseAndFeesResponse> => {
+/*
+// browser version (does not work, CORS issues)
+export const createHtmlInscriptionOrder = async (request: { receiveAddress: string, htmlString: string }): Promise<OrderResponse> => {
 
   // Convert the HTML string to a base64 encoded string
-  const contentB64 = btoa(unescape(encodeURIComponent(htmlString)));
-
-  // instead of Buffer.from(htmlString).length which does not work in the browser
-  const size = new Blob([htmlString]).size;
+  const contentB64 = btoa(unescape(encodeURIComponent(request.htmlString)));
+  const size = new Blob([request.htmlString]).size;
 
   const btcClient = new BitcoinEsploraApiProvider({
     network: 'Mainnet',
@@ -162,14 +135,12 @@ export const createHtmlInscriptionOrder = async (
 
   const feesResponse = await btcClient.getRecommendedFees();
   const inscriptionRequest = await createInscriptionRequestForHtml(
-    receiveAddress,
+    request.receiveAddress,
     size,
     feesResponse.fastestFee,
     contentB64
   );
 
-  return {
-    inscriptionRequest,
-    feesResponse
-  };
+  return inscriptionRequest;
 };
+*/

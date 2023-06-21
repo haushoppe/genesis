@@ -5,6 +5,7 @@ api.module.ts
 api/api.service.ts
 api/api.ts
 api/cube.service.ts
+api/ordinals.service.ts
 api/scales.service.ts
 configuration.ts
 encoder.ts
@@ -13,6 +14,7 @@ index.ts
 model/chain.ts
 model/configDetails.ts
 model/configResponse.ts
+model/htmlInscriptionRequest.ts
 model/listOfOwnedTokens.ts
 model/metadata.ts
 model/metatdataAttribute.ts

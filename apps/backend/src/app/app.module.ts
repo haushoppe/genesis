@@ -15,6 +15,7 @@ import { MetadataGenesisService } from './model/metadata-genesis.service';
 import { KnownTokenName, allKnownTokenNames } from '../../../shared/known-token-name';
 import { ContractService } from './model/contract.service';
 import { MetadataService } from './model/metadata-service';
+import { OrdinalsController } from './api/ordinals.controller';
 
 
 @Module({
@@ -42,7 +43,13 @@ import { MetadataService } from './model/metadata-service';
     //   inject: [ConfigService],
     // })
   ],
-  controllers: [AppController, ApiController, ScalesController, CubeController],
+  controllers: [
+    AppController,
+    ApiController,
+    ScalesController,
+    CubeController,
+    OrdinalsController
+  ],
   providers: [
     AllowlistService,
     MetadataGenesisService,

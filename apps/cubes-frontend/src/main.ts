@@ -17,6 +17,7 @@ import { WalletEffects } from './app/store/wallet.effects';
 import { walletFeature } from './app/store/wallet.reducer';
 import { environment } from './environments/environment';
 import { NotificationModule } from '@progress/kendo-angular-notification';
+import { ApiModule, Configuration } from './app/openapi-client';
 
 if (environment.production) {
   enableProdMode();
@@ -26,9 +27,9 @@ bootstrapApplication(AppComponent,{
   providers: [
     provideHttpClient(),
     provideAnimations(),
-    // importProvidersFrom(ApiModule.forRoot(() => new Configuration({
-    //   basePath: environment.mintApi
-    // }))),
+    importProvidersFrom(ApiModule.forRoot(() => new Configuration({
+      basePath: environment.api
+    }))),
     importProvidersFrom(NotificationModule),
     provideRouter([
       { path: '',

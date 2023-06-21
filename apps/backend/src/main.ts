@@ -13,8 +13,8 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   const openApiConfig = new DocumentBuilder()
-    .setTitle('🎨 NFT API')
-    .setDescription('Serves data for our NFT projects')
+    .setTitle('🎨 API')
+    .setDescription('Serves data for our projects')
     .setVersion('1.0')
     .build();
 

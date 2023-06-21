@@ -1,13 +1,18 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { SixInscriptionIds } from '../store/mint.reducer';
-import { createHtmlInscriptionOrder } from './api';
+import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
+import { OrdinalsService } from '../openapi-client';
+import { Observable } from 'rxjs';
+import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 
 
 @Injectable({
   providedIn: 'root'
 })
 export class MintService {
+
+  ordinalsService = inject(OrdinalsService);
 
   readonly template1 = `<html><!-- cubes.haushoppe.art --><body><script>t='`;
   readonly template2 = `'</script><script src="/content/9475aa8df559d569f7284ce59e97014f28be758e832e212fdbba0202699dd035i0"></script>`;
@@ -49,7 +54,15 @@ export class MintService {
     return dataUrl;
   }
 
-  async mint(receiveAddress: string, inscriptionIds: SixInscriptionIds) {
+  async getFees() {
+
+    const btcClient = new BitcoinEsploraApiProvider({
+      network: 'Mainnet',
+    });
+    return await btcClient.getRecommendedFees();
+  }
+
+  mint(receiveAddress: string, inscriptionIds: SixInscriptionIds, fee: number): Observable<OrderResponse> {
 
     if (!inscriptionIds.inscriptionId1 ||
         !inscriptionIds.inscriptionId2 ||
@@ -60,9 +73,14 @@ export class MintService {
       throw 'InscriptionId is missing!'
     }
 
-    const html = this.getCubeHtml(inscriptionIds);
-    const order = await createHtmlInscriptionOrder(receiveAddress, html);
+    const htmlString = this.getCubeHtml(inscriptionIds);
 
-    return order;
+    const order = this.ordinalsService.createHtmlInscriptionOrder({
+      receiveAddress,
+      htmlString,
+      fee
+    });
+
+    return order as any;
   }
 }

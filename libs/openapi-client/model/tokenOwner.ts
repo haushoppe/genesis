@@ -1,6 +1,6 @@
 /**
- * 🎨 NFT API
- * Serves data for our NFT projects
+ * 🎨 API
+ * Serves data for our projects
  *
  * The version of the OpenAPI document: 1.0
  * 

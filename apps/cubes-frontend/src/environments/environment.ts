@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  mintApi: 'https://signet.ordinalsbot.com/api'
+  api: 'http://localhost:3333'
 };
 
 /*

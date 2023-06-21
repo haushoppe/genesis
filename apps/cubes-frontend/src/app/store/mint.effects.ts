@@ -2,13 +2,13 @@ import { inject, Injectable, NgZone } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
-import { from, of } from 'rxjs';
+import { concat, from, of } from 'rxjs';
 import { catchError, concatMap, map, retry, switchMap } from 'rxjs/operators';
 
 import { MintService } from '../services/mint-service';
 import { MintActions } from './mint.actions';
 import { PageActions } from './page.actions';
-import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
+import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 
 
 @Injectable()
@@ -22,16 +22,21 @@ export class MintEffects {
   ngZone = inject(NgZone);
 
 
-  mint$ = createEffect(() => {
-    return this.actions.pipe(
-      ofType(MintActions.mint),
-      switchMap(({ receiveAddress, inscriptionIds }) =>
-        from(this.mintService.mint(receiveAddress, inscriptionIds)).pipe(
-          map(inscriptionRequest => MintActions.mintSuccess({ inscriptionRequest })),
-          catchError(error => of(MintActions.mintFailure({ error }))))
+  mint$ = createEffect(() =>
+  this.actions.pipe(
+    ofType(MintActions.mint),
+    concatMap(({ receiveAddress, inscriptionIds }) =>
+      from(this.mintService.getFees()).pipe(
+        switchMap(fees =>
+          this.mintService.mint(receiveAddress, inscriptionIds, fees.halfHourFee).pipe(
+            map(mintOrderResponse => MintActions.mintSuccess({ mintOrderResponse })),
+            catchError(error => of(MintActions.mintFailure({ error })))
+          )
+        )
       )
-    );
-  });
+    )
+  )
+);
 
 
   // loadMintsOnRouting$ = createEffect(() => {

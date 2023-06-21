@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  mintApi: 'https://ordinalsbot.com/api'
+  api: 'https://backend.haushoppe.art'
 };

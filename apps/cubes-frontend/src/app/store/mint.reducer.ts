@@ -1,4 +1,5 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
+import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 
 import { MintActions } from './mint.actions';
 import {
@@ -8,7 +9,6 @@ import {
   getSuccessfulState,
   SubmittableState,
 } from './submittable/submittable-state';
-import { InscriptionRequestResponseAndFeesResponse } from '../services/types';
 
 export interface SixInscriptionIds {
   inscriptionId1?: string;
@@ -27,7 +27,7 @@ export interface State {
   // tokenMetadataAndOwner: any | undefined;
   // tokenMetadataAndOwnerStatus: SubmittableState;
 
-  mintInscriptionRequest: InscriptionRequestResponseAndFeesResponse | undefined;
+  mintOrderResponse: OrderResponse | undefined;
   mintStatus: SubmittableState;
 }
 
@@ -38,7 +38,7 @@ export const initialState: State = {
   // tokenMetadataAndOwner: undefined,
   // tokenMetadataAndOwnerStatus: getInitialState(),
 
-  mintInscriptionRequest: undefined,
+  mintOrderResponse: undefined,
   mintStatus: getInitialState(),
 };
 
@@ -91,19 +91,19 @@ export const mintFeature = createFeature({
 
     on(MintActions.mint, state => ({
       ...state,
-      mintInscriptionRequest: undefined,
+      mintOrderResponse: undefined,
       mintStatus: getSubmittingState()
     })),
 
-    on(MintActions.mintSuccess, (state, { inscriptionRequest }) => ({
+    on(MintActions.mintSuccess, (state, { mintOrderResponse }) => ({
       ...state,
-      mintInscriptionRequest: inscriptionRequest,
+      mintOrderResponse,
       mintStatus: getSuccessfulState()
     })),
 
     on(MintActions.mintFailure, (state, { error }) => ({
       ...state,
-      mintInscriptionRequest: undefined,
+      mintOrderResponse: undefined,
       mintStatus: getFailureState(error)
     }))
   )

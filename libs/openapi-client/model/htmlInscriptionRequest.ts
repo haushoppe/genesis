@@ -11,18 +11,18 @@
  */
 
 
-export interface MintTicket { 
+export interface HtmlInscriptionRequest { 
     /**
-     * The hashed message, which contains msg.sender + maximumAllowedMints
+     * A single Bitcoin address to receive the inscription
      */
-    messageHash: string;
+    receiveAddress: string;
     /**
-     * The secret signature that only this API can create
+     * Text that should be subscribed
      */
-    signature: string;
+    htmlString: string;
     /**
-     * Maximum allowed mints
+     * Miner fee that will be paid while inscribing the ordinals in sats/byte.
      */
-    maximumAllowedMints: number;
+    fee: number;
 }
 

@@ -1,5 +1,3 @@
-// btc-address.validator.spec.ts
-
 import { FormControl } from '@angular/forms';
 import { BtcAddressValidator } from './btc-address.validator';
 
@@ -26,7 +24,7 @@ describe('BtcAddressValidator', () => {
     expect(BtcAddressValidator()(control)).toBeNull();
   });
 
-  it('should reject an completely invalid address', () => {
+  it('should reject a completely invalid address', () => {
     const control = new FormControl('1BvBMSEYs');
     expect(BtcAddressValidator()(control)).toEqual({ 'invalidBtcAddress': { value: '1BvBMSEYs' } });
   });

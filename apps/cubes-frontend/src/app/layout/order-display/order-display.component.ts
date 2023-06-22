@@ -1,5 +1,5 @@
 import { JsonPipe, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, inject } from '@angular/core';
 import { PushModule } from '@rx-angular/template/push';
 
 import { ChargeStatus, OrderResponse } from '../../ordinalsbot';
@@ -9,6 +9,7 @@ import { LoadingIndicatorComponent } from '../loading-indicator/loading-indicato
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { getPaymentPending } from './get-payment-pending';
 import { getSubmittingState } from '../../store/submittable/submittable-state';
+import { QRCodeModule } from 'angularx-qrcode';
 
 
 @Component({
@@ -22,7 +23,8 @@ import { getSubmittingState } from '../../store/submittable/submittable-state';
     JsonPipe,
     NgClass,
     LoadingIndicatorComponent,
-    NgIf
+    NgIf,
+    QRCodeModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -30,12 +32,14 @@ export class OrderDisplayComponent {
 
   ChargeStatus = ChargeStatus;
   submittingState = getSubmittingState();
-
-  constructor(private cd: ChangeDetectorRef) {}
+  cd = inject(ChangeDetectorRef);
 
   @Input() order?: OrderResponse;
   showLightning = false;
   copyChainSuccessfull: boolean | undefined;
+  copyAmountSuccessfull: boolean | undefined;
+  copyPayreqSuccessfull: boolean | undefined;
+
 
   paymentStatusMessage() {
     return getPaymentStatusMessage(this.order?.charge.status)
@@ -49,29 +53,56 @@ export class OrderDisplayComponent {
     return getPaymentPending(this.order?.charge.status)
   }
 
+  getLinkToChain() {
+    if (!this.order) { return ''; };
 
-  copyChainAddressToClipboard() {
-
-    if (this.order) {
-
-      navigator.clipboard.writeText(this.order?.charge.chain_invoice.address).then(() => {
-        console.log('AAAA')
-
-        this.copyChainSuccessfull = true;
-        this.cd.detectChanges();
-
-      }).catch(() => {
-        console.log('BBB')
-
-        this.copyChainSuccessfull = false;
-        this.cd.detectChanges();
-      });
-    }
+    return 'bitcoin:' + this.order.charge.chain_invoice.address
+      + '?amount=' + (this.order.charge.amount / 100000000)
+      + '&label=cubes+order';
   }
 
+  getLinkToLightning() {
+    if (!this.order) { return ''; };
 
-}
-function inject(ChangeDetectorRef: any) {
-  throw new Error('Function not implemented.');
-}
+    return 'lightning:' + this.order.charge.lightning_invoice.payreq;
+  }
 
+  async copyChainAddressToClipboard() {
+    if (!this.order) { return };
+
+    try {
+      await navigator.clipboard.writeText(this.order.charge.chain_invoice.address);
+      this.copyChainSuccessfull = true;
+    } catch {
+      this.copyChainSuccessfull = false;
+      console.error('Cant copy to clipboard!')
+    }
+    this.cd.detectChanges();
+  }
+
+  async copyAmountToClipboard() {
+    if (!this.order) { return };
+
+    try {
+      await navigator.clipboard.writeText((this.order.charge.amount / 100000000) + '');
+      this.copyAmountSuccessfull = true;
+    } catch {
+      this.copyAmountSuccessfull = false;
+      console.error('Cant copy to clipboard!')
+    }
+    this.cd.detectChanges();
+  }
+
+  async copyPayreqToClipboard() {
+    if (!this.order) { return };
+
+    try {
+      await navigator.clipboard.writeText(this.order.charge.lightning_invoice.payreq);
+      this.copyPayreqSuccessfull = true;
+    } catch {
+      this.copyPayreqSuccessfull = false;
+      console.error('Cant copy to clipboard!')
+    }
+    this.cd.detectChanges();
+  }
+}

@@ -38,8 +38,8 @@ export const initialState: State = {
   // tokenMetadataAndOwner: undefined,
   // tokenMetadataAndOwnerStatus: getInitialState(),
 
-  // mintOrderResponse: undefined,
-  mintOrderResponse: exampleUnpaidResponse as OrderResponse,
+  mintOrderResponse: undefined,
+  // mintOrderResponse: exampleUnpaidResponse as OrderResponse,
   mintStatus: getInitialState(),
 };
 

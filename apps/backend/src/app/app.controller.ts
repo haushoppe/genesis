@@ -22,7 +22,7 @@ export class AppController {
 
 <body class="markdown-body">
   <h1>
-    🎨 API!
+    🎨 API
   </h1>
 
   <p>

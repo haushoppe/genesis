@@ -3,71 +3,138 @@
 
     <h3>Order <span class="badge" [ngClass]="getPaymentStatusBadge()">{{ order.charge.status }}</span></h3>
 
-    Order ID: <strong>#{{ order.charge.id }}</strong>
+    Order ID: <strong>{{ order.charge.id }}</strong><br>
+    Amount: &nbsp;{{ order.charge.amount }} sats (which equals to {{ order.charge.fiat_value }} USD)
 
     <p>
       {{ paymentStatusMessage() }}<span class="blinking-text">...</span>
     </p>
 
+    <ng-container *ngIf="getPaymentPending()">
+      <ul class="nav nav-tabs pt-2">
+        <li class="nav-item">
+          <a class="nav-link" [ngClass]="{
+              'active text-white': !showLightning,
+              'not-active': showLightning
+            }" href="javascript:void(0)" (click)="showLightning = false">🟧 Pay on chain BTC</a>
+        </li>
+        <li class="nav-item"><strong class="nav-link fake-nav">or</strong></li>
+        <li class="nav-item">
+          <a class="nav-link" [ngClass]="{
+              'active text-white': showLightning,
+              'not-active': !showLightning }" href="javascript:void(0)" (click)="showLightning = true">⚡️ Pay with
+            Lightning</a>
+        </li>
+      </ul>
 
-    <ul class="nav nav-tabs">
-      <li class="nav-item">
-        <a class="nav-link"
-          [ngClass]="{
-            'active text-white': !showLightning,
-            'not-active': showLightning
-          }" href="javascript:void(0)"
-          (click)="showLightning = false">Pay on chain BTC</a>
-      </li>
-      <li class="nav-item"><strong class="nav-link fake-nav">or</strong></li>
-      <li class="nav-item">
-        <a class="nav-link"
-          [ngClass]="{
-            'active text-white': showLightning,
-            'not-active': !showLightning }" href="javascript:void(0)"
-          (click)="showLightning = true">Pay with Lightning</a>
-      </li>
-    </ul>
+      <div class="tab-pane p-3 pt-4 pb-1 nav-link">
 
-    <div class="tab-pane p-3 nav-link">
+        <ng-container *ngIf="!showLightning">
+          <div class="qrcodeBox pb-4">
+            <a [href]="getLinkToChain()" target="_blank">
+              <qrcode
+                [qrdata]="getLinkToChain()"
+                [width]="256"
+                [errorCorrectionLevel]="'M'"
+              />
+            </a>
+          </div>
+          <div class="form-group row">
 
-      <div class="input-group mb-3">
-        <input class="form-control" type="text" [value]="order.charge.chain_invoice.address" readonly>
-        <div class="input-group-append">
-          <button class="btn btn-outline-secondary" type="button" (click)="copyChainAddressToClipboard()">
-            Copy
-            <i class="bi bi-check2" *ngIf="copyChainSuccessfull === true"></i>
-            <i class="bi bi-x" *ngIf="copyChainSuccessfull === false"></i>
+            <label for="address" class="col-3 col-form-label">BTC Address:</label>
+            <div class="col-9">
+
+              <div class="input-group mb-3">
+
+                <input id="address" class="form-control bg-light text-dark" type="text"
+                  [value]="order.charge.chain_invoice.address" readonly>
+                <div class="input-group-append">
+                  <button class="btn btn-outline-secondary" type="button" (click)="copyChainAddressToClipboard()">
+
+                    <i class="bi bi-clipboard" *ngIf="copyChainSuccessfull === undefined"></i>
+                    <i class="bi bi-clipboard-check" *ngIf="copyChainSuccessfull === true"></i>
+                    <i class="bi bi-clipboard-x" *ngIf="copyChainSuccessfull === false"></i> Copy to clipboard
+                  </button>
+
+                </div>
 
 
-          </button>
+              </div>
+            </div>
+          </div>
 
+          <div class="form-group row">
 
-        </div>
+            <label for="amount" class="col-3 col-form-label">BTC Amount:</label>
+            <div class="col-9">
+
+              <div class="input-group mb-3">
+
+                <input id="amount" class="form-control bg-light text-dark" type="text" [value]="order.charge.amount / 100000000"  readonly>
+                <div class="input-group-append">
+                  <button class="btn btn-outline-secondary" type="button" (click)="copyAmountToClipboard()">
+
+                    <i class="bi bi-clipboard" *ngIf="copyAmountSuccessfull === undefined"></i>
+                    <i class="bi bi-clipboard-check" *ngIf="copyAmountSuccessfull === true"></i>
+                    <i class="bi bi-clipboard-x" *ngIf="copyAmountSuccessfull === false"></i> Copy to clipboard
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </ng-container>
+
+        <ng-container *ngIf="showLightning">
+
+          <div class="qrcodeBox pb-4">
+            <a [href]="getLinkToLightning()" target="_blank">
+              <qrcode
+                [qrdata]="this.order.charge.lightning_invoice.payreq"
+                [width]="256"
+                [errorCorrectionLevel]="'M'"
+              />
+            </a>
+          </div>
+          <div class="form-group row">
+
+            <label for="payreq" class="col-3 col-form-label">Payment Request:</label>
+            <div class="col-9">
+
+              <div class="input-group mb-3">
+
+                <input id="payreq" class="form-control bg-light text-dark" type="text" [value]="order.charge.lightning_invoice.payreq"  readonly>
+                <div class="input-group-append">
+                  <button class="btn btn-outline-secondary" type="button" (click)="copyPayreqToClipboard()">
+
+                    <i class="bi bi-clipboard" *ngIf="copyPayreqSuccessfull === undefined"></i>
+                    <i class="bi bi-clipboard-check" *ngIf="copyPayreqSuccessfull === true"></i>
+                    <i class="bi bi-clipboard-x" *ngIf="copyPayreqSuccessfull === false"></i> Copy to clipboard
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </ng-container>
+
       </div>
 
-      Fee Rate: {{ order.fee }} sats/byte<br>
-      Total Amount: <strong>{{ order.charge.amount / 100000000 }} BTC</strong> ({{ order.charge.amount }} sats)
-      <!-- which equals to {{ order.charge.fiat_value }} USD -->
-    </div>
+      <br *ngIf="getPaymentPending()">
+      <app-loading-indicator *ngIf="getPaymentPending()" [state]="submittingState" sendDataText="Order is pending…" />
+    </ng-container>
 
-    <br *ngIf="getPaymentPending()">
-    <app-loading-indicator
-      *ngIf="getPaymentPending()"
-      [state]="submittingState"
-      sendDataText="Order is pending…"
-    />
-
-
-    <p  class="mt-4">
+    <p class="mt-4">
       <small>
-      Please retain your order ID for future reference. It will be essential in assisting you should any issues arise.<br>
-      You may visit the following page to secure the number or process the payment:
-      <a [href]="order.charge.hosted_checkout_url" target="_blank">Opennode Checkout</a>
+        Please retain your order ID for future reference. It will be essential in assisting you should any issues
+        arise.<br>
+        You may visit the following page to secure the number or process the payment:
+        <a [href]="order.charge.hosted_checkout_url" target="_blank">Opennode Checkout</a>
       </small>
     </p>
 
 
   </div>
 </div>
-

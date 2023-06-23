@@ -3,23 +3,19 @@
   role="navigation"
   attr.aria-label="Go to details page of the Inscription {{ inscription.inscriptionId }}">
 
-  <div class="resize-container">
-
+  <div class="iframe-container">
     <!--
       linking to external domain here, to mitigate possible XSS vectors
       TODO: validate cubes and only show our own ones
     -->
     <iframe
+      class="responsive-iframe"
       [src]="'https://www.ord.io/content/' + inscription.inscriptionId | safeResourceUrl"
-      class=" p-3 mt-2"
-      class="img-fluid"
-      width="400"
-      height="400"
     ></iframe>
 
   </div>
 
-  <div class="ord-name one-line fs-6 lh-sm mt-2 ps-1 one-line">
+  <div class="ord-name one-line fs-6 lh-sm mt-2 ps-1 one-line mb-4">
     {{ inscription.inscriptionId }}
   </div>
 

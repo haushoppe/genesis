@@ -43,6 +43,10 @@ export class FaqComponent {
       answer: `This project allows anyone to create art on the Bitcoin blockchain. The artistic process consists of selecting suitable images that are already present on the chain.<br><br>Additionally this project seeks to fully utilize the technical possibilities around Ordinals and Inscriptions. Normally, collections are pre-generated, and all digital artifacts are known from the start. The buyer acquires one of the artifacts without any possibility of intervening in the process. We want to reverse this process - the art collector becomes the curator and chooses the images to be added to the cube. __It's a bit like fx(params), but for Bitcoin!__ Furthermore, the cube artifacts have been generated with the maximum possible technical compression. Each individual inscription stores data with exactly __577 bytes__ in size, making it incredibly efficient. This efficiency is made possible through the use of recursive inscriptions.`
     },
     {
+      question: 'Where can I find suitable inscriptions with images?',
+      answer: ` Your best bet is to look at the website ord.io under [Images](https://www.ord.io/?contentType=image) or [GIFs](https://www.ord.io/?contentType=gif), or use the [image search](https://ordinals.hiro.so/explore?f=image) from hiro.so. Make sure that none of the sides of your cube turns black, that would be a pity. For animated GIFs, only the first image will be displayed.`
+    },
+    {
       question: "What are Bitcoin Ordinals?",
       answer: "Ordinals are a Bitcoin project that has experienced increased interest in recent weeks. They are bringing new excitement around Bitcoin's innovative potential. Ordinals, essentially, are a new and emerging movement within the Bitcoin ecosystem."
     },
@@ -68,7 +72,7 @@ export class FaqComponent {
     },
     {
       question: 'What is a taproot address?',
-      answer: 'A taproot address is a type of Bitcoin address that starts with "bc1p"...'
+      answer: 'A taproot address is a type of Bitcoin address that starts with "bc1p"... . This type of address is best suited to receive Ordinals. Please only use a wallet specifically designed for Ordinals, for example, the Xverse wallet (see below).'
     },
     {
       question: 'How do I pay for my cube?',

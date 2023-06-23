@@ -48,6 +48,7 @@ export class MintFormComponent implements OnInit {
   c = this.form.controls;
 
   ngOnInit() {
+    return;
     if (!environment.production) {
       this.form.patchValue({
         inscriptionId1: '6761724cd0a42d465efc3ea3ece3cb8790b47fd0f19799d0c257d6df80fcf642i0',

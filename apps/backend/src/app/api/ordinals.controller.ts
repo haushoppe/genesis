@@ -13,6 +13,20 @@ export class InscriptionSimple {
   @ApiProperty() blockheight: number;
 }
 
+function hideUnwantedProperties({ charge, files }: OrderResponse): OrderResponse {
+
+  const { id,  amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = charge;
+
+  return {
+    charge: {
+      id,  amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value
+    },
+    files: files.map(({ completed, sent, tx }) => ({
+      completed, sent, tx
+    }))
+  };
+}
+
 @ApiTags('ordinals')
 @Controller()
 export class OrdinalsController {
@@ -42,13 +56,7 @@ export class OrdinalsController {
       contentB64
     );
 
-    // const { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = orderResponseFull.charge;
-    // const orderResponseShort = {
-    //   fee: orderResponseFull.fee,
-    //   charge: { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value }
-    // }
-
-    return orderResponseFull;
+    return hideUnwantedProperties(orderResponseFull);
   }
 
   /**
@@ -61,17 +69,10 @@ export class OrdinalsController {
     description: 'order Id'
   })
   @Header('Cache-Control', 'no-cache')
-  async getOrderStatus(@Param('id') id: string): Promise<OrderResponse> {
+  async getOrderStatus(@Param('id') orderId: string): Promise<OrderResponse> {
 
-    const orderResponseFull = await getOrderStatus(id);
-
-    // const { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = orderResponseFull.charge;
-    // const orderResponseShort = {
-    //   fee: orderResponseFull.fee,
-    //   charge: { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value }
-    // }
-
-    return orderResponseFull;
+    const orderResponseFull = await getOrderStatus(orderId);
+    return hideUnwantedProperties(orderResponseFull);
   }
 
   lastBackup: InscriptionSimple[] = [];

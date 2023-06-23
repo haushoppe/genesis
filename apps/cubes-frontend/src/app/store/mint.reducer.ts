@@ -8,7 +8,7 @@ import {
   getSuccessfulState,
   SubmittableState,
 } from './submittable/submittable-state';
-import { Inscription, OrderResponse } from '../ordinalsbot';
+import { examplePaidResponse, exampleUnpaidResponse, Inscription, OrderResponse } from '../ordinalsbot';
 import { InscriptionSimple } from '../openapi-client';
 
 export interface SixInscriptionIds {
@@ -28,7 +28,6 @@ export interface State {
   inscription: Inscription | undefined;
   inscriptionStatus: SubmittableState;
 
-  orderId: string | undefined;
   orderResponse: OrderResponse | undefined;
   orderStatus: SubmittableState;
 }
@@ -40,9 +39,9 @@ export const initialState: State = {
   inscription: undefined,
   inscriptionStatus: getInitialState(),
 
-  orderId: undefined,
   orderResponse: undefined,
-  // orderStatus: exampleUnpaidResponse as OrderResponse,
+  //orderResponse: examplePaidResponse as OrderResponse,
+  // orderResponse: exampleUnpaidResponse as OrderResponse,
   orderStatus: getInitialState(),
 };
 
@@ -130,7 +129,6 @@ export const {
   selectAllInscriptionsStatus,
   selectInscription,
   selectInscriptionStatus,
-  selectOrderId,
   selectOrderResponse,
   selectOrderStatus
 } = mintFeature;

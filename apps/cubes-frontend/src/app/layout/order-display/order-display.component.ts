@@ -3,10 +3,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, inject } 
 import { PushModule } from '@rx-angular/template/push';
 
 import { ChargeStatus, OrderResponse } from '../../ordinalsbot';
-import { getPaymentStatusMessage } from './get-payment-status-message';
-import { getPaymentStatusBadge } from './get-payment-status-badge';
 import { LoadingIndicatorComponent } from '../loading-indicator/loading-indicator.component';
-import { getPaymentPending } from './get-payment-pending';
 import { getSubmittingState } from '../../store/submittable/submittable-state';
 import { QRCodeModule } from 'angularx-qrcode';
 
@@ -39,17 +36,20 @@ export class OrderDisplayComponent {
   copyAmountSuccessfull: boolean | undefined;
   copyPayreqSuccessfull: boolean | undefined;
 
-
-  paymentStatusMessage() {
-    return getPaymentStatusMessage(this.order?.charge.status)
-  }
-
-  getPaymentStatusBadge() {
-    return getPaymentStatusBadge(this.order?.charge.status)
+  getFile() {
+    if (this.order?.files && this.order?.files.length > 0) {
+      return this.order.files[0];
+    }
+    return undefined;
   }
 
   getPaymentPending() {
-    return getPaymentPending(this.order?.charge.status)
+    const file = this.getFile();
+    if (file?.sent) {
+      return false;
+    }
+
+    return true;
   }
 
   getLinkToChain() {

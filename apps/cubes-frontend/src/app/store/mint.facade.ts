@@ -7,7 +7,6 @@ import {
   selectAllInscriptionsStatus,
   selectInscription,
   selectInscriptionStatus,
-  selectOrderId,
   selectOrderResponse,
   selectOrderStatus,
   SixInscriptionIds,
@@ -27,7 +26,6 @@ export class MintFacade {
   inscription$ = this.store.select(selectInscription);
   inscriptionStatus$ = this.store.select(selectInscriptionStatus);
 
-  orderId$ = this.store.select(selectOrderId);
   orderResponse$ = this.store.select(selectOrderResponse);
   orderStatus$ = this.store.select(selectOrderStatus);
 

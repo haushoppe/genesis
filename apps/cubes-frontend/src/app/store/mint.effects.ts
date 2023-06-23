@@ -21,11 +21,12 @@ import { OrderResponse } from '../ordinalsbot';
 import { MintService } from '../services/mint-service';
 import { confettiFirework } from './helper/confetti-firework';
 import { MintActions } from './mint.actions';
-import { selectOrderId, selectOrderResponse } from './mint.reducer';
+import { selectOrderResponse } from './mint.reducer';
 import { PageActions } from './page.actions';
 import { ofRoute } from './utils-ngrx-router/operators';
 import { limitArray } from './helper/limit-array';
 import { MempoolService } from '../services/mempool-service';
+import { selectOrderId } from './mint.selectors';
 
 
 @Injectable()
@@ -59,20 +60,11 @@ export class MintEffects {
   startOrderPolling$ = createEffect(() => {
     return this.actions.pipe(
       ofType(MintActions.placeOrderSuccess),
-      exhaustMap(() =>  // Start polling when startPolling action is dispatched. Ignore new startPolling actions until the current polling completes.
+      map(({ orderResponse }) => orderResponse.charge.id),
+      exhaustMap(orderId =>  // Start polling when startPolling action is dispatched. Ignore new startPolling actions until the current polling completes.
         interval(2000).pipe(
           takeUntil(this.actions.pipe(ofType((MintActions.orderCompleted)))),  // Stop polling when stopPolling action is dispatched.
-
-          withLatestFrom(
-            this.store.select(selectOrderId),
-            this.store.select(selectOrderResponse)
-          ),
-          map(([, orderId, orderResponse]) => ({
-            orderId: orderId + '',
-            orderResponse
-          })),
-
-          exhaustMap(({ orderId }) =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
+          exhaustMap(() =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
             this.ordinalsService.getOrderStatus(orderId).pipe(
               map(orderResponse => MintActions.updateOrderStatus({ orderResponse: orderResponse as OrderResponse })),
               catchError(() => EMPTY)
@@ -83,11 +75,14 @@ export class MintEffects {
     )
   });
 
+  // the order is completed when OrderBot startet the inscription
+  // the property `sent` is the txid of the transaction that reveals the insription
+  // eg. https://mempool.space/tx/f1997166547da9784a3e7419d2b248551565211811d4f5e705b685efa244451f
   detectOrderCompleted$ = createEffect(() =>
     this.actions.pipe(
       ofType(MintActions.updateOrderStatus),
-      map(({ orderResponse }) => orderResponse),
-      filter(orderResponse => orderResponse.charge.status === 'paid'),
+      map(({ orderResponse }) => orderResponse.files[0]),
+      filter(file => !!file.sent),
       map(() => MintActions.orderCompleted())
     )
   );

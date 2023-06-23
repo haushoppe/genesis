@@ -17,6 +17,8 @@ import { error } from 'console';
 @Injectable()
 export class ContractService {
 
+  disabled = true;
+
   private readonly knownTokens = this.configService.get<KnownTokenConfig[]>('knownTokens');
   private readonly tokenConfig = this.knownTokens.find(x => x.name === this.tokenName);
   private provider: ethers.Provider;
@@ -37,6 +39,10 @@ export class ContractService {
    * Performing async tasks before controllers are available
    */
   async onModuleInit() {
+
+    Logger.warn('Disabled ContractService!', this.tokenName);
+    return;
+
     if (this.tokenName != KnownTokenName.genesis) {
       return;
     }

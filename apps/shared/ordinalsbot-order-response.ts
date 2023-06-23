@@ -6,7 +6,7 @@ RESPONSE of POST https://api2.ordinalsbot.com/order
 AND
 RESPONSE of GET https://api2.ordinalsbot.com/order?id=da418953-225b-4cba-99f9-1c5f826704b0
 */
-
+/*
 export const exampleUnpaidResponse = {
     "status": "ok",
     "files": [
@@ -59,7 +59,7 @@ export const exampleUnpaidResponse = {
         ".sv": "timestamp"
     }
 }
-
+*/
 
 
 // see https://developers.opennode.com/reference/create-charge

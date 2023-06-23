@@ -1,0 +1,26 @@
+<a *ngIf="inscription"
+  href="https://ordinals.com/inscription/{{ inscription.inscriptionid }}" target="_blank"
+  role="navigation"
+  attr.aria-label="Go to details page of the Inscription {{ inscription.inscriptionid }}">
+
+  <div class="resize-container">
+
+    <!--
+      linking to external domain here, to mitigate possible XSS vectors
+      TODO: validate cubes and only show our own ones
+    -->
+    <iframe
+      [src]="'https://www.ord.io/content/' + inscription.inscriptionid | safeResourceUrl"
+      class=" p-3 mt-2"
+      class="img-fluid"
+      width="400"
+      height="400"
+    ></iframe>
+
+  </div>
+
+  <div class="ord-name one-line fs-6 lh-sm mt-2 ps-1 one-line">
+    {{ inscription.inscriptionid }}
+  </div>
+
+</a>

@@ -1,1 +1,2 @@
-/content/* https://ordinals.com/content/:splat 301
+/x-content/* https://ordinals.com/content/:splat 301
+/content/* https://www.ord.io/content/:splat 301

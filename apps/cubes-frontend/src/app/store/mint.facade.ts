@@ -3,10 +3,13 @@ import { Store } from '@ngrx/store';
 
 import { MintActions } from './mint.actions';
 import {
-  selectAllTokenMetadata,
-  selectAllTokenMetadataStatus,
-  selectMintOrderResponse,
-  selectMintStatus,
+  selectAllInscriptions,
+  selectAllInscriptionsStatus,
+  selectInscription,
+  selectInscriptionStatus,
+  selectOrderId,
+  selectOrderResponse,
+  selectOrderStatus,
   SixInscriptionIds,
 } from './mint.reducer';
 
@@ -18,16 +21,17 @@ export class MintFacade {
 
   store = inject(Store);
 
-  allTokenMetadata$ = this.store.select(selectAllTokenMetadata);
-  allTokenMetadataStatus$ = this.store.select(selectAllTokenMetadataStatus);
+  allInscriptions$ = this.store.select(selectAllInscriptions);
+  allInscriptionsStatus$ = this.store.select(selectAllInscriptionsStatus);
 
-  // tokenMetadataAndOwner$ = this.store.select(selectTokenMetadataAndOwner);
-  // tokenMetadataAndOwnerStatus$ = this.store.select(selectTokenMetadataAndOwnerStatus);
+  inscription$ = this.store.select(selectInscription);
+  inscriptionStatus$ = this.store.select(selectInscriptionStatus);
 
-  mintOrderResponse$ = this.store.select(selectMintOrderResponse);
-  mintStatus$ = this.store.select(selectMintStatus);
+  orderId$ = this.store.select(selectOrderId);
+  orderResponse$ = this.store.select(selectOrderResponse);
+  orderStatus$ = this.store.select(selectOrderStatus);
 
   mint(inscriptionIds: SixInscriptionIds, receiveAddress: string) {
-    this.store.dispatch(MintActions.mint({ inscriptionIds, receiveAddress }));
+    this.store.dispatch(MintActions.placeOrder({ inscriptionIds, receiveAddress }));
   }
 }

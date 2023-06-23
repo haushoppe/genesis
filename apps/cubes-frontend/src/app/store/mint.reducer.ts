@@ -8,7 +8,7 @@ import {
   getSuccessfulState,
   SubmittableState,
 } from './submittable/submittable-state';
-import { exampleUnpaidResponse, OrderResponse } from '../ordinalsbot';
+import { Inscription, OrderResponse } from '../ordinalsbot';
 
 export interface SixInscriptionIds {
   inscriptionId1?: string;
@@ -20,27 +20,29 @@ export interface SixInscriptionIds {
 }
 
 export interface State {
-  allTokenMetadata: any;
-  allTokenMetadataStatus: SubmittableState;
+  allInscriptions: Inscription[];
+  allInscriptionsStatus: SubmittableState;
 
-  // info about one single token, used for the details page
-  // tokenMetadataAndOwner: any | undefined;
-  // tokenMetadataAndOwnerStatus: SubmittableState;
+  // info about one single inscription, used for the details page
+  inscription: Inscription | undefined;
+  inscriptionStatus: SubmittableState;
 
-  mintOrderResponse: OrderResponse | undefined;
-  mintStatus: SubmittableState;
+  orderId: string | undefined;
+  orderResponse: OrderResponse | undefined;
+  orderStatus: SubmittableState;
 }
 
 export const initialState: State = {
-  allTokenMetadata: [],
-  allTokenMetadataStatus: getInitialState(),
+  allInscriptions: [],
+  allInscriptionsStatus: getInitialState(),
 
-  // tokenMetadataAndOwner: undefined,
-  // tokenMetadataAndOwnerStatus: getInitialState(),
+  inscription: undefined,
+  inscriptionStatus: getInitialState(),
 
-  mintOrderResponse: undefined,
-  // mintOrderResponse: exampleUnpaidResponse as OrderResponse,
-  mintStatus: getInitialState(),
+  orderId: undefined,
+  orderResponse: undefined,
+  // orderStatus: exampleUnpaidResponse as OrderResponse,
+  orderStatus: getInitialState(),
 };
 
 
@@ -49,63 +51,67 @@ export const mintFeature = createFeature({
   reducer: createReducer(
     initialState,
 
-    // Load All Mints
+    // Load All Inscriptions
 
-    on(MintActions.loadAllTokenMetadata, state => ({
+    on(MintActions.loadAllInscriptions, state => ({
       ...state,
       // no reset
-      allTokenMetadataStatus: getSubmittingState()
+      allInscriptionsStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadAllTokenMetadataSuccess, (state) => ({
+    on(MintActions.loadAllInscriptionsSuccess, (state, { allInscriptions }) => ({
       ...state,
-      // allTokenMetadata,
-      allTokenMetadataStatus: getSuccessfulState()
+      allInscriptions,
+      allInscriptionsStatus: getSuccessfulState()
     })),
 
-    on(MintActions.loadAllTokenMetadataFailure, (state, { error }) => ({
+    on(MintActions.loadAllInscriptionsFailure, (state, { error }) => ({
       ...state,
-      allTokenMetadataStatus: getFailureState(error)
+      allInscriptionsStatus: getFailureState(error)
     })),
 
-    // Load Token Info
+    // Load Inscription
 
-    // on(MintActions.loadTokenMetadata, state => ({
-    //   ...state,
-    //    // reset previous tokenMetadataAndOwner to not show outdated data while loading!
-    //   tokenMetadataAndOwner: undefined,
-    //   tokenMetadataAndOwnerStatus: getSubmittingState()
-    // })),
-
-    // on(MintActions.loadTokenMetadataSuccess, (state) => ({
-    //   ...state,
-    //   // tokenMetadataAndOwner,
-    //   tokenMetadataAndOwnerStatus: getSuccessfulState()
-    // })),
-
-    // on(MintActions.loadTokenMetadataFailure, (state, { error }) => ({
-    //   ...state,
-    //   tokenMetadataAndOwnerStatus: getFailureState(error)
-    // })),
-
-    // Mint!
-
-    on(MintActions.mint, state => ({
+    on(MintActions.loadInscription, state => ({
       ...state,
-      mintOrderResponse: undefined,
-      mintStatus: getSubmittingState()
+       // reset previous singleInscription to not show outdated data while loading!
+       inscription: undefined,
+       inscriptionStatus: getSubmittingState()
     })),
 
-    on(MintActions.mintSuccess, (state, { mintOrderResponse }) => ({
+    on(MintActions.loadInscriptionSuccess, (state, { inscription }) => ({
       ...state,
-      mintOrderResponse,
-      mintStatus: getSuccessfulState()
+      inscription,
+      inscriptionStatus: getSuccessfulState()
     })),
 
-    on(MintActions.mintFailure, (state, { error }) => ({
+    on(MintActions.loadInscriptionFailure, (state, { error }) => ({
       ...state,
-      mintOrderResponse: undefined,
-      mintStatus: getFailureState(error)
+      inscriptionStatus: getFailureState(error)
+    })),
+
+    // Place Order
+
+    on(MintActions.placeOrder, state => ({
+      ...state,
+      orderId: undefined,
+      orderResponse: undefined,
+      orderStatus: getSubmittingState()
+    })),
+
+    on(MintActions.placeOrderSuccess,
+       MintActions.updateOrderStatus, (state, { orderResponse }) => ({
+      ...state,
+      orderId: orderResponse.charge.id,
+      orderResponse,
+      orderStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.placeOrderFailure, (state, { error }) => ({
+      ...state,
+      orderId: undefined,
+      orderResponse: undefined,
+      orderStatus: getFailureState(error)
     }))
   )
 });
@@ -114,8 +120,11 @@ export const {
   name,
   reducer,
   selectMintState,
-  selectAllTokenMetadata,
-  selectAllTokenMetadataStatus,
-  selectMintOrderResponse,
-  selectMintStatus
+  selectAllInscriptions,
+  selectAllInscriptionsStatus,
+  selectInscription,
+  selectInscriptionStatus,
+  selectOrderId,
+  selectOrderResponse,
+  selectOrderStatus
 } = mintFeature;

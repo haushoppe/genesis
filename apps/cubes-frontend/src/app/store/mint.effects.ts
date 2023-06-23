@@ -2,60 +2,115 @@ import { inject, Injectable, NgZone } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
-import { from, of } from 'rxjs';
-import { catchError, concatMap, map, retry, switchMap } from 'rxjs/operators';
+import { EMPTY, from, interval, of } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  exhaustMap,
+  filter,
+  map,
+  retry,
+  switchMap,
+  takeUntil,
+  tap,
+  withLatestFrom,
+} from 'rxjs/operators';
 
+import { OrdinalsService } from '../openapi-client';
+import { OrderResponse } from '../ordinalsbot';
+import { OrdinalsbotService } from '../services/api';
 import { MintService } from '../services/mint-service';
+import { confettiFirework } from './helper/confetti-firework';
 import { MintActions } from './mint.actions';
+import { selectOrderId, selectOrderResponse } from './mint.reducer';
 import { PageActions } from './page.actions';
+import { ofRoute } from './utils-ngrx-router/operators';
+import { limitArray } from './helper/limit-array';
 
 
 @Injectable()
 export class MintEffects {
 
   actions = inject(Actions);
-  apiService = { allTokenMetadata: () => of(), tokenMetadata: () => of()  };
+  ordinalsbotService = inject(OrdinalsbotService);
+  ordinalsService = inject(OrdinalsService);
   mintService = inject(MintService);
   store = inject(Store);
   notificationService = inject(NotificationService);
   ngZone = inject(NgZone);
 
 
-  mint$ = createEffect(() =>
-  this.actions.pipe(
-    ofType(MintActions.mint),
-    concatMap(({ receiveAddress, inscriptionIds }) =>
-      from(this.mintService.getFees()).pipe(
-        switchMap(fees =>
-          this.mintService.mint(receiveAddress, inscriptionIds, fees.halfHourFee).pipe(
-            map(mintOrderResponse => MintActions.mintSuccess({ mintOrderResponse })),
-            catchError(error => of(MintActions.mintFailure({ error })))
+  placeOrder$ = createEffect(() =>
+    this.actions.pipe(
+      ofType(MintActions.placeOrder),
+      concatMap(({ receiveAddress, inscriptionIds }) =>
+        from(this.mintService.getFees()).pipe(
+          switchMap(fees =>
+            this.mintService.placeOrder(receiveAddress, inscriptionIds, fees.halfHourFee).pipe(
+              map(orderResponse => MintActions.placeOrderSuccess({ orderResponse })),
+              catchError(error => of(MintActions.placeOrderFailure({ error })))
+            )
           )
         )
       )
     )
-  )
-);
+  );
 
+  detectOrderCompleted$ = createEffect(() =>
+    this.actions.pipe(
+      ofType(MintActions.updateOrderStatus),
+      map(({ orderResponse }) => orderResponse),
+      filter(orderResponse => orderResponse.charge.status === 'paid'),
+      map(() => MintActions.orderCompleted())
+    )
+  );
 
-  // loadMintsOnRouting$ = createEffect(() => {
-  //   return this.actions.pipe(
-  //     ofRoute(['']),
-  //     map(() => MintActions.loadAllTokenMetadata()),
-  //   );
-  // });
-
-  loadMints$ = createEffect(() => {
+  startOrderPolling$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(MintActions.loadAllTokenMetadata),
+      ofType(MintActions.placeOrderSuccess),
+      exhaustMap(() =>  // Start polling when startPolling action is dispatched. Ignore new startPolling actions until the current polling completes.
+        interval(2000).pipe(
+          takeUntil(this.actions.pipe(ofType((MintActions.orderCompleted)))),  // Stop polling when stopPolling action is dispatched.
+
+          withLatestFrom(
+            this.store.select(selectOrderId),
+            this.store.select(selectOrderResponse)
+          ),
+          map(([, orderId, orderResponse]) => ({
+            orderId: orderId + '',
+            orderResponse
+          })),
+
+          exhaustMap(({ orderId }) =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
+            this.ordinalsService.getOrderStatus(orderId).pipe(
+              map(orderResponse => MintActions.updateOrderStatus({ orderResponse: orderResponse as OrderResponse })),
+              catchError(() => EMPTY)
+            )
+          )
+        )
+      )
+    )
+  });
+
+  loadAllInscriptionsOnRouting$ = createEffect(() => {
+    return this.actions.pipe(
+      ofRoute(['']),
+      map(() => MintActions.loadAllInscriptions()),
+    );
+  });
+
+  loadAllInscriptions$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(MintActions.loadAllInscriptions),
       switchMap(() =>
-        this.apiService.allTokenMetadata().pipe(
+        // this.ordinalsbotService.searchForText('cubes.haushoppe.art').pipe(
+        this.ordinalsbotService.searchForText('<html>').pipe(
           retry({ count: 3, delay: 1000 }),
-          concatMap(allTokenMetadata => [
-            MintActions.loadAllTokenMetadataSuccess(),
+          concatMap(searchResult => [
+            MintActions.loadAllInscriptionsSuccess({ allInscriptions: limitArray(searchResult.results, 20) }),
             PageActions.ready()
           ]),
-          catchError(error => of(MintActions.loadAllTokenMetadataFailure({ error }))))
+          catchError(error => of(MintActions.loadAllInscriptionsFailure({ error }))))
       )
     );
   });
@@ -84,48 +139,13 @@ export class MintEffects {
   // });
 
 
-
-  /*
   showNotification$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(
-        MintActions.tokensMintedOrBought,
-        MintActions.tokensSentOrSold,
-        MintActions.tokensLoaned,
-        MintActions.loanedTokensRetrieved
-      ),
-      tap(action => {
-        let message = '';
-
-        const pluralize = (amount: number, adjective = ''): string => {
-          switch (amount) {
-            case 1: return `one ${ adjective }element`;
-            case 2: return `two ${ adjective }elements`;
-            case 3: return `three ${ adjective }elements`;
-            case 4: return `four ${ adjective }elements`;
-            default: return `${ amount } ${ adjective }elements`;
-          }
-        }
-
-        const amount = action.tokens.length;
-
-        switch (action.type) {
-          case MintActions.tokensMintedOrBought.type:
-            message = `You successfully collected ${ pluralize(amount) }!`;
-            break;
-          case MintActions.tokensSentOrSold.type:
-            message = `You successfully transferred ${ pluralize(amount) }.`;
-            break;
-          case MintActions.tokensLoaned.type:
-            message = `You loaned out ${ pluralize(amount) }`;
-            break;
-          case MintActions.loanedTokensRetrieved.type:
-            message = `You retrieved ${ pluralize(amount, 'loaned ') }.`;
-            break;
-        }
+      ofType(MintActions.orderCompleted),
+      tap(() => {
 
         this.notificationService.show({
-          content: message,
+          content: 'We received your payment and submitted a transaction that will inscribe your cube!',
           hideAfter: 10000,
           position: { horizontal: 'center', vertical: 'top' },
           animation: { type: 'slide', duration: 400 },
@@ -133,11 +153,8 @@ export class MintEffects {
           // closable: true
         });
 
-        if (action.type === MintActions.tokensMintedOrBought.type) {
-          this.ngZone.runOutsideAngular(() => confettiFirework());
-        }
+        this.ngZone.runOutsideAngular(() => confettiFirework());
       })
     )
   }, { dispatch: false });
-  */
 }

@@ -9,7 +9,7 @@ import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-i
 import { MintFacade } from '../store/mint.facade';
 import { LinkifyDirective } from './linkify.directive';
 import { ParseMarkdownPipe } from './parse-markdown.pipe';
-import { SafeResourceUrlPipe } from './safe-url.pipe';
+import { SafeResourceUrlPipe } from '../safe-url.pipe';
 
 @Component({
   selector: 'app-details',

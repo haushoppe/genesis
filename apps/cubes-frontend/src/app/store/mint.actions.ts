@@ -1,23 +1,25 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
-import { OrderResponse } from '../ordinalsbot';
+import { Inscription, OrderResponse } from '../ordinalsbot';
 import { SixInscriptionIds } from './mint.reducer';
 
 export const MintActions = createActionGroup({
   source: 'Mint',
   events: {
 
-    'Load All Token Metadata': emptyProps(),
-    'Load All Token Metadata Success': emptyProps(),
-    'Load All Token Metadata Failure': props<{ error: HttpErrorResponse }>(),
+    'Load All Inscriptions': emptyProps(),
+    'Load All Inscriptions Success':  props<{ allInscriptions: Inscription[] }>(),
+    'Load All Inscriptions Failure': props<{ error: HttpErrorResponse }>(),
 
-    // 'Load Token Metadata': props<{ tokenId: number }>(),
-    // 'Load Token Metadata Success': emptyProps(),
-    // 'Load Token Metadata Failure': props<{ error: HttpErrorResponse }>(),
+    'Load Inscription': props<{ inscriptionId: string }>(),
+    'Load Inscription Success': props<{ inscription: Inscription }>(),
+    'Load Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
-    'Mint': props<{  receiveAddress: string, inscriptionIds: SixInscriptionIds }>(),
-    'Mint Success': props<{ mintOrderResponse: OrderResponse }>(),
-    'Mint Failure': props<{ error: HttpErrorResponse }>(),
+    'Place Order': props<{ receiveAddress: string, inscriptionIds: SixInscriptionIds }>(),
+    'Place Order Success': props<{ orderResponse: OrderResponse }>(),
+    'Place Order Failure': props<{ error: HttpErrorResponse }>(),
+    'Update Order Status': props<{ orderResponse: OrderResponse }>(),
+    'Order Completed': emptyProps()
   }
 });

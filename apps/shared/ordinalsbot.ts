@@ -83,3 +83,25 @@ export async function getReferralStatus(): Promise<any> {
   });
   return response.data;
 }
+
+export async function getOrderStatus(id: string): Promise<OrderResponse> {
+
+  const response = await axios.get('https://api2.ordinalsbot.com/order',
+  {
+    params: {
+      id
+    }
+  });
+  return response.data;
+}
+
+export async function searchForText(text: string): Promise<OrderResponse> {
+
+  const response = await axios.get('https://api2.ordinalsbot.com/search',
+  {
+    params: {
+      text
+    }
+  });
+  return response.data;
+}

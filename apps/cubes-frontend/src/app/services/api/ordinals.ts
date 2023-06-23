@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 import axios from 'axios';
 
+import { OrderResponse, OrdinalsbotInscriptionSearchResult } from '../../ordinalsbot';
 import BitcoinEsploraApiProvider from '../api/esplora/esploraAPiProvider';
 import { ORDINALS_URL, XVERSE_API_BASE_URL } from '../constant';
 import { BtcOrdinal, NetworkType, UTXO } from '../types';
+
 
 export function parseOrdinalTextContentData(content: string): string {
   try {
@@ -118,7 +122,8 @@ export async function getNonOrdinalUtxo(
 }
 
 /*
-// browser version (does not work, CORS issues)
+
+// browser version
 export const createHtmlInscriptionOrder = async (request: { receiveAddress: string, htmlString: string }): Promise<OrderResponse> => {
 
   // Convert the HTML string to a base64 encoded string
@@ -140,3 +145,19 @@ export const createHtmlInscriptionOrder = async (request: { receiveAddress: stri
   return inscriptionRequest;
 };
 */
+
+@Injectable({
+  providedIn: 'root'
+})
+export class OrdinalsbotService {
+
+  httpClient = inject(HttpClient);
+
+  // getOrderStatus(id: string) {
+  //   return this.httpClient.get<OrderResponse>('https://api2.ordinalsbot.com/order', { params: { id }});
+  // }
+
+  searchForText(text: string) {
+    return this.httpClient.get<OrdinalsbotInscriptionSearchResult>('https://api2.ordinalsbot.com/search', { params: { text }});
+  }
+}

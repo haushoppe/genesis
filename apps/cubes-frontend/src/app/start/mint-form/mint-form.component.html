@@ -56,14 +56,14 @@
       <div class="form-group row">
         <div class="col text-center pt-2 pb-1">
 
-          <ng-container *rxLet="mintFacade.mintStatus$; let mintStatus">
+          <ng-container *rxLet="mintFacade.orderStatus$; let orderStatus">
 
             <app-loading-indicator-button
               [disabled]="form.invalid"
               [showAlertOnError]="true"
               (buttonClick)="mint()"
-              [state]="mintStatus"
-              [buttonText]="mintStatus.submitStatus === SubmitStatus.Successful ? 'Mint successfully submitted' : 'Mint your cube!'"
+              [state]="orderStatus"
+              [buttonText]="orderStatus.submitStatus === SubmitStatus.Successful ? 'Mint successfully submitted' : 'Mint your cube!'"
               defaultIconClass="bi bi-lightning-charge-fill"
             />
 

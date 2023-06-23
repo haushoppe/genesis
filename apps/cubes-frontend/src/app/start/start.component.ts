@@ -8,12 +8,12 @@ import { PushModule } from '@rx-angular/template/push';
 import { AlertComponent } from '../layout/alert/alert.component';
 import { LoadingIndicatorButtonComponent } from '../layout/loading-indicator-button/loading-indicator-button.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
-import { NftDisplayListComponent } from '../layout/nft-display-list/nft-display-list.component';
 import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
 import { OrderDisplayComponent } from '../layout/order-display/order-display.component';
+import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 
 
 const expandDuration = 500
@@ -27,7 +27,7 @@ const expandDuration = 500
       LoadingIndicatorComponent,
       LoadingIndicatorButtonComponent,
       AlertComponent,
-      NftDisplayListComponent,
+      InscriptionListItemComponent,
       NgFor,
       NgIf,
       LetModule,

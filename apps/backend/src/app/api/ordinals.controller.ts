@@ -1,8 +1,8 @@
-import { Body, Controller, ForbiddenException, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Header, Param, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiExcludeEndpoint, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { createInscriptionRequestForHtml, getReferralStatus, saveReferralCode } from '../../../../shared/ordinalsbot';
+import { createInscriptionRequestForHtml, getOrderStatus, getReferralStatus, saveReferralCode } from '../../../../shared/ordinalsbot';
 import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 import { HtmlInscriptionRequest } from '../types/html-inscription-request';
 
@@ -43,6 +43,29 @@ export class OrdinalsController {
   }
 
   /**
+   * Get inscription order updates
+   */
+  @Get(['ordinals/getOrderStatus/:id'])
+  @ApiOperation({ operationId: 'getOrderStatus' })
+  @ApiParam({
+    name: 'id',
+    description: 'order Id'
+  })
+  @Header('Cache-Control', 'no-cache')
+  async getOrderStatus(@Param('id') id: string): Promise<OrderResponse> {
+
+    const orderResponseFull = await getOrderStatus(id);
+
+    // const { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = orderResponseFull.charge;
+    // const orderResponseShort = {
+    //   fee: orderResponseFull.fee,
+    //   charge: { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value }
+    // }
+
+    return orderResponseFull;
+  }
+
+  /**
    * Saving Referral Code
    *
    * Use this endpoint to set a unique referral code for yourself.
@@ -64,15 +87,15 @@ export class OrdinalsController {
    *
    * Use this endpoint to set a unique referral code for yourself.
    */
-    @Post(['ordinals/getReferralStatus'])
-    @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-    @ApiOperation({ operationId: 'getReferralStatus' })
-    async getReferralStatus() {
+  @Post(['ordinals/getReferralStatus'])
+  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+  @ApiOperation({ operationId: 'getReferralStatus' })
+  async getReferralStatus() {
 
-      if (this.configService.get('environment') !== 'development') {
-        throw new ForbiddenException('This method should not be called on production');
-      }
+    if (this.configService.get('environment') !== 'development') {
+      throw new ForbiddenException('This method should not be called on production');
+    }
 
-      return getReferralStatus();
+    return getReferralStatus();
   }
 }

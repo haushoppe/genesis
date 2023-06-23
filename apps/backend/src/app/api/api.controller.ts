@@ -6,7 +6,6 @@ import {
   Header,
   Logger,
   NotFoundException,
-  NotImplementedException,
   Param,
   ParseIntPipe,
   Post,
@@ -133,6 +132,14 @@ export class ApiController {
     }
 
     const contractService = this.moduleRef.get<ContractService>(tokenName);
+
+    if (contractService.disabled) {
+      return {
+        environment: this.configService.get('environment'),
+        uptime: formatSeconds(process.uptime()),
+        config: null
+      }
+    }
 
     const token = this.knownTokens.find(x => x.name === tokenName);
 

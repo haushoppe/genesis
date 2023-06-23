@@ -17,27 +17,31 @@
 </p>
 
 
-<ng-container *rxLet="mintFacade.mintOrderResponse$; let mintOrderResponse">
+<ng-container *rxLet="mintFacade.orderResponse$; let orderResponse">
 
   <h2 class="mt-5">Mint a cube</h2>
 
-  <p class="mb-0" *ngIf="!mintOrderResponse">
+  <p class="mb-0" *ngIf="!orderResponse">
     Enter six Inscription IDs in the TXID<strong>i</strong>N format
     <small class="fs-6">(eg. 571fcea04e<wbr>78d4fb484d<wbr>46d7efbd00<wbr>d0baaf418f<wbr>a6da06ea86<wbr>3eee474a57<wbr>2b83<strong>i</strong>0)</small>
-    and your receive address (preferably a taproot address which starts with <strong>bc1p</strong>).
-    After submitting your cube via the "Mint your cube!" button, we will display an invoice that you can pay directly either with ⚡️ Lightning (instant) or pay on-chain 🟧 BTC.
+    and your receive address (preferably a Taproot address which starts with <strong>bc1p</strong>).
+    The six inscriptions must contain an image (e.g., PNG, JPG, GIF, DDS) or video (e.g., MP4, OGG/OGV).
+    If a side of the cube turns black, then the file format is not supported.<br>
+    <br>
+    After submitting your cube via the "Mint your cube!" button,
+    we will display an invoice that you can pay directly either with ⚡️ Lightning (instant) or
+    on-chain with 🟧 Bitcoin (BTC).
     As soon as the payment is confirmed, we will automatically inscribe your cube on the Bitcoin blockchain and send it to you.
     The data for the cube is then fully stored on-chain and will remain unchangeable forever.
   </p>
 
 
-  <app-mint-form *ngIf="!mintOrderResponse "/>
-  <app-order-display *ngIf="mintOrderResponse" [order]="mintOrderResponse" />
+  <app-mint-form *ngIf="!orderResponse "/>
+  <app-order-display *ngIf="orderResponse" [order]="orderResponse" />
 
 </ng-container>
 
 
-<ng-container *ngIf="false">
 <h2 class="mt-5">Latest cubes</h2>
 
 <p class="mb-3">
@@ -46,14 +50,13 @@
 
 <div class="row">
 
-  <!-- <div *rxFor="let nft of mintFacade.allTokenMetadata$" class="col-6 col-md-4 col-lg-3">
-    <app-nft-display-list [nft]="nft"></app-nft-display-list>
-  </div> -->
+  <div *rxFor="let inscription of mintFacade.allInscriptions$" class="col-6 col-md-4 col-lg-3">
+    <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
+  </div>
 
   <app-loading-indicator
-    [state]="mintFacade.allTokenMetadataStatus$ | push" class="mb-5"
-    sendDataText="Loading latest mints…"
+    [state]="mintFacade.allInscriptionsStatus$ | push" class="mb-5"
+    sendDataText="Loading latest cubes…"
   ></app-loading-indicator>
 
 </div>
-</ng-container>

@@ -25,6 +25,7 @@ import { selectOrderId, selectOrderResponse } from './mint.reducer';
 import { PageActions } from './page.actions';
 import { ofRoute } from './utils-ngrx-router/operators';
 import { limitArray } from './helper/limit-array';
+import { MempoolService } from '../services/mempool-service';
 
 
 @Injectable()
@@ -33,6 +34,7 @@ export class MintEffects {
   actions = inject(Actions);
   ordinalsService = inject(OrdinalsService);
   mintService = inject(MintService);
+  mempoolService = inject(MempoolService);
   store = inject(Store);
   notificationService = inject(NotificationService);
   ngZone = inject(NgZone);
@@ -51,15 +53,6 @@ export class MintEffects {
           )
         )
       )
-    )
-  );
-
-  detectOrderCompleted$ = createEffect(() =>
-    this.actions.pipe(
-      ofType(MintActions.updateOrderStatus),
-      map(({ orderResponse }) => orderResponse),
-      filter(orderResponse => orderResponse.charge.status === 'paid'),
-      map(() => MintActions.orderCompleted())
     )
   );
 
@@ -89,6 +82,31 @@ export class MintEffects {
       )
     )
   });
+
+  detectOrderCompleted$ = createEffect(() =>
+    this.actions.pipe(
+      ofType(MintActions.updateOrderStatus),
+      map(({ orderResponse }) => orderResponse),
+      filter(orderResponse => orderResponse.charge.status === 'paid'),
+      map(() => MintActions.orderCompleted())
+    )
+  );
+
+  loadMempoolInfo$ = createEffect(() =>
+    this.actions.pipe(
+      ofType(MintActions.updateOrderStatus),
+      map(({ orderResponse }) => orderResponse.charge.chain_invoice.address),
+      switchMap(address =>
+        this.mempoolService.getUnconfirmedTransactions(address).pipe(
+          map(transactions => MintActions.saveMempoolInfo({ transactions })),
+          catchError(() => EMPTY)
+        )
+      )
+    )
+  );
+
+
+
 
   loadAllInscriptionsOnRouting$ = createEffect(() => {
     return this.actions.pipe(

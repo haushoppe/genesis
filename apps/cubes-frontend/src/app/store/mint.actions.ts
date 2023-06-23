@@ -4,6 +4,7 @@ import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { Inscription, OrderResponse } from '../ordinalsbot';
 import { SixInscriptionIds } from './mint.reducer';
 import { InscriptionSimple } from '../openapi-client';
+import { MempoolTransaction } from '../services/mempool-service';
 
 export const MintActions = createActionGroup({
   source: 'Mint',
@@ -21,6 +22,8 @@ export const MintActions = createActionGroup({
     'Place Order Success': props<{ orderResponse: OrderResponse }>(),
     'Place Order Failure': props<{ error: HttpErrorResponse }>(),
     'Update Order Status': props<{ orderResponse: OrderResponse }>(),
-    'Order Completed': emptyProps()
+    'Order Completed': emptyProps(),
+
+    'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),
   }
 });

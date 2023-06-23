@@ -91,6 +91,11 @@ export const mintFeature = createFeature({
       inscriptionStatus: getFailureState(error)
     })),
 
+    on(MintActions.loadInscriptionFailure, (state, { error }) => ({
+      ...state,
+      inscriptionStatus: getFailureState(error)
+    })),
+
     // Place Order
 
     on(MintActions.placeOrder, state => ({

@@ -1,0 +1,61 @@
+POST https://api2.ordinalsbot.com/order
+BODY
+{"files":[{"size":557,"type":"text/html","name":"cube1.html","dataURL":"data:text/html;base64,PGh0bWw+PCEtLWN1YmVzLmhhdXNob3BwZS5hcnQtLT48Ym9keT48c2NyaXB0PnQ9J2FiMmY0ZTlkY2UwNTgzMjY0MDc4NDI4YTkxYWE5MDM3ZGEwZTc1ZjkwZGM3N2ZlM2NiYTdjZjUzMjBhZDAwM2RpMHxkZGE3NDcwYjZkNWJiZWVhNjU2MGExNjdmNTZhMDQ4YWEyOWNlNzFmNTdlZGM3YjcxY2Y1ZGYzNjVkZGJkZGFlaTB8ZGRhNzQ3MGI2ZDViYmVlYTY1NjBhMTY3ZjU2YTA0OGFhMjljZTcxZjU3ZWRjN2I3MWNmNWRmMzY1ZGRiZGRhZWkwfGRkYTc0NzBiNmQ1YmJlZWE2NTYwYTE2N2Y1NmEwNDhhYTI5Y2U3MWY1N2VkYzdiNzFjZjVkZjM2NWRkYmRkYWVpMHxkZGE3NDcwYjZkNWJiZWVhNjU2MGExNjdmNTZhMDQ4YWEyOWNlNzFmNTdlZGM3YjcxY2Y1ZGYzNjVkZGJkZGFlaTB8ZGRhNzQ3MGI2ZDViYmVlYTY1NjBhMTY3ZjU2YTA0OGFhMjljZTcxZjU3ZWRjN2I3MWNmNWRmMzY1ZGRiZGRhZWkwJzwvc2NyaXB0PjxzY3JpcHQgc3JjPS9jb250ZW50Lzk0NzVhYThkZjU1OWQ1NjlmNzI4NGNlNTllOTcwMTRmMjhiZTc1OGU4MzJlMjEyZmRiYmEwMjAyNjk5ZGQwMzVpMD48L3NjcmlwdD4=","url":""}],"lowPostage":true,"receiveAddress":"???","rareSats":"random","fee":"60","referral":"your-referral-code"}
+
+Response
+
+{
+    "status": "ok",
+    "files": [
+        {
+            "size": 557,
+            "type": "text/html",
+            "name": "cube1.html",
+            "dataURL": "data:text/html;base64,PGh0bWw+PCEtLWN1YmVzLmhhdXNob3BwZS5hcnQtLT48Ym9keT48c2NyaXB0PnQ9J2FiMmY0ZTlkY2UwNTgzMjY0MDc4NDI4YTkxYWE5MDM3ZGEwZTc1ZjkwZGM3N2ZlM2NiYTdjZjUzMjBhZDAwM2RpMHxkZGE3NDcwYjZkNWJiZWVhNjU2MGExNjdmNTZhMDQ4YWEyOWNlNzFmNTdlZGM3YjcxY2Y1ZGYzNjVkZGJkZGFlaTB8ZGRhNzQ3MGI2ZDViYmVlYTY1NjBhMTY3ZjU2YTA0OGFhMjljZTcxZjU3ZWRjN2I3MWNmNWRmMzY1ZGRiZGRhZWkwfGRkYTc0NzBiNmQ1YmJlZWE2NTYwYTE2N2Y1NmEwNDhhYTI5Y2U3MWY1N2VkYzdiNzFjZjVkZjM2NWRkYmRkYWVpMHxkZGE3NDcwYjZkNWJiZWVhNjU2MGExNjdmNTZhMDQ4YWEyOWNlNzFmNTdlZGM3YjcxY2Y1ZGYzNjVkZGJkZGFlaTB8ZGRhNzQ3MGI2ZDViYmVlYTY1NjBhMTY3ZjU2YTA0OGFhMjljZTcxZjU3ZWRjN2I3MWNmNWRmMzY1ZGRiZGRhZWkwJzwvc2NyaXB0PjxzY3JpcHQgc3JjPS9jb250ZW50Lzk0NzVhYThkZjU1OWQ1NjlmNzI4NGNlNTllOTcwMTRmMjhiZTc1OGU4MzJlMjEyZmRiYmEwMjAyNjk5ZGQwMzVpMD48L3NjcmlwdD4=",
+            "url": ""
+        }
+    ],
+    "lowPostage": true,
+    "receiveAddress": "???",
+    "rareSats": "random",
+    "fee": "60",
+    "referral": "your-referral-code",
+    "charge": {
+        "id": "baab1eb7-f814-4164-9004-0a5bf6b11c61",
+        "description": "ordinalsbot order",
+        "desc_hash": false,
+        "created_at": 1687524553,
+        "status": "unpaid",
+        "amount": 43745,
+        "callback_url": "",
+        "success_url": null,
+        "hosted_checkout_url": "https://checkout.opennode.com/baab1eb7-f814-4164-9004-0a5bf6b11c61",
+        "order_id": null,
+        "currency": "BTC",
+        "source_fiat_value": 43745,
+        "fiat_value": 12.09,
+        "auto_settle": false,
+        "notif_email": null,
+        "address": "3QQom6T5HdtM2PRU95VHAGAPoBppiB8huN",
+        "metadata": {},
+        "chain_invoice": {
+            "address": "3QQom6T5HdtM2PRU95VHAGAPoBppiB8huN"
+        },
+        "uri": "bitcoin:3QQom6T5HdtM2PRU95VHAGAPoBppiB8huN?amount=0.00043745&label=ordinalsbot+order&lightning=lnbc437450n1pjft9xgpp56ajmeymq4uw0u29w42d2pak4ynssesv4zjuur67k7g8esell88psdqudaexg6twv9k8xcn0wssx7unyv4eqcqzzsxqy8ayqsp5hywa77xw7gwvwvnsv04q3mcrpkmup6xdxq97wvl4k0al6f08qa0q9qyyssq8mnf53lur2ljljf9f3kzd4yg7fggw72u8rkxxp0e2r0e8cvsmz0zn4apq268yuvln90h6qf4f409pc36wxksz0uz5qzg5280u54nrhcqgdxdje",
+        "ttl": 4320,
+        "lightning_invoice": {
+            "expires_at": 1687783752,
+            "payreq": "lnbc437450n1pjft9xgpp56ajmeymq4uw0u29w42d2pak4ynssesv4zjuur67k7g8esell88psdqudaexg6twv9k8xcn0wssx7unyv4eqcqzzsxqy8ayqsp5hywa77xw7gwvwvnsv04q3mcrpkmup6xdxq97wvl4k0al6f08qa0q9qyyssq8mnf53lur2ljljf9f3kzd4yg7fggw72u8rkxxp0e2r0e8cvsmz0zn4apq268yuvln90h6qf4f409pc36wxksz0uz5qzg5280u54nrhcqgdxdje"
+        }
+    },
+    "chainFee": 26355,
+    "serviceFee": 17390,
+    "baseFee": 15546,
+    "orderType": "bulk",
+    "createdAt": {
+        ".sv": "timestamp"
+    }
+}
+
+
+

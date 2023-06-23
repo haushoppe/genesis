@@ -1,0 +1,80 @@
+GET https://api2.ordinalsbot.com/order?id=d06174e8-49a3-4b3b-9986-11aed2d44b71
+
+
+Payment Success!
+Your payment was successful. Please see your order information below.
+
+Your payment was received and your order is currently being processed, see details below. It will be sent to the address you provided once finished.
+
+
+
+
+{
+    "baseFee": 15546,
+    "chainFee": 26355,
+    "charge": {
+        "address": "3MJmqUktrjF1GLLWaYthZwHacwi9uwvz3c",
+        "amount": 43745,
+        "auto_settle": false,
+        "callback_url": "",
+        "chain_invoice": {
+            "address": "3MJmqUktrjF1GLLWaYthZwHacwi9uwvz3c"
+        },
+        "created_at": 1687530078,
+        "currency": "BTC",
+        "desc_hash": false,
+        "description": "ordinalsbot order",
+        "fiat_value": 12.12,
+        "hosted_checkout_url": "https://checkout.opennode.com/d06174e8-49a3-4b3b-9986-11aed2d44b71",
+        "id": "d06174e8-49a3-4b3b-9986-11aed2d44b71",
+        "lightning_invoice": {
+            "expires_at": 1687789278,
+            "payreq": "lnbc437450n1pjft2j7pp5xe63jfw0fu7s3jjg7f28nxyll4vw5j8qxcghhczhu3ev0yn97hgqdqudaexg6twv9k8xcn0wssx7unyv4eqcqzzsxqy8ayqsp548v8k9kvz4pkztkl4vx2w7k8g757nzzjxvr3nqrkazarapcvn5cq9qyyssq76an89relr7dctl3s5e9tzaen35qxvm8upysfguydv90vn8mw7m4thh653gnvp75sll3qkvnu3ppuzkpk59fqelueqtvxyaw27uuk3gp09s7u3"
+        },
+        "source_fiat_value": 43745,
+        "status": "unpaid",
+        "ttl": 4320,
+        "uri": "bitcoin:3MJmqUktrjF1GLLWaYthZwHacwi9uwvz3c?amount=0.00043745&label=ordinalsbot+order&lightning=lnbc437450n1pjft2j7pp5xe63jfw0fu7s3jjg7f28nxyll4vw5j8qxcghhczhu3ev0yn97hgqdqudaexg6twv9k8xcn0wssx7unyv4eqcqzzsxqy8ayqsp548v8k9kvz4pkztkl4vx2w7k8g757nzzjxvr3nqrkazarapcvn5cq9qyyssq76an89relr7dctl3s5e9tzaen35qxvm8upysfguydv90vn8mw7m4thh653gnvp75sll3qkvnu3ppuzkpk59fqelueqtvxyaw27uuk3gp09s7u3"
+    },
+    "createdAt": 1687530078231,
+    "fee": "60",
+    "files": [
+        {
+            "completed": true,
+            "dataURL": "data:text/html;base64,PGh0bWw+PCEtLWN1YmVzLmhhdXNob3BwZS5hcnQtLT48Ym9keT48c2NyaXB0PnQ9JzY3NjE3MjRjZDBhNDJkNDY1ZWZjM2VhM2VjZTNjYjg3OTBiNDdmZDBmMTk3OTlkMGMyNTdkNmRmODBmY2Y2NDJpMHxlYzZkMWQ3ZjViODQxMzM1NWM2M2IyM2Q4ZjViOGRkZTVmMGUwMWRkODlhMzgzODViMDQ5MThhMjRkODk2NmQyaTB8YjQzOTA4ZjRjODQ1OGI3YjNjNzk3YTZkZjQyOTUwZmZjZGQ3MDA4NzQ0YWZmMGNhMzk5ZTJiNzdmZWE0MzU1ZWkwfDk5MmY2ODIyYjZjM2MzNGViMzI5N2NkMGQ5OTIzYmQxNTljNGQ3N2VmYzBjZTNkZDFmZTc4YTdiZTI4OTgxODJpMHxlZTA1ZjI2MDVjOTljZjAwNTk0NzI2NzRjZWI0OTlmOTAzMjdmMzliNTBjMzRiODcyNWU3NzJiNzA2MzFjZTMyaTB8MDE5MTExODJhMjQ5NTQzYjNkYjFmZDkyYjZmNjFjOGYxNDQ4N2MyZjNlNzgwZTE5YjgzY2Q4MzZhM2Q5OGYxZmkwJzwvc2NyaXB0PjxzY3JpcHQgc3JjPS9jb250ZW50Lzk0NzVhYThkZjU1OWQ1NjlmNzI4NGNlNTllOTcwMTRmMjhiZTc1OGU4MzJlMjEyZmRiYmEwMjAyNjk5ZGQwMzVpMD48L3NjcmlwdD4=",
+            "iqueued": true,
+            "iqueuedAt": 1687530241092,
+            "name": "cube2.html",
+            "processing": false,
+            "sent": "fc24e9b9207e00d747968ca80a940296cb6ab3709b73beabaa046e0cbc0b9108",
+            "size": 557,
+            "tx": {
+                "commit": "0db57bbbce2e568a75e9eda579059f716dc59b12afd217321a86e865f63e9cca",
+                "fees": 26760,
+                "inscription": "fc24e9b9207e00d747968ca80a940296cb6ab3709b73beabaa046e0cbc0b9108i0",
+                "inscriptions": [
+                    "fc24e9b9207e00d747968ca80a940296cb6ab3709b73beabaa046e0cbc0b9108i0"
+                ],
+                "reveal": "fc24e9b9207e00d747968ca80a940296cb6ab3709b73beabaa046e0cbc0b9108",
+                "reveals": [
+                    "fc24e9b9207e00d747968ca80a940296cb6ab3709b73beabaa046e0cbc0b9108"
+                ],
+                "satpoint": "440b2dfdcc5d371f06474d3cf1b0eb4597c7d90416756719b5b68d5895697827:1:0"
+            },
+            "type": "text/html",
+            "url": "",
+            "vm": 1
+        }
+    ],
+    "inscribedCount": 1,
+    "lowPostage": true,
+    "orderType": "bulk",
+    "paid": true,
+    "paidAt": 1687530240465,
+    "processing": true,
+    "rareSats": "random",
+    "receiveAddress": "???",
+    "referral": "your-referral-code",
+    "serviceFee": 17390,
+    "status": "ok"
+}

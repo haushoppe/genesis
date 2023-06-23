@@ -60,7 +60,7 @@ export class MempoolService {
    * @param address The bitcoin address or scripthash
    * @returns An observable array of unconfirmed transactions
    */
-  getUnconfirmedTransactions(address: string): Observable<MemmpoolTransaction[]> {
-    return this.http.get<MemmpoolTransaction[]>(`${this.baseApiUrl}/${address}/txs/mempool`);
+  getUnconfirmedTransactions(address: string): Observable<MempoolTransaction[]> {
+    return this.http.get<MempoolTransaction[]>(`${this.baseApiUrl}/${address}/txs/mempool`);
   }
 }

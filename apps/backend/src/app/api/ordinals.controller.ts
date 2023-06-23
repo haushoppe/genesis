@@ -87,11 +87,15 @@ export class OrdinalsController {
 
     const simpleResult = async () => {
 
-      const searchResult = await searchForText('<html>');
-      const simple = searchResult.results.map(x => ({
-        inscriptionId: x.inscriptionid,
-        blockheight: x.blockheight
-      }));
+      const searchResult = await searchForText('cubes.haushoppe.art');
+      const simple = searchResult.results
+        .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art--><body><script>'))
+        .map(x => ({
+          inscriptionId: x.inscriptionid,
+          blockheight: x.blockheight
+        }))
+        .reverse();
+
       this.lastBackup = simple;
       Logger.log('Fetched ' + simple.length + ' cubes', 'ordinals_cubes')
       return simple;

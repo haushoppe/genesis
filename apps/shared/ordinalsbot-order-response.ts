@@ -65,6 +65,17 @@ export const exampleUnpaidResponse = {
 // see https://developers.opennode.com/reference/create-charge
 // see https://developers.opennode.com/docs/charge-lifecycle
 
+export interface InscriptionFile {
+  completed?: boolean;
+  sent?: string;
+  tx?: {
+    commit: string;
+    fees: number;
+    inscription: string;
+    reveal: string;
+  }
+}
+
 export interface OrderResponse {
   fee: number;   // choosen fee rate in sats/byte
   charge: {
@@ -85,7 +96,7 @@ export interface OrderResponse {
     },
     fiat_value: number; // amount in USD
     ttl: number; // TTL (time to live) in minutes. Min: 10, Max: 1440 (24H), Default: 1440
-  }
+  },
+  files: InscriptionFile[]
 }
 
-// https://api2.ordinalsbot.com/search?text=haushoppe.art

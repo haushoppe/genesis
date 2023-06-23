@@ -3,30 +3,17 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
 import { EMPTY, from, interval, of } from 'rxjs';
-import {
-  catchError,
-  concatMap,
-  exhaustMap,
-  filter,
-  map,
-  retry,
-  switchMap,
-  takeUntil,
-  tap,
-  withLatestFrom,
-} from 'rxjs/operators';
+import { catchError, concatMap, exhaustMap, filter, map, retry, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { OrdinalsService } from '../openapi-client';
 import { OrderResponse } from '../ordinalsbot';
+import { MempoolService } from '../services/mempool-service';
 import { MintService } from '../services/mint-service';
 import { confettiFirework } from './helper/confetti-firework';
+import { limitArray } from './helper/limit-array';
 import { MintActions } from './mint.actions';
-import { selectOrderResponse } from './mint.reducer';
 import { PageActions } from './page.actions';
 import { ofRoute } from './utils-ngrx-router/operators';
-import { limitArray } from './helper/limit-array';
-import { MempoolService } from '../services/mempool-service';
-import { selectOrderId } from './mint.selectors';
 
 
 @Injectable()
@@ -100,9 +87,6 @@ export class MintEffects {
     )
   );
 
-
-
-
   loadAllInscriptionsOnRouting$ = createEffect(() => {
     return this.actions.pipe(
       ofRoute(['']),
@@ -147,7 +131,6 @@ export class MintEffects {
   //     )
   //   );
   // });
-
 
   showNotification$ = createEffect(() => {
     return this.actions.pipe(

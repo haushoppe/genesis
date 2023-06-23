@@ -14,6 +14,7 @@ import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
 import { OrderDisplayComponent } from '../layout/order-display/order-display.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
+import { RouterLink } from '@angular/router';
 
 
 const expandDuration = 500
@@ -34,7 +35,8 @@ const expandDuration = 500
       ForModule,
       PushModule,
       MintFormComponent,
-      OrderDisplayComponent
+      OrderDisplayComponent,
+      RouterLink
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [

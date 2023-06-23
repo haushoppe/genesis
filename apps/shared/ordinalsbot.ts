@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { OrderResponse } from './ordinalsbot-order-response';
+import { OrdinalsbotInscriptionSearchResult } from './ordinalsbot-inscription-search-result';
 
 export const REFERRAL_CODE = 'HAUS_HOPPE_CUBE_35000';
 export const REFERRAL_ADDRESS = '???';
@@ -95,7 +96,7 @@ export async function getOrderStatus(id: string): Promise<OrderResponse> {
   return response.data;
 }
 
-export async function searchForText(text: string): Promise<OrderResponse> {
+export async function searchForText(text: string): Promise<OrdinalsbotInscriptionSearchResult> {
 
   const response = await axios.get('https://api2.ordinalsbot.com/search',
   {

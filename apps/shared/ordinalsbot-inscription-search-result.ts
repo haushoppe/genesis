@@ -1,5 +1,3 @@
-import { ChargeStatus } from './ordinalsbot-charge-status'
-
 
 /*
   RESPONSE of GET https://api2.ordinalsbot.com/search?text=haushoppe.art

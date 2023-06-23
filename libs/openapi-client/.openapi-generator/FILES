@@ -15,6 +15,7 @@ model/chain.ts
 model/configDetails.ts
 model/configResponse.ts
 model/htmlInscriptionRequest.ts
+model/inscriptionSimple.ts
 model/listOfOwnedTokens.ts
 model/metadata.ts
 model/metatdataAttribute.ts

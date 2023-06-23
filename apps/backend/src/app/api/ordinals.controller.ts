@@ -1,17 +1,26 @@
-import { Body, Controller, ForbiddenException, Get, Header, Param, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Header, Logger, Param, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiExcludeEndpoint, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiTags } from '@nestjs/swagger';
 
-import { createInscriptionRequestForHtml, getOrderStatus, getReferralStatus, saveReferralCode } from '../../../../shared/ordinalsbot';
+import { createInscriptionRequestForHtml, getOrderStatus, getReferralStatus, saveReferralCode, searchForText } from '../../../../shared/ordinalsbot';
 import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 import { HtmlInscriptionRequest } from '../types/html-inscription-request';
+import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
+import { CacheService } from '../model/cache.service';
 
+export class InscriptionSimple {
+  @ApiProperty() inscriptionId: string;
+  @ApiProperty() blockheight: number;
+}
 
 @ApiTags('ordinals')
 @Controller()
 export class OrdinalsController {
 
-  constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService,
+    private cacheService: CacheService) {
+      this.getCubes();
+    }
 
   /**
    * Creating an Inscription Order
@@ -63,6 +72,36 @@ export class OrdinalsController {
     // }
 
     return orderResponseFull;
+  }
+
+  lastBackup: InscriptionSimple[] = [];
+
+  /**
+   * Get known cubes (cached!)
+   */
+  @Get(['ordinals/getCubes'])
+  @ApiOperation({ operationId: 'getCubes' })
+  @ApiOkResponse({ type: InscriptionSimple, isArray: true })
+  @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
+  async getCubes(): Promise<InscriptionSimple[]> {
+
+    const simpleResult = async () => {
+
+      const searchResult = await searchForText('<html>');
+      const simple = searchResult.results.map(x => ({
+        inscriptionId: x.inscriptionid,
+        blockheight: x.blockheight
+      }));
+      this.lastBackup = simple;
+      Logger.log('Fetched ' + simple.length + ' cubes', 'ordinals_cubes')
+      return simple;
+    };
+
+    try {
+      return this.cacheService.loadCached('ordinal_cubes', simpleResult, tenMinutesInSeconds);
+    } catch {
+      return this.lastBackup;
+    }
   }
 
   /**

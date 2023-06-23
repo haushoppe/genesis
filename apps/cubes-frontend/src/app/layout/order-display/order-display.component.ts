@@ -6,7 +6,6 @@ import { ChargeStatus, OrderResponse } from '../../ordinalsbot';
 import { getPaymentStatusMessage } from './get-payment-status-message';
 import { getPaymentStatusBadge } from './get-payment-status-badge';
 import { LoadingIndicatorComponent } from '../loading-indicator/loading-indicator.component';
-import { SubmitStatus } from '../../store/submittable/submit-status';
 import { getPaymentPending } from './get-payment-pending';
 import { getSubmittingState } from '../../store/submittable/submittable-state';
 import { QRCodeModule } from 'angularx-qrcode';

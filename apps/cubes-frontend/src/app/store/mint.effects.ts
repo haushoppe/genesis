@@ -18,7 +18,6 @@ import {
 
 import { OrdinalsService } from '../openapi-client';
 import { OrderResponse } from '../ordinalsbot';
-import { OrdinalsbotService } from '../services/api';
 import { MintService } from '../services/mint-service';
 import { confettiFirework } from './helper/confetti-firework';
 import { MintActions } from './mint.actions';
@@ -32,7 +31,6 @@ import { limitArray } from './helper/limit-array';
 export class MintEffects {
 
   actions = inject(Actions);
-  ordinalsbotService = inject(OrdinalsbotService);
   ordinalsService = inject(OrdinalsService);
   mintService = inject(MintService);
   store = inject(Store);
@@ -103,11 +101,10 @@ export class MintEffects {
     return this.actions.pipe(
       ofType(MintActions.loadAllInscriptions),
       switchMap(() =>
-        // this.ordinalsbotService.searchForText('cubes.haushoppe.art').pipe(
-        this.ordinalsbotService.searchForText('<html>').pipe(
+        this.ordinalsService.getCubes().pipe(
           retry({ count: 3, delay: 1000 }),
-          concatMap(searchResult => [
-            MintActions.loadAllInscriptionsSuccess({ allInscriptions: limitArray(searchResult.results, 20) }),
+          concatMap(allInscriptions => [
+            MintActions.loadAllInscriptionsSuccess({ allInscriptions: limitArray(allInscriptions, 20) }),
             PageActions.ready()
           ]),
           catchError(error => of(MintActions.loadAllInscriptionsFailure({ error }))))

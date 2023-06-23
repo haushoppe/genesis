@@ -145,19 +145,3 @@ export const createHtmlInscriptionOrder = async (request: { receiveAddress: stri
   return inscriptionRequest;
 };
 */
-
-@Injectable({
-  providedIn: 'root'
-})
-export class OrdinalsbotService {
-
-  httpClient = inject(HttpClient);
-
-  // getOrderStatus(id: string) {
-  //   return this.httpClient.get<OrderResponse>('https://api2.ordinalsbot.com/order', { params: { id }});
-  // }
-
-  searchForText(text: string) {
-    return this.httpClient.get<OrdinalsbotInscriptionSearchResult>('https://api2.ordinalsbot.com/search', { params: { text }});
-  }
-}

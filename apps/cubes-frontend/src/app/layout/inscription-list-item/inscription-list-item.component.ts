@@ -1,9 +1,9 @@
+import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { Inscription } from '../../ordinalsbot';
-import { NgIf } from '@angular/common';
 import { SafeResourceUrlPipe } from '../../safe-url.pipe';
+import { InscriptionSimple } from '../../openapi-client';
 
 @Component({
   selector: 'app-inscription-list-item',
@@ -19,5 +19,5 @@ import { SafeResourceUrlPipe } from '../../safe-url.pipe';
 })
 export class InscriptionListItemComponent {
 
-  @Input() inscription?: Inscription;
+  @Input() inscription?: InscriptionSimple;
 }

@@ -9,6 +9,7 @@ import {
   SubmittableState,
 } from './submittable/submittable-state';
 import { Inscription, OrderResponse } from '../ordinalsbot';
+import { InscriptionSimple } from '../openapi-client';
 
 export interface SixInscriptionIds {
   inscriptionId1?: string;
@@ -20,7 +21,7 @@ export interface SixInscriptionIds {
 }
 
 export interface State {
-  allInscriptions: Inscription[];
+  allInscriptions: InscriptionSimple[];
   allInscriptionsStatus: SubmittableState;
 
   // info about one single inscription, used for the details page

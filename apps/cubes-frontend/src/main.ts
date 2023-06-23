@@ -7,18 +7,18 @@ import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore, routerReducer } from '@ngrx/router-store';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { NotificationModule } from '@progress/kendo-angular-notification';
 
 import { AppComponent } from './app/app.component';
-// import { ApiModule, Configuration } from './app/openapi-client';
+import { ApiModule, Configuration } from './app/openapi-client';
 import { MintEffects } from './app/store/mint.effects';
 import { mintFeature } from './app/store/mint.reducer';
 import { CustomRouteSerializer } from './app/store/utils-ngrx-router/custom-route-serializer';
 import { WalletEffects } from './app/store/wallet.effects';
 import { walletFeature } from './app/store/wallet.reducer';
 import { environment } from './environments/environment';
-import { NotificationModule } from '@progress/kendo-angular-notification';
-import { ApiModule, Configuration } from './app/openapi-client';
 
+// import { ApiModule, Configuration } from './app/openapi-client';
 if (environment.production) {
   enableProdMode();
 }
@@ -33,7 +33,7 @@ bootstrapApplication(AppComponent,{
     importProvidersFrom(NotificationModule),
     provideRouter([
       { path: '',
-        loadChildren: () => import('./nft.routes').then(m => m.NFT_ROUTES),
+        loadChildren: () => import('./ordinal.routes').then(m => m.ORDINAL_ROUTES),
         providers: [
           provideState(mintFeature),
           provideEffects(MintEffects),

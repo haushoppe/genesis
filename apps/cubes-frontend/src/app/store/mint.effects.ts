@@ -13,7 +13,8 @@ import { confettiFirework } from './helper/confetti-firework';
 import { limitArray } from './helper/limit-array';
 import { MintActions } from './mint.actions';
 import { PageActions } from './page.actions';
-import { ofRoute } from './utils-ngrx-router/operators';
+import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
+import { Router } from '@angular/router';
 
 
 @Injectable()
@@ -26,6 +27,8 @@ export class MintEffects {
   store = inject(Store);
   notificationService = inject(NotificationService);
   ngZone = inject(NgZone);
+  router = inject(Router);
+
 
 
   placeOrder$ = createEffect(() =>
@@ -35,6 +38,7 @@ export class MintEffects {
         from(this.mintService.getFees()).pipe(
           switchMap(fees =>
             this.mintService.placeOrder(receiveAddress, inscriptionIds, fees.halfHourFee).pipe(
+              tap(orderResponse => this.router.navigate(['/order', orderResponse.charge.id ])),
               map(orderResponse => MintActions.placeOrderSuccess({ orderResponse })),
               catchError(error => of(MintActions.placeOrderFailure({ error })))
             )
@@ -46,10 +50,10 @@ export class MintEffects {
 
   startOrderPolling$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(MintActions.placeOrderSuccess),
-      map(({ orderResponse }) => orderResponse.charge.id),
+      ofRoute(['order/:orderId']),
+      mapToParam('orderId'),
       exhaustMap(orderId =>  // Start polling when startPolling action is dispatched. Ignore new startPolling actions until the current polling completes.
-        interval(2000).pipe(
+        interval(3500).pipe(
           takeUntil(this.actions.pipe(ofType((MintActions.orderCompleted)))),  // Stop polling when stopPolling action is dispatched.
           exhaustMap(() =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
             this.ordinalsService.getOrderStatus(orderId).pipe(
@@ -74,6 +78,7 @@ export class MintEffects {
     )
   );
 
+  // TODO
   loadMempoolInfo$ = createEffect(() =>
     this.actions.pipe(
       ofType(MintActions.updateOrderStatus),
@@ -108,6 +113,7 @@ export class MintEffects {
       )
     );
   });
+
 
   // loadTokenMetadataOnRouting$ = createEffect(() => {
   //   return this.actions.pipe(

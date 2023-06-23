@@ -9,7 +9,7 @@ import { MintFacade } from '../../store/mint.facade';
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
 import { InscriptionIdValidator } from './inscription-id.validator';
-import { TrimValueAccessorDirective } from './trim-value-accessor.directive';
+import { TrimValueAccessorDirective } from '../../trim-value-accessor.directive';
 import { BtcAddressValidator } from './btc-address.validator';
 import { environment } from '../../../environments/environment';
 
@@ -48,7 +48,6 @@ export class MintFormComponent implements OnInit {
   c = this.form.controls;
 
   ngOnInit() {
-    return;
     if (!environment.production) {
       this.form.patchValue({
         inscriptionId1: '6761724cd0a42d465efc3ea3ece3cb8790b47fd0f19799d0c257d6df80fcf642i0',

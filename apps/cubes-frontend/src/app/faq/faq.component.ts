@@ -97,6 +97,14 @@ export class FaqComponent {
     {
       question: 'Which wallet should I use to manage my Ordinals?',
       answer: 'We really like the Xverse wallet from [www.xverse.app](https://www.xverse.app/). Anyone who has used MetaMask before will feel right at home.'
+    },
+    {
+      question: 'Q: Which wallet can I use for quick and easy ⚡️ Lightning payments?',
+      answer: 'There are a number of excellent Lightning wallets, and our recommendation is the Phoenix Wallet from [phoenix.acinq.co](https://phoenix.acinq.co/). Phoenix has been designed for less technical users. Phoenix takes care of everything under the hood and you will barely notice anything, except that your payments are faster and cheaper. The great thing: Phoenix is a real, self-contained Lightning node that runs on your phone. It does not require you to run another Lightning node at home or in the cloud. It is a __non-custodial__ wallet, you are in full control of your funds.'
+    },
+    {
+      question: 'What is the "utility" of this project?',
+      answer: `There is no utility. Well, there's one. With your fees, you pay the miners who secure the network.`
     }
   ];
 

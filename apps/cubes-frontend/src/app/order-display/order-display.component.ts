@@ -1,11 +1,11 @@
 import { JsonPipe, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input } from '@angular/core';
 import { PushModule } from '@rx-angular/template/push';
-
-import { ChargeStatus, OrderResponse } from '../../ordinalsbot';
-import { LoadingIndicatorComponent } from '../loading-indicator/loading-indicator.component';
-import { getSubmittingState } from '../../store/submittable/submittable-state';
 import { QRCodeModule } from 'angularx-qrcode';
+
+import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
+import { ChargeStatus, OrderResponse } from '../ordinalsbot';
+import { getSubmittingState } from '../store/submittable/submittable-state';
 
 
 @Component({
@@ -31,6 +31,7 @@ export class OrderDisplayComponent {
   cd = inject(ChangeDetectorRef);
 
   @Input() order?: OrderResponse;
+
   showLightning = false;
   copyChainSuccessfull: boolean | undefined;
   copyAmountSuccessfull: boolean | undefined;

@@ -8,6 +8,7 @@ import { ChargeStatus, InscriptionOrder } from '../ordinalsbot';
 import { getSubmittingState } from '../store/submittable/submittable-state';
 import { MintFacade } from '../store/mint.facade';
 import { LetModule } from '@rx-angular/template/let';
+import { RouterLink } from '@angular/router';
 
 
 @Component({
@@ -23,7 +24,8 @@ import { LetModule } from '@rx-angular/template/let';
     LoadingIndicatorComponent,
     NgIf,
     QRCodeModule,
-    LetModule
+    LetModule,
+    RouterLink
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -1,6 +1,8 @@
-import { createSelector } from '@ngrx/store';
+import { createFeatureSelector, createSelector } from '@ngrx/store';
 
 import { selectOrderResponse } from './mint.reducer';
+import { RouterReducerState } from '@ngrx/router-store';
+export const selectRouter = createFeatureSelector<RouterReducerState<any>>('router');
 
 
 export const selectFile = createSelector(
@@ -13,8 +15,22 @@ export const selectFile = createSelector(
   }
 );
 
+export const selectIsPaymentPending = createSelector(
+  selectFile,
+  file => {
+    if (file?.sent) {
+      return false;
+    }
+    return true;
+  }
+);
 
-export const selectOrderId = createSelector(
+export const selectBestOrderId = createSelector(
   selectOrderResponse,
-  orderResponse => orderResponse?.charge.id
+  selectRouter,
+  (orderResponse, { state: { params }}: {
+    state: {
+      params: { [parm: string]: string }
+    }
+  }) => orderResponse?.id || params.orderId
 );

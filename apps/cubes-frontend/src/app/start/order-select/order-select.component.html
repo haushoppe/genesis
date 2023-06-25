@@ -1,0 +1,14 @@
+<form [formGroup]="form" (ngSubmit)="navigateToOrder()">
+  <div class="input-group  w-25">
+
+  <input
+    class="form-control" type="text"
+      [formControl]="form.controls.orderId"
+      appTrimValueAccessor>
+
+  <div class="input-group-append">
+    <button class="btn btn-primary" type="submit" [disabled]="this.form.invalid">Check</button>
+  </div>
+
+  </div>
+</form>

@@ -163,3 +163,26 @@ export interface OrderResponse {
   files: InscriptionFile[]
 }
 
+export interface InscriptionOrder {
+  id: string;      // save this to poll against https://api2.ordinalsbot.com/order?id=XXX
+  // fee: number | string;   // choosen fee rate in sats/byte
+  charge: {
+
+    // status: ChargeStatus; // IS ALWAYS "UNPAID!!! :-()
+    amount: number;  // amount to pay in satoshis
+    hosted_checkout_url: string;
+
+    chain_invoice: {
+      address: string // Pay on chain BTC address
+    },
+
+    lightning_invoice: {
+      "expires_at": number,
+      payreq: string
+    },
+    fiat_value: number; // amount in USD
+    // ttl: number; // TTL (time to live) in minutes. Min: 10, Max: 1440 (24H), Default: 1440
+  },
+  files: InscriptionFile[]
+}
+

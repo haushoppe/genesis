@@ -11,7 +11,7 @@ import {
   selectOrderStatus,
   SixInscriptionIds,
 } from './mint.reducer';
-import { selectFile } from './mint.selectors';
+import { selectBestOrderId, selectFile, selectIsPaymentPending } from './mint.selectors';
 
 
 @Injectable({
@@ -31,6 +31,8 @@ export class MintFacade {
   orderStatus$ = this.store.select(selectOrderStatus);
 
   file$ = this.store.select(selectFile);
+  isPaymentPending$ = this.store.select(selectIsPaymentPending);
+  bestOrderId$ = this.store.select(selectBestOrderId);
 
   mint(inscriptionIds: SixInscriptionIds, receiveAddress: string) {
     this.store.dispatch(MintActions.placeOrder({ inscriptionIds, receiveAddress }));

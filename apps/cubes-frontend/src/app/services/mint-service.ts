@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { OrdinalsService } from '../openapi-client';
-import { OrderResponse } from '../ordinalsbot';
+import { InscriptionOrder, OrderResponse } from '../ordinalsbot';
 import { SixInscriptionIds } from '../store/mint.reducer';
 import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
 
@@ -62,7 +62,7 @@ export class MintService {
     return await btcClient.getRecommendedFees();
   }
 
-  placeOrder(receiveAddress: string, inscriptionIds: SixInscriptionIds, fee: number): Observable<OrderResponse> {
+  placeOrder(receiveAddress: string, inscriptionIds: SixInscriptionIds, fee: number): Observable<InscriptionOrder> {
 
     if (!inscriptionIds.inscriptionId1 ||
         !inscriptionIds.inscriptionId2 ||

@@ -71,12 +71,31 @@
 
         </div>
       </div>
+
+
+      <p *ngIf="mintFacade.file$ | push as file" class="mt-4">
+
+        <ng-container *ngIf="!file.sent">
+          You have a pending order!<br>
+        </ng-container>
+
+        <ng-container *ngIf="file.sent">
+          We received a payment for your last order!<br>
+        </ng-container>
+
+        <ng-container *rxLet="mintFacade.orderResponse$; let orderResponse">
+          <a [routerLink]="['/order', orderResponse?.id]">Track the status here!</a>
+        </ng-container>
+
+      </p>
+
+
     </form>
 
   </div>
   <div class="col-md-6 col-12">
 
-    <app-cube-preview [inscriptionIds]="getInscriptionIds()" />
+  <app-cube-preview [inscriptionIds]="getInscriptionIds()" />
 
   </div>
 </div>

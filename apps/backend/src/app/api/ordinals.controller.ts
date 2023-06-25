@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiTags } from '@nestjs/swagger';
 
 import { createInscriptionRequestForHtml, getOrderStatus, getReferralStatus, saveReferralCode, searchForText } from '../../../../shared/ordinalsbot';
-import { OrderResponse } from '../../../../shared/ordinalsbot-order-response';
+import { InscriptionOrder, OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 import { HtmlInscriptionRequest } from '../types/html-inscription-request';
 import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { CacheService } from '../model/cache.service';
@@ -13,13 +13,14 @@ export class InscriptionSimple {
   @ApiProperty() blockheight: number;
 }
 
-function hideUnwantedProperties({ charge, files }: OrderResponse): OrderResponse {
+function hideUnwantedProperties({ charge, files }: OrderResponse): InscriptionOrder {
 
   const { id,  amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = charge;
 
   return {
+    id, // id at the root, and not down below charge!
     charge: {
-      id,  amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value
+      amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value
     },
     files: files.map(({ completed, sent, tx }) => ({
       completed, sent, tx
@@ -41,7 +42,7 @@ export class OrdinalsController {
    */
   @Post(['ordinals/createHtmlInscriptionOrder'])
   @ApiOperation({ operationId: 'createHtmlInscriptionOrder' })
-  async createHtmlInscriptionOrder(@Body() request: HtmlInscriptionRequest): Promise<OrderResponse> {
+  async createHtmlInscriptionOrder(@Body() request: HtmlInscriptionRequest): Promise<InscriptionOrder> {
 
     const buff = Buffer.from(request.htmlString);
 
@@ -69,7 +70,7 @@ export class OrdinalsController {
     description: 'order Id'
   })
   @Header('Cache-Control', 'no-cache')
-  async getOrderStatus(@Param('id') orderId: string): Promise<OrderResponse> {
+  async getOrderStatus(@Param('id') orderId: string): Promise<InscriptionOrder> {
 
     const orderResponseFull = await getOrderStatus(orderId);
     return hideUnwantedProperties(orderResponseFull);

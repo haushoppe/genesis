@@ -12,6 +12,8 @@ import { InscriptionIdValidator } from './inscription-id.validator';
 import { TrimValueAccessorDirective } from '../../trim-value-accessor.directive';
 import { BtcAddressValidator } from './btc-address.validator';
 import { environment } from '../../../environments/environment';
+import { RouterLink } from '@angular/router';
+import { PushModule } from '@rx-angular/template/push';
 
 @Component({
   selector: 'app-mint-form',
@@ -25,7 +27,9 @@ import { environment } from '../../../environments/environment';
     LetModule,
     NgClass,
     TrimValueAccessorDirective,
-    CubePreviewComponent
+    CubePreviewComponent,
+    RouterLink,
+    PushModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

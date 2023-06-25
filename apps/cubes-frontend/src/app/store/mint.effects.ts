@@ -6,7 +6,7 @@ import { EMPTY, from, interval, of } from 'rxjs';
 import { catchError, concatMap, exhaustMap, filter, map, retry, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { OrdinalsService } from '../openapi-client';
-import { OrderResponse } from '../ordinalsbot';
+import { InscriptionOrder, OrderResponse } from '../ordinalsbot';
 import { MempoolService } from '../services/mempool-service';
 import { MintService } from '../services/mint-service';
 import { confettiFirework } from './helper/confetti-firework';
@@ -29,8 +29,6 @@ export class MintEffects {
   ngZone = inject(NgZone);
   router = inject(Router);
 
-
-
   placeOrder$ = createEffect(() =>
     this.actions.pipe(
       ofType(MintActions.placeOrder),
@@ -38,7 +36,7 @@ export class MintEffects {
         from(this.mintService.getFees()).pipe(
           switchMap(fees =>
             this.mintService.placeOrder(receiveAddress, inscriptionIds, fees.halfHourFee).pipe(
-              tap(orderResponse => this.router.navigate(['/order', orderResponse.charge.id ])),
+              tap(orderResponse => this.router.navigate(['/order', orderResponse.id ])),
               map(orderResponse => MintActions.placeOrderSuccess({ orderResponse })),
               catchError(error => of(MintActions.placeOrderFailure({ error })))
             )
@@ -52,12 +50,12 @@ export class MintEffects {
     return this.actions.pipe(
       ofRoute(['order/:orderId']),
       mapToParam('orderId'),
-      exhaustMap(orderId =>  // Start polling when startPolling action is dispatched. Ignore new startPolling actions until the current polling completes.
+      switchMap(orderId => // Start polling when startPolling action is dispatched. Cancel old startPolling actions when new polling called.
         interval(3500).pipe(
           takeUntil(this.actions.pipe(ofType((MintActions.orderCompleted)))),  // Stop polling when stopPolling action is dispatched.
           exhaustMap(() =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
             this.ordinalsService.getOrderStatus(orderId).pipe(
-              map(orderResponse => MintActions.updateOrderStatus({ orderResponse: orderResponse as OrderResponse })),
+              map(orderResponse => MintActions.updateOrderStatus({ orderResponse: orderResponse as InscriptionOrder })),
               catchError(() => EMPTY)
             )
           )

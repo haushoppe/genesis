@@ -44,7 +44,7 @@ export class FaqComponent {
     },
     {
       question: 'Where can I find suitable inscriptions with images?',
-      answer: ` Your best bet is to look at the website ord.io under [Images](https://www.ord.io/?contentType=image) or [GIFs](https://www.ord.io/?contentType=gif), or use the [image search](https://ordinals.hiro.so/explore?f=image) from hiro.so. Make sure that none of the sides of your cube turns black, that would be a pity. For animated GIFs, only the first image will be displayed.`
+      answer: ` Your best bet is to look at the website ord.io under [Images](https://www.ord.io/?contentType=image) or [GIFs](https://www.ord.io/?contentType=gif), or use the [image search](https://ordinals.hiro.so/explore?f=image) from hiro.so. Make sure that none of the sides of your cube turns black, that would be a pity. For animated GIFs, only the first frame will be displayed.`
     },
     {
       question: "What are Bitcoin Ordinals?",
@@ -63,7 +63,7 @@ export class FaqComponent {
       answer: "Ownership of inscriptions is linked to the individual owner of the Satoshi. The ownership can be transferred by sending it to any Bitcoin address. The recipient of the transfer becomes the new owner of the Satoshi and its inscription."
     },
     {
-      question: 'How do I create an cube?',
+      question: 'How do I create a cube?',
       answer: 'You can create an inscription cube by entering six Inscription IDs and your receiving address to the form. Each cube, with its six sides, displays the image of the respective inscription. After submitting the form, you are required to cover the costs of creating the inscription through a Bitcoin payment.'
     },
     {
@@ -90,16 +90,16 @@ export class FaqComponent {
       question: 'How is the data of my cube stored?',
       answer: 'The data for your cube is fully stored on-chain and remains unchangeable forever. At least almost forever. Since the data is stored in the (segregated) witness data area, it could theoretically be lost if all nodes were to prune their data. But this is really very, very unlikely. After all, Bitcoin is maximally decentralized. There only needs to be one node operator on this planet who keeps the data.'
     },
-    {
-      question: 'Does this website store any data? What about privacy?',
-      answer: 'We absolutely do not store anything. No cookies, no tracking, no log files. We host on a static web server (Cloudflare Pages). The backend also does not store any data and doesn\'t even have a database, its filesystem is ephemeral. We really know nothing about you. If you refresh the page, everything is gone. __The only storage is the Bitcoin blockchain!__'
-    },
+    // {
+    //   question: 'Does this website store any data? What about privacy?',
+    //   answer: 'We absolutely do not store anything. No cookies, no tracking, no log files. We host on a static web server (Cloudflare Pages). The backend also does not store any data and doesn\'t even have a database, its filesystem is ephemeral. We really know nothing about you. If you refresh the page, everything is gone. __The only storage is the Bitcoin blockchain!__'
+    // },
     {
       question: 'Which wallet should I use to manage my Ordinals?',
       answer: 'We really like the Xverse wallet from [www.xverse.app](https://www.xverse.app/). Anyone who has used MetaMask before will feel right at home.'
     },
     {
-      question: 'Q: Which wallet can I use for quick and easy ⚡️ Lightning payments?',
+      question: 'Which wallet can I use for quick and easy ⚡️ Lightning payments?',
       answer: 'There are a number of excellent Lightning wallets, and our recommendation is the Phoenix Wallet from [phoenix.acinq.co](https://phoenix.acinq.co/). Phoenix has been designed for less technical users. Phoenix takes care of everything under the hood and you will barely notice anything, except that your payments are faster and cheaper. The great thing: Phoenix is a real, self-contained Lightning node that runs on your phone. It does not require you to run another Lightning node at home or in the cloud. It is a __non-custodial__ wallet, you are in full control of your funds.'
     },
     {

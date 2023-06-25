@@ -18,41 +18,25 @@
 </p>
 
 
-<ng-container *rxLet="mintFacade.orderResponse$; let orderResponse">
 
-  <h2 class="mt-5">Mint a cube</h2>
+<h2 class="mt-5">Mint a cube</h2>
 
-  <p class="mb-0">
-    Enter six Inscription IDs in the TXID<strong>i</strong>N format
-    <small class="fs-6">(eg. 571fcea04e<wbr>78d4fb484d<wbr>46d7efbd00<wbr>d0baaf418f<wbr>a6da06ea86<wbr>3eee474a57<wbr>2b83<strong>i</strong>0)</small>
-    and your receive address (preferably a Taproot address which starts with <strong>bc1p</strong>).
-    The six inscriptions must contain an image.
-    If a side of the cube turns black, then the image format is not supported.<br>
-    <br>
-    After submitting your cube via the "Mint your cube!" button,
-    we will display an invoice that you can pay directly either with ⚡️ Lightning (instant) or
-    on-chain with 🟧 Bitcoin (BTC).
-    As soon as the payment is confirmed, we will automatically inscribe your cube on the Bitcoin blockchain and send it to you.
-    The data for the cube is then fully stored on-chain and will remain unchangeable forever.
-  </p>
+<p class="mb-0">
+  Enter six Inscription IDs in the TXID<strong>i</strong>N format
+  <small class="fs-6">(eg. 571fcea04e<wbr>78d4fb484d<wbr>46d7efbd00<wbr>d0baaf418f<wbr>a6da06ea86<wbr>3eee474a57<wbr>2b83<strong>i</strong>0)</small>
+  and your receive address (preferably a Taproot address which starts with <strong>bc1p</strong>).
+  The six inscriptions must contain an image.
+  If a side of the cube turns black, then the image format is not supported.<br>
+  <br>
+  After submitting your cube via the "Mint your cube!" button,
+  we will display an invoice that you can pay directly either with ⚡️ Lightning (instant) or
+  on-chain with 🟧 Bitcoin (BTC).
+  As soon as the payment is confirmed, we will automatically inscribe your cube on the Bitcoin blockchain and send it to you.
+  The data for the cube is then fully stored on-chain and will remain unchangeable forever.
+</p>
 
-  <app-mint-form />
+<app-mint-form />
 
-  <p *ngIf="mintFacade.file$ | push as file" class="mb-5">
-
-    <ng-container *ngIf="!file.sent">
-      You have a pending order!<br>
-    </ng-container>
-
-    <ng-container *ngIf="file.sent">
-      We received a payment for your last order!<br>
-    </ng-container>
-
-    <a [routerLink]="['/order', orderResponse?.charge?.id]">Track the status here!</a>
-  </p>
-
-
-</ng-container>
 
 
 <h2 class="mt-2">Latest cubes</h2>
@@ -72,7 +56,7 @@
   <app-loading-indicator
     [state]="mintFacade.allInscriptionsStatus$ | push" class="mb-5"
     sendDataText="Loading latest cubes…"
-  ></app-loading-indicator>
+  />
 
 </div>
 
@@ -83,22 +67,14 @@
 <p class="mb-2">
   If you have any outstanding questions,
   <a routerLink="/faq">please refer to our FAQ section.</a><br>
-  <br>
+</p>
+
+
+
+<h2 class="mt-5">Your last order</h2>
+
+<p class="mb-2">
   If you want to check the status of an existing order, then enter the Order ID here:
 </p>
 
-  <form [formGroup]="form" (ngSubmit)="navigateToOrder()">
-    <div class="input-group  w-25">
-
-    <input
-      class="form-control" type="text"
-        [formControl]="form.controls.orderId"
-        appTrimValueAccessor>
-
-    <div class="input-group-append">
-      <button class="btn btn-primary" type="submit" [disabled]="this.form.invalid">Check</button>
-    </div>
-
-    </div>
-  </form>
-
+<app-order-select />

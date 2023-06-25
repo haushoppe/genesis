@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
-import { Inscription, OrderResponse } from '../ordinalsbot';
+import { Inscription, InscriptionOrder } from '../ordinalsbot';
 import { SixInscriptionIds } from './mint.reducer';
 import { InscriptionSimple } from '../openapi-client';
 import { MempoolTransaction } from '../services/mempool-service';
@@ -19,9 +19,9 @@ export const MintActions = createActionGroup({
     'Load Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
     'Place Order': props<{ receiveAddress: string, inscriptionIds: SixInscriptionIds }>(),
-    'Place Order Success': props<{ orderResponse: OrderResponse }>(),
+    'Place Order Success': props<{ orderResponse: InscriptionOrder }>(),
     'Place Order Failure': props<{ error: HttpErrorResponse }>(),
-    'Update Order Status': props<{ orderResponse: OrderResponse }>(),
+    'Update Order Status': props<{ orderResponse: InscriptionOrder }>(),
     'Order Completed': emptyProps(),
 
     'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),

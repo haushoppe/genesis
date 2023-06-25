@@ -14,9 +14,7 @@ import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TrimValueAccessorDirective } from '../trim-value-accessor.directive';
-import { UuidValidator } from '../uuid-validator';
+import { OrderSelectComponent } from './order-select/order-select.component';
 
 
 const expandDuration = 500
@@ -38,8 +36,7 @@ const expandDuration = 500
       PushModule,
       MintFormComponent,
       RouterLink,
-      TrimValueAccessorDirective,
-      ReactiveFormsModule
+      OrderSelectComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -54,24 +51,7 @@ const expandDuration = 500
 export class StartComponent {
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
-  router = inject(Router);
 
   SubmitStatus = SubmitStatus;
   collapsed = true;
-
-  form = new FormGroup({
-    orderId: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        UuidValidator // does NOT work?????
-      ]})
-  });
-
-  c = this.form.controls;
-
-  navigateToOrder() {
-    this.router.navigate(['/order', this.c.orderId.value]);
-  }
-
 }

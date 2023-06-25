@@ -1,5 +1,8 @@
+import { routerNavigatedAction } from '@ngrx/router-store';
 import { createFeature, createReducer, on } from '@ngrx/store';
 
+import { InscriptionSimple } from '../openapi-client';
+import { Inscription, InscriptionOrder } from '../ordinalsbot';
 import { MintActions } from './mint.actions';
 import {
   getFailureState,
@@ -8,8 +11,6 @@ import {
   getSuccessfulState,
   SubmittableState,
 } from './submittable/submittable-state';
-import { examplePaidResponse, exampleUnpaidResponse, Inscription, OrderResponse } from '../ordinalsbot';
-import { InscriptionSimple } from '../openapi-client';
 
 export interface SixInscriptionIds {
   inscriptionId1?: string;
@@ -28,7 +29,7 @@ export interface State {
   inscription: Inscription | undefined;
   inscriptionStatus: SubmittableState;
 
-  orderResponse: OrderResponse | undefined;
+  orderResponse: InscriptionOrder | undefined;
   orderStatus: SubmittableState;
 }
 
@@ -99,7 +100,6 @@ export const mintFeature = createFeature({
 
     on(MintActions.placeOrder, state => ({
       ...state,
-      orderId: undefined,
       orderResponse: undefined,
       orderStatus: getSubmittingState()
     })),
@@ -107,17 +107,32 @@ export const mintFeature = createFeature({
     on(MintActions.placeOrderSuccess,
        MintActions.updateOrderStatus, (state, { orderResponse }) => ({
       ...state,
-      orderId: orderResponse.charge.id,
       orderResponse,
       orderStatus: getSuccessfulState()
     })),
 
     on(MintActions.placeOrderFailure, (state, { error }) => ({
       ...state,
-      orderId: undefined,
       orderResponse: undefined,
       orderStatus: getFailureState(error)
-    }))
+    })),
+
+    // delete state if it contains an outdated orderResponse
+    on(routerNavigatedAction, (state, { payload: { routerState } }) => {
+
+      if (routerState.url.includes('/order/')) {
+        const urlOrderId = routerState.url.replace('/order/', '');
+        if (state.orderResponse?.id !== urlOrderId) {
+          return {
+            ...state,
+            orderResponse: undefined,
+            orderStatus: getSubmittingState()
+          };
+        }
+      }
+
+      return state;
+    }),
   )
 });
 

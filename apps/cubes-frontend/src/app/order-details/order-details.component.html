@@ -1,0 +1,168 @@
+<div class="row ps-3 pr-3 mb-4">
+  <div *rxLet="mintFacade.orderResponse$; let order" class="bg-dark p-3 mt-4 border col-lg-8 mx-auto">
+
+    <h3>Your Order</h3>
+
+    Order ID: {{ mintFacade.bestOrderId$ | push }}<br>
+
+    <ng-container *ngIf="order">
+      Amount: &nbsp;<strong>{{ order.charge.amount }} sats</strong>
+      <!--(which equals to {{ order?.charge?.fiat_value }} USD)-->
+    </ng-container>
+
+    <div class="mt-4 mb-4">
+      <app-loading-indicator
+        [state]="mintFacade.orderStatus$ | push"
+        sendDataText="Loading order details…"
+      />
+    </div>
+
+    <ng-container *ngIf="order">
+
+      <ng-container *ngIf="mintFacade.isPaymentPending$ | push">
+
+        <p>
+          Your order has been created and we are waiting for your payment!
+          <span class="blinking-text">...</span>
+        </p>
+
+        <ul class="nav nav-tabs pt-2">
+          <li class="nav-item">
+            <a class="nav-link" [ngClass]="{
+                'active text-white': !showLightning,
+                'not-active': showLightning
+              }" href="javascript:void(0)" (click)="showLightning = false">🟧 Pay on chain BTC</a>
+          </li>
+          <li class="nav-item"><strong class="nav-link fake-nav">or</strong></li>
+          <li class="nav-item">
+            <a class="nav-link" [ngClass]="{
+                'active text-white': showLightning,
+                'not-active': !showLightning }" href="javascript:void(0)" (click)="showLightning = true">⚡️ Pay with
+              Lightning</a>
+          </li>
+        </ul>
+
+        <div class="tab-pane p-3 pt-4 pb-1 nav-link">
+
+          <ng-container *ngIf="!showLightning">
+            <div class="qrcodeBox pb-4">
+              <a [href]="getLinkToChain(order)" target="_blank">
+                <qrcode
+                  [qrdata]="getLinkToChain(order)"
+                  [width]="256"
+                  [errorCorrectionLevel]="'M'"
+                />
+              </a>
+            </div>
+            <div class="form-group row">
+
+              <label for="address" class="col-3 col-form-label">BTC Address:</label>
+              <div class="col-9">
+
+                <div class="input-group mb-3">
+
+                  <input id="address" class="form-control bg-light text-dark" type="text"
+                    [value]="order.charge.chain_invoice.address" readonly>
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" (click)="copyChainAddressToClipboard(order)">
+
+                      <i class="bi bi-clipboard" *ngIf="copyChainSuccessfull === undefined"></i>
+                      <i class="bi bi-clipboard-check" *ngIf="copyChainSuccessfull === true"></i>
+                      <i class="bi bi-clipboard-x" *ngIf="copyChainSuccessfull === false"></i> Copy to clipboard
+                    </button>
+
+                  </div>
+
+
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group row">
+
+              <label for="amount" class="col-3 col-form-label">BTC Amount:</label>
+              <div class="col-9">
+
+                <div class="input-group mb-3">
+
+                  <input id="amount" class="form-control bg-light text-dark" type="text" [value]="order.charge.amount / 100000000"  readonly>
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" (click)="copyAmountToClipboard(order)">
+
+                      <i class="bi bi-clipboard" *ngIf="copyAmountSuccessfull === undefined"></i>
+                      <i class="bi bi-clipboard-check" *ngIf="copyAmountSuccessfull === true"></i>
+                      <i class="bi bi-clipboard-x" *ngIf="copyAmountSuccessfull === false"></i> Copy to clipboard
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </ng-container>
+
+          <ng-container *ngIf="showLightning">
+
+            <div class="qrcodeBox pb-4">
+              <a [href]="getLinkToLightning(order)" target="_blank">
+                <qrcode
+                  [qrdata]="this.order.charge.lightning_invoice.payreq"
+                  [width]="256"
+                  [errorCorrectionLevel]="'M'"
+                />
+              </a>
+            </div>
+            <div class="form-group row">
+
+              <label for="payreq" class="col-3 col-form-label">Payment Request:</label>
+              <div class="col-9">
+
+                <div class="input-group mb-3">
+
+                  <input id="payreq" class="form-control bg-light text-dark" type="text" [value]="order.charge.lightning_invoice.payreq"  readonly>
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" (click)="copyPayreqToClipboard(order)">
+
+                      <i class="bi bi-clipboard" *ngIf="copyPayreqSuccessfull === undefined"></i>
+                      <i class="bi bi-clipboard-check" *ngIf="copyPayreqSuccessfull === true"></i>
+                      <i class="bi bi-clipboard-x" *ngIf="copyPayreqSuccessfull === false"></i> Copy to clipboard
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </ng-container>
+
+        </div>
+
+        <br>
+        <app-loading-indicator [state]="submittingState" sendDataText="Order is pending…" />
+      </ng-container>
+
+      <ng-container *ngIf="!(mintFacade.isPaymentPending$ | push)">
+
+        <p class="alert alert-success m-4 fw-bold">
+          <i class="bi bi-check-circle"></i> We received your payment!
+        </p>
+
+        We have sent your inscription to you.
+        It will be available when <a href="https://mempool.space/tx/{{ (mintFacade.file$ | push)?.sent }}" target="_blank">this transaction</a> is confirmed!
+
+
+      </ng-container>
+
+    </ng-container>
+
+    <p class="mt-4">
+      <small>
+        Please retain your order ID for future reference. It will be essential if you want to check the order status later on.<br>
+        <!-- You may visit the following page to secure the number or process the payment:
+        <a [href]="order.charge.hosted_checkout_url" target="_blank">Opennode Checkout</a> -->
+      </small>
+    </p>
+
+
+  </div>
+</div>

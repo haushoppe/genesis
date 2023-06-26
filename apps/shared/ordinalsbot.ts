@@ -1,10 +1,8 @@
 import axios from 'axios';
 import { OrderResponse } from './ordinalsbot-order-response';
 import { OrdinalsbotInscriptionSearchResult } from './ordinalsbot-inscription-search-result';
-
-export const REFERRAL_CODE = 'HAUS_HOPPE_CUBE_35000';
-export const REFERRAL_ADDRESS = '???';
-export const REFERRAL_ADDITIONAL_FEE = 35000; // 35000 satashis round about 10 USD if BTC 1 = $28,916.07
+import { validateCode } from './validate-code';
+import { REFERRALS } from './referrals';
 
 export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api2.ordinalsbot.com/order';
 // export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://signet.ordinalsbot.com/api/order'
@@ -42,7 +40,10 @@ export async function createInscriptionRequestForHtml(
   size: number,
   fee: number,
   contentB64: string,
+  code: string
 ): Promise<OrderResponse> {
+
+  const referal = validateCode(code);
 
   const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, {
     fee,
@@ -57,52 +58,60 @@ export async function createInscriptionRequestForHtml(
     ],
     lowPostage: true,
     receiveAddress,
-    referral: REFERRAL_CODE,
-    additionalFee: REFERRAL_ADDITIONAL_FEE
+    referral: referal.code,
+    additionalFee: referal.bonus
   });
   return response.data;
 }
 
 export async function saveReferralCode(): Promise<any> {
 
-  const response = await axios.post('https://ordinalsbot.com/api/referrals', {
-    referral: REFERRAL_CODE,
-    address: REFERRAL_ADDRESS
+  return await Promise.all(
+    REFERRALS.map(async r => {
+      const response = await axios.post('https://ordinalsbot.com/api/referrals', {
+        referral: r.code,
+        address: r.address
+      });
 
-  });
-  return response.data;
+      return { [r.code]: response.data }
+    })
+  );
 }
 
 export async function getReferralStatus(): Promise<any> {
 
-  const response = await axios.get('https://ordinalsbot.com/api/referrals',
-  {
-    params: {
-      referral: REFERRAL_CODE,
-      address: REFERRAL_ADDRESS
-    }
-  });
-  return response.data;
+  return await Promise.all(
+    REFERRALS.map(async r => {
+      const response = await axios.get('https://ordinalsbot.com/api/referrals', {
+        params: {
+          referral: r.code,
+          address: r.address
+        }
+      });
+
+      return { [r.code]: response.data }
+    })
+  );
 }
 
 export async function getOrderStatus(id: string): Promise<OrderResponse> {
 
   const response = await axios.get('https://api2.ordinalsbot.com/order',
-  {
-    params: {
-      id
-    }
-  });
+    {
+      params: {
+        id
+      }
+    });
   return response.data;
 }
 
 export async function searchForText(text: string): Promise<OrdinalsbotInscriptionSearchResult> {
 
   const response = await axios.get('https://api2.ordinalsbot.com/search',
-  {
-    params: {
-      text
-    }
-  });
+    {
+      params: {
+        text
+      }
+    });
   return response.data;
 }

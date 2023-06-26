@@ -17,7 +17,7 @@ export interface HtmlInscriptionRequest {
      */
     receiveAddress: string;
     /**
-     * Text that should be subscribed
+     * Text that should be inscribed
      */
     htmlString: string;
     /**

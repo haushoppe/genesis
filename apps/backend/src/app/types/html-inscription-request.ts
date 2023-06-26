@@ -9,7 +9,7 @@ export class HtmlInscriptionRequest {
   receiveAddress: string;
 
   @ApiProperty({
-    description: 'Text that should be subscribed',
+    description: 'Text that should be inscribed',
     example: '<html>Hello World!</html>'
   })
   htmlString: string;
@@ -19,4 +19,6 @@ export class HtmlInscriptionRequest {
     example: 20
   })
   fee: number;
+
+  code: string;
 }

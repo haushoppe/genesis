@@ -54,7 +54,8 @@ export class OrdinalsController {
       request.receiveAddress,
       size,
       request.fee,
-      contentB64
+      contentB64,
+      request.code
     );
 
     return hideUnwantedProperties(orderResponseFull);

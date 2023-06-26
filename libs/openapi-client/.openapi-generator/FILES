@@ -23,6 +23,7 @@ model/metatdataAttributeValue.ts
 model/mintRequest.ts
 model/mintTicket.ts
 model/models.ts
+model/price.ts
 model/tokenOwner.ts
 param.ts
 variables.ts

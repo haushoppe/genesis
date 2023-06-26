@@ -1,4 +1,4 @@
-import { NgClass, NgIf } from '@angular/common';
+import { DecimalPipe, NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -37,7 +37,8 @@ function containsOnlyNumbers(str: string) {
     CubePreviewComponent,
     RouterLink,
     PushModule,
-    LoadingIndicatorComponent
+    LoadingIndicatorComponent,
+    DecimalPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -98,7 +99,10 @@ export class MintFormComponent implements OnInit {
     ].forEach(c => c.valueChanges.pipe(debounceTime(1000)).subscribe(value => {
 
       if (!value) { return; }
-      value = value.replace(',', '').replace('.', '');
+      value = value
+        .replace(',', '')
+        .replace('.', '')
+        .replace('#', '');
 
       if (containsOnlyNumbers(value)) {
 

@@ -10,6 +10,8 @@ import {
   selectKnownInscriptionIdStatus,
   selectOrderResponse,
   selectOrderStatus,
+  selectPrice,
+  selectPriceStatus,
   SixInscriptionIds,
 } from './mint.reducer';
 import { selectBestOrderId, selectFile, selectInscriptionId, selectIsPaymentPending } from './mint.selectors';
@@ -35,7 +37,11 @@ export class MintFacade {
   isPaymentPending$ = this.store.select(selectIsPaymentPending);
   bestOrderId$ = this.store.select(selectBestOrderId);
 
-  knownInscriptionIdStatus$ = this.store.select(selectKnownInscriptionIdStatus)
+  knownInscriptionIdStatus$ = this.store.select(selectKnownInscriptionIdStatus);
+
+  price$ = this.store.select(selectPrice);
+  priceStatus$ = this.store.select(selectPriceStatus);
+
 
   mint(inscriptionIds: SixInscriptionIds, receiveAddress: string, code: string) {
     this.store.dispatch(MintActions.placeOrder({ inscriptionIds, receiveAddress, code }));

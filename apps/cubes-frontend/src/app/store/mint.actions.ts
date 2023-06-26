@@ -3,7 +3,7 @@ import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
 import { Inscription, InscriptionOrder } from '../ordinalsbot';
 import { SixInscriptionIds } from './mint.reducer';
-import { InscriptionSimple } from '../openapi-client';
+import { InscriptionSimple, Price } from '../openapi-client';
 import { MempoolTransaction } from '../services/mempool-service';
 
 export const MintActions = createActionGroup({
@@ -28,6 +28,10 @@ export const MintActions = createActionGroup({
 
     'Lookup Inscription Id': props<{ inscriptionNumber: string }>(),
     'Lookup Inscription Id Success': props<{ inscriptionNumber: string, inscriptionId: string }>(),
-    'Lookup Inscription Id Failure':  props<{ error: HttpErrorResponse }>()
+    'Lookup Inscription Id Failure':  props<{ error: HttpErrorResponse }>(),
+
+    'Load Price': props<{ code: string }>(),
+    'Load Price Success': props<{ price: Price }>(),
+    'Load Price Failure':  props<{ error: HttpErrorResponse }>()
   }
 });

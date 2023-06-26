@@ -1,17 +1,31 @@
-import { Body, Controller, ForbiddenException, Get, Header, Logger, Param, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Header, Logger, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiTags } from '@nestjs/swagger';
 
-import { createInscriptionRequestForHtml, getOrderStatus, getReferralStatus, saveReferralCode, searchForText } from '../../../../shared/ordinalsbot';
+import {
+  createInscriptionRequestForHtml,
+  getFxrate,
+  getOrderStatus,
+  getPrice,
+  getReferralStatus,
+  saveReferralCode,
+  searchForText,
+} from '../../../../shared/ordinalsbot';
 import { InscriptionOrder, OrderResponse } from '../../../../shared/ordinalsbot-order-response';
-import { HtmlInscriptionRequest } from '../types/html-inscription-request';
-import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
+import { REFERRALS, validateCode } from '../../../../shared/referrals';
 import { CacheService } from '../model/cache.service';
-import { REFERRALS } from '../../../../shared/referrals';
+import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
+import { HtmlInscriptionRequest } from '../types/html-inscription-request';
 
 export class InscriptionSimple {
   @ApiProperty() inscriptionId: string;
   @ApiProperty() blockheight: number;
+}
+
+export class Price {
+  @ApiProperty() priceInSats: number;
+  @ApiProperty() priceInUsd: number;
+
 }
 
 function hideUnwantedProperties({ charge, files, referral }: OrderResponse): InscriptionOrder {
@@ -112,6 +126,45 @@ export class OrdinalsController {
       return this.lastBackup;
     }
   }
+
+    /**
+     * Get price in sats (cached!)
+     */
+    @Get(['ordinals/getPrice/:fee/:size'])
+    @ApiOperation({ operationId: 'getPrice' })
+    @ApiParam({ name: 'fee', type: 'number' })
+    @ApiParam({ name: 'size', type: 'number' })
+    @ApiParam({ name: 'code', type: 'string' })
+    @ApiOkResponse({ type: Price })
+    @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
+    async getPrice(
+      @Param('fee', ParseIntPipe) fee: number,
+      @Param('size', ParseIntPipe) size: number,
+      @Param('code') code: string): Promise<Price> {
+
+        return this.cacheService.loadCached('ordinal_price_' + fee + '_' + size, async () => {
+
+          const referral = validateCode(code);
+
+          const price = await getPrice({
+            fee,
+            size,
+            count: 1,
+            lowPostage: 'true'
+          });
+
+          const fxrate = await getFxrate();
+
+          const priceInSats = price.totalFee + referral.bonus;
+          const priceInBtc = (price.totalFee + referral.bonus) / 100000000;
+          const priceInUsd = priceInBtc * fxrate.bitcoin.usd;
+
+          return {
+            priceInSats,
+            priceInUsd
+          };
+        }, oneMinuteInSeconds);
+    }
 
   /**
    * Saving Referral Code

@@ -50,32 +50,22 @@
             <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.code" class="form-control" id="code"></div>
           </div>
 
-          <!-- <div class="form-group row">
+          <div class="form-group row" *rxLet="mintFacade.price$; let price">
             <label for="price" class="col-4 col-form-label">Price:</label>
-            <div class="col-8">
+            <div class="col-8" *rxLet="mintFacade.priceStatus$; let priceStatus">
 
               <strong class="d-block mt-2">
-                {{ 1000 }} sats
+                {{ price?.priceInSats }} sats
               </strong>
-              <input class="d-none" id="price">
+              <span class="text-muted mt-n1 d-block">(which equals to {{ price?.priceInUsd | number : '1.2-2' }} USD)</span>
 
-            </div>
-          </div> -->
-
-          <div class="form-group row">
-            <label for="price" class="col-4 col-form-label">Price:</label>
-            <div class="col-8">
-
-              <span class="d-block mt-2">
-                TODO <small class="text-muted">(Shown next page!)</small>
-              </span>
               <input class="d-none" id="price">
 
             </div>
           </div>
 
           <div class="form-group row">
-            <div class="col text-center pt-2 pb-1">
+            <div class="col text-center pt-3 pb-1">
 
                 <app-loading-indicator-button
                   [disabled]="form.invalid || knownInscriptionIdStatus.submitStatus === SubmitStatus.Submitting"

@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { OrderResponse } from './ordinalsbot-order-response';
 import { OrdinalsbotInscriptionSearchResult } from './ordinalsbot-inscription-search-result';
+import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from './ordinalsbot-price-result';
+import { OrdinalsbotFxrateResult } from './ordinalsbot-fxrate-result';
+
 import { validateCode } from './validate-code';
 import { REFERRALS } from './referrals';
 
@@ -112,5 +115,28 @@ export async function searchForText(text: string): Promise<OrdinalsbotInscriptio
         text
       }
     });
+  return response.data;
+}
+
+export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPriceRequestParams): Promise<OrdinalsbotPriceResult> {
+
+  const response = await axios.get('https://ordinalsbot.com/api/price',
+    {
+      params: { fee, size, count, lowPostage }
+    });
+
+  return response.data;
+}
+
+export async function getFxrate(): Promise<OrdinalsbotFxrateResult> {
+
+  const response = await axios.get('https://ordinalsbot.com/api/fxrate',
+    {
+      params: {
+        ids: 'bitcoin',
+        vs_currencies: 'usd'
+      }
+    });
+
   return response.data;
 }

@@ -2,7 +2,7 @@ import { inject, Injectable, NgZone } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
-import { EMPTY, from, interval, of } from 'rxjs';
+import { defer, EMPTY, from, interval, of } from 'rxjs';
 import { catchError, concatMap, exhaustMap, filter, map, retry, switchMap, takeUntil, tap, withLatestFrom } from 'rxjs/operators';
 
 import { OrdinalsService } from '../openapi-client';
@@ -16,6 +16,9 @@ import { PageActions } from './page.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 import { Router } from '@angular/router';
 import { selectKnownInscriptionIds } from './mint.reducer';
+
+
+
 
 
 @Injectable()
@@ -34,7 +37,8 @@ export class MintEffects {
     this.actions.pipe(
       ofType(MintActions.placeOrder),
       concatMap(({ receiveAddress, inscriptionIds, code }) =>
-        from(this.mintService.getFees()).pipe(
+        defer(() => from(this.mintService.getFees())).pipe(
+          retry({ count: 3, delay: 1000 }),
           switchMap(fees =>
             this.mintService.placeOrder(receiveAddress, inscriptionIds, fees.halfHourFee, code).pipe(
               tap(orderResponse => this.router.navigate(['/order', orderResponse.id])),
@@ -78,6 +82,7 @@ export class MintEffects {
   );
 
   // TODO
+  /*
   loadMempoolInfo$ = createEffect(() =>
     this.actions.pipe(
       ofType(MintActions.updateOrderStatus),
@@ -90,11 +95,15 @@ export class MintEffects {
       )
     )
   );
+  */
 
   loadAllInscriptionsOnRouting$ = createEffect(() => {
     return this.actions.pipe(
       ofRoute(['']),
-      map(() => MintActions.loadAllInscriptions()),
+      concatMap(() => [
+        MintActions.loadAllInscriptions(),
+        MintActions.loadPrice({ code: '' })
+      ]),
     );
   });
 
@@ -177,4 +186,23 @@ export class MintEffects {
       })
     );
   });
+
+  loadPrice$ = createEffect(() =>
+    this.actions.pipe(
+      ofType(MintActions.loadPrice),
+      switchMap(({ code }) =>
+        defer(() => from(this.mintService.getFees())).pipe(
+          retry({ count: 3, delay: 1000 }),
+          switchMap(fees =>
+            this.ordinalsService.getPrice(fees.halfHourFee, 557, code).pipe(
+              retry({ count: 3, delay: 1000 }),
+              map(price => MintActions.loadPriceSuccess({ price })),
+              catchError(error => of(MintActions.loadPriceFailure({ error })))
+            )
+          )
+        )
+      )
+    )
+  );
+
 }

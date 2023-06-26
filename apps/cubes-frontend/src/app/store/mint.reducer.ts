@@ -1,7 +1,7 @@
 import { routerNavigatedAction } from '@ngrx/router-store';
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { InscriptionSimple } from '../openapi-client';
+import { InscriptionSimple, Price } from '../openapi-client';
 import { Inscription, InscriptionOrder } from '../ordinalsbot';
 import { MintActions } from './mint.actions';
 import {
@@ -34,6 +34,9 @@ export interface State {
 
   knownInscriptionIds: { [inscriptionNumber: string]: string };
   knownInscriptionIdStatus: SubmittableState;
+
+  price: Price | undefined;
+  priceStatus: SubmittableState;
 }
 
 export const initialState: State = {
@@ -49,8 +52,10 @@ export const initialState: State = {
   orderStatus: getInitialState(),
 
   knownInscriptionIds: {},
-  knownInscriptionIdStatus: getInitialState()
-};
+  knownInscriptionIdStatus: getInitialState(),
+
+  price: undefined,
+  priceStatus: getInitialState(),};
 
 
 export const mintFeature = createFeature({
@@ -160,6 +165,24 @@ export const mintFeature = createFeature({
       ...state,
       knownInscriptionIdStatus: getFailureState(error)
     })),
+
+    // Load Price
+
+    on(MintActions.loadPrice, state => ({
+      ...state,
+      priceStatus: getSubmittingState()
+    })),
+
+    on(MintActions.loadPriceSuccess, (state, { price }) => ({
+      ...state,
+      price,
+      priceStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.loadPriceFailure, (state, { error }) => ({
+      ...state,
+      priceStatus: getFailureState(error)
+    })),
   )
 });
 
@@ -174,5 +197,7 @@ export const {
   selectOrderResponse,
   selectOrderStatus,
   selectKnownInscriptionIds,
-  selectKnownInscriptionIdStatus
+  selectKnownInscriptionIdStatus,
+  selectPrice,
+  selectPriceStatus
 } = mintFeature;

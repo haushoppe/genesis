@@ -9,4 +9,5 @@ export * from './metatdataAttribute';
 export * from './metatdataAttributeValue';
 export * from './mintRequest';
 export * from './mintTicket';
+export * from './price';
 export * from './tokenOwner';

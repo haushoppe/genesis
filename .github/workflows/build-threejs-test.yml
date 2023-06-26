@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'z_extra/prototypes/threejs-test/**'
+      - '.github/workflows/build-threejs-test.yml'
 
 jobs:
 

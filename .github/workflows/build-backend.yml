@@ -6,6 +6,7 @@ on:
     paths:
       - 'apps/backend/**'
       - '*.json'
+      - '.github/workflows/build-backend.yml'
 
 jobs:
 

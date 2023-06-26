@@ -31,6 +31,9 @@ export interface State {
 
   orderResponse: InscriptionOrder | undefined;
   orderStatus: SubmittableState;
+
+  knownInscriptionIds: { [inscriptionNumber: string]: string };
+  knownInscriptionIdStatus: SubmittableState;
 }
 
 export const initialState: State = {
@@ -44,6 +47,9 @@ export const initialState: State = {
   //orderResponse: examplePaidResponse as OrderResponse,
   // orderResponse: exampleUnpaidResponse as OrderResponse,
   orderStatus: getInitialState(),
+
+  knownInscriptionIds: {},
+  knownInscriptionIdStatus: getInitialState()
 };
 
 
@@ -133,6 +139,27 @@ export const mintFeature = createFeature({
 
       return state;
     }),
+
+    // Lookup Inscription Id
+
+    on(MintActions.lookupInscriptionId, state => ({
+      ...state,
+      knownInscriptionIdStatus: getSubmittingState()
+    })),
+
+    on(MintActions.lookupInscriptionIdSuccess, (state, { inscriptionNumber, inscriptionId }) => ({
+      ...state,
+      knownInscriptionIds: {
+        ... state.knownInscriptionIds,
+        [inscriptionNumber]: inscriptionId
+      },
+      knownInscriptionIdStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.lookupInscriptionIdFailure, (state, { error }) => ({
+      ...state,
+      knownInscriptionIdStatus: getFailureState(error)
+    })),
   )
 });
 
@@ -145,5 +172,7 @@ export const {
   selectInscription,
   selectInscriptionStatus,
   selectOrderResponse,
-  selectOrderStatus
+  selectOrderStatus,
+  selectKnownInscriptionIds,
+  selectKnownInscriptionIdStatus
 } = mintFeature;

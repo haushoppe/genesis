@@ -25,5 +25,9 @@ export const MintActions = createActionGroup({
     'Order Completed': emptyProps(),
 
     'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),
+
+    'Lookup Inscription Id': props<{ inscriptionNumber: string }>(),
+    'Lookup Inscription Id Success': props<{ inscriptionNumber: string, inscriptionId: string }>(),
+    'Lookup Inscription Id Failure':  props<{ error: HttpErrorResponse }>()
   }
 });

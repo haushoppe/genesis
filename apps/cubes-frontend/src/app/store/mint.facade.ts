@@ -7,11 +7,12 @@ import {
   selectAllInscriptionsStatus,
   selectInscription,
   selectInscriptionStatus,
+  selectKnownInscriptionIdStatus,
   selectOrderResponse,
   selectOrderStatus,
   SixInscriptionIds,
 } from './mint.reducer';
-import { selectBestOrderId, selectFile, selectIsPaymentPending } from './mint.selectors';
+import { selectBestOrderId, selectFile, selectInscriptionId, selectIsPaymentPending } from './mint.selectors';
 
 
 @Injectable({
@@ -34,7 +35,14 @@ export class MintFacade {
   isPaymentPending$ = this.store.select(selectIsPaymentPending);
   bestOrderId$ = this.store.select(selectBestOrderId);
 
+  knownInscriptionIdStatus$ = this.store.select(selectKnownInscriptionIdStatus)
+
   mint(inscriptionIds: SixInscriptionIds, receiveAddress: string, code: string) {
     this.store.dispatch(MintActions.placeOrder({ inscriptionIds, receiveAddress, code }));
+  }
+
+  lookupInscriptionId(inscriptionNumber: string) {
+    this.store.dispatch(MintActions.lookupInscriptionId({ inscriptionNumber }));
+    return this.store.select(selectInscriptionId(inscriptionNumber));
   }
 }

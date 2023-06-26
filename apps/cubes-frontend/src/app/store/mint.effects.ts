@@ -3,7 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
 import { EMPTY, from, interval, of } from 'rxjs';
-import { catchError, concatMap, exhaustMap, filter, map, retry, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { catchError, concatMap, exhaustMap, filter, map, retry, switchMap, takeUntil, tap, withLatestFrom } from 'rxjs/operators';
 
 import { OrdinalsService } from '../openapi-client';
 import { InscriptionOrder, OrderResponse } from '../ordinalsbot';
@@ -15,6 +15,7 @@ import { MintActions } from './mint.actions';
 import { PageActions } from './page.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 import { Router } from '@angular/router';
+import { selectKnownInscriptionIds } from './mint.reducer';
 
 
 @Injectable()
@@ -36,7 +37,7 @@ export class MintEffects {
         from(this.mintService.getFees()).pipe(
           switchMap(fees =>
             this.mintService.placeOrder(receiveAddress, inscriptionIds, fees.halfHourFee, code).pipe(
-              tap(orderResponse => this.router.navigate(['/order', orderResponse.id ])),
+              tap(orderResponse => this.router.navigate(['/order', orderResponse.id])),
               map(orderResponse => MintActions.placeOrderSuccess({ orderResponse })),
               catchError(error => of(MintActions.placeOrderFailure({ error })))
             )
@@ -154,4 +155,26 @@ export class MintEffects {
       })
     )
   }, { dispatch: false });
+
+  lookupInscriptionId$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(MintActions.lookupInscriptionId),
+      withLatestFrom(this.store.select(selectKnownInscriptionIds)),
+      switchMap(([{ inscriptionNumber }, knownInscriptionIds]) => {
+        const knownInscriptionId = knownInscriptionIds[inscriptionNumber];
+
+        if (knownInscriptionId) {
+          // If the inscriptionNumber is already known, directly emit lookupInscriptionIdSuccess
+          return of(MintActions.lookupInscriptionIdSuccess({ inscriptionNumber, inscriptionId: knownInscriptionId }));
+        } else {
+          // Otherwise, make the service call
+          return this.mintService.inscriptionNumberToId(inscriptionNumber).pipe(
+            retry({ count: 3, delay: 1000 }),
+            map(inscriptionId => MintActions.lookupInscriptionIdSuccess({ inscriptionNumber, inscriptionId })),
+            catchError(error => of(MintActions.lookupInscriptionIdFailure({ error })))
+          );
+        }
+      })
+    );
+  });
 }

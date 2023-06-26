@@ -1,10 +1,11 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { OrdinalsService } from '../openapi-client';
 import { InscriptionOrder, OrderResponse } from '../ordinalsbot';
 import { SixInscriptionIds } from '../store/mint.reducer';
 import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
+import { HiroService } from './hiro-service';
 
 
 @Injectable({
@@ -13,6 +14,7 @@ import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
 export class MintService {
 
   ordinalsService = inject(OrdinalsService);
+  hiroService = inject(HiroService);
 
   readonly template1 = `<html><!--cubes.haushoppe.art--><body><script>t='`;
   readonly template2 = `'</script><script src=/content/4c5b32a1bd0dc43b3540097bf0135de6b0389f55fe6fe06910e5393bf6591a42i0></script>`;
@@ -87,5 +89,11 @@ export class MintService {
     });
 
     return order as any;
+  }
+
+  inscriptionNumberToId(inscriptionNumber: string) {
+    return this.hiroService.getInscription(inscriptionNumber).pipe(
+      map(x => x.id)
+    );
   }
 }

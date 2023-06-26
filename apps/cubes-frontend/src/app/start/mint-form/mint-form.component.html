@@ -1,120 +1,126 @@
 <ng-container *rxLet="mintFacade.orderStatus$; let orderStatus">
+  <ng-container *rxLet="mintFacade.knownInscriptionIdStatus$; let knownInscriptionIdStatus">
 
-  <div class="row mt-4">
-    <div class="col-md-6 col-12">
+    <div class="row mt-4">
+      <div class="col-md-6 col-12">
 
-      <form
-        (ngSubmit)="mint()"
-        [formGroup]="form"
-        [ngClass]="{ formWithError: orderStatus.submitStatus === SubmitStatus.Failure }"
-        class="bg-dark p-3 mt-4">
+        <form
+          (ngSubmit)="mint()"
+          [formGroup]="form"
+          [ngClass]="{ formWithError: orderStatus.submitStatus === SubmitStatus.Failure }"
+          class="bg-dark p-3 mt-4">
 
-        <div class="form-group row inscriptionId1 mt-2">
-          <label for="inscriptionId1" class="col-4 col-form-label">Side 1:</label>
-          <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId1" class="form-control" id="inscriptionId1" placeholder="1. Inscription ID (TXIDiN)"></div>
-        </div>
-
-        <div class="form-group row inscriptionId2">
-          <label for="inscriptionId2" class="col-4 col-form-label">Side 2:</label>
-          <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId2" class="form-control" id="inscriptionId2" placeholder="2. Inscription ID (TXIDiN)"></div>
-        </div>
-
-        <div class="form-group row inscriptionId3">
-          <label for="inscriptionId3" class="col-4 col-form-label">Side 3:</label>
-          <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId3" class="form-control" id="inscriptionId3" placeholder="3. Inscription ID (TXIDiN)"></div>
-        </div>
-
-        <div class="form-group row inscriptionId4">
-          <label for="inscriptionId4" class="col-4 col-form-label">Side 4:</label>
-          <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId4" class="form-control" id="inscriptionId4" placeholder="4. Inscription ID (TXIDiN)"></div>
-        </div>
-
-        <div class="form-group row inscriptionId5">
-          <label for="inscriptionId5" class="col-4 col-form-label">Side 5:</label>
-          <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId5" class="form-control" id="inscriptionId5" placeholder="5. Inscription ID (TXIDiN)"></div>
-        </div>
-
-        <div class="form-group row inscriptionId6">
-          <label for="inscriptionId6" class="col-4 col-form-label">Side 6:</label>
-          <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId6"class="form-control" id="inscriptionId6" placeholder="6. Inscription ID (TXIDiN)"></div>
-        </div>
-
-        <div class="form-group row">
-          <label for="receiveAddress" class="col-4 col-form-label">Address:</label>
-          <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.receiveAddress" class="form-control" id="receiveAddress" placeholder="Receive address, bc1p..."></div>
-        </div>
-
-        <div class="form-group row" *ngIf="showCode">
-          <label for="code" class="col-4 col-form-label">Code:</label>
-          <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.code" class="form-control" id="code"></div>
-        </div>
-
-        <!-- <div class="form-group row">
-          <label for="price" class="col-4 col-form-label">Price:</label>
-          <div class="col-8">
-
-            <strong class="d-block mt-2">
-              {{ 1000 }} sats
-            </strong>
-            <input class="d-none" id="price">
-
+          <div class="form-group row inscriptionId1 mt-2">
+            <label for="inscriptionId1" class="col-4 col-form-label">Side 1:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId1" class="form-control" id="inscriptionId1" placeholder="1. Inscription Number or ID"></div>
           </div>
-        </div> -->
 
-        <div class="form-group row">
-          <label for="price" class="col-4 col-form-label">Price:</label>
-          <div class="col-8">
-
-            <span class="d-block mt-2">
-              TODO <small class="text-muted">(Shown next page!)</small>
-            </span>
-            <input class="d-none" id="price">
-
+          <div class="form-group row inscriptionId2">
+            <label for="inscriptionId2" class="col-4 col-form-label">Side 2:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId2" class="form-control" id="inscriptionId2" placeholder="2. Inscription Number or ID"></div>
           </div>
-        </div>
 
-        <div class="form-group row">
-          <div class="col text-center pt-2 pb-1">
-
-
-              <app-loading-indicator-button
-                [disabled]="form.invalid"
-                [showAlertOnError]="true"
-                (buttonClick)="mint()"
-                [state]="orderStatus"
-                [buttonText]="orderStatus.submitStatus === SubmitStatus.Successful ? 'Mint successfully submitted' : 'Mint your cube!'"
-                defaultIconClass="bi bi-lightning-charge-fill"
-              />
-
+          <div class="form-group row inscriptionId3">
+            <label for="inscriptionId3" class="col-4 col-form-label">Side 3:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId3" class="form-control" id="inscriptionId3" placeholder="3. Inscription Number or ID"></div>
           </div>
-        </div>
+
+          <div class="form-group row inscriptionId4">
+            <label for="inscriptionId4" class="col-4 col-form-label">Side 4:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId4" class="form-control" id="inscriptionId4" placeholder="4. Inscription Number or ID"></div>
+          </div>
+
+          <div class="form-group row inscriptionId5">
+            <label for="inscriptionId5" class="col-4 col-form-label">Side 5:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId5" class="form-control" id="inscriptionId5" placeholder="5. Inscription Number or ID"></div>
+          </div>
+
+          <div class="form-group row inscriptionId6">
+            <label for="inscriptionId6" class="col-4 col-form-label">Side 6:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.inscriptionId6"class="form-control" id="inscriptionId6" placeholder="6. Inscription Number or ID"></div>
+          </div>
+
+          <div class="form-group row">
+            <label for="receiveAddress" class="col-4 col-form-label">Address:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.receiveAddress" class="form-control" id="receiveAddress" placeholder="Receive address, bc1p..."></div>
+          </div>
+
+          <div class="form-group row" *ngIf="showCode">
+            <label for="code" class="col-4 col-form-label">Code:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.code" class="form-control" id="code"></div>
+          </div>
+
+          <!-- <div class="form-group row">
+            <label for="price" class="col-4 col-form-label">Price:</label>
+            <div class="col-8">
+
+              <strong class="d-block mt-2">
+                {{ 1000 }} sats
+              </strong>
+              <input class="d-none" id="price">
+
+            </div>
+          </div> -->
+
+          <div class="form-group row">
+            <label for="price" class="col-4 col-form-label">Price:</label>
+            <div class="col-8">
+
+              <span class="d-block mt-2">
+                TODO <small class="text-muted">(Shown next page!)</small>
+              </span>
+              <input class="d-none" id="price">
+
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <div class="col text-center pt-2 pb-1">
+
+                <app-loading-indicator-button
+                  [disabled]="form.invalid || knownInscriptionIdStatus.submitStatus === SubmitStatus.Submitting"
+                  [showAlertOnError]="true"
+                  (buttonClick)="mint()"
+                  [state]="orderStatus"
+                  [buttonText]="orderStatus.submitStatus === SubmitStatus.Successful ? 'Mint successfully submitted' : 'Mint your cube!'"
+                  defaultIconClass="bi bi-lightning-charge-fill"
+                />
+
+                <app-loading-indicator
+                  [state]="knownInscriptionIdStatus"
+                  sendDataText="Looking up…"
+                />
+
+            </div>
+          </div>
 
 
-        <p *ngIf="mintFacade.file$ | push as file" class="mt-4">
+          <p *ngIf="mintFacade.file$ | push as file" class="mt-4">
 
-          <ng-container *ngIf="!file.sent">
-            You have a pending order!<br>
-          </ng-container>
+            <ng-container *ngIf="!file.sent">
+              You have a pending order!<br>
+            </ng-container>
 
-          <ng-container *ngIf="file.sent">
-            We received a payment for your last order!<br>
-          </ng-container>
+            <ng-container *ngIf="file.sent">
+              We received a payment for your last order!<br>
+            </ng-container>
 
-          <ng-container *rxLet="mintFacade.orderResponse$; let orderResponse">
-            <a [routerLink]="['/order', orderResponse?.id]">Track the status here!</a>
-          </ng-container>
+            <ng-container *rxLet="mintFacade.orderResponse$; let orderResponse">
+              <a [routerLink]="['/order', orderResponse?.id]">Track the status here!</a>
+            </ng-container>
 
-        </p>
+          </p>
 
 
-      </form>
+        </form>
 
+      </div>
+      <div class="col-md-6 col-12">
+
+      <app-cube-preview [inscriptionIds]="getInscriptionIds()" />
+
+      </div>
     </div>
-    <div class="col-md-6 col-12">
-
-    <app-cube-preview [inscriptionIds]="getInscriptionIds()" />
-
-    </div>
-  </div>
+  </ng-container>
 </ng-container>
 

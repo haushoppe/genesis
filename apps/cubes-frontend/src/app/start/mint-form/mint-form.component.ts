@@ -1,21 +1,26 @@
 import { NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
+import { PushModule } from '@rx-angular/template/push';
+import { debounceTime } from 'rxjs';
 
 import { CubePreviewComponent } from '../../layout/cube-preview/cube-preview.component';
 import { LoadingIndicatorButtonComponent } from '../../layout/loading-indicator-button/loading-indicator-button.component';
 import { MintFacade } from '../../store/mint.facade';
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
-import { InscriptionIdValidator } from './inscription-id.validator';
 import { TrimValueAccessorDirective } from '../../trim-value-accessor.directive';
 import { BtcAddressValidator } from './btc-address.validator';
-import { environment } from '../../../environments/environment';
-import { RouterLink } from '@angular/router';
-import { PushModule } from '@rx-angular/template/push';
-import { debounceTime } from 'rxjs';
 import { CorrectCodeValidator } from './correct-code.validator';
+import { InscriptionIdValidator } from './inscription-id.validator';
+import { LoadingIndicatorComponent } from '../../layout/loading-indicator/loading-indicator.component';
+
+function containsOnlyNumbers(str: string) {
+  const reg = /^\d+$/;
+  return reg.test(str);
+}
 
 @Component({
   selector: 'app-mint-form',
@@ -31,7 +36,8 @@ import { CorrectCodeValidator } from './correct-code.validator';
     TrimValueAccessorDirective,
     CubePreviewComponent,
     RouterLink,
-    PushModule
+    PushModule,
+    LoadingIndicatorComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -81,6 +87,27 @@ export class MintFormComponent implements OnInit {
         this.cd.detectChanges();
       }
     });
+
+    [
+      this.c.inscriptionId1,
+      this.c.inscriptionId2,
+      this.c.inscriptionId3,
+      this.c.inscriptionId4,
+      this.c.inscriptionId5,
+      this.c.inscriptionId6,
+    ].forEach(c => c.valueChanges.pipe(debounceTime(1000)).subscribe(value => {
+
+      if (!value) { return; }
+      value = value.replace(',', '').replace('.', '');
+
+      if (containsOnlyNumbers(value)) {
+
+        this.mintFacade.lookupInscriptionId(value.trim()).subscribe(inscriptionId => {
+          c.setValue(inscriptionId);
+          this.cd.detectChanges();
+        })
+      }
+    }));
   }
 
   getInscriptionIds() {

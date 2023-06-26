@@ -151,16 +151,17 @@ export interface OrderResponse {
 
     chain_invoice: {
       address: string // Pay on chain BTC address
-    },
+    };
 
     lightning_invoice: {
-      "expires_at": number,
-      payreq: string
-    },
+      "expires_at": number;
+      payreq: string;
+    };
     fiat_value: number; // amount in USD
     // ttl: number; // TTL (time to live) in minutes. Min: 10, Max: 1440 (24H), Default: 1440
   },
-  files: InscriptionFile[]
+  files: InscriptionFile[];
+  referral: string;
 }
 
 export interface InscriptionOrder {
@@ -177,12 +178,13 @@ export interface InscriptionOrder {
     },
 
     lightning_invoice: {
-      "expires_at": number,
-      payreq: string
+      "expires_at": number;
+      payreq: string;
     },
     fiat_value: number; // amount in USD
     // ttl: number; // TTL (time to live) in minutes. Min: 10, Max: 1440 (24H), Default: 1440
   },
-  files: InscriptionFile[]
+  files: InscriptionFile[];
+  code?: string;
 }
 

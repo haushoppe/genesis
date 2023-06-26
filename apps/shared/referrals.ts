@@ -7,7 +7,7 @@ export interface Referral {
 export const REFERRALS: Referral[] = [
   {
       code: 'HAUS_HOPPE_CUBE_35000',
-      bonus: 3500,
+      bonus: 35000,
       address: '???'
   },
   {

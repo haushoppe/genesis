@@ -34,7 +34,7 @@ export class MintFacade {
   isPaymentPending$ = this.store.select(selectIsPaymentPending);
   bestOrderId$ = this.store.select(selectBestOrderId);
 
-  mint(inscriptionIds: SixInscriptionIds, receiveAddress: string) {
-    this.store.dispatch(MintActions.placeOrder({ inscriptionIds, receiveAddress }));
+  mint(inscriptionIds: SixInscriptionIds, receiveAddress: string, code: string) {
+    this.store.dispatch(MintActions.placeOrder({ inscriptionIds, receiveAddress, code }));
   }
 }

@@ -32,10 +32,10 @@ export class MintEffects {
   placeOrder$ = createEffect(() =>
     this.actions.pipe(
       ofType(MintActions.placeOrder),
-      concatMap(({ receiveAddress, inscriptionIds }) =>
+      concatMap(({ receiveAddress, inscriptionIds, code }) =>
         from(this.mintService.getFees()).pipe(
           switchMap(fees =>
-            this.mintService.placeOrder(receiveAddress, inscriptionIds, fees.halfHourFee).pipe(
+            this.mintService.placeOrder(receiveAddress, inscriptionIds, fees.halfHourFee, code).pipe(
               tap(orderResponse => this.router.navigate(['/order', orderResponse.id ])),
               map(orderResponse => MintActions.placeOrderSuccess({ orderResponse })),
               catchError(error => of(MintActions.placeOrderFailure({ error })))

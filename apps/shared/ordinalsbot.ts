@@ -7,8 +7,6 @@ import { REFERRALS } from './referrals';
 export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api2.ordinalsbot.com/order';
 // export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://signet.ordinalsbot.com/api/order'
 
-production: false
-
 /*
 
 EXAMPLE of sending test.html with the content
@@ -43,7 +41,8 @@ export async function createInscriptionRequestForHtml(
   code: string
 ): Promise<OrderResponse> {
 
-  const referal = validateCode(code);
+  const referral = validateCode(code);
+  console.log('Creating order with referral code: ' + referral.code + ' and bonus ' + referral.bonus);
 
   const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, {
     fee,
@@ -58,8 +57,8 @@ export async function createInscriptionRequestForHtml(
     ],
     lowPostage: true,
     receiveAddress,
-    referral: referal.code,
-    additionalFee: referal.bonus
+    referral: referral.code,
+    additionalFee: referral.bonus
   });
   return response.data;
 }

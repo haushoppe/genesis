@@ -7,13 +7,14 @@ import { InscriptionOrder, OrderResponse } from '../../../../shared/ordinalsbot-
 import { HtmlInscriptionRequest } from '../types/html-inscription-request';
 import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { CacheService } from '../model/cache.service';
+import { REFERRALS } from '../../../../shared/referrals';
 
 export class InscriptionSimple {
   @ApiProperty() inscriptionId: string;
   @ApiProperty() blockheight: number;
 }
 
-function hideUnwantedProperties({ charge, files }: OrderResponse): InscriptionOrder {
+function hideUnwantedProperties({ charge, files, referral }: OrderResponse): InscriptionOrder {
 
   const { id,  amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = charge;
 
@@ -24,7 +25,8 @@ function hideUnwantedProperties({ charge, files }: OrderResponse): InscriptionOr
     },
     files: files.map(({ completed, sent, tx }) => ({
       completed, sent, tx
-    }))
+    })),
+    code: referral === REFERRALS[0].code ? '' : referral
   };
 }
 

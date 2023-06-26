@@ -24,5 +24,9 @@ export interface HtmlInscriptionRequest {
      * Miner fee that will be paid while inscribing the ordinals in sats/byte.
      */
     fee: number;
+    /**
+     * Additional data
+     */
+    code: string;
 }
 

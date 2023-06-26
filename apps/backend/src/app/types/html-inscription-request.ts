@@ -20,5 +20,8 @@ export class HtmlInscriptionRequest {
   })
   fee: number;
 
+  @ApiProperty({
+    description: 'Additional data',
+  })
   code: string;
 }

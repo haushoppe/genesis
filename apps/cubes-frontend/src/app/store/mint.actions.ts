@@ -18,7 +18,7 @@ export const MintActions = createActionGroup({
     'Load Inscription Success': props<{ inscription: Inscription }>(),
     'Load Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
-    'Place Order': props<{ receiveAddress: string, inscriptionIds: SixInscriptionIds }>(),
+    'Place Order': props<{ receiveAddress: string, inscriptionIds: SixInscriptionIds, code: string }>(),
     'Place Order Success': props<{ orderResponse: InscriptionOrder }>(),
     'Place Order Failure': props<{ error: HttpErrorResponse }>(),
     'Update Order Status': props<{ orderResponse: InscriptionOrder }>(),

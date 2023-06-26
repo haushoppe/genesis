@@ -7,7 +7,9 @@
 
   <ng-container *ngIf="order">
     Amount: &nbsp;<strong>{{ order.charge.amount }} sats</strong>
-    <!--(which equals to {{ order?.charge?.fiat_value }} USD)-->
+    (which equals to {{ order?.charge?.fiat_value }} USD)
+    <span *ngIf="order.code"><br>
+      Code: {{ order.code }}</span>
   </ng-container>
 
   <div class="mt-4 mb-4">
@@ -157,7 +159,8 @@
 
   <p class="mt-4">
     <small>
-      Please retain your order ID for future reference. It will be essential if you want to check the order status later on.<br>
+      Please retain your order ID for future reference.<br>
+      It will be essential if you want to check the order status later on.<br>
       <!-- You may visit the following page to secure the number or process the payment:
       <a [href]="order.charge.hosted_checkout_url" target="_blank">Opennode Checkout</a> -->
     </small>

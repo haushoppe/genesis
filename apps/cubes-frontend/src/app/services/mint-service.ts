@@ -62,7 +62,11 @@ export class MintService {
     return await btcClient.getRecommendedFees();
   }
 
-  placeOrder(receiveAddress: string, inscriptionIds: SixInscriptionIds, fee: number): Observable<InscriptionOrder> {
+  placeOrder(
+    receiveAddress: string,
+    inscriptionIds: SixInscriptionIds,
+    fee: number,
+    code: string): Observable<InscriptionOrder> {
 
     if (!inscriptionIds.inscriptionId1 ||
         !inscriptionIds.inscriptionId2 ||
@@ -78,7 +82,8 @@ export class MintService {
     const order = this.ordinalsService.createHtmlInscriptionOrder({
       receiveAddress,
       htmlString,
-      fee
+      fee,
+      code
     });
 
     return order as any;

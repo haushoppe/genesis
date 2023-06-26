@@ -14,14 +14,14 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
         ? exception.getStatus()
         : 500;
 
-    const message = (exception as any).message;
-    const stack = (exception as any).stack;
+    const message = (exception as any)?.message;
+    const stack = (exception as any)?.stack;
 
     const errorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: message,
+      message,
       // Include the stack trace if it exists
       // TODO: Disable or filter out these stack traces in a production environment, as they may contain sensitive information.
       stack

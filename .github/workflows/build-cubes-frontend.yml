@@ -22,7 +22,7 @@ jobs:
 
     - run: npm install --force
     - run: npm install @nrwl/nx-linux-x64-gnu  --force #bugfix broken build! 😕
-    - run: npm test:cubes-frontend
+    - run: npm run test:cubes-frontend
     - run: npm run build:cubes-frontend:production
     - name: Deploy Frontend to `haushoppe/cubes-frontend-build` repo
       env:

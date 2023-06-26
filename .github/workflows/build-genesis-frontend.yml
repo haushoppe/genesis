@@ -25,7 +25,7 @@ jobs:
     - run: npx kendo-ui-license activate
       env:
         KENDO_UI_LICENSE: ${{ secrets.KENDO_UI_LICENSE }}
-    - run: npm test:genesis-frontend
+    - run: npm run test:genesis-frontend
     - run: npm run build:genesis-frontend:production
     - name: Deploy Frontend to `haushoppe/genesis-frontend-build` repo
       env:

@@ -16,6 +16,7 @@ import { BtcAddressValidator } from './btc-address.validator';
 import { CorrectCodeValidator } from './correct-code.validator';
 import { InscriptionIdValidator } from './inscription-id.validator';
 import { LoadingIndicatorComponent } from '../../layout/loading-indicator/loading-indicator.component';
+import { TrimNumberValueAccessorDirective } from '../../trim-number-value-accessor.directive';
 
 function containsOnlyNumbers(str: string) {
   const reg = /^\d+$/;
@@ -34,6 +35,7 @@ function containsOnlyNumbers(str: string) {
     LetModule,
     NgClass,
     TrimValueAccessorDirective,
+    TrimNumberValueAccessorDirective,
     CubePreviewComponent,
     RouterLink,
     PushModule,
@@ -99,10 +101,6 @@ export class MintFormComponent implements OnInit {
     ].forEach(c => c.valueChanges.pipe(debounceTime(1000)).subscribe(value => {
 
       if (!value) { return; }
-      value = value
-        .replace(',', '')
-        .replace('.', '')
-        .replace('#', '');
 
       if (containsOnlyNumbers(value)) {
 

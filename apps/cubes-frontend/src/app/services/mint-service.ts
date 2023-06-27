@@ -17,7 +17,7 @@ export class MintService {
   hiroService = inject(HiroService);
 
   readonly template1 = `<html><!--cubes.haushoppe.art--><body><script>t='`;
-  readonly template2 = `'</script><script src=/content/4c5b32a1bd0dc43b3540097bf0135de6b0389f55fe6fe06910e5393bf6591a42i0></script>`;
+  readonly template2 = `'</script><script src=/content/fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0></script>`;
 
   readonly dummyInscriptionIds = [
     // '09da2c75de72d006e2f24dac29a27976963a5723abe110cf2c29d1cf9225fb36i0',    // 1. #944 - orange - #ff9900

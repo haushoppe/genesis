@@ -105,6 +105,46 @@ export class FaqComponent {
     {
       question: 'What is the "utility" of this project?',
       answer: `There is no utility. Well, there's one. With your fees, you pay the miners who secure the network.`
+    },
+    {
+      question: 'Positioning of the cube in the world space',
+      answer:
+`#### What is the world space?
+The world space is a global, fixed coordinate system in a 3D scene. The origin (0,0,0) of our world space is by default at the center of the scene.
+
+#### How is our cube positioned in the world space?
+In our setup, the cube is positioned at the origin (0,0,0) of the world space. This means the cube's center is aligned with the center of the scene.
+
+#### How is the world space oriented?
+The y-axis is the up direction, and the x and z axes form a horizontal plane:
+
+* The positive x-axis points to the right.
+* The positive y-axis points up.
+* The positive z-axis points out of the screen towards the viewer.
+
+However, in our setup, we've adjusted the camera to look towards the positive z-axis, so:
+
+* The positive z-axis points into the screen, away from the viewer.
+* The negative z-axis points out of the screen, towards the viewer.
+
+<img src="/assets/coordinate_system_cube.png" width="50%">
+
+<br><br>
+
+#### Where is the camera in relation to the cube?
+
+Our camera is positioned on the positive z-axis, at a slightly elevated position. This means the camera is looking down towards the cube from in front of the screen.
+
+<img src="/assets/coordinate_system.svg" width="50%">
+
+<br><br>
+
+#### How is the light positioned in the scene?
+We have two lights in our scene:
+
+1. A point light positioned directly above the cube along the y-axis, which casts shadows.
+2. A front point light positioned in front of the cube along the positive z-axis, which provides additional illumination.
+`
     }
   ];
 

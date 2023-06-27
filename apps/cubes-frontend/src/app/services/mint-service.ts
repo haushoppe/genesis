@@ -20,13 +20,18 @@ export class MintService {
   readonly template2 = `'</script><script src=/content/4c5b32a1bd0dc43b3540097bf0135de6b0389f55fe6fe06910e5393bf6591a42i0></script>`;
 
   readonly dummyInscriptionIds = [
-    '09da2c75de72d006e2f24dac29a27976963a5723abe110cf2c29d1cf9225fb36i0',    // 1. #944 - orange - #ff9900
-    'ce1e4fd0f31f802d2348ab27eeec9385f4e58e5f81606cd94200fcd05c622a37i0',    // 2. #945 - green  - #1c6b4c
-    'dfcf3fc4aec42d2c0bdb3b6d26a4dac4ea7893b70f6b42ae9e5ac883621c6537i0',    // 3. #946 - red    - #f44336
-    '519bca4c2adec9c41f3de0099202d495ddf66c664fa801c14fc723a836938550i0',    // 4. #947 - blue   - #2196f3
-    // '93125728223d2a2014ed1df0ff5f50d83573718964b71c48286f88775829c45ci0', // 5. #948 - yellow - #ffeb3b
-    'f1ac3821de11c8fe7eabe39027915806662bc6e87a236e90f088cc3b371eaa80i0',    // 6. #949 - indigo - #3f51b5
-    'f44905aeb2bdb5ac3e71999d6648b6425018656898c8c55fd7a3b7df7ab79ac2i0'     // 7. #950 - violet - #9c27b0
+    // '09da2c75de72d006e2f24dac29a27976963a5723abe110cf2c29d1cf9225fb36i0',    // 1. #944 - orange - #ff9900
+    // 'ce1e4fd0f31f802d2348ab27eeec9385f4e58e5f81606cd94200fcd05c622a37i0',    // 2. #945 - green  - #1c6b4c
+    // 'dfcf3fc4aec42d2c0bdb3b6d26a4dac4ea7893b70f6b42ae9e5ac883621c6537i0',    // 3. #946 - red    - #f44336
+    // '519bca4c2adec9c41f3de0099202d495ddf66c664fa801c14fc723a836938550i0',    // 4. #947 - blue   - #2196f3
+    // 'f1ac3821de11c8fe7eabe39027915806662bc6e87a236e90f088cc3b371eaa80i0',    // 5. #949 - indigo - #3f51b5
+    // 'f44905aeb2bdb5ac3e71999d6648b6425018656898c8c55fd7a3b7df7ab79ac2i0',    // 6. #950 - violet - #9c27b0
+       '../assets/_______________________________________________side1.svg',
+       '../assets/_______________________________________________side2.svg',
+       '../assets/_______________________________________________side3.svg',
+       '../assets/_______________________________________________side4.svg',
+       '../assets/_______________________________________________side5.svg',
+       '../assets/_______________________________________________side6.svg',
   ];
 
   getCubeHtml(inscriptionIds: SixInscriptionIds | undefined) {

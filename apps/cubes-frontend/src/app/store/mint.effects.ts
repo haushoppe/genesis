@@ -114,7 +114,7 @@ export class MintEffects {
         this.ordinalsService.getCubes().pipe(
           retry({ count: 3, delay: 1000 }),
           concatMap(allInscriptions => [
-            MintActions.loadAllInscriptionsSuccess({ allInscriptions: limitArray(allInscriptions, 20) }),
+            MintActions.loadAllInscriptionsSuccess({ allInscriptions: limitArray(allInscriptions, 12) }),
             PageActions.ready()
           ]),
           catchError(error => of(MintActions.loadAllInscriptionsFailure({ error }))))

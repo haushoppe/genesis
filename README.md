@@ -142,3 +142,36 @@ Johannes has been in the topic 10 years before, and has pretty much forgotten it
 * Safe has a heavy customized web3-onboard version: https://github.com/safe-global/web-core/tree/dev/src/utils
 * Docs: https://onboard.blocknative.com/docs/overview/introduction
 * README for React (has Hooks) https://github.com/blocknative/web3-onboard/tree/develop/packages/react
+
+
+
+# TODO Ordinal Collections:
+
+[
+   {
+      "id":"INSCRIPTION_ID",
+      "meta":{
+         "name":"Acme Inc #1",
+         "attributes":[
+            {
+               "trait_type":"background",
+               "value":"orange"
+            }
+         ]
+      }
+   },
+   {
+      "id":"INSCRIPTION_ID",
+      "meta":{
+         "name":"Acme Inc #2",
+         "attributes":[
+            {
+               "trait_type":"background",
+               "value":"red"
+            }
+         ]
+      }
+   }
+]
+
+https://airtable.com/shrWiSRp6UR2RjyD7

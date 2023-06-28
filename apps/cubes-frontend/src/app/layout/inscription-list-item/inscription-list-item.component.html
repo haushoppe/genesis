@@ -1,5 +1,5 @@
 <a *ngIf="inscription"
-  href="https://ordinals.com/inscription/{{ inscription.inscriptionId }}" target="_blank"
+  href="https://ord-mirror.magiceden.dev/inscription/{{ inscription.inscriptionId }}" target="_blank"
   role="navigation"
   attr.aria-label="Go to details page of the Inscription {{ inscription.inscriptionId }}">
 
@@ -10,7 +10,7 @@
     -->
     <iframe
       class="responsive-iframe"
-      [src]="'https://ordinals.com/content/' + inscription.inscriptionId | safeResourceUrl"
+      [src]="'https://ord-mirror.magiceden.dev/content/' + inscription.inscriptionId | safeResourceUrl"
     ></iframe>
 
   </div>

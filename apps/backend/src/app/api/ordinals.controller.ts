@@ -16,6 +16,7 @@ import { REFERRALS, validateCode } from '../../../../shared/referrals';
 import { CacheService } from '../model/cache.service';
 import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { HtmlInscriptionRequest } from '../types/html-inscription-request';
+import { limitArray } from '../model/limit-array';
 
 export class InscriptionSimple {
   @ApiProperty() inscriptionId: string;
@@ -107,7 +108,7 @@ export class OrdinalsController {
     const simpleResult = async () => {
 
       const searchResult = await searchForText('cubes.haushoppe.art');
-      const simple = searchResult.results
+      let simple = searchResult.results
         .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art--><body><script>'))
         .map(x => ({
           inscriptionId: x.inscriptionid,
@@ -115,8 +116,12 @@ export class OrdinalsController {
         }))
         .reverse();
 
+      Logger.log('Fetched ' + simple.length + ' cubes', 'ordinals_cubes');
+
+      simple = limitArray(simple, 12);
       this.lastBackup = simple;
-      Logger.log('Fetched ' + simple.length + ' cubes', 'ordinals_cubes')
+      Logger.log('Limited the array to 12 entries!', 'ordinals_cubes');
+
       return simple;
     };
 

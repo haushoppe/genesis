@@ -1,21 +1,31 @@
 import { inject, Injectable, NgZone } from '@angular/core';
+import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
 import { defer, EMPTY, from, interval, of } from 'rxjs';
-import { catchError, concatMap, exhaustMap, filter, map, retry, switchMap, takeUntil, tap, withLatestFrom } from 'rxjs/operators';
+import {
+  catchError,
+  concatMap,
+  exhaustMap,
+  filter,
+  map,
+  retry,
+  switchMap,
+  takeUntil,
+  tap,
+  withLatestFrom,
+} from 'rxjs/operators';
 
 import { OrdinalsService } from '../openapi-client';
-import { InscriptionOrder, OrderResponse } from '../ordinalsbot';
+import { InscriptionOrder } from '../ordinalsbot';
 import { MempoolService } from '../services/mempool-service';
 import { MintService } from '../services/mint-service';
 import { confettiFirework } from './helper/confetti-firework';
-import { limitArray } from './helper/limit-array';
 import { MintActions } from './mint.actions';
+import { selectKnownInscriptionIds } from './mint.reducer';
 import { PageActions } from './page.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
-import { Router } from '@angular/router';
-import { selectKnownInscriptionIds } from './mint.reducer';
 
 
 
@@ -114,7 +124,7 @@ export class MintEffects {
         this.ordinalsService.getCubes().pipe(
           retry({ count: 3, delay: 1000 }),
           concatMap(allInscriptions => [
-            MintActions.loadAllInscriptionsSuccess({ allInscriptions: limitArray(allInscriptions, 12) }),
+            MintActions.loadAllInscriptionsSuccess({ allInscriptions: allInscriptions }),
             PageActions.ready()
           ]),
           catchError(error => of(MintActions.loadAllInscriptionsFailure({ error }))))

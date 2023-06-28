@@ -12,7 +12,7 @@ Unfinished projects:
 
 ## Setup
 
-This project was developed with Node v16. Newer version should work fine, too.  
+This project was developed with Node v16. Newer version should work fine, too.
 Copy `.env.example` to `.env` and adjust the config values.
 
 Install all npm deps:
@@ -22,7 +22,7 @@ npm install
 ```
 
 To make the developer experience nicer,
-you may want to install the Nx CLI globally.  
+you may want to install the Nx CLI globally.
 But this is optional:
 
 ```
@@ -72,20 +72,20 @@ npm run start:hardhat
 Only start backend (API) in dev mode:
 
 ```
-npm run start:backend 
+npm run start:backend
 ```
 
 Only start Genesis Frontend (Angular App) in dev mode:
 
 ```
 npm run start:genesis-frontend
-``` 
+```
 
 Only start Cubes Frontend (Angular App) in dev mode:
 
 ```
 npm run start:cubes-frontend
-``` 
+```
 
 
 ## Infrastructure
@@ -174,4 +174,20 @@ Johannes has been in the topic 10 years before, and has pretty much forgotten it
    }
 ]
 
-https://airtable.com/shrWiSRp6UR2RjyD7
+https://magiceden.io/ordinals
+https://ordinals.market/ --> https://github.com/ordinals-wallet/ordinals-collections
+
+
+
+Collection Submission Form
+
+email: johannes@haushoppe.art
+collection_name: Ordinal Cubes by HAUS HOPPE
+symbol: ordinal-cubes-by-haus-hoppe
+description: This is a digital art experiment. You can now be an artist and curator. Choose six images that are already on the chain, arrange them into a cube. Mint on-demand with ⚡️ Lightning (instant) or on-chain with 🟧 Bitcoin.
+twitter: https://twitter.com/DummyUser4
+discord: https://discord.gg/F25NEDuyEb
+website: https://cubes.haushoppe.art/
+supply: 10000
+inscription icon: e5e1ef65f3f3edabeb2e292aa60581f737786b7dc7c78ed4b4e501aaa6ccbe3bi0
+what else: This is a project built by a single developer. Thank you for your support!

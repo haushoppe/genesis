@@ -4,7 +4,9 @@
 
 export const environment = {
   production: false,
-  api: 'http://localhost:3333'
+  api: 'http://localhost:3333',
+  ordinalsExplorerIframe: 'https://ord-mirror.magiceden.dev/content/',
+  ordinalsExplorerMarketplace: 'https://magiceden.io/ordinals/item-details/'
 };
 
 /*

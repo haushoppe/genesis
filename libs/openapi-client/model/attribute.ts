@@ -9,12 +9,16 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { Meta } from './meta';
 
 
-export interface InscriptionSimple { 
-    inscriptionId: string;
-    blockheight: number;
-    meta: Meta;
+export interface Attribute { 
+    /**
+     * The type of trait
+     */
+    trait_type: string;
+    /**
+     * The value of the trait
+     */
+    value: string;
 }
 

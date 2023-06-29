@@ -9,12 +9,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { Meta } from './meta';
+import { InscriptionMeta } from './inscriptionMeta';
 
 
-export interface InscriptionSimple { 
-    inscriptionId: string;
-    blockheight: number;
-    meta: Meta;
+export interface Inscription { 
+    /**
+     * The ID
+     */
+    id: string;
+    meta: InscriptionMeta;
 }
 

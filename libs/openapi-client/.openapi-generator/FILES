@@ -11,12 +11,16 @@ configuration.ts
 encoder.ts
 git_push.sh
 index.ts
+model/attribute.ts
 model/chain.ts
 model/configDetails.ts
 model/configResponse.ts
 model/htmlInscriptionRequest.ts
+model/inscription.ts
+model/inscriptionMeta.ts
 model/inscriptionSimple.ts
 model/listOfOwnedTokens.ts
+model/meta.ts
 model/metadata.ts
 model/metatdataAttribute.ts
 model/metatdataAttributeValue.ts

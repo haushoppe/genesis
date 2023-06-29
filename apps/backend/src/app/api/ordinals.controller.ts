@@ -132,9 +132,13 @@ export class OrdinalsController {
       const searchResult = await searchForText('cubes.haushoppe.art');
       let simple = searchResult.results
         .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art--><body><script>'))
-        .map(x => ({
+        .map((x, index) => ({
           inscriptionId: x.inscriptionid,
-          blockheight: x.blockheight
+          blockheight: x.blockheight,
+          meta: {
+            name: 'Ordinal Cube #' + index,
+            attributes: parseCube(x.contentstr)
+          }
         }))
         .reverse();
 

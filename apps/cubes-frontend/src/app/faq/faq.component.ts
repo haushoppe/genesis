@@ -44,7 +44,7 @@ export class FaqComponent {
     },
     {
       question: 'Where can I find suitable inscriptions with images?',
-      answer: `Your best bet is to look at the website ord.io under [Images](https://www.ord.io/?contentType=image) or [GIFs](https://www.ord.io/?contentType=gif), or use the [image search](https://ordinals.hiro.so/explore?f=image) from hiro.so. Make sure that none of the sides of your cube turns black, that would be a pity. For animated GIFs, only the first frame will be displayed.`
+      answer: `Your best bet is to search at [Magic Eden](https://magiceden.io/ordinals), [Ord.io](https://www.ord.io/?contentType=image) or [Hiro](https://ordinals.hiro.so/explore?f=image). Make sure that none of the sides of your cube turns black, that would be a pity. For animated GIFs, only the first frame will be displayed.`
     },
     {
       question: "What are Bitcoin Ordinals?",

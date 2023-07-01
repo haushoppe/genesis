@@ -175,6 +175,9 @@ Johannes has been in the topic 10 years before, and has pretty much forgotten it
 ]
 
 https://magiceden.io/ordinals
+--> https://creators.magiceden.io/dashboard
+
+
 https://ordinals.market/ --> https://github.com/ordinals-wallet/ordinals-collections
 
 

@@ -140,3 +140,75 @@ export async function getFxrate(): Promise<OrdinalsbotFxrateResult> {
 
   return response.data;
 }
+
+/*
+GET https://ordinalsbot.com/api/inventory
+
+Example reponse!
+Pizza is out of stock! :-/
+
+{
+    "2009": {
+        "amount": 10459597,
+        "baseFee": 50000,
+        "count": 43,
+        "maxSize": 4812114,
+        "minSize": 526
+    },
+    "2010": {
+        "amount": 10234765,
+        "baseFee": 30000,
+        "count": 132,
+        "maxSize": 616822,
+        "minSize": 516
+    },
+    "2011": {
+        "amount": 19707330,
+        "baseFee": 20000,
+        "count": 195,
+        "maxSize": 998200,
+        "minSize": 753
+    },
+    "btcmachines_glam": {
+        "amount": 2766727,
+        "baseFee": 178787,
+        "count": 4,
+        "maxSize": 920606,
+        "minSize": 4909
+    },
+    "pizza": {
+        "amount": 0,
+        "baseFee": 25000,
+        "count": 0,
+        "maxSize": 0,
+        "minSize": 100000000
+    },
+    "rare_1": {
+        "amount": 125087769,
+        "baseFee": 3000000,
+        "count": 5,
+        "maxSize": 5000000,
+        "minSize": 9500
+    },
+    "updatedAt": 1688284178475
+}
+
+//
+switch (e) {
+  case "2009":
+    return "2009";
+case "2010":
+    return "2010";
+case "2011":
+    return "2011";
+case "pizza":
+    return "pizza";
+case "btcmachines_glam":
+    return "block78";
+case "rare_1":
+    return "uncommon";
+default:
+    return "random"
+}
+
+*/

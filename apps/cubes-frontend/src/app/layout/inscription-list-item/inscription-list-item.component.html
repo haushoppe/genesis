@@ -6,9 +6,8 @@
     <div class="iframe-container">
       <iframe
         class="responsive-iframe"
-        [src]="environment.ordinalsExplorerIframe + inscription.inscriptionId | safeResourceUrl"
+        [appToggleIframe]="environment.ordinalsExplorerIframe + inscription.inscriptionId"
       ></iframe>
-
     </div>
 
     <div class="one-line fs-6 lh-sm mt-2 ps-1 one-line">

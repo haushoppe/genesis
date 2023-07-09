@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>🟧 Cubes by HAUS HOPPE - Placeholder</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+
+      html,body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        background-color: #000000;
+        background-image: linear-gradient(180deg, transparent 52%, black 52%, #212121 90%),
+        linear-gradient(180deg, #000000 20%, #5a5a5a 80%);
+
+
+        font-family: sans-serif;
+        color: gray;
+      }
+
+      .center-child {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 90vh;
+        text-align: center;
+      }
+
+      @keyframes blink {
+        0% {opacity: 1;}
+        50% {opacity: 0;}
+        100% {opacity: 1;}
+      }
+
+      .blinking-text {
+        animation: blink 1s linear infinite;
+      }
+    </style>
+
+  </head>
+  <body>
+    <div class="center-child">
+      <div>
+        Loading <span class="blinking-text">...</span>
+      </div>
+    </div>
+  </body>
+</html>

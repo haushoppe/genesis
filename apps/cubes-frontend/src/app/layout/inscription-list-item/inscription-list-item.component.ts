@@ -2,9 +2,9 @@ import { NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { SafeResourceUrlPipe } from '../../safe-url.pipe';
 import { InscriptionSimple } from '../../openapi-client';
 import { environment } from '../../../../src/environments/environment';
+import { ToggleIframeDirective } from '../toggle-iframe.directive';
 
 @Component({
   selector: 'app-inscription-list-item',
@@ -15,11 +15,11 @@ import { environment } from '../../../../src/environments/environment';
     RouterLink,
     NgIf,
     NgFor,
-    SafeResourceUrlPipe
+    ToggleIframeDirective
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class InscriptionListItemComponent {
+export class InscriptionListItemComponent  {
 
   @Input() inscription?: InscriptionSimple;
   environment = environment

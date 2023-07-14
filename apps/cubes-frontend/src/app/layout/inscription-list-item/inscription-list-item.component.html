@@ -6,7 +6,8 @@
     <div class="iframe-container">
       <iframe
         class="responsive-iframe"
-        [appToggleIframe]="environment.ordinalsExplorerIframe + inscription.inscriptionId"
+        appToggleIframe
+        [toggleSrc]="environment.ordinalsExplorerIframe + inscription.inscriptionId"
       ></iframe>
     </div>
 

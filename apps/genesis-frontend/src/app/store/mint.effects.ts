@@ -2,7 +2,7 @@ import { inject, Injectable, NgZone } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
-import { forkJoin, from, interval, of } from 'rxjs';
+import { forkJoin, from, interval, of, timer } from 'rxjs';
 import {
   catchError,
   concatMap,
@@ -182,7 +182,7 @@ export class MintEffects {
     return this.actions.pipe(
       ofType(WalletActions.walletStateChange),
       exhaustMap(() =>  // Start polling when startPolling action is dispatched. Ignore new startPolling actions until the current polling completes.
-        interval(2000).pipe(
+        timer(0, 2000).pipe(
           takeUntil(this.actions.pipe(ofType((WalletActions.disconnectWalletDetected)))),  // Stop polling when stopPolling action is dispatched.
           withLatestFrom(
             this.store.select(selectWalletAddress),

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { NotificationService } from '@progress/kendo-angular-notification';
-import { defer, EMPTY, from, interval, of } from 'rxjs';
+import { defer, EMPTY, from, of, timer } from 'rxjs';
 import {
   catchError,
   concatMap,
@@ -66,7 +66,7 @@ export class MintEffects {
       ofRoute(['order/:orderId']),
       mapToParam('orderId'),
       switchMap(orderId => // Start polling when startPolling action is dispatched. Cancel old startPolling actions when new polling called.
-        interval(3500).pipe(
+        timer(0, 3500).pipe(
           takeUntil(this.actions.pipe(ofType((MintActions.orderCompleted)))),  // Stop polling when stopPolling action is dispatched.
           exhaustMap(() =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
             this.ordinalsService.getOrderStatus(orderId).pipe(

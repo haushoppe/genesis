@@ -5,6 +5,7 @@ import { PushModule } from '@rx-angular/template/push';
 import { MintService } from '../../services/mint-service';
 import { SixInscriptionIds } from '../../store/mint.reducer';
 import { ToggleIframeDirective } from '../toggle-iframe.directive';
+import { SafeHtmlPipe } from '../../safe-html.pipe';
 
 @Component({
   selector: 'app-cube-preview',
@@ -15,7 +16,7 @@ import { ToggleIframeDirective } from '../toggle-iframe.directive';
     NgIf,
     PushModule,
     JsonPipe,
-    ToggleIframeDirective
+    SafeHtmlPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

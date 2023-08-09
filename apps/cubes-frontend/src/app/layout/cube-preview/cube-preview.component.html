@@ -1,6 +1,5 @@
 <iframe
-  appToggleIframe
-  [toggleSrcDoc]="mintService.getCubeHtml(inscriptionIds)"
+  [srcdoc]="mintService.getCubeHtml(inscriptionIds) | safeHtml"
   class=" p-3 mt-2"
   sandbox="allow-scripts"
   width="100%" height="500"

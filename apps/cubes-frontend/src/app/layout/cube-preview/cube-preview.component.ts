@@ -3,9 +3,8 @@ import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core
 import { PushModule } from '@rx-angular/template/push';
 
 import { MintService } from '../../services/mint-service';
-import { SixInscriptionIds } from '../../store/mint.reducer';
-import { ToggleIframeDirective } from '../toggle-iframe.directive';
 import { SafeHtmlPipe } from '../../safe-html.pipe';
+import { CubeDetails } from '../../store/mint.actions';
 
 @Component({
   selector: 'app-cube-preview',
@@ -22,7 +21,21 @@ import { SafeHtmlPipe } from '../../safe-html.pipe';
 })
 export class CubePreviewComponent {
 
-  @Input() inscriptionIds: SixInscriptionIds = { };
+  @Input() cubeDetails: CubeDetails = {
+    inscriptionIds: {
+      inscriptionId1: '',
+      inscriptionId2: '',
+      inscriptionId3: '',
+      inscriptionId4: '',
+      inscriptionId5: '',
+      inscriptionId6: ''
+    },
+    rotationSpeedX: '',
+    rotationSpeedY: '',
+    colorPane: '',
+    bgColor1: '',
+    bgColor2: ''
+  };
 
   mintService = inject(MintService);
 }

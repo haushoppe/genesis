@@ -21,10 +21,26 @@
 
   <ng-container *ngIf="order">
 
-    <ng-container *ngIf="mintFacade.isPaymentPending$ | push">
+    <iframe
+      *ngIf="(mintFacade.file$ | push)?.dataURL as dataURL"
+      [srcdoc]="getDecoded(dataURL) | safeHtml"
+      sandbox="allow-scripts"
+      width="300"
+      height="300"
+      class="d-block mx-auto mb-4"
+    ></iframe>
 
-      <p>
+    <ng-container *ngIf="mintFacade.isOrderPending$ | push">
+
+      <p *ngIf="!order.paid">
         Your order has been created and we are waiting for your payment!
+        <span class="blinking-text">...</span>
+      </p>
+
+      <p *ngIf="order.paid">
+        Your payment was received and your order is currently being processed!
+        It will be sent to the address you provided once finished.
+        You should see updates here shortly.
         <span class="blinking-text">...</span>
       </p>
 
@@ -143,14 +159,24 @@
       <app-loading-indicator [state]="submittingState" sendDataText="Order is pending…" />
     </ng-container>
 
-    <ng-container *ngIf="!(mintFacade.isPaymentPending$ | push)">
+    <ng-container *ngIf="!(mintFacade.isOrderPending$ | push)">
 
       <p class="alert alert-success m-4 fw-bold">
         <i class="bi bi-check-circle"></i> We received your payment!
       </p>
 
-      We have sent your inscription to you.
-      It will be available when <a href="https://mempool.space/tx/{{ (mintFacade.file$ | push)?.sent }}" target="_blank">this transaction</a> is confirmed!
+      We have sent your inscription to you.<br>
+      It will be available when <a href="https://mempool.space/tx/{{ (mintFacade.file$ | push)?.sent }}" target="_blank">this transaction</a> is confirmed!<br>
+
+      <ng-container *ngIf="(mintFacade.file$ | push)?.tx?.inscription as inscriptionId">
+        The Inscription ID is:
+
+        <a [href]="environment.ordinalsExplorerMarketplace + inscriptionId" target="_blank"
+          role="navigation"
+          attr.aria-label="Visit marketplace for Inscription {{ inscriptionId }}">
+          {{ inscriptionId }}
+        </a>
+      </ng-container>
 
 
     </ng-container>

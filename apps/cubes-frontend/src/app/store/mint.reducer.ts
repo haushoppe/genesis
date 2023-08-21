@@ -12,14 +12,6 @@ import {
   SubmittableState,
 } from './submittable/submittable-state';
 
-export interface SixInscriptionIds {
-  inscriptionId1?: string;
-  inscriptionId2?: string;
-  inscriptionId3?: string;
-  inscriptionId4?: string;
-  inscriptionId5?: string;
-  inscriptionId6?: string;
-}
 
 export interface State {
   allInscriptions: InscriptionSimple[];
@@ -47,7 +39,7 @@ export const initialState: State = {
   inscriptionStatus: getInitialState(),
 
   orderResponse: undefined,
-  //orderResponse: examplePaidResponse as OrderResponse,
+  // orderResponse: examplePaidResponse as OrderResponse,
   // orderResponse: exampleUnpaidResponse as OrderResponse,
   orderStatus: getInitialState(),
 

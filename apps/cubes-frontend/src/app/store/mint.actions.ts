@@ -2,9 +2,26 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
 import { Inscription, InscriptionOrder } from '../ordinalsbot';
-import { SixInscriptionIds } from './mint.reducer';
 import { InscriptionSimple, Price } from '../openapi-client';
 import { MempoolTransaction } from '../services/mempool-service';
+
+export interface SixInscriptionIds {
+  inscriptionId1: string;
+  inscriptionId2: string;
+  inscriptionId3: string;
+  inscriptionId4: string;
+  inscriptionId5: string;
+  inscriptionId6: string;
+}
+
+export interface CubeDetails {
+  inscriptionIds: SixInscriptionIds,
+  rotationSpeedX: string,
+  rotationSpeedY: string,
+  colorPane: string,
+  bgColor1: string,
+  bgColor2: string
+}
 
 export const MintActions = createActionGroup({
   source: 'Mint',
@@ -18,7 +35,7 @@ export const MintActions = createActionGroup({
     'Load Inscription Success': props<{ inscription: Inscription }>(),
     'Load Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
-    'Place Order': props<{ receiveAddress: string, inscriptionIds: SixInscriptionIds, code: string }>(),
+    'Place Order': props<{ cubeDetails: CubeDetails, receiveAddress: string, code: string }>(),
     'Place Order Success': props<{ orderResponse: InscriptionOrder }>(),
     'Place Order Failure': props<{ error: HttpErrorResponse }>(),
     'Update Order Status': props<{ orderResponse: InscriptionOrder }>(),

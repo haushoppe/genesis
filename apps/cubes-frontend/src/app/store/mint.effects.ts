@@ -46,11 +46,11 @@ export class MintEffects {
   placeOrder$ = createEffect(() =>
     this.actions.pipe(
       ofType(MintActions.placeOrder),
-      concatMap(({ receiveAddress, inscriptionIds, code }) =>
+      concatMap(({ cubeDetails, receiveAddress, code }) =>
         defer(() => from(this.mintService.getFees())).pipe(
           retry({ count: 3, delay: 1000 }),
           switchMap(fees =>
-            this.mintService.placeOrder(receiveAddress, inscriptionIds, fees.halfHourFee, code).pipe(
+            this.mintService.placeOrder(cubeDetails, receiveAddress, code, fees.halfHourFee).pipe(
               tap(orderResponse => this.router.navigate(['/order', orderResponse.id])),
               map(orderResponse => MintActions.placeOrderSuccess({ orderResponse })),
               catchError(error => of(MintActions.placeOrderFailure({ error })))
@@ -204,7 +204,11 @@ export class MintEffects {
         defer(() => from(this.mintService.getFees())).pipe(
           retry({ count: 3, delay: 1000 }),
           switchMap(fees =>
-            this.ordinalsService.getPrice(fees.halfHourFee, 557, code).pipe(
+            this.ordinalsService.getPrice(
+              fees.halfHourFee,
+              557, // TODO! calculate real size
+              code
+            ).pipe(
               retry({ count: 3, delay: 1000 }),
               map(price => MintActions.loadPriceSuccess({ price })),
               catchError(error => of(MintActions.loadPriceFailure({ error })))

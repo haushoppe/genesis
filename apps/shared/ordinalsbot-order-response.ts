@@ -130,7 +130,9 @@ export const examplePaidResponse = {
 
 export interface InscriptionFile {
   completed?: boolean;
-  sent?: string;
+  dataURL?: string;
+  iqueued?: boolean;  // we use to show that the money was received
+  sent?: string;      // we use this to check if an order is completed!
   tx?: {
     commit: string;
     fees: number;
@@ -161,6 +163,7 @@ export interface OrderResponse {
     // ttl: number; // TTL (time to live) in minutes. Min: 10, Max: 1440 (24H), Default: 1440
   },
   files: InscriptionFile[];
+  paid: boolean;
   referral: string;
 }
 
@@ -185,6 +188,7 @@ export interface InscriptionOrder {
     // ttl: number; // TTL (time to live) in minutes. Min: 10, Max: 1440 (24H), Default: 1440
   },
   files: InscriptionFile[];
+  paid: boolean;
   code?: string;
 }
 

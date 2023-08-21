@@ -2,10 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
 import { OrdinalsService } from '../openapi-client';
-import { InscriptionOrder, OrderResponse } from '../ordinalsbot';
-import { SixInscriptionIds } from '../store/mint.reducer';
+import { InscriptionOrder } from '../ordinalsbot';
+import { CubeDetails } from '../store/mint.actions';
 import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
 import { HiroService } from './hiro-service';
+import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
 
 
 @Injectable({
@@ -34,31 +35,33 @@ export class MintService {
        '../assets/_______________________________________________side6.svg',
   ];
 
-  getCubeHtml(inscriptionIds: SixInscriptionIds | undefined) {
+  getConcatenatedCubeDetails({
+    inscriptionIds,
+    rotationSpeedX,
+    rotationSpeedY,
+    colorPane,
+    bgColor1,
+    bgColor2
+  }: CubeDetails) {
 
-    inscriptionIds = inscriptionIds || {};
+    const t = (inscriptionIds.inscriptionId1 || this.dummyInscriptionIds[0]) + '|'
+    + (inscriptionIds.inscriptionId2 || this.dummyInscriptionIds[1]) + '|'
+    + (inscriptionIds.inscriptionId3 || this.dummyInscriptionIds[2]) + '|'
+    + (inscriptionIds.inscriptionId4 || this.dummyInscriptionIds[3]) + '|'
+    + (inscriptionIds.inscriptionId5 || this.dummyInscriptionIds[4]) + '|'
+    + (inscriptionIds.inscriptionId6 || this.dummyInscriptionIds[5]) + '|'
+    + rotationSpeedX + '|'
+    + rotationSpeedY + '|'
+    + colorPane + '|'
+    + bgColor1 + '|'
+    + bgColor2;
 
-    return this.template1
-      + (inscriptionIds.inscriptionId1 || this.dummyInscriptionIds[0]) + '|'
-      + (inscriptionIds.inscriptionId2 || this.dummyInscriptionIds[1]) + '|'
-      + (inscriptionIds.inscriptionId3 || this.dummyInscriptionIds[2]) + '|'
-      + (inscriptionIds.inscriptionId4 || this.dummyInscriptionIds[3]) + '|'
-      + (inscriptionIds.inscriptionId5 || this.dummyInscriptionIds[4]) + '|'
-      + (inscriptionIds.inscriptionId6 || this.dummyInscriptionIds[5])
-      + this.template2;
+    return removeTrailingPipes(t);
   }
 
-  getCubeHtmlAsDataUrl(inscriptionIds: SixInscriptionIds) {
-
-    const html = this.getCubeHtml(inscriptionIds);
-
-    // Convert the HTML string to a base64 encoded string
-    const encodedHtml = btoa(unescape(encodeURIComponent(html)));
-
-    // Create a data URL
-    const dataUrl = 'data:text/html;base64,' + encodedHtml;
-
-    return dataUrl;
+  getCubeHtml(cubeDetails: CubeDetails) {
+    const t = this.getConcatenatedCubeDetails(cubeDetails);
+    return this.template1 + t + this.template2;
   }
 
   async getFees() {
@@ -70,10 +73,13 @@ export class MintService {
   }
 
   placeOrder(
+    cubeDetails: CubeDetails,
     receiveAddress: string,
-    inscriptionIds: SixInscriptionIds,
-    fee: number,
-    code: string): Observable<InscriptionOrder> {
+    code: string,
+    fee: number
+  ): Observable<InscriptionOrder> {
+
+    const inscriptionIds = cubeDetails.inscriptionIds;
 
     if (!inscriptionIds.inscriptionId1 ||
         !inscriptionIds.inscriptionId2 ||
@@ -84,7 +90,7 @@ export class MintService {
       throw 'InscriptionId is missing!'
     }
 
-    const htmlString = this.getCubeHtml(inscriptionIds);
+    const htmlString = this.getCubeHtml(cubeDetails);
 
     const order = this.ordinalsService.createHtmlInscriptionOrder({
       receiveAddress,

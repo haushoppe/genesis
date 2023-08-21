@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 
-import { MintActions } from './mint.actions';
+import { CubeDetails, MintActions } from './mint.actions';
 import {
   selectAllInscriptions,
   selectAllInscriptionsStatus,
@@ -12,9 +12,8 @@ import {
   selectOrderStatus,
   selectPrice,
   selectPriceStatus,
-  SixInscriptionIds,
 } from './mint.reducer';
-import { selectBestOrderId, selectFile, selectInscriptionId, selectIsPaymentPending } from './mint.selectors';
+import { selectBestOrderId, selectFile, selectInscriptionId, selectIsOrderPending } from './mint.selectors';
 
 
 @Injectable({
@@ -34,7 +33,7 @@ export class MintFacade {
   orderStatus$ = this.store.select(selectOrderStatus);
 
   file$ = this.store.select(selectFile);
-  isPaymentPending$ = this.store.select(selectIsPaymentPending);
+  isOrderPending$ = this.store.select(selectIsOrderPending);
   bestOrderId$ = this.store.select(selectBestOrderId);
 
   knownInscriptionIdStatus$ = this.store.select(selectKnownInscriptionIdStatus);
@@ -43,12 +42,20 @@ export class MintFacade {
   priceStatus$ = this.store.select(selectPriceStatus);
 
 
-  mint(inscriptionIds: SixInscriptionIds, receiveAddress: string, code: string) {
-    this.store.dispatch(MintActions.placeOrder({ inscriptionIds, receiveAddress, code }));
+  mint(cubeDetails: CubeDetails, receiveAddress: string, code: string) {
+    this.store.dispatch(MintActions.placeOrder({
+      cubeDetails,
+      receiveAddress,
+      code
+    }));
   }
 
   lookupInscriptionId(inscriptionNumber: string) {
     this.store.dispatch(MintActions.lookupInscriptionId({ inscriptionNumber }));
     return this.store.select(selectInscriptionId(inscriptionNumber));
+  }
+
+  loadPrice(code = '') {
+    this.store.dispatch(MintActions.loadPrice({ code }));
   }
 }

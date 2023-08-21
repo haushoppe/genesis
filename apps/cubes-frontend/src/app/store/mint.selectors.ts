@@ -15,7 +15,7 @@ export const selectFile = createSelector(
   }
 );
 
-export const selectIsPaymentPending = createSelector(
+export const selectIsOrderPending = createSelector(
   selectFile,
   file => {
     if (file?.sent) {

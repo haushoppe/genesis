@@ -50,6 +50,31 @@
             <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.code" class="form-control" id="code"></div>
           </div>
 
+          <div class="form-group row" *ngIf="showSecret">
+            <label for="rotationSpeedX" class="col-4 col-form-label">R Speed X:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.rotationSpeedX" class="form-control" id="rotationSpeedX"></div>
+          </div>
+
+          <div class="form-group row" *ngIf="showSecret">
+            <label for="rotationSpeedY" class="col-4 col-form-label">R Speed Y:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.rotationSpeedY" class="form-control" id="rotationSpeedY"></div>
+          </div>
+
+          <div class="form-group row" *ngIf="showSecret">
+            <label for="colorPane" class="col-4 col-form-label">Color Pane:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.colorPane" class="form-control" id="colorPane"></div>
+          </div>
+
+          <div class="form-group row" *ngIf="showSecret">
+            <label for="bgColor1" class="col-4 col-form-label">BG Color 1:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.bgColor1" class="form-control" id="bgColor1"></div>
+          </div>
+
+          <div class="form-group row" *ngIf="showSecret">
+            <label for="bgColor2" class="col-4 col-form-label">BG Color 2:</label>
+            <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.bgColor2" class="form-control" id="bgColor2"></div>
+          </div>
+
           <div class="form-group row" *rxLet="mintFacade.price$; let price">
             <label for="price" class="col-4 col-form-label">Price:</label>
             <div class="col-8" *rxLet="mintFacade.priceStatus$; let priceStatus">
@@ -107,7 +132,7 @@
       </div>
       <div class="col-md-6 col-12">
 
-      <app-cube-preview [inscriptionIds]="getInscriptionIds()" />
+      <app-cube-preview [cubeDetails]="getCubeDetails()" />
 
       </div>
     </div>

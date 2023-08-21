@@ -9,29 +9,34 @@ import { getSubmittingState } from '../store/submittable/submittable-state';
 import { MintFacade } from '../store/mint.facade';
 import { LetModule } from '@rx-angular/template/let';
 import { RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
+import { decodeBase64DataURI } from './decode-base64-data-uri';
+import { SafeHtmlPipe } from '../safe-html.pipe';
 
 
 @Component({
-  selector: 'app-order-details',
-  templateUrl: './order-details.component.html',
-  styleUrls: ['./order-details.component.scss'],
-  standalone: true,
-  imports: [
-    NgIf,
-    PushModule,
-    JsonPipe,
-    NgClass,
-    LoadingIndicatorComponent,
-    NgIf,
-    QRCodeModule,
-    LetModule,
-    RouterLink
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-order-details',
+    templateUrl: './order-details.component.html',
+    styleUrls: ['./order-details.component.scss'],
+    standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        NgIf,
+        PushModule,
+        JsonPipe,
+        NgClass,
+        LoadingIndicatorComponent,
+        NgIf,
+        QRCodeModule,
+        LetModule,
+        RouterLink,
+        SafeHtmlPipe
+    ]
 })
 export class OrderDetailsComponent {
 
   mintFacade = inject(MintFacade);
+  environment = environment;
 
   ChargeStatus = ChargeStatus;
   submittingState = getSubmittingState();
@@ -51,6 +56,12 @@ export class OrderDetailsComponent {
 
   getLinkToLightning(order: InscriptionOrder) {
     return 'lightning:' + order.charge.lightning_invoice.payreq;
+  }
+
+  getDecoded(dataURL: string): string {
+    if (!dataURL) return '';
+
+    return decodeBase64DataURI(dataURL) || '';
   }
 
   async copyChainAddressToClipboard(order: InscriptionOrder) {

@@ -389,7 +389,7 @@ export class OrdinalsService {
             }
         }
 
-        let localVarPath = `/ordinals/getPrice/${this.configuration.encodeParam({name: "fee", value: fee, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "size", value: size, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}`;
+        let localVarPath = `/ordinals/getPrice/${this.configuration.encodeParam({name: "fee", value: fee, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "size", value: size, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "code", value: code, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         return this.httpClient.request<Price>('get', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,

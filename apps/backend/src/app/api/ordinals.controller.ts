@@ -22,7 +22,7 @@ import { Price } from '../types/ordinals/price';
 import { Inscription } from '../types/ordinals/inscription';
 import { Attribute } from '../types/ordinals/attribute';
 
-function hideUnwantedProperties({ charge, files, referral }: OrderResponse): InscriptionOrder {
+function hideUnwantedProperties({ charge, files, paid, referral }: OrderResponse): InscriptionOrder {
 
   const { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = charge;
 
@@ -31,9 +31,14 @@ function hideUnwantedProperties({ charge, files, referral }: OrderResponse): Ins
     charge: {
       amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value
     },
-    files: files.map(({ completed, sent, tx }) => ({
-      completed, sent, tx
+    files: files.map(({ completed, dataURL, iqueued, sent, tx }) => ({
+      completed,
+      dataURL,
+      iqueued,
+      sent,
+      tx
     })),
+    paid,
     code: referral === REFERRALS[0].code ? '' : referral
   };
 }
@@ -188,7 +193,7 @@ export class OrdinalsController {
   /**
    * Get price in sats (cached!)
    */
-  @Get(['ordinals/getPrice/:fee/:size'])
+  @Get(['ordinals/getPrice/:fee/:size/:code?'])
   @ApiOperation({ operationId: 'getPrice' })
   @ApiParam({ name: 'fee', type: 'number' })
   @ApiParam({ name: 'size', type: 'number' })
@@ -198,9 +203,9 @@ export class OrdinalsController {
   async getPrice(
     @Param('fee', ParseIntPipe) fee: number,
     @Param('size', ParseIntPipe) size: number,
-    @Param('code') code: string): Promise<Price> {
+    @Param('code') code?: string): Promise<Price> {
 
-    return this.cacheService.loadCached('ordinal_price_' + fee + '_' + size, async () => {
+    return this.cacheService.loadCached('ordinal_price_' + fee + '_' + size + '_' + code, async () => {
 
       const referral = validateCode(code);
 

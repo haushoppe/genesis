@@ -48,7 +48,7 @@ export class FaqComponent {
     },
     {
       question: "What are Bitcoin Ordinals?",
-      answer: "Ordinals are a Bitcoin project that has experienced increased interest in recent weeks. They are bringing new excitement around Bitcoin's innovative potential. Ordinals, essentially, are a new and emerging movement within the Bitcoin ecosystem."
+      answer: "Ordinals are digital assets inscribed on a satoshi, the lowest denomination of a Bitcoin (BTC). Ordinals only exist onchain and are totally immutable, meaning they cannot be altered in any way."
     },
     {
       question: "What is the Ordinal theory?",
@@ -56,7 +56,7 @@ export class FaqComponent {
     },
     {
       question: "What are inscriptions in the context of Bitcoin?",
-      answer: "Inscriptions refer to a novel method of storing data in the Bitcoin blockchain. Each inscription is assigned to an individual Satoshi. They represent a newly discovered (or invented) functionality within the Bitcoin ecosystem."
+      answer: "Inscriptions refer to a novel method of storing data in the Bitcoin blockchain. Each inscription is assigned to an individual Satoshi. They represent a newly invented functionality within the Bitcoin ecosystem."
     },
     {
       question: "How is ownership of inscriptions changed?",
@@ -76,19 +76,19 @@ export class FaqComponent {
     },
     {
       question: 'How do I pay for my cube?',
-      answer: 'You can pay for your cube directly with either Lightning (instant) or by paying on-chain with Bitcoin (BTC). It\' super simple!'
+      answer: 'You can pay for your cube directly with either Lightning (instant) or by paying onchain with Bitcoin (BTC). It\' super simple!'
     },
     {
-      question: 'Can I make an on-chain payment via a centralized exchange like Coinbase or Binance?',
+      question: 'Can I make an onchain payment via a centralized exchange like Coinbase or Binance?',
       answer: 'That is not a problem. However, please make sure that the exact amount of satoshis reaches us. This means the satoshis to be paid PLUS all additional fees.'
     },
     {
       question: 'What happens after I pay?',
-      answer: 'Once your payment is confirmed, your cube is automatically inscribed onto the Bitcoin blockchain and sent to you.'
+      answer: 'Once your payment is confirmed, your cube is automatically inscribed onto the Bitcoin blockchain and sent to your wallet.'
     },
     {
       question: 'How is the data of my cube stored?',
-      answer: 'The data for your cube is fully stored on-chain and remains unchangeable forever. At least almost forever. Since the data is stored in the (segregated) witness data area, it could theoretically be lost if all nodes were to prune their data. But this is really very, very unlikely. After all, Bitcoin is maximally decentralized. There only needs to be one node operator on this planet who keeps the data.'
+      answer: 'The data for your cube is fully stored onchain and remains unchangeable forever. At least almost forever. Since the data is stored in the (segregated) witness data area, it could theoretically be lost if all nodes were to prune their data. But this is really very, very unlikely. After all, Bitcoin is maximally decentralized. There only needs to be one node operator on this planet who keeps the data.'
     },
     // {
     //   question: 'Does this website store any data? What about privacy?',
@@ -104,7 +104,7 @@ export class FaqComponent {
     },
     {
       question: 'What is the "utility" of this project?',
-      answer: `There is no utility. Well, there's one. With your fees, you pay the miners who secure the network.`
+      answer: `There is no utility. This is a digital art experiment!`
     },
     {
       question: 'Positioning of the cube in the world space',

@@ -2,128 +2,52 @@
 .image-container {
   position: relative;
   height: 13vw;
-  overflow: hidden;
 }
-
-// https://stackoverflow.com/a/62135576
-.image-container::before {
-  content: "";
-  position: absolute;
-  width: 110vw;
-  height: 110vw;
-  left: 50%;
-  top: 50%;
-
-  background-color: #6c757d;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>');
-  background-image: var(--banner-image);
-  background-size: cover;
-
-  background-blend-mode: darken;
-  transition: 4s;
-
-  transform: translate(-50%,-50%) rotate(45deg); /* center the element then rotate */
-  animation-name: spin;
-  animation-duration: 300s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-}
-
-@keyframes spin {
-  0% {
-    transform: translate(-50%,-50%) rotate(0deg);
-  }
-  100% {
-    transform: translate(-50%,-50%) rotate(360deg);
-  }
-}
-
-.text {
-  background-color: white;
-  color: black;
-  font-size: 16vw;
-  line-height: 7.5vw;
-  padding-top: 1vw;
-  font-weight: bold;
-  padding-left: 1.1vw;
-  padding-right: 1.1vw;
-  text-align: center;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  mix-blend-mode: screen;
-}
-
 
 // X-Small devices (portrait phones, less than 576px)
 @media (min-width: 0) {
   .image-container {
-    height: 34vw;
-  }
-
-  .text {
-    font-size: 24vw;
-    line-height: 13vw;
+    height: 46vw;
+    // border: 1px solid white;
   }
 }
 
 // Small devices (landscape phones, 576px and up)
 @media (min-width: 576px) {
   .image-container {
-    height: 28vw;
-  }
-
-  .text {
-    font-size: 22vw;
-    line-height: 11vw;
+    height: 38vw;
+    // border: 1px solid pink;
   }
 }
 
 // Medium devices (tablets, 768px and up)
 @media (min-width: 768px) {
   .image-container {
-    height: 24vw;
-  }
-
-  .text {
-    font-size: 22vw;
-    line-height: 11vw;
+    height: 32vw;
+    // border: 1px solid blue;
   }
 }
 
 // Large devices (desktops, 992px and up)
 @media (min-width: 992px) {
   .image-container {
-    height: 22vw;
-  }
-
-  .text {
-    font-size: 22vw;
-    line-height: 11vw;
+    height: 28vw;
+    // border: 1px solid yellow;
   }
 }
 
 // X-Large devices (large desktops, 1200px and up)
 @media (min-width: 1200px) {
   .image-container {
-    height: 20vw;
-  }
-
-  .text {
-    font-size: 20vw;
-    line-height: 10vw;
+    height: 24vw;
+    // border: 1px solid green;
   }
 }
 
 // XX-Large devices (larger desktops, 1400px and up)
 @media (min-width: 1400px) {
   .image-container {
-    height: 16vw;
-  }
-
-  .text {
-    font-size: 16vw;
-    line-height: 8vw;
+    height: 24vw;
+    // border: 1px solid red;
   }
 }

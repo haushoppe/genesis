@@ -59,10 +59,9 @@ Collection Submission Form
 email: johannes@haushoppe.art
 collection_name: Ordinal Cubes by HAUS HOPPE
 symbol: ordinal-cubes-by-haus-hoppe
-description: This is a digital art experiment. You can now be an artist and curator. Choose six images that are already on the chain, arrange them into a cube. Mint on-demand with ⚡️ Lightning (instant) or on-chain with 🟧 Bitcoin.
+description: The world's smallest onchain gallery, visualized as a 3D cube. 🟧 Mint your own personalized cube now! Permissionless. Immutable. Forever existing.
 twitter: https://twitter.com/DummyUser4
 discord: https://discord.gg/F25NEDuyEb
 website: https://cubes.haushoppe.art/
 supply: 10000
-inscription icon: e5e1ef65f3f3edabeb2e292aa60581f737786b7dc7c78ed4b4e501aaa6ccbe3bi0
-what else: This is a project built by a single developer. Thank you for your support!
+inscription icon: 00ef588330b57ba4586365c9a3663e14bcc14452819ae6c09f99eec291435831i0

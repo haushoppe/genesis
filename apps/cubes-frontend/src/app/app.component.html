@@ -1,10 +1,10 @@
 <header></header>
 
-<app-banner></app-banner>
+<app-banner *ngIf="!(hideBanner$ | push)" />
 
 <div class="cover-container">
 
-  <router-outlet></router-outlet>
+  <router-outlet />
 
   <footer></footer>
 

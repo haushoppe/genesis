@@ -29,7 +29,7 @@ export interface Inscription {
   txid: string,
   inputindex: number,
   inscriptionid: string,
-  // inscriptionnumber: null, // ?! why null?
+  inscriptionnumber: null, // WARNING: sometimes null, reported bug!
   blockheight: number,
   contentstr: string,
   contenttypestr: string,

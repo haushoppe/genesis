@@ -2,6 +2,7 @@ import { Body, Controller, ForbiddenException, Get, Header, Logger, Param, Parse
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
+import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../../../../shared/ordinalnovus';
 import {
   createInscriptionRequestForHtml,
   getFxrate,
@@ -14,13 +15,13 @@ import {
 import { InscriptionOrder, OrderResponse } from '../../../../shared/ordinalsbot-order-response';
 import { REFERRALS, validateCode } from '../../../../shared/referrals';
 import { CacheService } from '../model/cache.service';
-import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
-import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
 import { limitArray } from '../model/limit-array';
+import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
+import { Attribute } from '../types/ordinals/attribute';
+import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
+import { Inscription } from '../types/ordinals/inscription';
 import { InscriptionSimple } from '../types/ordinals/inscription-simple';
 import { Price } from '../types/ordinals/price';
-import { Inscription } from '../types/ordinals/inscription';
-import { Attribute } from '../types/ordinals/attribute';
 
 function hideUnwantedProperties({ charge, files, paid, referral }: OrderResponse): InscriptionOrder {
 
@@ -139,7 +140,6 @@ export class OrdinalsController {
         .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art--><body><script>'))
         .map((x, index) => ({
           inscriptionId: x.inscriptionid,
-          blockheight: x.blockheight,
           meta: {
             name: 'Ordinal Cube #' + index,
             attributes: parseCube(x.contentstr)
@@ -262,4 +262,65 @@ export class OrdinalsController {
 
     return getReferralStatus();
   }
+
+  /**
+   * Create Ordinalnovus API key
+   *
+   * Use this endpoint create an new API key for api.ordinalnovus.com
+   */
+    @Post(['ordinals/createOrdinalnovusApiKey'])
+    @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+    @ApiOperation({ operationId: 'createOrdinalnovusApiKey' })
+    async createOrdinalnovusApiKey(): Promise<{
+      message: string,
+      apiKey: string
+    }> {
+
+      if (this.configService.get('environment') !== 'development') {
+        throw new ForbiddenException('This method should not be called on production');
+      }
+
+      // 3BvkAwgL7zHkko7tMtxoaDekmqmavuE5BK - XVerse Account 1
+      return apikeyCreate('3BvkAwgL7zHkko7tMtxoaDekmqmavuE5BK')
+  }
+
+  /**
+   * Get Ordinalnovus API key details
+   *
+   * Use this endpoint query all details for our API key
+   */
+  @Post(['ordinals/getOrdinalnovusApiKeyDetails'])
+  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+  @ApiOperation({ operationId: 'getOrdinalnovusApiKeyDetails' })
+  async getOrdinalnovusApiKeyDetails(): Promise<{
+    success: boolean,
+    usage: number,
+    userType: string,
+    rateLimit: number,
+    expirationDate: string
+  }> {
+
+    if (this.configService.get('environment') !== 'development') {
+      throw new ForbiddenException('This method should not be called on production');
+    }
+
+    return getApikeyDetails();
+  }
+
+  /**
+   * Test for search
+   *
+   * Use this endpoint query all details for our API key
+   */
+    @Post(['ordinals/ordinalnovusSearchForText'])
+    @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+    @ApiOperation({ operationId: 'ordinalnovusSearchForText' })
+    async ordinalnovusSearchForText(): Promise<any> {
+
+      if (this.configService.get('environment') !== 'development') {
+        throw new ForbiddenException('This method should not be called on production');
+      }
+
+      return ordinalnovusSearchForText('cubes.haushoppe.art');
+    }
 }

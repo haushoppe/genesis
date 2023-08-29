@@ -6,6 +6,7 @@ import { LetModule } from '@rx-angular/template/let';
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
 import { LoadingIndicatorButtonComponent } from '../loading-indicator-button/loading-indicator-button.component';
+import { AlertComponent } from '../alert/alert.component';
 
 @Component({
   templateUrl: './header.component.html',
@@ -17,7 +18,8 @@ import { LoadingIndicatorButtonComponent } from '../loading-indicator-button/loa
     RouterLink,
     RouterLinkActive,
     LoadingIndicatorButtonComponent,
-    LetModule
+    LetModule,
+    AlertComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

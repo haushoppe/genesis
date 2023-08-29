@@ -2,10 +2,20 @@ import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType, OnInitEffects } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { catchError, distinctUntilChanged, filter, map, mergeMap, pairwise, retry, tap, withLatestFrom } from 'rxjs/operators';
+import {
+  catchError,
+  distinctUntilChanged,
+  filter,
+  map,
+  mergeMap,
+  pairwise,
+  retry,
+  tap,
+  withLatestFrom,
+} from 'rxjs/operators';
+
 import { environment } from '../../environments/environment';
 import { ApiService } from '../openapi-client';
-
 import { WalletService } from '../services/wallet-service';
 import { WalletActions } from './wallet.actions';
 import { selectConfig, selectWallet } from './wallet.reducer';
@@ -28,7 +38,13 @@ export class WalletEffects implements OnInitEffects {
           count: 3,
           delay: 1000
         }),
-        map(response => WalletActions.loadConfigSuccess({ config: response.config })),
+        map(({ config }) => {
+          if (!config) {
+            throw Error('Minting is disabled. Please check back later!')
+          }
+          return config;
+        }),
+        map(config => WalletActions.loadConfigSuccess({ config })),
         catchError(error => of(WalletActions.loadConfigFailure({ error }))))
       )
     );
@@ -37,7 +53,7 @@ export class WalletEffects implements OnInitEffects {
   createOnboardInstance$ = createEffect(() => {
     return this.actions.pipe(
       ofType(WalletActions.loadConfigSuccess),
-      map(({ config }) => this.walletService.createOnboardInstance(config.networkConfig))
+      tap(({ config }) => this.walletService.createOnboardInstance(config.networkConfig))
     );
   }, { dispatch: false });
 

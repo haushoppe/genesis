@@ -3,8 +3,8 @@ import { OrdinalnovusInscription, OrdinalnovusInscriptionSearchResult, LooksLike
 
 const apiHost = 'https://api.ordinalnovus.com/api';
 
-// workaround, not my API key
-const apiKey = '85b1f7f4-3099-4cf7-8e38-8d3ba494a3ad';
+// const apiKey = '85b1f7f4-3099-4cf7-8e38-8d3ba494a3ad'; // golden example API key
+const apiKey = '0bf2eced-5ab2-4595-b353-41de8d2627d6';
 
 export async function apikeyCreate(wallet: string): Promise<{
   message: string,

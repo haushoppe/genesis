@@ -280,8 +280,8 @@ export class OrdinalsController {
         throw new ForbiddenException('This method should not be called on production');
       }
 
-      // 3BvkAwgL7zHkko7tMtxoaDekmqmavuE5BK - XVerse Account 1
-      return apikeyCreate('3BvkAwgL7zHkko7tMtxoaDekmqmavuE5BK')
+      // ??? - Xverse Account 1: Ordinals address
+      return apikeyCreate('???')
   }
 
   /**

@@ -31,19 +31,13 @@
   <small class="presents">presents</small>
 </div>
 
-<!-- <ng-container *rxLet="walletFacade.configStatus$; let configStatus">
-  <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
+<ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
 
-    <app-loading-indicator-button
-      *ngIf="walletStatus.submitStatus !== SubmitStatus.Successful"
-      [disabled]="configStatus.submitStatus !== SubmitStatus.Successful"
-      (buttonClick)="walletFacade.connectWallet()"
-      [state]="walletStatus"
-      buttonText="Connect wallet"
-      defaultIconClass="bi bi-wallet2"
-    />
+  <app-loading-indicator-button
+    (buttonClick)="walletFacade.connectWallet()"
+    [state]="walletStatus"
+    [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Connected with Xverse' : 'Connect Xverse wallet'"
+    defaultIconClass="bi bi-wallet2"
+  />
 
-
-
-  </ng-container>
-</ng-container> -->
+</ng-container>

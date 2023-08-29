@@ -43,7 +43,9 @@
       defaultIconClass="bi bi-wallet2"
     />
 
-
-
   </ng-container>
+
+  <app-alert *ngIf="configStatus.submitStatus === SubmitStatus.Failure" type="danger">
+    {{ configStatus.submitErrorText }}
+  </app-alert>
 </ng-container>

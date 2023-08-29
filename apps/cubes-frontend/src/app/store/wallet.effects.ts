@@ -1,8 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import { Actions } from '@ngrx/effects';
+import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 
 import { WalletService } from '../services/wallet-service';
+import { map, mergeMap, withLatestFrom } from 'rxjs';
+import { WalletActions } from './wallet.actions';
 
 
 @Injectable()
@@ -13,26 +15,20 @@ export class WalletEffects {
   store = inject(Store);
 
 
-  // connectWallet$ = createEffect(() => {
-  //   return this.actions.pipe(
-  //     ofType(WalletActions.connectWallet),
-  //     withLatestFrom(this.store.select(selectConfig)),
-  //     map(([, knownToken]) => knownToken),
-  //     mergeMap(knownToken => this.walletService.connect(knownToken?.networkConfig)),
-  //     map(wallet => wallet ?
-  //       WalletActions.connectWalletSuccess({ wallet }) :
-  //       WalletActions.connectWalletFailure())
-  //   );
-  // });
+  connectWallet$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(WalletActions.connectWallet),
+      mergeMap(() => this.walletService.connect()),
+      map(({ wallet, error }) => wallet ?
+        WalletActions.connectWalletSuccess({ wallet }) :
+        WalletActions.connectWalletFailure({ message: error?.message || '' }))
+    );
+  });
 
-  // disconnectWallet$ = createEffect(() => {
-  //   return this.actions.pipe(
-  //     ofType(WalletActions.disconnectWallet),
-  //     withLatestFrom(this.store.select(selectWallet)),
-  //     map(([, wallet]) => wallet),
-  //     mergeMap(wallet => this.walletService.disconnect(wallet?.label)),
-  //     // we will use disconnectWalletDetected which is always triggered
-  //     // map(() => WalletActions.disconnectWalletDone())
-  //   );
-  // }, { dispatch: false });
+  disconnectWallet$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(WalletActions.disconnectWallet),
+      mergeMap(() => this.walletService.disconnect()),
+    );
+  }, { dispatch: false });
 }

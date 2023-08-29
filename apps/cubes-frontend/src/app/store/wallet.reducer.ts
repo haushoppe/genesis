@@ -9,8 +9,17 @@ import {
 } from './submittable/submittable-state';
 import { WalletActions } from './wallet.actions';
 
+export interface WalletInfo {
+  ordinalsAddress: string;
+}
+
+export interface WalletConnectResult {
+  error: Error | undefined;
+  wallet: WalletInfo | undefined;
+}
+
 export interface State {
-  wallet: string | undefined;
+  wallet: WalletInfo | undefined;
   walletStatus: SubmittableState;
 }
 
@@ -39,10 +48,10 @@ export const walletFeature = createFeature({
       walletStatus: getSuccessfulState()
     })),
 
-    on(WalletActions.connectWalletFailure, state => ({
+    on(WalletActions.connectWalletFailure, (state, { message }) => ({
       ...state,
       wallet: undefined,
-      walletStatus: getFailureState({ message: 'No wallet was connected' })
+      walletStatus: getFailureState({ message })
     })),
 
     on(WalletActions.disconnectWallet, state => ({

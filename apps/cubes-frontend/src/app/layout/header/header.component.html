@@ -34,6 +34,7 @@
 <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
 
   <app-loading-indicator-button
+    *ngIf="walletService.getXverseInstalled()"
     (buttonClick)="walletFacade.connectWallet()"
     [state]="walletStatus"
     [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Connected with Xverse' : 'Connect Xverse wallet'"

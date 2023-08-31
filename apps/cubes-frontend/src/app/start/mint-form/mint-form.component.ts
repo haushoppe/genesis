@@ -1,4 +1,4 @@
-import { DecimalPipe, NgClass, NgIf } from '@angular/common';
+import { DecimalPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,16 +8,17 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { CubePreviewComponent } from '../../layout/cube-preview/cube-preview.component';
 import { LoadingIndicatorButtonComponent } from '../../layout/loading-indicator-button/loading-indicator-button.component';
+import { LoadingIndicatorComponent } from '../../layout/loading-indicator/loading-indicator.component';
+import { ShortenAddressPipe } from '../../layout/shorten-address.pipe';
+import { CubeDetails } from '../../store/mint.actions';
 import { MintFacade } from '../../store/mint.facade';
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
+import { TrimNumberValueAccessorDirective } from '../../trim-number-value-accessor.directive';
 import { TrimValueAccessorDirective } from '../../trim-value-accessor.directive';
 import { BtcAddressValidator } from './btc-address.validator';
 import { CorrectCodeValidator } from './correct-code.validator';
 import { InscriptionIdValidator } from './inscription-id.validator';
-import { LoadingIndicatorComponent } from '../../layout/loading-indicator/loading-indicator.component';
-import { TrimNumberValueAccessorDirective } from '../../trim-number-value-accessor.directive';
-import { CubeDetails } from '../../store/mint.actions';
 
 function containsOnlyNumbers(str: string) {
   const reg = /^\d+$/;
@@ -41,7 +42,9 @@ function containsOnlyNumbers(str: string) {
     RouterLink,
     PushModule,
     LoadingIndicatorComponent,
-    DecimalPipe
+    DecimalPipe,
+    ShortenAddressPipe,
+    JsonPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -61,7 +64,7 @@ export class MintFormComponent implements OnInit {
     inscriptionId4: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
     inscriptionId5: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
     inscriptionId6: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
-    receiveAddress: new FormControl('', { nonNullable: true, validators: [Validators.required, BtcAddressValidator()] }),
+    receiveAddress: new FormControl('', { nonNullable: true, validators: [Validators.required, BtcAddressValidator(), Validators.pattern('^bc1p.*')] }),
     // hiden code
     code: new FormControl('', { nonNullable: true, validators: [CorrectCodeValidator()] }),
     // hidden options of v3
@@ -73,6 +76,24 @@ export class MintFormComponent implements OnInit {
   });
 
   c = this.form.controls;
+
+  getBestAddressError() {
+    const r = this.c.receiveAddress;
+
+    if (r.hasError('required')) {
+      return '';
+    }
+
+    if (r.hasError('pattern')) {
+      return 'Please provide your Taproot address for receiving Ordinals, which always starts with "bc1p…"!';
+    }
+
+    if (r.hasError('invalidBtcAddress')) {
+      return 'This is not a valid Bitcoin address!';
+    }
+
+    return '';
+  }
 
   ngOnInit() {
     /*
@@ -158,9 +179,9 @@ export class MintFormComponent implements OnInit {
     };
   }
 
-  mint() {
+  mint(walletAddress: string | undefined) {
     const cubeDetails = this.getCubeDetails()
-    const receiveAddress = this.c.receiveAddress.value;
+    const receiveAddress = walletAddress || this.c.receiveAddress.value;
     const code = this.c.code.value;
 
     this.mintFacade.mint(cubeDetails, receiveAddress, code);

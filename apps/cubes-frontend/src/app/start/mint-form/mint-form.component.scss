@@ -47,3 +47,7 @@ $violet: #9c27b0; // #950
   label { color: $violet; }
   input { border-color: $violet; }
 }
+
+span.disabled {
+  cursor: not-allowed;
+}

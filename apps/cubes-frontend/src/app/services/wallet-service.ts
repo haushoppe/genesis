@@ -13,7 +13,20 @@ interface XverseAddressResponse {
   }[];
 }
 
-
+const knownWallets = {
+  unisat: {
+    label: 'Unisat',
+    logo: '/assets/btc-unisat-logo.png',
+  },
+  hiro: {
+    label: 'Hiro',
+    logo: '/btc-hiro-logo.jpeg',
+  },
+  xverse: {
+    label: 'Xverse',
+    logo: '/btc-xverse-logo.png',
+  }
+}
 
 
 @Injectable({
@@ -33,31 +46,31 @@ export class WalletService {
 
     const installedWallets = [];
 
-    if (typeof (window as any).unisat !== 'undefined') {
-      installedWallets.push({
-        key: 'unisat',
-        label: 'Unisat',
-        logo: '/assets/btc-unisat-logo.png',
-      });
+    if (this.getUnisatInstalled()) {
+      installedWallets.push(knownWallets.unisat);
     }
 
-    if ((window as any)?.StacksProvider?.psbtRequest) {
-      installedWallets.push({
-        key: 'hiro',
-        label: 'Hiro',
-        logo: '/btc-hiro-logo.jpeg',
-      });
+    if (this.getHiroInstalled()) {
+      installedWallets.push(knownWallets.hiro);
     }
 
-    if ((window as any)?.BitcoinProvider?.signTransaction?.toString()?.includes('Psbt')) {
-      installedWallets.push({
-        key: 'xverse',
-        label: 'Xverse',
-        logo: '/btc-xverse-logo.png',
-      });
+    if (this.getXverseInstalled()) {
+      installedWallets.push(knownWallets.xverse);
     }
 
     return installedWallets;
+  }
+
+  getUnisatInstalled(): boolean {
+    return !!(typeof (window as any).unisat !== 'undefined')
+  }
+
+  getHiroInstalled(): boolean {
+    return !!((window as any)?.StacksProvider?.psbtRequest);
+  }
+
+  getXverseInstalled(): boolean {
+    return !!(((window as any)?.BitcoinProvider?.signTransaction?.toString()?.includes('Psbt')));
   }
 
   async connectXverseWallet(): Promise<WalletConnectResult> {

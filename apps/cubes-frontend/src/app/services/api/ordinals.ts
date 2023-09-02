@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
 import axios from 'axios';
 
-import { OrderResponse, OrdinalsbotInscriptionSearchResult } from '../../ordinalsbot';
 import BitcoinEsploraApiProvider from '../api/esplora/esploraAPiProvider';
 import { ORDINALS_URL, XVERSE_API_BASE_URL } from '../constant';
 import { BtcOrdinal, NetworkType, UTXO } from '../types';
@@ -120,28 +117,3 @@ export async function getNonOrdinalUtxo(
 
   return nonOrdinalOutputs;
 }
-
-/*
-
-// browser version
-export const createHtmlInscriptionOrder = async (request: { receiveAddress: string, htmlString: string }): Promise<OrderResponse> => {
-
-  // Convert the HTML string to a base64 encoded string
-  const contentB64 = btoa(unescape(encodeURIComponent(request.htmlString)));
-  const size = new Blob([request.htmlString]).size;
-
-  const btcClient = new BitcoinEsploraApiProvider({
-    network: 'Mainnet',
-  });
-
-  const feesResponse = await btcClient.getRecommendedFees();
-  const inscriptionRequest = await createInscriptionRequestForHtml(
-    request.receiveAddress,
-    size,
-    feesResponse.fastestFee,
-    contentB64
-  );
-
-  return inscriptionRequest;
-};
-*/

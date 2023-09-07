@@ -46,29 +46,29 @@ export class FaqComponent {
       question: 'Where can I find suitable inscriptions with images?',
       answer: `Your best bet is to search at [Magic Eden](https://magiceden.io/ordinals), [Ord.io](https://www.ord.io/?contentType=image) or [Hiro](https://ordinals.hiro.so/explore?f=image). Make sure that none of the sides of your cube turns black, that would be a pity. For animated GIFs, only the first frame will be displayed.`
     },
-    {
-      question: "What are Bitcoin Ordinals?",
-      answer: "Ordinals are digital assets inscribed on a satoshi, the lowest denomination of a Bitcoin (BTC). Ordinals only exist onchain and are totally immutable, meaning they cannot be altered in any way."
-    },
-    {
-      question: "What is the Ordinal theory?",
-      answer: "The Ordinal theory offers a unique method to track and potentially assign value to individual satoshis, even if they are not officially recorded on the blockchain."
-    },
-    {
-      question: "What are inscriptions in the context of Bitcoin?",
-      answer: "Inscriptions refer to a novel method of storing data in the Bitcoin blockchain. Each inscription is assigned to an individual Satoshi. They represent a newly invented functionality within the Bitcoin ecosystem."
-    },
-    {
-      question: "How is ownership of inscriptions changed?",
-      answer: "Ownership of inscriptions is linked to the individual owner of the Satoshi. The ownership can be transferred by sending it to any Bitcoin address. The recipient of the transfer becomes the new owner of the Satoshi and its inscription."
-    },
+    // {
+    //   question: "What are Bitcoin Ordinals?",
+    //   answer: "Ordinals are digital assets inscribed on a satoshi, the lowest denomination of a Bitcoin (BTC). Ordinals only exist onchain and are totally immutable, meaning they cannot be altered in any way."
+    // },
+    // {
+    //   question: "What is the Ordinal theory?",
+    //   answer: "The Ordinal theory offers a unique method to track and potentially assign value to individual satoshis, even if they are not officially recorded on the blockchain."
+    // },
+    // {
+    //   question: "What are inscriptions in the context of Bitcoin?",
+    //   answer: "Inscriptions refer to a novel method of storing data in the Bitcoin blockchain. Each inscription is assigned to an individual Satoshi. They represent a newly invented functionality within the Bitcoin ecosystem."
+    // },
+    // {
+    //   question: "How is ownership of inscriptions changed?",
+    //   answer: "Ownership of inscriptions is linked to the individual owner of the Satoshi. The ownership can be transferred by sending it to any Bitcoin address. The recipient of the transfer becomes the new owner of the Satoshi and its inscription."
+    // },
     {
       question: 'How do I create a cube?',
-      answer: 'You can create an inscription cube by entering six Inscription IDs and your receiving address to the form. Each cube, with its six sides, displays the image of the respective inscription. After submitting the form, you are required to cover the costs of creating the inscription through a Bitcoin payment.'
+      answer: 'You can create an ordinal cube by entering six Inscription IDs and your receiving address to the form. Each cube, with its six sides, displays the image of the respective inscription. After submitting the form, you are required to cover the costs of creating the inscription through a Bitcoin payment.'
     },
     {
       question: 'What is the TXIDiN format?',
-      answer: 'Inscription IDs are of the form TXID<strong>i</strong>N, where TXID is the transaction ID of the reveal transaction, and N is the index of the inscription in the reveal transaction. The small letter __"i"__ separates both entries.'
+      answer: 'Inscription IDs are of the form TXID<strong>i</strong>N, where TXID is the transaction ID of the reveal transaction, and N is the index of the inscription in the reveal transaction. The small letter __"i"__ separates both entries. Please provide six Inscription IDs to create a new cube!'
     },
     {
       question: 'What is a taproot address?',
@@ -88,7 +88,8 @@ export class FaqComponent {
     },
     {
       question: 'How is the data of my cube stored?',
-      answer: 'The data for your cube is fully stored onchain and remains unchangeable forever. At least almost forever. Since the data is stored in the (segregated) witness data area, it could theoretically be lost if all nodes were to prune their data. But this is really very, very unlikely. After all, Bitcoin is maximally decentralized. There only needs to be one node operator on this planet who keeps the data.'
+      answer: 'The data for your cube is fully stored on the Bitcoin blockchain ("onchain") and remains unchangeable forever.'
+      //  At least almost forever. Since the data is stored in the (segregated) witness data area, it could theoretically be lost if all nodes were to prune their data. But this is really very, very unlikely. After all, Bitcoin is maximally decentralized. There only needs to be one node operator on this planet who keeps the data.
     },
     // {
     //   question: 'Does this website store any data? What about privacy?',

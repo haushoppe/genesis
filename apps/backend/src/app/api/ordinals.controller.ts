@@ -1,6 +1,6 @@
-import { Body, Controller, ForbiddenException, Get, Header, Logger, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Header, Logger, NotFoundException, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiExcludeEndpoint, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../../../../shared/ordinalnovus';
 import {
@@ -12,7 +12,7 @@ import {
   saveReferralCode,
   searchForText,
 } from '../../../../shared/ordinalsbot';
-import { InscriptionOrder, OrderResponse } from '../../../../shared/ordinalsbot-order-response';
+import { InscriptionOrder, OrderResponse, isErrorResponse } from '../../../../shared/ordinalsbot-order-response';
 import { REFERRALS, validateCode } from '../../../../shared/referrals';
 import { CacheService } from '../model/cache.service';
 import { limitArray } from '../model/limit-array';
@@ -116,10 +116,16 @@ export class OrdinalsController {
     description: 'order Id'
   })
   @Header('Cache-Control', 'no-cache')
+  @ApiNotFoundResponse({ description: 'No such order' })
   async getOrderStatus(@Param('id') orderId: string): Promise<InscriptionOrder> {
 
     const orderResponseFull = await getOrderStatus(orderId);
-    return hideUnwantedProperties(orderResponseFull);
+
+    if (isErrorResponse(orderResponseFull)) {
+      throw new NotFoundException(orderResponseFull.error);
+    } else {
+      return hideUnwantedProperties(orderResponseFull);
+    }
   }
 
   lastBackup: InscriptionSimple[] = [];

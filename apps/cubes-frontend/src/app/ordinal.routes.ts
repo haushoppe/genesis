@@ -8,5 +8,6 @@ export const ORDINAL_ROUTES: Routes = [
   { path: '', component: StartComponent },
   // { path: 'nft/:tokenId', component: DetailsComponent }
   { path: 'faq', component: FaqComponent },
-  { path: 'order/:orderId', component: OrderDetailsComponent, data: { hideBanner: true } }
+  { path: 'order/:orderId', component: OrderDetailsComponent, data: { hideBanner: true } },
+  { path: '**', component: StartComponent },
 ];

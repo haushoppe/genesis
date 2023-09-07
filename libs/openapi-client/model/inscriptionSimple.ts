@@ -14,7 +14,6 @@ import { Meta } from './meta';
 
 export interface InscriptionSimple { 
     inscriptionId: string;
-    blockheight: number;
     meta: Meta;
 }
 

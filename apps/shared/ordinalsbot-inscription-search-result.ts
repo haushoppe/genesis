@@ -1,6 +1,6 @@
 
 /*
-  RESPONSE of GET https://api2.ordinalsbot.com/search?text=haushoppe.art
+  RESPONSE of GET https://api.ordinalsbot.com/search?text=haushoppe.art
   --> use blockheight as timestamp!
   --> createdat: this is when record is parsed - not the block timestamp
 */

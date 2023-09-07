@@ -114,6 +114,12 @@ export const mintFeature = createFeature({
       orderStatus: getSuccessfulState()
     })),
 
+    on(MintActions.orderNotFound, (state, { error }) => ({
+     ...state,
+     orderResponse: undefined,
+     orderStatus: getFailureState(error)
+   })),
+
     on(MintActions.placeOrderFailure, (state, { error }) => ({
       ...state,
       orderResponse: undefined,

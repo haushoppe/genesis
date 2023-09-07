@@ -39,6 +39,7 @@ export const MintActions = createActionGroup({
     'Place Order Success': props<{ orderResponse: InscriptionOrder }>(),
     'Place Order Failure': props<{ error: HttpErrorResponse }>(),
     'Update Order Status': props<{ orderResponse: InscriptionOrder }>(),
+    'Order Not Found': props<{ error: HttpErrorResponse }>(),
     'Order Completed': emptyProps(),
 
     'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),

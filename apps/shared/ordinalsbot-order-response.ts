@@ -2,9 +2,9 @@ import { ChargeStatus } from './ordinalsbot-charge-status'
 
 
 /*
-RESPONSE of POST https://api2.ordinalsbot.com/order
+RESPONSE of POST https://api.ordinalsbot.com/order
 AND
-RESPONSE of GET https://api2.ordinalsbot.com/order?id=da418953-225b-4cba-99f9-1c5f826704b0
+RESPONSE of GET https://api.ordinalsbot.com/order?id=da418953-225b-4cba-99f9-1c5f826704b0
 */
 
 export const exampleUnpaidResponse = {
@@ -145,7 +145,7 @@ export interface OrderResponse {
   // fee: number | string;   // choosen fee rate in sats/byte
   charge: {
 
-    id: string;      // save this to poll against https://api2.ordinalsbot.com/order?id=XXX
+    id: string;      // save this to poll against https://api.ordinalsbot.com/order?id=XXX
 
     // status: ChargeStatus; // IS ALWAYS "UNPAID!!! :-()
     amount: number;  // amount to pay in satoshis
@@ -167,8 +167,19 @@ export interface OrderResponse {
   referral: string;
 }
 
+// seen at https://api.ordinalsbot.com/order?id=e926126f-2435-4881-ac56-4e5964c96792
+// {"status":"error","error":"no such order e926126f-2435-4881-ac56-4e5964c96792"}
+export interface ErrorResponse  {
+  status: 'error',
+  error: string
+}
+
+export function isErrorResponse(response: any): response is ErrorResponse {
+  return response && response.status === 'error' && typeof response.error === 'string';
+}
+
 export interface InscriptionOrder {
-  id: string;      // save this to poll against https://api2.ordinalsbot.com/order?id=XXX
+  id: string;      // save this to poll against https://api.ordinalsbot.com/order?id=XXX
   // fee: number | string;   // choosen fee rate in sats/byte
   charge: {
 

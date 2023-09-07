@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { OrderResponse } from './ordinalsbot-order-response';
+import { ErrorResponse, OrderResponse } from './ordinalsbot-order-response';
 import { OrdinalsbotInscriptionSearchResult } from './ordinalsbot-inscription-search-result';
 import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from './ordinalsbot-price-result';
 import { OrdinalsbotFxrateResult } from './ordinalsbot-fxrate-result';
@@ -7,7 +7,7 @@ import { OrdinalsbotFxrateResult } from './ordinalsbot-fxrate-result';
 import { validateCode } from './validate-code';
 import { REFERRALS } from './referrals';
 
-export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api2.ordinalsbot.com/order';
+export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api.ordinalsbot.com/order';
 // export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://signet.ordinalsbot.com/api/order'
 
 /*
@@ -96,9 +96,9 @@ export async function getReferralStatus(): Promise<any> {
   );
 }
 
-export async function getOrderStatus(id: string): Promise<OrderResponse> {
+export async function getOrderStatus(id: string): Promise<OrderResponse | ErrorResponse> {
 
-  const response = await axios.get('https://api2.ordinalsbot.com/order',
+  const response = await axios.get('https://api.ordinalsbot.com/order',
     {
       params: {
         id
@@ -109,7 +109,7 @@ export async function getOrderStatus(id: string): Promise<OrderResponse> {
 
 export async function searchForText(text: string): Promise<OrdinalsbotInscriptionSearchResult> {
 
-  const response = await axios.get('https://api2.ordinalsbot.com/search',
+  const response = await axios.get('https://api.ordinalsbot.com/search',
     {
       params: {
         text

@@ -26,6 +26,7 @@ import { MintActions } from './mint.actions';
 import { selectKnownInscriptionIds } from './mint.reducer';
 import { PageActions } from './page.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
+import { HttpErrorResponse } from '@angular/common/http';
 
 
 
@@ -67,11 +68,19 @@ export class MintEffects {
       mapToParam('orderId'),
       switchMap(orderId => // Start polling when startPolling action is dispatched. Cancel old startPolling actions when new polling called.
         timer(0, 3500).pipe(
+
           takeUntil(this.actions.pipe(ofType((MintActions.orderCompleted)))),  // Stop polling when stopPolling action is dispatched.
+          takeUntil(this.actions.pipe(ofType((MintActions.orderNotFound)))),  // Stop polling
+
           exhaustMap(() =>  // Perform an HTTP request for each value emitted by the interval. Ignore new values until the HTTP request completes.
             this.ordinalsService.getOrderStatus(orderId).pipe(
               map(orderResponse => MintActions.updateOrderStatus({ orderResponse: orderResponse as InscriptionOrder })),
-              catchError(() => EMPTY)
+              catchError((error: HttpErrorResponse) => {
+                if (error.status === 404) {
+                  return of(MintActions.orderNotFound(error))
+                }
+                return EMPTY;
+              })
             )
           )
         )

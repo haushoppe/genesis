@@ -1,5 +1,5 @@
 import { DecimalPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
@@ -49,6 +49,16 @@ function containsOnlyNumbers(str: string) {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MintFormComponent implements OnInit {
+
+  @Input()
+  public set walletAddress(address: string | undefined) {
+    this.form.patchValue({ receiveAddress: address });
+    if (address) {
+      this.c.receiveAddress.disable()
+    } else {
+      this.c.receiveAddress.enable()
+    }
+  }
 
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
@@ -179,9 +189,9 @@ export class MintFormComponent implements OnInit {
     };
   }
 
-  mint(walletAddress: string | undefined) {
+  mint() {
     const cubeDetails = this.getCubeDetails()
-    const receiveAddress = walletAddress || this.c.receiveAddress.value;
+    const receiveAddress = this.c.receiveAddress.value;
     const code = this.c.code.value;
 
     this.mintFacade.mint(cubeDetails, receiveAddress, code);

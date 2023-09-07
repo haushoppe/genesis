@@ -4,7 +4,7 @@ import Onboard, { OnboardAPI } from '@web3-onboard/core';
 import injectedModule from '@web3-onboard/injected-wallets';
 import ledgerModule from '@web3-onboard/ledger';
 import trezorModule from '@web3-onboard/trezor';
-import walletConnectModule from '@web3-onboard/walletconnect';
+// import walletConnectModule from '@web3-onboard/walletconnect';
 import { map } from 'rxjs';
 
 import { Chain } from '../openapi-client';
@@ -16,7 +16,10 @@ import { getLocalStore, setLocalStore } from './local-storage';
 const injected = injectedModule();
 const ledger = ledgerModule();
 const trezor = trezorModule({ email: 'team@haushoppe.art', appUrl: 'https://genesis.haushoppe.art' });
-const walletConnect = walletConnectModule();
+
+// TODO: update walletConnect to v2 and make it working again
+// --> https://onboard.blocknative.com/docs/wallets/walletconnect
+// const walletConnect = walletConnectModule();
 const coinbase = coinbaseModule();
 
 
@@ -106,7 +109,7 @@ export class WalletService {
         injected,
         ledger,
         trezor,
-        walletConnect,
+        // walletConnect,
         coinbase
       ],
       chains: [{

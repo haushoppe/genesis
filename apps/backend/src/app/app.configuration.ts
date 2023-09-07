@@ -11,7 +11,7 @@ export const configuration = () => {
   return {
     environment: process.env.NODE_ENV,
     port: process.env.PORT,
-    mongodbUri: process.env.MONGODB_URI,
+    // mongodbUri: process.env.MONGODB_URI,
     signerKey_genesis: process.env.SIGNER_KEY_GENESIS,
     signerKey_mosaic: process.env.SIGNER_KEY_MOSAIC,
     signerKey_sea: process.env.SIGNER_KEY_SEA,
@@ -28,7 +28,7 @@ export const configuration = () => {
 export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production'),
   PORT: Joi.number(),
-  MONGODB_URI: Joi.string().required(),
+  // MONGODB_URI: Joi.string().required(),
   NETWORK: Joi.string().valid(KnownNetworkName.hardhat, KnownNetworkName.goerli, KnownNetworkName.mainnet),
   SIGNER_KEY_GENESIS: Joi.string().required(),
   SIGNER_KEY_MOSAIC: Joi.string().required(),

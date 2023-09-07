@@ -90,9 +90,9 @@ npm run start:cubes-frontend
 
 ## Infrastructure
 
-### Database (TODO, right now unused)
+<!-- ### Database (TODO, right now unused)
 
-* [MongoDB Atlas](https://www.mongodb.com/cloud)
+* [MongoDB Atlas](https://www.mongodb.com/cloud) -->
 
 ### Ethereum contracts
 
@@ -100,18 +100,6 @@ npm run start:cubes-frontend
 
 
 # Extra stuff
-
-### ⭐️ z_extra/testmint
-
-Ethspresso deployed a first testnet contract:
-
-* 99 pre-generated (?) metadata-files, all pointing to the same URL
-* https://testnets.opensea.io/collection/rotatingcube
-* see
-    * `testmint/animation_url` (static html)
-    * `testmint/contract` (not verified on etherscan!)
-    * `testmint/metadata` (example 0-10)
-* TODO: contract, instructions how to deploy, etc...
 
 ### ⭐️ z_extra/prototypes/threejs-test
 

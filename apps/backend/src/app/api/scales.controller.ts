@@ -1,7 +1,6 @@
 import { Controller, Get, Header, Param, ParseIntPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import axios from 'axios';
 
 import { tenMinutesInSeconds } from '../types/constants';
 
@@ -11,15 +10,15 @@ import { tenMinutesInSeconds } from '../types/constants';
 export class ScalesController {
 
   // TODO: outdated!
-  readonly mongodbRestEndpoint = this.configService.get('mongodbRestEndpoint');
-  readonly mongodbApiKey = this.configService.get('mongodbApiKey');
-  readonly restApiConfig = {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Request-Headers': '*',
-      'api-key': this.mongodbApiKey
-    }
-  }
+  // readonly mongodbRestEndpoint = this.configService.get('mongodbRestEndpoint');
+  // readonly mongodbApiKey = this.configService.get('mongodbApiKey');
+  // readonly restApiConfig = {
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //     'Access-Control-Request-Headers': '*',
+  //     'api-key': this.mongodbApiKey
+  //   }
+  // }
 
   constructor(private configService: ConfigService) { }
 
@@ -43,24 +42,24 @@ export class ScalesController {
 
     // Logger.verbose("Serving api/getSingle/" + token_id);
 
-    const response = await axios.post(
-      // https://www.mongodb.com/docs/manual/reference/method/db.collection.findOne/
-      this.mongodbRestEndpoint + 'findOne',
-      {
-        collection: 'scales',
-        database: 'scales',
-        dataSource: 'mongodb-eth-1',
-        filter: {
-          token_id: tokenId,
-        },
-        projection: {
-          // '_id': 1
-        }
-      },
-      this.restApiConfig
-    );
+    // const response = await axios.post(
+    //   // https://www.mongodb.com/docs/manual/reference/method/db.collection.findOne/
+    //   this.mongodbRestEndpoint + 'findOne',
+    //   {
+    //     collection: 'scales',
+    //     database: 'scales',
+    //     dataSource: 'mongodb-eth-1',
+    //     filter: {
+    //       token_id: tokenId,
+    //     },
+    //     projection: {
+    //       // '_id': 1
+    //     }
+    //   },
+    //   this.restApiConfig
+    // );
 
-    return response.data.document;
+    // return response.data.document;
   }
 
   /**
@@ -75,18 +74,18 @@ export class ScalesController {
 
     return [];
 
-    const response = await axios.post(
-      // https://www.mongodb.com/docs/manual/reference/method/db.collection.find/
-      this.mongodbRestEndpoint + 'find',
-      {
-        collection: 'scales',
-        database: 'scales',
-        dataSource: 'mongodb-eth-1',
-        projection: {}
-      },
-      this.restApiConfig
-    );
+    // const response = await axios.post(
+    //   // https://www.mongodb.com/docs/manual/reference/method/db.collection.find/
+    //   this.mongodbRestEndpoint + 'find',
+    //   {
+    //     collection: 'scales',
+    //     database: 'scales',
+    //     dataSource: 'mongodb-eth-1',
+    //     projection: {}
+    //   },
+    //   this.restApiConfig
+    // );
 
-    return response.data.documents;
+    // return response.data.documents;
   }
 }

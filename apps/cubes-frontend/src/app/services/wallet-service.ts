@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { getLocalStore, setLocalStore } from './local-storage';
-import { AddressPurposes, getAddress } from 'sats-connect';
+import { AddressPurpose, BitcoinNetworkType, getAddress } from 'sats-connect';
 import { WalletConnectResult, WalletInfo } from '../store/wallet.reducer';
 
 
@@ -9,7 +9,7 @@ interface XverseAddressResponse {
   addresses: {
     address: string,
     publicKey: string,
-    purpose: AddressPurposes.ORDINALS | AddressPurposes.PAYMENT
+    purpose: AddressPurpose.Ordinals | AddressPurpose.Payment
   }[];
 }
 
@@ -82,10 +82,10 @@ export class WalletService {
 
     const getAddressOptions = {
       payload: {
-        purposes: [AddressPurposes.ORDINALS],
+        purposes: [AddressPurpose.Ordinals],
         message: 'Please share your address for receiving Ordinals.',
         network: {
-          type: 'Mainnet' as const,
+          type: BitcoinNetworkType.Mainnet,
         },
       },
       onFinish: (response: XverseAddressResponse) => {

@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
 // import { DetailsComponent } from './app/details/details.component';
-import { StartComponent } from './app/start/start.component';
-import { FaqComponent } from './app/faq/faq.component';
-import { OrderDetailsComponent } from './app/order-details/order-details.component';
+import { StartComponent } from './start/start.component';
+import { FaqComponent } from './faq/faq.component';
+import { OrderDetailsComponent } from './order-details/order-details.component';
 
 export const ORDINAL_ROUTES: Routes = [
   { path: '', component: StartComponent },

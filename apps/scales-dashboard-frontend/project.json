@@ -1,5 +1,6 @@
 {
   "name": "scales-dashboard-frontend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/scales-dashboard-frontend/src",
   "prefix": "app",
@@ -14,7 +15,10 @@
         "polyfills": "apps/scales-dashboard-frontend/src/polyfills.ts",
         "tsConfig": "apps/scales-dashboard-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
-        "assets": ["apps/scales-dashboard-frontend/src/favicon.ico", "apps/scales-dashboard-frontend/src/assets"],
+        "assets": [
+          "apps/scales-dashboard-frontend/src/favicon.ico",
+          "apps/scales-dashboard-frontend/src/assets"
+        ],
         "styles": ["apps/scales-dashboard-frontend/src/styles.scss"],
         "scripts": []
       },
@@ -73,13 +77,16 @@
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "options": {
-        "lintFilePatterns": ["apps/scales-dashboard-frontend/**/*.ts", "apps/scales-dashboard-frontend/**/*.html"]
+        "lintFilePatterns": [
+          "apps/scales-dashboard-frontend/**/*.ts",
+          "apps/scales-dashboard-frontend/**/*.html"
+        ]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
+      "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/apps/scales-dashboard-frontend"],
       "options": {
         "jestConfig": "apps/scales-dashboard-frontend/jest.config.ts",

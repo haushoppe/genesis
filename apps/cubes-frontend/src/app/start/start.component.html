@@ -38,7 +38,9 @@
   You will find great images on <a href="https://magiceden.io/ordinals" target="_blank">Magic Eden</a> or <a href="https://www.ord.io/?contentType=image" target="_blank">Ord.io</a>.<br>
 </p>
 
-<app-mint-form />
+<ng-container *rxLet="walletFacade.walletAddress$; let walletAddress">
+  <app-mint-form [walletAddress]="walletAddress" />
+</ng-container>
 
 <p class="mt-5">
   After submitting your cube via the "Mint your cube!" button,

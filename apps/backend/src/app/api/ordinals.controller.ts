@@ -1,4 +1,15 @@
-import { Body, Controller, ForbiddenException, Get, Header, Logger, NotFoundException, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Header,
+  Logger,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
@@ -11,67 +22,18 @@ import {
   getReferralStatus,
   saveReferralCode,
   searchForText,
-} from '../../../../shared/ordinalsbot';
-import { InscriptionOrder, OrderResponse, isErrorResponse } from '../../../../shared/ordinalsbot-order-response';
-import { REFERRALS, validateCode } from '../../../../shared/referrals';
+} from '../model/ordinals/ordinalsbot';
+import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinalsbot-order-response';
 import { CacheService } from '../model/cache.service';
 import { limitArray } from '../model/limit-array';
+import { hideUnwantedProperties as hideUnwantedOrderProperties, parseCube, searchResultToCubeInscriptionMeta } from '../model/ordinals/cube-helper';
+import { validateReferralCode } from '../model/ordinals/validate-referral-code';
 import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
-import { Attribute } from '../types/ordinals/attribute';
 import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
 import { Inscription } from '../types/ordinals/inscription';
 import { InscriptionSimple } from '../types/ordinals/inscription-simple';
 import { Price } from '../types/ordinals/price';
 
-function hideUnwantedProperties({ charge, files, paid, referral }: OrderResponse): InscriptionOrder {
-
-  const { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = charge;
-
-  return {
-    id, // id at the root, and not down below charge!
-    charge: {
-      amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value
-    },
-    files: files.map(({ completed, dataURL, iqueued, sent, tx }) => ({
-      completed,
-      dataURL,
-      iqueued,
-      sent,
-      tx
-    })),
-    paid,
-    code: referral === REFERRALS[0].code ? '' : referral
-  };
-}
-
-function parseCube(cubeHtmlRaw: string): Attribute[] {
-
-  const template1 = `<html><!--cubes.haushoppe.art--><body><script>t='`;
-  let cubeHtml = cubeHtmlRaw.replace(template1, '');
-  cubeHtml = cubeHtml.split('\'')[0];
-  const data = cubeHtml.split('|');
-
-  let version = '?';
-  if (cubeHtmlRaw.includes('<script src=/content/9475aa8df559d569f7284ce59e97014f28be758e832e212fdbba0202699dd035i0></script>')) {
-    version = 'v1';
-  }
-  if (cubeHtmlRaw.includes('<script src=/content/4c5b32a1bd0dc43b3540097bf0135de6b0389f55fe6fe06910e5393bf6591a42i0></script>')) {
-    version = 'v2';
-  }
-  if (cubeHtmlRaw.includes('<script src=/content/fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0></script>')) {
-    version = 'v3';
-  }
-
-  return [
-    { 'trait_type': 'Side 1', 'value': data[0] },
-    { 'trait_type': 'Side 2', 'value': data[1] },
-    { 'trait_type': 'Side 3', 'value': data[2] },
-    { 'trait_type': 'Side 4', 'value': data[3] },
-    { 'trait_type': 'Side 5', 'value': data[4] },
-    { 'trait_type': 'Side 6', 'value': data[5] },
-    { 'trait_type': 'Version', 'value': version }
-  ];
-}
 
 @ApiTags('ordinals')
 @Controller()
@@ -103,7 +65,7 @@ export class OrdinalsController {
       request.code
     );
 
-    return hideUnwantedProperties(orderResponseFull);
+    return hideUnwantedOrderProperties(orderResponseFull);
   }
 
   /**
@@ -124,7 +86,7 @@ export class OrdinalsController {
     if (isErrorResponse(orderResponseFull)) {
       throw new NotFoundException(orderResponseFull.error);
     } else {
-      return hideUnwantedProperties(orderResponseFull);
+      return hideUnwantedOrderProperties(orderResponseFull);
     }
   }
 
@@ -142,35 +104,26 @@ export class OrdinalsController {
     const simpleResult = async () => {
 
       const searchResult = await searchForText('cubes.haushoppe.art');
-      let simple = searchResult.results
-        .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art--><body><script>'))
-        .map((x, index) => ({
-          inscriptionId: x.inscriptionid,
-          meta: {
-            name: 'Ordinal Cube #' + index,
-            attributes: parseCube(x.contentstr)
-          }
-        }))
+      const meta = searchResultToCubeInscriptionMeta(searchResult)
         .reverse();
 
-      Logger.log('Fetched ' + simple.length + ' cubes', 'ordinals_cubes');
+      Logger.log('Fetched ' + meta.length + ' cubes', 'ordinals_cubes');
 
-      simple = limitArray(simple, 12);
-      this.lastBackup = simple;
-      Logger.log('Limited the array to 12 entries!', 'ordinals_cubes');
-
-      return simple;
+      this.lastBackup = meta;
+      return meta;
     };
 
     try {
-      return this.cacheService.loadCached('ordinal_cubes', simpleResult, tenMinutesInSeconds);
+      const fullArray = await this.cacheService.loadCached('ordinal_cubes', simpleResult, tenMinutesInSeconds);
+      return limitArray(fullArray, 12);
+
     } catch {
       return this.lastBackup;
     }
   }
 
   /**
-   * Get known cubes metadata (cached!)
+   * Get known cubes metadata (cached!) – format of MagicEden and other
    */
   @Get(['ordinals/getCubesMetadata'])
   @ApiOperation({ operationId: 'getCubesMetadata' })
@@ -181,15 +134,12 @@ export class OrdinalsController {
     const simpleResult = async () => {
 
       const searchResult = await searchForText('cubes.haushoppe.art');
-      return searchResult.results
-        .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art--><body><script>'))
-        .map((x, index) => ({
-          id: x.inscriptionid,
-          meta: {
-            name: 'Ordinal Cube #' + index,
-            attributes: parseCube(x.contentstr)
-          }
-        }));
+      const meta = searchResultToCubeInscriptionMeta(searchResult);
+
+      return meta.map(x => ({
+        id: x.inscriptionId,
+        meta: x.meta
+      }));
     };
 
     return this.cacheService.loadCached('ordinal_cubes_metadata', simpleResult, tenMinutesInSeconds);
@@ -213,7 +163,7 @@ export class OrdinalsController {
 
     return this.cacheService.loadCached('ordinal_price_' + fee + '_' + size + '_' + code, async () => {
 
-      const referral = validateCode(code);
+      const referral = validateReferralCode(code);
 
       const price = await getPrice({
         fee,
@@ -330,3 +280,4 @@ export class OrdinalsController {
       return ordinalnovusSearchForText('cubes.haushoppe.art');
     }
 }
+

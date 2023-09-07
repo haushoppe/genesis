@@ -1,10 +1,10 @@
-export interface Referral {
+export interface ReferralCode {
   code: string,
   bonus: number,
   address: string
 }
 
-export const REFERRALS: Referral[] = [
+export const REFERRALS: ReferralCode[] = [
   {
       code: 'HAUS_HOPPE_CUBE_35000',
       bonus: 35000,
@@ -21,8 +21,3 @@ export const REFERRALS: Referral[] = [
       address: '???'
   },
 ];
-
-export function validateCode(code: string | null | undefined): Referral {
-  const referral = REFERRALS.find(ref => ref.code === code);
-  return referral ? referral : REFERRALS[0];  // default is the first entry
-}

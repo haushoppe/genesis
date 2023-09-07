@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { ErrorResponse, OrderResponse } from './ordinalsbot-order-response';
-import { OrdinalsbotInscriptionSearchResult } from './ordinalsbot-inscription-search-result';
-import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from './ordinalsbot-price-result';
-import { OrdinalsbotFxrateResult } from './ordinalsbot-fxrate-result';
+import { ErrorResponse, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
+import { OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
+import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../../../shared/ordinalsbot-price-result';
+import { OrdinalsbotFxrateResult } from '../../../../../shared/ordinalsbot-fxrate-result';
 
-import { validateCode } from './validate-code';
-import { REFERRALS } from './referrals';
+import { validateReferralCode } from './validate-referral-code';
+import { REFERRALS } from './referral-code';
 
 export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api.ordinalsbot.com/order';
 // export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://signet.ordinalsbot.com/api/order'
@@ -44,7 +44,7 @@ export async function createInscriptionRequestForHtml(
   code: string
 ): Promise<OrderResponse> {
 
-  const referral = validateCode(code);
+  const referral = validateReferralCode(code);
   console.log('Creating order with referral code: ' + referral.code + ' and bonus ' + referral.bonus);
 
   const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, {

@@ -54,9 +54,9 @@ export function searchResultToCubeInscriptionMeta(searchResult: OrdinalsbotInscr
 
       let name = 'Ordinal Cube #' + index;
 
-      const title = x.attributes.find(t => t.trait_type === 'Title');
-      if (title) {
-        name = `${ name } (${ title })`
+      const titleTrait = x.attributes.find(t => t.trait_type === 'Title');
+      if (titleTrait) {
+        name = `${ name } (${ titleTrait.value })`
       }
 
       return {

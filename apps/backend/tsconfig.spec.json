@@ -6,5 +6,5 @@
     "types": ["jest", "node"],
     "target": "es2020"
   },
-  "include": ["jest.config.ts", "**/*.test.ts", "**/*.spec.ts", "**/*.d.ts", "src/app/api/api.controller.spec.ts.xxx", "src/app/app.controller.spec.ts.xxx"]
+  "include": ["jest.config.ts", "**/*.test.ts", "**/*.spec.ts", "**/*.d.ts", "/**/*.ts"]
 }

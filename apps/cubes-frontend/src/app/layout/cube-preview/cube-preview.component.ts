@@ -1,10 +1,8 @@
 import { JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
-import { PushModule } from '@rx-angular/template/push';
 
-import { MintService } from '../../services/mint-service';
 import { SafeHtmlPipe } from '../../safe-html.pipe';
-import { CubeDetails } from '../../store/mint.actions';
+import { MintFacade } from '../../store/mint.facade';
 
 @Component({
   selector: 'app-cube-preview',
@@ -13,15 +11,13 @@ import { CubeDetails } from '../../store/mint.actions';
   standalone: true,
   imports: [
     NgIf,
-    PushModule,
-    JsonPipe,
     SafeHtmlPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CubePreviewComponent {
 
-  @Input() cubeDetails: CubeDetails = {
+  @Input() cubeDetails = {
     inscriptionIds: {
       inscriptionId1: '',
       inscriptionId2: '',
@@ -30,6 +26,7 @@ export class CubePreviewComponent {
       inscriptionId5: '',
       inscriptionId6: ''
     },
+    // title: '', // without Title!
     rotationSpeedX: '',
     rotationSpeedY: '',
     colorPane: '',
@@ -37,5 +34,12 @@ export class CubePreviewComponent {
     bgColor2: ''
   };
 
-  mintService = inject(MintService);
+  get cubeDetailsWithMockedTitle() {
+    return {
+      ...this.cubeDetails,
+      title: ''
+    };
+  }
+
+  mintFacade = inject(MintFacade);
 }

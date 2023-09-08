@@ -5,7 +5,7 @@
   Order ID: {{ mintFacade.bestOrderId$ | push }}<br>
 
   <ng-container *ngIf="order">
-    Amount: &nbsp;<strong>{{ order.charge.amount }} sats</strong>
+    Price: &nbsp;<strong>{{ order.charge.amount | number }} sats</strong>
     <!-- (which equals to {{ order?.charge?.fiat_value }} USD) -->
     <span *ngIf="order.code"><br>
       Code: {{ order.code }}</span>

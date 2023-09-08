@@ -1,0 +1,29 @@
+cite {
+  font-weight: 500;
+
+  position: relative;
+  margin: 0 auto;
+  padding: .5rem;
+}
+
+cite:before,
+cite:after {
+  position: absolute;
+  color: gray;
+  font-size: 4rem;
+  width: 4rem;
+  height: 4rem;
+  font-family: "Merriweather", sans-serif;
+}
+
+cite:before {
+  content: '“';
+  left: -4rem;
+  top: -1rem;
+}
+
+cite:after {
+  content: '”';
+  right: -3rem;
+  bottom: -1rem;
+}

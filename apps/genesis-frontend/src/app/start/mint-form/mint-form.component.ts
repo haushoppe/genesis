@@ -41,7 +41,7 @@ export class MintFormComponent {
         Validators.required
       ]
     })
-  } );
+  });
 
   c = this.form.controls;
 

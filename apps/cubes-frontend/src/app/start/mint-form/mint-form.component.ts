@@ -4,8 +4,9 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 
+import { CubePreviewTitleComponent } from '../../layout/cube-preview/cube-preview-title.component';
 import { CubePreviewComponent } from '../../layout/cube-preview/cube-preview.component';
 import { LoadingIndicatorButtonComponent } from '../../layout/loading-indicator-button/loading-indicator-button.component';
 import { LoadingIndicatorComponent } from '../../layout/loading-indicator/loading-indicator.component';
@@ -39,12 +40,14 @@ function containsOnlyNumbers(str: string) {
     TrimValueAccessorDirective,
     TrimNumberValueAccessorDirective,
     CubePreviewComponent,
+    CubePreviewTitleComponent,
     RouterLink,
     PushModule,
     LoadingIndicatorComponent,
     DecimalPipe,
     ShortenAddressPipe,
-    JsonPipe
+    JsonPipe,
+    LoadingIndicatorComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -74,6 +77,7 @@ export class MintFormComponent implements OnInit {
     inscriptionId4: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
     inscriptionId5: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
     inscriptionId6: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
+    title: new FormControl('', { nonNullable: true }),
     receiveAddress: new FormControl('', { nonNullable: true, validators: [Validators.required, BtcAddressValidator(), Validators.pattern('^bc1p.*')] }),
     // hiden code
     code: new FormControl('', { nonNullable: true, validators: [CorrectCodeValidator()] }),
@@ -142,11 +146,17 @@ export class MintFormComponent implements OnInit {
       }
     });
 
-    this.c.code.valueChanges.pipe(
-      distinctUntilChanged(),
-      debounceTime(1000)
-    ).subscribe(value => {
-      this.mintFacade.loadPrice(value);
+    this.form.valueChanges.pipe(
+      map(v => ({
+        size: this.mintFacade.getCubeHtml(MintFormComponent.mapCubeDetails(v)).length,
+        code: v.code
+      })),
+      distinctUntilChanged((prev, curr) => {
+        return JSON.stringify(prev) === JSON.stringify(curr);
+      }),
+      debounceTime(500)
+    ).subscribe(({ size, code }) => {
+      this.mintFacade.loadPrice(size, code);
     });
 
     [
@@ -170,27 +180,47 @@ export class MintFormComponent implements OnInit {
     }));
   }
 
-  getCubeDetails(): CubeDetails {
+  static mapCubeDetails(value: Partial<{
+    inscriptionId1: string,
+    inscriptionId2: string,
+    inscriptionId3: string,
+    inscriptionId4: string,
+    inscriptionId5: string;
+    inscriptionId6: string,
+    title: string,
+    receiveAddress: string,
+    code: string,
+    rotationSpeedX: string,
+    rotationSpeedY: string,
+    colorPane: string,
+    bgColor1: string,
+    bgColor2: string,
+  }>): CubeDetails {
 
     return {
       inscriptionIds: {
-        inscriptionId1: this.c.inscriptionId1.value,
-        inscriptionId2: this.c.inscriptionId2.value,
-        inscriptionId3: this.c.inscriptionId3.value,
-        inscriptionId4: this.c.inscriptionId4.value,
-        inscriptionId5: this.c.inscriptionId5.value,
-        inscriptionId6: this.c.inscriptionId6.value
+        inscriptionId1: value.inscriptionId1 || '',
+        inscriptionId2: value.inscriptionId2 || '',
+        inscriptionId3: value.inscriptionId3 || '',
+        inscriptionId4: value.inscriptionId4 || '',
+        inscriptionId5: value.inscriptionId5 || '',
+        inscriptionId6: value.inscriptionId6 || ''
       },
-      rotationSpeedX: this.c.rotationSpeedX.value,
-      rotationSpeedY: this.c.rotationSpeedY.value,
-      colorPane: this.c.colorPane.value,
-      bgColor1: this.c.bgColor1.value,
-      bgColor2: this.c.bgColor2.value
+      title: value.title || '',
+      rotationSpeedX: value.rotationSpeedX || '',
+      rotationSpeedY: value.rotationSpeedY || '',
+      colorPane: value.colorPane || '',
+      bgColor1: value.bgColor1 || '',
+      bgColor2: value.bgColor2 || ''
     };
   }
 
+  getCubeDetails(): CubeDetails {
+    return MintFormComponent.mapCubeDetails(this.form.value);
+  }
+
   mint() {
-    const cubeDetails = this.getCubeDetails()
+    const cubeDetails = this.getCubeDetails();
     const receiveAddress = this.c.receiveAddress.value;
     const code = this.c.code.value;
 

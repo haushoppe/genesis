@@ -116,12 +116,12 @@ export class MintEffects {
   );
   */
 
-  loadAllInscriptionsOnRouting$ = createEffect(() => {
+  loadInitialDataOnRouting$ = createEffect(() => {
     return this.actions.pipe(
       ofRoute(['']),
       concatMap(() => [
         MintActions.loadAllInscriptions(),
-        MintActions.loadPrice({ code: '' })
+        MintActions.loadPrice({ code: '', size: 557 }) // lowest possible size
       ]),
     );
   });
@@ -209,13 +209,13 @@ export class MintEffects {
   loadPrice$ = createEffect(() =>
     this.actions.pipe(
       ofType(MintActions.loadPrice),
-      switchMap(({ code }) =>
+      switchMap(({ code, size }) =>
         defer(() => from(this.mintService.getFees())).pipe(
           retry({ count: 3, delay: 1000 }),
           switchMap(fees =>
             this.ordinalsService.getPrice(
               fees.halfHourFee,
-              557, // TODO! calculate real size
+              size,
               code
             ).pipe(
               retry({ count: 3, delay: 1000 }),

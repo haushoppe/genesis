@@ -6,7 +6,7 @@
       role="status"
       style="margin-bottom: -6px;"
     ></span>
-    <span class="inline-block ms-3" style="font-size: 1.2em;">{{ sendDataText }}</span>
+    <span *ngIf="sendDataText" class="inline-block ms-3" style="font-size: 1.2em;">{{ sendDataText }}</span>
 
   </div>
 

@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { parseCube } from 'apps/shared/parse-cube';
 import { map, Observable } from 'rxjs';
 
 import { OrdinalsService } from '../openapi-client';
@@ -7,6 +8,8 @@ import { CubeDetails } from '../store/mint.actions';
 import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
 import { HiroService } from './hiro-service';
 import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
+import { UuidValidator } from '../uuid-validator';
+import { isValidInscriptionId } from './is-valid-inscription-id';
 
 
 @Injectable({
@@ -18,6 +21,8 @@ export class MintService {
   hiroService = inject(HiroService);
 
   readonly template1 = `<html><!--cubes.haushoppe.art--><body><script>t='`;
+  readonly template1title = `<html><!--cubes.haushoppe.art--><head><title>__TITLE__</title></head><body><script>t='`;
+
   readonly template2 = `'</script><script src=/content/fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0></script>`;
 
   readonly dummyInscriptionIds = [
@@ -35,7 +40,7 @@ export class MintService {
        '../assets/_______________________________________________side6.svg',
   ];
 
-  getConcatenatedCubeDetails({
+  getConcatenatedCubeData({
     inscriptionIds,
     rotationSpeedX,
     rotationSpeedY,
@@ -44,12 +49,13 @@ export class MintService {
     bgColor2
   }: CubeDetails) {
 
-    const t = (inscriptionIds.inscriptionId1 || this.dummyInscriptionIds[0]) + '|'
-    + (inscriptionIds.inscriptionId2 || this.dummyInscriptionIds[1]) + '|'
-    + (inscriptionIds.inscriptionId3 || this.dummyInscriptionIds[2]) + '|'
-    + (inscriptionIds.inscriptionId4 || this.dummyInscriptionIds[3]) + '|'
-    + (inscriptionIds.inscriptionId5 || this.dummyInscriptionIds[4]) + '|'
-    + (inscriptionIds.inscriptionId6 || this.dummyInscriptionIds[5]) + '|'
+    const t =
+      this.fallbackIfNotValidId(inscriptionIds.inscriptionId1, this.dummyInscriptionIds[0]) + '|'
+    + this.fallbackIfNotValidId(inscriptionIds.inscriptionId2, this.dummyInscriptionIds[1]) + '|'
+    + this.fallbackIfNotValidId(inscriptionIds.inscriptionId3, this.dummyInscriptionIds[2]) + '|'
+    + this.fallbackIfNotValidId(inscriptionIds.inscriptionId4, this.dummyInscriptionIds[3]) + '|'
+    + this.fallbackIfNotValidId(inscriptionIds.inscriptionId5, this.dummyInscriptionIds[4]) + '|'
+    + this.fallbackIfNotValidId(inscriptionIds.inscriptionId6, this.dummyInscriptionIds[5]) + '|'
     + rotationSpeedX + '|'
     + rotationSpeedY + '|'
     + colorPane + '|'
@@ -59,9 +65,35 @@ export class MintService {
     return removeTrailingPipes(t);
   }
 
+  fallbackIfNotValidId(inscriptionId: string, fallback: string) {
+
+    if (!inscriptionId || !isValidInscriptionId(inscriptionId)) {
+      return fallback;
+    }
+
+    return inscriptionId;
+  }
+
   getCubeHtml(cubeDetails: CubeDetails) {
-    const t = this.getConcatenatedCubeDetails(cubeDetails);
-    return this.template1 + t + this.template2;
+    const t = this.getConcatenatedCubeData(cubeDetails);
+
+    let template1: string;
+    if (cubeDetails.title) {
+      const title = cubeDetails.title
+        .replace('<', '&lt;')
+        .replace('>', '&gt;');
+      template1 = this.template1title.replace('__TITLE__', title);
+    } else {
+      template1 = this.template1
+    }
+
+    const html = template1 + t + this.template2;
+
+    if (!parseCube(html)) {
+      return `<html style="color:red"><h1>Warning!</h1>You have entered data that would create an invalid cube. Please send us an email and a direct message (DM) so we can determine what went wrong.</head>`
+    }
+
+    return html;
   }
 
   async getFees() {

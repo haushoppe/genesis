@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["**/*.ts", "webpack.config.js", "src/app/services/types/network.ts", "../backend/src/app/model/limit-array.spec.ts"],
+  "include": ["**/*.ts", "webpack.config.js"],
   "compilerOptions": {
     "types": ["jest", "node"]
   }

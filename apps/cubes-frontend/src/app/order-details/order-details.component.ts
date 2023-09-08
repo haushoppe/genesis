@@ -1,4 +1,4 @@
-import { JsonPipe, NgClass, NgIf } from '@angular/common';
+import { DecimalPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input } from '@angular/core';
 import { PushModule } from '@rx-angular/template/push';
 import { QRCodeModule } from 'angularx-qrcode';
@@ -12,6 +12,8 @@ import { RouterLink } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { decodeBase64DataURI } from './decode-base64-data-uri';
 import { SafeHtmlPipe } from '../safe-html.pipe';
+import { parseCube } from '../../../../shared/parse-cube';
+
 
 
 @Component({
@@ -30,7 +32,8 @@ import { SafeHtmlPipe } from '../safe-html.pipe';
         QRCodeModule,
         LetModule,
         RouterLink,
-        SafeHtmlPipe
+        SafeHtmlPipe,
+        DecimalPipe
     ]
 })
 export class OrderDetailsComponent {
@@ -61,7 +64,14 @@ export class OrderDetailsComponent {
   getDecoded(dataURL: string): string {
     if (!dataURL) return '';
 
-    return decodeBase64DataURI(dataURL) || '';
+    const decoded = decodeBase64DataURI(dataURL) || '';
+
+    // only 100% valid cubes will be displayed here, for XSS security reasons
+    if (!parseCube(decoded)) {
+      return '';
+    }
+
+    return decoded;
   }
 
   async copyChainAddressToClipboard(order: InscriptionOrder) {

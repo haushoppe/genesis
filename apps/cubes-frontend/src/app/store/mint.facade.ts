@@ -14,6 +14,7 @@ import {
   selectPriceStatus,
 } from './mint.reducer';
 import { selectBestOrderId, selectFile, selectInscriptionId, selectIsOrderPending } from './mint.selectors';
+import { MintService } from '../services/mint-service';
 
 
 @Injectable({
@@ -22,6 +23,7 @@ import { selectBestOrderId, selectFile, selectInscriptionId, selectIsOrderPendin
 export class MintFacade {
 
   store = inject(Store);
+  mintService = inject(MintService);
 
   allInscriptions$ = this.store.select(selectAllInscriptions);
   allInscriptionsStatus$ = this.store.select(selectAllInscriptionsStatus);
@@ -55,7 +57,11 @@ export class MintFacade {
     return this.store.select(selectInscriptionId(inscriptionNumber));
   }
 
-  loadPrice(code = '') {
-    this.store.dispatch(MintActions.loadPrice({ code }));
+  loadPrice(size: number, code = '') {
+    this.store.dispatch(MintActions.loadPrice({ code, size }));
+  }
+
+  getCubeHtml(cubeDetails: CubeDetails) {
+    return this.mintService.getCubeHtml(cubeDetails);
   }
 }

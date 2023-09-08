@@ -16,6 +16,7 @@ export interface SixInscriptionIds {
 
 export interface CubeDetails {
   inscriptionIds: SixInscriptionIds,
+  title: string,
   rotationSpeedX: string,
   rotationSpeedY: string,
   colorPane: string,
@@ -48,7 +49,7 @@ export const MintActions = createActionGroup({
     'Lookup Inscription Id Success': props<{ inscriptionNumber: string, inscriptionId: string }>(),
     'Lookup Inscription Id Failure':  props<{ error: HttpErrorResponse }>(),
 
-    'Load Price': props<{ code: string }>(),
+    'Load Price': props<{ code: string, size: number }>(),
     'Load Price Success': props<{ price: Price }>(),
     'Load Price Failure':  props<{ error: HttpErrorResponse }>()
   }

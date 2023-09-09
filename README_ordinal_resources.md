@@ -65,3 +65,10 @@ discord: https://discord.gg/F25NEDuyEb
 website: https://cubes.haushoppe.art/
 supply: 10000
 inscription icon: 00ef588330b57ba4586365c9a3663e14bcc14452819ae6c09f99eec291435831i0
+
+
+
+OrdinalsBot Affiliate Program
+https://ordinalsbot.com?ref=haushoppecubeangels0
+https://ordinalsbot.com?ref=haushoppe
+???

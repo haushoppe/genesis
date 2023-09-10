@@ -215,12 +215,18 @@ export const {
   name,
   reducer,
   selectMintState,
+
   selectAllInscriptions,
   selectAllInscriptionsStatus,
   selectInscription,
   selectInscriptionStatus,
+
   selectOrderResponse,
   selectOrderStatus,
+
+  selectCreateInscriptionResponse,
+  selectCreateInscriptionStatus,
+
   selectKnownInscriptionIds,
   selectKnownInscriptionIdStatus,
   selectPrice,

@@ -5,6 +5,8 @@ import { CubeDetails, MintActions } from './mint.actions';
 import {
   selectAllInscriptions,
   selectAllInscriptionsStatus,
+  selectCreateInscriptionResponse,
+  selectCreateInscriptionStatus,
   selectInscription,
   selectInscriptionStatus,
   selectKnownInscriptionIdStatus,
@@ -33,6 +35,9 @@ export class MintFacade {
 
   orderResponse$ = this.store.select(selectOrderResponse);
   orderStatus$ = this.store.select(selectOrderStatus);
+
+  createInscriptionResponse$ = this.store.select(selectCreateInscriptionResponse);
+  createInscriptionStatus$ = this.store.select(selectCreateInscriptionStatus);
 
   file$ = this.store.select(selectFile);
   isOrderPending$ = this.store.select(selectIsOrderPending);

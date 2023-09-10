@@ -138,9 +138,9 @@ export class MintService {
 
   createConnectInscription(cubeDetails: CubeDetails, fee: number): Observable<CreateInscriptionResponse> {
 
-    if (!((window as any)?.BitcoinProvider?.createInscription)) {
-      return throwError(() => new Error('Your Xverse wallet is outdated. Please install the latest version!'))
-    }
+    // if (!((window as any)?.BitcoinProvider?.createInscription)) {
+    //   return throwError(() => new Error('Your Xverse wallet is outdated. Please install the latest version!'))
+    // }
 
     const inscriptionIds = cubeDetails.inscriptionIds;
 

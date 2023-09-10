@@ -11,7 +11,7 @@ import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
 import { isValidInscriptionId } from './is-valid-inscription-id';
 
 import { BitcoinNetworkType, createInscription, CreateInscriptionResponse } from 'sats-connect'
-import { REFERRALS } from 'apps/backend/src/app/model/ordinals/referral-code';
+import { REFERRALS } from '../../../../shared/referral-code';
 
 
 @Injectable({
@@ -138,9 +138,9 @@ export class MintService {
 
   createConnectInscription(cubeDetails: CubeDetails, fee: number): Observable<CreateInscriptionResponse> {
 
-    // if (!((window as any)?.BitcoinProvider?.createInscription)) {
-    //   return throwError(() => new Error('Your Xverse wallet is outdated. Please install the latest version!'))
-    // }
+    if (!((window as any)?.BitcoinProvider?.createInscription)) {
+      return throwError(() => new Error('Your Xverse wallet is outdated. Please update it!'))
+    }
 
     const inscriptionIds = cubeDetails.inscriptionIds;
 

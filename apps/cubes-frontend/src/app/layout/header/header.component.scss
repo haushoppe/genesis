@@ -1,23 +1,3 @@
-// .nav-masthead {
-
-//   .nav-link {
-//     color: darkgray;
-//     border-bottom: .25rem solid transparent;
-//     + {
-//       .nav-link {
-//         margin-left: 1rem;
-//       }
-//     }
-//   }
-
-//   .active {
-//     color: darkgray;
-//     ;
-//   }
-// }
-
-
-
 .connect-button {
   z-index: 2;
   position: fixed;
@@ -25,10 +5,8 @@
   right: 0;
   margin-top: 16px;
   margin-right: 16px;
-  box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 16px 0px
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 16px 0px;
 }
-
-
 
 
 // X-Small devices (portrait phones, less than 576px)
@@ -74,10 +52,5 @@
     display: inline;
     font-weight: 500;
     color: #6c757d;
-  }
-
-  app-loading-indicator-button {
-    margin-top: 24px;
-    margin-right: 24px;
   }
 }

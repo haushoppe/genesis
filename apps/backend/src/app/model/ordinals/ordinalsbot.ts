@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { ErrorResponse, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
-import { OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
-import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../../../shared/ordinalsbot-price-result';
-import { OrdinalsbotFxrateResult } from '../../../../../shared/ordinalsbot-fxrate-result';
 
+import { OrdinalsbotFxrateResult } from '../../../../../shared/ordinalsbot-fxrate-result';
+import { OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
+import { ErrorResponse, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
+import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../../../shared/ordinalsbot-price-result';
+import { REFERRALS } from '../../../../../shared/referral-code';
 import { validateReferralCode } from './validate-referral-code';
-import { REFERRALS } from './referral-code';
 
 export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api.ordinalsbot.com/order';
 // export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://signet.ordinalsbot.com/api/order'

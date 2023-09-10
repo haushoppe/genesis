@@ -1,4 +1,4 @@
-import { REFERRALS, ReferralCode } from "./referral-code";
+import { REFERRALS, ReferralCode } from "../../../../../shared/referral-code";
 
 /**
  * Validates the provided referral code.

@@ -1,5 +1,5 @@
-import { REFERRALS, ReferralCode } from "./referral-code";
-import { validateReferralCode } from "./validate-referral-code";
+import { ReferralCode, REFERRALS } from '../../../../../shared/referral-code';
+import { validateReferralCode } from './validate-referral-code';
 
 describe('validateReferralCode', () => {
     it('returns the correct referral for a valid code', () => {

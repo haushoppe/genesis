@@ -1,8 +1,7 @@
-import { OrdinalsbotInscriptionSearchResult } from 'apps/shared/ordinalsbot-inscription-search-result';
-
+import { OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
 import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
 import { parseCube } from '../../../../../shared/parse-cube';
-import { REFERRALS } from './referral-code';
+import { REFERRALS } from '../../../../../shared/referral-code';
 
 
 export function hideUnwantedProperties({ charge, files, paid, referral }: OrderResponse): InscriptionOrder {
@@ -28,7 +27,7 @@ export function hideUnwantedProperties({ charge, files, paid, referral }: OrderR
 
 export function searchResultToCubeInscriptionMeta(searchResult: OrdinalsbotInscriptionSearchResult) {
 
-  let meta = searchResult.results
+  const meta = searchResult.results
 
     // filter all out without correct prefex
     .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'))

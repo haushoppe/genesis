@@ -85,12 +85,19 @@ export class WalletService {
           },
         },
         onFinish: (response: XverseAddressResponse) => {
-          observer.next({
-            label: KnownOrdinalWallets.xverse.label,
-            ordinalsAddress: response.addresses[0].address, // we only requested Ordinals, so it should be always the first one
-            useConnectInscription: true
-          });
-          observer.complete();
+
+          const ordinalsAddress = response.addresses.find(x => x.purpose === AddressPurpose.Ordinals);
+
+          if (!ordinalsAddress) {
+            observer.error(new Error('No Ordinals address found?!'));
+          } else {
+            observer.next({
+              label: KnownOrdinalWallets.xverse.label,
+              ordinalsAddress: ordinalsAddress.address,
+              useConnectInscription: true
+            });
+            observer.complete();
+          }
         },
         onCancel: () => {
           observer.error(new Error('Request was cancelled'));

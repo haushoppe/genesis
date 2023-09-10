@@ -106,7 +106,7 @@
                 </div>
 
                 <strong class="d-block mt-2">
-                  {{ price?.priceInSats | number }} sats<strong *ngIf="useConnectInscription"> or lower</strong>
+                  {{ price?.priceInSats | number }} sats<strong *ngIf="useConnectInscription"> (estimated)</strong>
                 </strong>
                 <span class="text-muted mt-n1 d-block">which equals to {{ price?.priceInUsd | number : '1.2-2' }} USD</span>
 

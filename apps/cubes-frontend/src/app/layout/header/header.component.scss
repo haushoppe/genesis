@@ -18,7 +18,7 @@
 
 
 
-app-loading-indicator-button {
+.connect-button {
   z-index: 2;
   position: fixed;
   top: 0;
@@ -27,6 +27,8 @@ app-loading-indicator-button {
   margin-right: 16px;
   box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 16px 0px
 }
+
+
 
 
 // X-Small devices (portrait phones, less than 576px)

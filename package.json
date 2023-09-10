@@ -88,7 +88,7 @@
     "papaparse": "^5.3.2",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0",
-    "sats-connect": "^1.0.0",
+    "sats-connect": "^1.1.1",
     "sharp": "^0.32.5",
     "swagger-ui-express": "^5.0.0",
     "tslib": "^2.3.0",

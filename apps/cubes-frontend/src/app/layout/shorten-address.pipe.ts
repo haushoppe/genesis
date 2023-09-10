@@ -14,5 +14,5 @@ export class ShortenAddressPipe implements PipeTransform  {
 
 // like on magic eden
 export function shortenAddress(address: string): string {
-  return `${address.slice(0, 7)}...${address.slice(-3)}`
+  return `${address.slice(0, 7)}...${address.slice(-4)}`
 }

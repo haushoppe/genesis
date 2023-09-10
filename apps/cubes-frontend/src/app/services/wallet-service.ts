@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-
-import { getLocalStore, setLocalStore } from './local-storage';
+import { Observable, of } from 'rxjs';
 import { AddressPurpose, BitcoinNetworkType, getAddress } from 'sats-connect';
-import { WalletConnectResult, WalletInfo } from '../store/wallet.reducer';
+
+import { WalletInfo } from '../store/wallet.reducer';
 
 
-interface XverseAddressResponse {
+export interface XverseAddressResponse {
   addresses: {
     address: string,
     publicKey: string,
@@ -13,18 +13,18 @@ interface XverseAddressResponse {
   }[];
 }
 
-const knownWallets = {
+export const KnownOrdinalWallets = {
   unisat: {
     label: 'Unisat',
     logo: '/assets/btc-unisat-logo.png',
   },
   hiro: {
     label: 'Hiro',
-    logo: '/btc-hiro-logo.jpeg',
+    logo: '/assets/btc-hiro-logo.jpeg',
   },
   xverse: {
     label: 'Xverse',
-    logo: '/btc-xverse-logo.png',
+    logo: '/assets/btc-xverse-logo.png',
   }
 }
 
@@ -34,12 +34,12 @@ const knownWallets = {
 })
 export class WalletService {
 
-  async connect() {
+  connect() {
     return this.connectXverseWallet();
   }
 
-  async disconnect() {
-    return undefined
+  disconnect() {
+    return of()
   }
 
   getInstalledWallets() {
@@ -47,15 +47,15 @@ export class WalletService {
     const installedWallets = [];
 
     if (this.getUnisatInstalled()) {
-      installedWallets.push(knownWallets.unisat);
+      installedWallets.push(KnownOrdinalWallets.unisat);
     }
 
     if (this.getHiroInstalled()) {
-      installedWallets.push(knownWallets.hiro);
+      installedWallets.push(KnownOrdinalWallets.hiro);
     }
 
     if (this.getXverseInstalled()) {
-      installedWallets.push(knownWallets.xverse);
+      installedWallets.push(KnownOrdinalWallets.xverse);
     }
 
     return installedWallets;
@@ -73,46 +73,30 @@ export class WalletService {
     return !!(((window as any)?.BitcoinProvider?.signTransaction?.toString()?.includes('Psbt')));
   }
 
-  async connectXverseWallet(): Promise<WalletConnectResult> {
+  connectXverseWallet(): Observable<WalletInfo> {
 
-    let result: WalletConnectResult = {
-      error: undefined,
-      wallet: undefined
-    };
-
-    const getAddressOptions = {
-      payload: {
-        purposes: [AddressPurpose.Ordinals],
-        message: 'Please share your address for receiving Ordinals.',
-        network: {
-          type: BitcoinNetworkType.Mainnet,
+    return new Observable<WalletInfo>((observer) => {
+      getAddress({
+        payload: {
+          purposes: [AddressPurpose.Ordinals],
+          message: 'Please share your address for receiving Ordinals.',
+          network: {
+            type: BitcoinNetworkType.Mainnet
+          },
         },
-      },
-      onFinish: (response: XverseAddressResponse) => {
-
-        result = {
-          error: undefined,
-          wallet: {
+        onFinish: (response: XverseAddressResponse) => {
+          observer.next({
+            label: KnownOrdinalWallets.xverse.label,
             ordinalsAddress: response.addresses[0].address, // we only requested Ordinals, so it should be always the first one
-          }
+            useConnectInscription: true
+          });
+          observer.complete();
+        },
+        onCancel: () => {
+          observer.error(new Error('Request was cancelled'));
         }
-      },
-      onCancel: () => result = {
-        error: new Error('Request was cancelled'),
-        wallet: undefined
-      }
-    };
-
-    try {
-      await getAddress(getAddressOptions);
-      return result;
-
-    } catch (ex: unknown) {
-      return {
-        error: ex as Error,
-        wallet: undefined
-      };
-    }
+      });
+    });
   };
 }
 

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { parseCube } from 'apps/shared/parse-cube';
-import { map, Observable } from 'rxjs';
+import { parseCube } from '../../../../shared/parse-cube';
+import { map, Observable, throwError } from 'rxjs';
 
 import { OrdinalsService } from '../openapi-client';
 import { InscriptionOrder } from '../ordinalsbot';
@@ -8,8 +8,10 @@ import { CubeDetails } from '../store/mint.actions';
 import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
 import { HiroService } from './hiro-service';
 import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
-import { UuidValidator } from '../uuid-validator';
 import { isValidInscriptionId } from './is-valid-inscription-id';
+
+import { BitcoinNetworkType, createInscription, CreateInscriptionResponse } from 'sats-connect'
+import { REFERRALS } from 'apps/backend/src/app/model/ordinals/referral-code';
 
 
 @Injectable({
@@ -132,6 +134,55 @@ export class MintService {
     });
 
     return order as any;
+  }
+
+  createConnectInscription(cubeDetails: CubeDetails, fee: number): Observable<CreateInscriptionResponse> {
+
+    if (!((window as any)?.BitcoinProvider?.createInscription)) {
+      return throwError(() => new Error('Your Xverse wallet is outdated. Please install the latest version!'))
+    }
+
+    const inscriptionIds = cubeDetails.inscriptionIds;
+
+    if (!inscriptionIds.inscriptionId1 ||
+        !inscriptionIds.inscriptionId2 ||
+        !inscriptionIds.inscriptionId3 ||
+        !inscriptionIds.inscriptionId4 ||
+        !inscriptionIds.inscriptionId5 ||
+        !inscriptionIds.inscriptionId6) {
+      throw 'InscriptionId is missing!'
+    }
+
+    const contentType = 'text/html';
+    const content = this.getCubeHtml(cubeDetails);
+    const payloadType = 'PLAIN_TEXT';
+
+    const appFeeAddress = REFERRALS[0].address; // the address where the inscription fee should go
+    const appFee = REFERRALS[0].bonus; // the amount of sats that should be sent to the fee address
+    const suggestedMinerFeeRate = fee; // suggest a fee rate for the transaction in sats/byte
+
+    return new Observable<CreateInscriptionResponse>((observer) => {
+      createInscription({
+        payload: {
+          network: {
+            type: BitcoinNetworkType.Mainnet,
+          },
+          contentType,
+          content,
+          payloadType,
+          appFeeAddress,
+          appFee,
+          suggestedMinerFeeRate,
+        },
+        onFinish: (response) => {
+          observer.next(response);
+          observer.complete();  // Complete the observable stream.
+        },
+        onCancel: () => {
+          observer.error(new Error('You canceled the inscription.'));  // Emit an error.
+        }
+      });
+    });
   }
 
   inscriptionNumberToId(inscriptionNumber: string) {

@@ -1,28 +1,3 @@
-<!-- <h3 class="float-md-start pt-1 ps-3">
-  <a href="https://cubes.haushoppe.art/" rel="home">
-    <img width="390" height="65" src="/assets/haushoppe-logo.svg">
-  </a>
-</h3>
-
-
-<nav class="nav nav-masthead justify-content-center float-md-end p-2 pt-3 pe-4">
-  <a class="nav-link fw-bold py-1 px-0"
-    aria-current="page"
-    routerLink="/"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{ exact: true}"
-  >
-    Start
-  </a>
-  <a class="nav-link fw-bold py-1 px-0"
-    routerLink="member"
-    routerLinkActive="active"
-  >
-    Member Area
-  </a>
-</nav> -->
-
-
 <div class="pt-2 pb-2 logo-container">
   <a routerLink="/" rel="home" role="navigation" aria-label="Go to home">
     <img src="/assets/haushoppe-logo.svg" class="logo" alt="HAUS HOPPE logo">
@@ -31,14 +6,23 @@
   <small class="presents">presents</small>
 </div>
 
-<ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
+<ng-container *rxLet="walletFacade.xverseInstalled$; let xverseInstalled">
+  <ng-container *rxLet="walletFacade.walletStatus$; let walletStatus">
+    <ng-container *rxLet="walletFacade.walletAddress$; let walletAddress">
 
-  <app-loading-indicator-button
-    *ngIf="walletService.getXverseInstalled()"
-    (buttonClick)="walletFacade.connectWallet()"
-    [state]="walletStatus"
-    [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Connected with Xverse' : 'Connect Xverse wallet'"
-    defaultIconClass="bi bi-wallet2"
-  />
+      <div class="connect-button" *ngIf="xverseInstalled">
 
+        <app-loading-indicator-button
+          (buttonClick)="walletFacade.connectWallet()"
+          [state]="walletStatus"
+          [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Connected' : 'Connect Xverse'"
+          defaultIconClass="bi bi-wallet2"
+        />
+        <ng-container *ngIf="walletAddress">
+          <br>
+          <small class="text-muted" [title]="walletAddress">with {{ walletAddress | shortenAddress }}</small>
+        </ng-container>
+      </div>
+    </ng-container>
+  </ng-container>
 </ng-container>

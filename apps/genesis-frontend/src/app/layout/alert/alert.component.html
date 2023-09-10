@@ -12,7 +12,7 @@
 
 <div class="alert alert-primary d-flex align-items-center m-0" role="alert" [ngClass]="'alert-' + type">
   <svg class="bi flex-shrink-0 me-3" width="24" height="24" role="img" [attr.aria-label]="type + ':'">
-    <use xlink:href="#info-fill"  *ngIf="type === 'primary'"/>
+    <use xlink:href="#info-fill" *ngIf="type === 'primary'"/>
     <use xlink:href="#check-circle-fill" *ngIf="type === 'success'"/>
     <use xlink:href="#exclamation-triangle-fill"  *ngIf="type === 'warning'"/>
     <use xlink:href="#exclamation-triangle-fill"  *ngIf="type === 'danger'"/>

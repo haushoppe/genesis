@@ -54,12 +54,17 @@ function containsOnlyNumbers(str: string) {
 export class MintFormComponent implements OnInit {
 
   @Input()
+  useConnectInscription = false;
+
+  @Input()
   public set walletAddress(address: string | undefined) {
     this.form.patchValue({ receiveAddress: address });
     if (address) {
-      this.c.receiveAddress.disable()
+      this.c.receiveAddress.disable();
+      this.useConnectInscription = true;
     } else {
-      this.c.receiveAddress.enable()
+      this.c.receiveAddress.enable();
+      this.useConnectInscription = false;
     }
   }
 
@@ -224,7 +229,11 @@ export class MintFormComponent implements OnInit {
     const receiveAddress = this.c.receiveAddress.value;
     const code = this.c.code.value;
 
-    this.mintFacade.mint(cubeDetails, receiveAddress, code);
+    if (this.useConnectInscription) {
+      this.mintFacade.createConnectInscription(cubeDetails);
+    } else {
+      this.mintFacade.placeOrder(cubeDetails, receiveAddress, code);
+    }
   }
 }
 

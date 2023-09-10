@@ -11,6 +11,7 @@ import {
   getSuccessfulState,
   SubmittableState,
 } from './submittable/submittable-state';
+import { CreateInscriptionResponse } from 'sats-connect';
 
 
 export interface State {
@@ -23,6 +24,9 @@ export interface State {
 
   orderResponse: InscriptionOrder | undefined;
   orderStatus: SubmittableState;
+
+  createInscriptionResponse: CreateInscriptionResponse | undefined;
+  createInscriptionStatus: SubmittableState;
 
   knownInscriptionIds: { [inscriptionNumber: string]: string };
   knownInscriptionIdStatus: SubmittableState;
@@ -42,6 +46,9 @@ export const initialState: State = {
   // orderResponse: examplePaidResponse as OrderResponse,
   // orderResponse: exampleUnpaidResponse as OrderResponse,
   orderStatus: getInitialState(),
+
+  createInscriptionResponse: undefined,
+  createInscriptionStatus:getInitialState(),
 
   knownInscriptionIds: {},
   knownInscriptionIdStatus: getInitialState(),
@@ -118,12 +125,32 @@ export const mintFeature = createFeature({
      ...state,
      orderResponse: undefined,
      orderStatus: getFailureState(error)
-   })),
+    })),
 
     on(MintActions.placeOrderFailure, (state, { error }) => ({
       ...state,
       orderResponse: undefined,
       orderStatus: getFailureState(error)
+    })),
+
+    // Sats Connect Inscription (Xverse)
+
+    on(MintActions.createConnectInscription, state => ({
+      ...state,
+      createInscriptionResponse: undefined,
+      createInscriptionStatus: getSubmittingState()
+    })),
+
+    on(MintActions.createConnectInscriptionSuccess, (state, { inscriptionResponse }) => ({
+      ...state,
+      createInscriptionResponse: inscriptionResponse,
+      createInscriptionStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.createConnectInscriptionFailure, (state, { error }) => ({
+      ...state,
+      createInscriptionResponse: undefined,
+      createInscriptionStatus: getFailureState(error)
     })),
 
     // delete state if it contains an outdated orderResponse

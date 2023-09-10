@@ -62,6 +62,24 @@ export class MintEffects {
     )
   );
 
+  createConnectInscription$ = createEffect(() =>
+    this.actions.pipe(
+      ofType(MintActions.createConnectInscription),
+      concatMap(({ cubeDetails }) =>
+        defer(() => from(this.mintService.getFees())).pipe(
+          retry({ count: 3, delay: 1000 }),
+          switchMap(fees =>
+            this.mintService.createConnectInscription(cubeDetails, fees.halfHourFee).pipe(
+              // tap(inscriptionResponse => this.router.navigate(['/order-connect', inscriptionResponse.txId])),
+              map(inscriptionResponse => MintActions.createConnectInscriptionSuccess({ inscriptionResponse })),
+              catchError(error => of(MintActions.createConnectInscriptionFailure({ error })))
+            )
+          )
+        )
+      )
+    )
+  );
+
   startOrderPolling$ = createEffect(() => {
     return this.actions.pipe(
       ofRoute(['order/:orderId']),

@@ -44,11 +44,17 @@ export class MintFacade {
   priceStatus$ = this.store.select(selectPriceStatus);
 
 
-  mint(cubeDetails: CubeDetails, receiveAddress: string, code: string) {
+  placeOrder(cubeDetails: CubeDetails, receiveAddress: string, code: string) {
     this.store.dispatch(MintActions.placeOrder({
       cubeDetails,
       receiveAddress,
       code
+    }));
+  }
+
+  createConnectInscription(cubeDetails: CubeDetails) {
+    this.store.dispatch(MintActions.createConnectInscription({
+      cubeDetails
     }));
   }
 

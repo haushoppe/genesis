@@ -9,7 +9,6 @@ import { tenMinutesInSeconds } from '../types/constants';
 @Controller()
 export class ScalesController {
 
-  // TODO: outdated!
   // readonly mongodbRestEndpoint = this.configService.get('mongodbRestEndpoint');
   // readonly mongodbApiKey = this.configService.get('mongodbApiKey');
   // readonly restApiConfig = {

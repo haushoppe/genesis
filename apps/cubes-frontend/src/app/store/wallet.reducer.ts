@@ -10,20 +10,19 @@ import {
 import { WalletActions } from './wallet.actions';
 
 export interface WalletInfo {
+  label: string;
   ordinalsAddress: string;
-}
-
-export interface WalletConnectResult {
-  error: Error | undefined;
-  wallet: WalletInfo | undefined;
+  useConnectInscription: boolean;
 }
 
 export interface State {
+  installedWallets: { label: string; logo: string; }[] | undefined;
   wallet: WalletInfo | undefined;
   walletStatus: SubmittableState;
 }
 
 export const initialState: State = {
+  installedWallets: undefined,
   wallet: undefined,
   walletStatus: getInitialState()
 };
@@ -33,6 +32,13 @@ export const walletFeature = createFeature({
   name: 'wallet',
   reducer: createReducer(
     initialState,
+
+    // Check Installed Wallets
+
+    on(WalletActions.installedWalletsChanged, (state, { installedWallets }) => ({
+      ...state,
+      installedWallets
+    })),
 
     // Wallet
 
@@ -65,6 +71,7 @@ export const walletFeature = createFeature({
 export const {
   name,
   reducer,
+  selectInstalledWallets,
   selectWalletState,
   selectWallet, // selector for `wallet` property
   selectWalletStatus, // selector for `walletStatus` property

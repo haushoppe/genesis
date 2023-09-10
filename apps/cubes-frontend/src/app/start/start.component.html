@@ -38,17 +38,50 @@
   You will find great images on <a href="https://magiceden.io/ordinals" target="_blank">Magic Eden</a> or <a href="https://www.ord.io/?contentType=image" target="_blank">Ord.io</a>.<br>
 </p>
 
-<ng-container *rxLet="walletFacade.walletAddress$; let walletAddress">
-  <app-mint-form [walletAddress]="walletAddress" />
+<ng-container *rxLet="walletFacade.xverseInstalled$; let xverseInstalled">
+  <ng-container *rxLet="walletFacade.xverseConnected$; let xverseConnected">
+    <ng-container *rxLet="walletFacade.useConnectInscription$; let useConnectInscription">
+      <ng-container *rxLet="walletFacade.walletAddress$; let walletAddress">
+
+        <app-mint-form
+          [walletAddress]="walletAddress"
+          [useConnectInscription]="useConnectInscription"
+        />
+
+        <p class="mt-5" *ngIf="!walletAddress">
+          When you click the "Mint your cube!" button,
+          we will display an invoice that you can pay directly either with ⚡️&nbsp;Lightning (instant) or
+          onchain with 🟧&nbsp;Bitcoin (BTC).
+          As soon as the payment is confirmed, we will automatically inscribe your cube on the Bitcoin blockchain and send it to you.
+          The data for your cube is then fully stored onchain and will remain unchangeable forever.
+        </p>
+
+        <div *ngIf="xverseInstalled && !xverseConnected" class="alert alert-warning d-flex align-items-center bg-dark text-light" role="alert">
+
+          <svg class="bi flex-shrink-0 me-2"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="24" height="24" role="img">
+            <path fill="#FF9900" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+          </svg>
+
+          <div>
+            You have the Xverse wallet installed.
+            To use its new inscription feature, <a (click)="walletFacade.connectWallet()" href="javascript:void()">please connect your wallet</a>.<br>
+            This method doesn't rely on third-party services, ensuring the best cost-efficiency for you.
+          </div>
+        </div>
+
+        <p class="mt-5" *ngIf="xverseConnected">
+          You have successfully connected your Xverse wallet. When you click the "Mint your cube!" button,
+          a transaction to create your cube is prepared.
+
+          If you approve it, the transaction will be immediately broadcast.
+          Once a miner adds your transaction to a block, the data for your cube is fully stored onchain and will remain unchangeable forever.
+        </p>
+
+      </ng-container>
+    </ng-container>
+  </ng-container>
 </ng-container>
 
-<p class="mt-5">
-  After submitting your cube via the "Mint your cube!" button,
-  we will display an invoice that you can pay directly either with ⚡️ Lightning (instant) or
-  onchain with 🟧 Bitcoin (BTC).
-  As soon as the payment is confirmed, we will automatically inscribe your cube on the Bitcoin blockchain and send it to you.
-  The data for the cube is then fully stored onchain and will remain unchangeable forever.
-</p>
 
 <h2 class="mt-5">Latest cubes</h2>
 

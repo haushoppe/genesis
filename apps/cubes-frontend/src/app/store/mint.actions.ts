@@ -4,6 +4,7 @@ import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { Inscription, InscriptionOrder } from '../ordinalsbot';
 import { InscriptionSimple, Price } from '../openapi-client';
 import { MempoolTransaction } from '../services/mempool-service';
+import { CreateInscriptionResponse } from 'sats-connect';
 
 export interface SixInscriptionIds {
   inscriptionId1: string;
@@ -42,6 +43,10 @@ export const MintActions = createActionGroup({
     'Update Order Status': props<{ orderResponse: InscriptionOrder }>(),
     'Order Not Found': props<{ error: HttpErrorResponse }>(),
     'Order Completed': emptyProps(),
+
+    'Create Connect Inscription': props<{ cubeDetails: CubeDetails }>(),
+    'Create Connect Inscription Success': props<{ inscriptionResponse: CreateInscriptionResponse }>(),
+    'Create Connect Inscription Failure': props<{ error: Error }>(),
 
     'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),
 

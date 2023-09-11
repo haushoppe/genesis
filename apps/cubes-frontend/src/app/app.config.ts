@@ -4,7 +4,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore, routerReducer } from '@ngrx/router-store';
-import { provideState, provideStore } from '@ngrx/store';
+import { ActionReducer, provideState, provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { environment } from '../environments/environment';
@@ -14,6 +14,16 @@ import { mintFeature } from './store/mint.reducer';
 import { CustomRouteSerializer } from './store/utils-ngrx-router/custom-route-serializer';
 import { WalletEffects } from './store/wallet.effects';
 import { walletFeature } from './store/wallet.reducer';
+import { localStorageSync } from 'ngrx-store-localstorage';
+
+
+export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
+  return localStorageSync({
+    keys: [{ wallet: ['wallet', 'walletStatus'] }],
+    rehydrate: true,
+    storageKeySerializer: (key) => `cube_${key}`
+  })(reducer);
+}
 
 
 export const appConfig: ApplicationConfig = {
@@ -50,6 +60,8 @@ export const appConfig: ApplicationConfig = {
     // NgRx providers
     provideStore({
       router: routerReducer,
+    }, {
+      metaReducers: [localStorageSyncReducer]
     }),
     provideRouterStore({
       serializer: CustomRouteSerializer,

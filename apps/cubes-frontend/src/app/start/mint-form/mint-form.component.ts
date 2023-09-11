@@ -129,7 +129,7 @@ export class MintFormComponent implements OnInit {
     }*/
 
     this.c.inscriptionId1.valueChanges.pipe(debounceTime(1000)).subscribe(value => {
-      if (value.includes('HAUS_HOPPE') || value.includes('SECRET')) {
+      if (value && (value.includes('HAUS_HOPPE') || value.includes('SECRET'))) {
 
         if (value.includes('HAUS_HOPPE')) {
           this.showCode = true;

@@ -1,4 +1,3 @@
-import { animate, AUTO_STYLE, state, style, transition, trigger } from '@angular/animations';
 import { NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -16,8 +15,6 @@ import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
 import { OrderSelectComponent } from './order-select/order-select.component';
 
-
-const expandDuration = 500
 
 @Component({
     selector: 'app-start',
@@ -38,20 +35,11 @@ const expandDuration = 500
       RouterLink,
       OrderSelectComponent
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    animations: [
-      trigger('collapse', [
-        state('false', style({ height: AUTO_STYLE, visibility: AUTO_STYLE })),
-        state('true', style({ height: '0', visibility: 'hidden' })),
-        transition('false => true', animate(expandDuration + 'ms ease-in')),
-        transition('true => false', animate(expandDuration + 'ms ease-out'))
-      ])
-    ]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StartComponent {
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
 
   SubmitStatus = SubmitStatus;
-  collapsed = true;
 }

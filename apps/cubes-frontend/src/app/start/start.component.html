@@ -1,29 +1,9 @@
 <h1 class="mt-4">Ordinal Cubes</h1>
 
-<!-- <p class="mt-2 text-justify">
-  This is a digital art experiment. You can now be an artist and curator.<br class="d-none d-md-block">
-  Choose six images that are already on the <strong>🟧 Bitcoin</strong> blockchain, arrange them into a cube!<br class="d-none d-md-block">
-  Let's create, collect, and curate together. Are you ready to join this artistic evolution?
-</p>
-
-<button
-  (click)="collapsed = !collapsed"
-  class="btn btn-outline-primary">{{ collapsed ? 'Read more…' : 'Read less…'}}</button>
-
-<p class="text-justify" [@collapse]="collapsed">
-
-  <br class="mt-4">
-  Through ordinals and recursive inscriptions, entirely new forms of expression will emerge, and this is one of them. Mint your inscription by combining other images from the chain and enjoy this unique 3D experiment. There is no copyright, no predefined collection, no provenance, no roadmap. <strong>Only immutable art.</strong><br>
-  <br>
-  Ordinals is a project in the Bitcoin world, which has gained a lot of excitement in the last few weeks. Within a short time span, this innovation has once again caught the public's attention to Bitcoin. It is time to examine what ordinals really are and what functionality they bring to the Bitcoin space.
-  For more insights, we encourage you to explore our <a routerLink="/faq">FAQ section</a>.
-</p> -->
-
 <p class="mt-2 text-justify">
   The world's smallest onchain gallery, visualized as a 3D cube. Permissionless. Immutable. Forever existing.<br class="d-none d-md-block">
   Choose six images that are already on the <strong>🟧 Bitcoin</strong> blockchain and arrange them into your own cube!
 </p>
-
 
 
 <h2 class="mt-5">Mint a cube</h2>
@@ -35,7 +15,7 @@
   <!-- and your receive address (which starts with <code class="fs-6">bc1p</code>) -->
   The six inscriptions must contain an image.<br class="d-none d-md-block">
   <!-- If a side of the cube turns black, then the image format is not supported. -->
-  You will find great images on <a href="https://magiceden.io/ordinals" target="_blank">Magic Eden</a> and <a href="https://www.ord.io/?contentType=image" target="_blank">Ord.io</a>.<br>
+  You will find great images on <a href="https://magiceden.io/ordinals" target="_blank">Magic Eden</a> and other Ordinal Explorers.<br>
 </p>
 
 <ng-container *rxLet="walletFacade.useConnectInscription$; let useConnectInscription">
@@ -54,9 +34,10 @@
           onchain with 🟧&nbsp;Bitcoin (BTC).
           As soon as the payment is confirmed, we will automatically inscribe your cube on the Bitcoin blockchain and send it to you.
           The data for your cube is then fully stored onchain and will remain unchangeable forever.
+          <strong>Create a digital artifact that lasts forever!</strong>
         </p>
 
-        <div *ngIf="xverseInstalled && !xverseConnected" class="alert alert-warning d-flex align-items-center bg-dark text-light" role="alert">
+        <div *ngIf="xverseInstalled && !xverseConnected" class="alert alert-warning d-flex align-items-center bg-dark text-light w-75 mt-4 ms-auto me-auto" role="alert">
 
           <svg class="bi flex-shrink-0 me-2"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="24" height="24" role="img">
             <path fill="#FF9900" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
@@ -65,7 +46,8 @@
           <div class="ms-1">
             You have the Xverse wallet installed.
             To utilize its new inscription feature, <a (click)="walletFacade.connectWallet()" href="javascript:void()">please connect your wallet</a>.<br class="d-none d-md-block">
-            This method ensures the best cost-efficiency for you.
+            <!-- This method ensures the best cost-efficiency for you. -->
+            With Xverse, you pay directly to a commit address, eliminating unnecessary fees and waiting times!
           </div>
         </div>
 
@@ -75,6 +57,7 @@
 
           If you approve it, the transaction will be immediately broadcast.
           Once a miner adds your transaction to a block, the data for your cube is fully stored onchain and will remain unchangeable forever.
+          <strong>Create a digital artifact that lasts forever!</strong>
         </p>
 
       </ng-container>
@@ -88,7 +71,7 @@
     Here you see the newest cubes that have been inscribed.
     <!-- Please note that this list is updated periodically for better performance,
     so the data you're seeing might be a few minutes old. -->
-    You can find the full collection on <a href="https://magiceden.io/ordinals/marketplace/ordinal-cubes-by-haus-hoppe">MagicEden</a>.
+    You can find the full collection on <a target="_blank" href="https://magiceden.io/ordinals/marketplace/ordinal-cubes-by-haus-hoppe">MagicEden</a>.
   </p>
 
   <div class="row">
@@ -110,7 +93,7 @@
   <p class="mb-3">
     Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities.
     However, the thrill of collecting intensifies when considering rarity.
-    To highlight this, all cubes will soon receive a Rarity Score based on the following criteria::
+    To highlight this, all cubes will soon receive a Rarity Score based on the following criteria:
   </p>
   <ul>
     <li>The first 100 cubes are granted an elevated score. <strong>You are still early!</strong></li>

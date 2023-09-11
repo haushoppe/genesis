@@ -15,12 +15,29 @@ import { CustomRouteSerializer } from './store/utils-ngrx-router/custom-route-se
 import { WalletEffects } from './store/wallet.effects';
 import { walletFeature } from './store/wallet.reducer';
 import { localStorageSync } from 'ngrx-store-localstorage';
+import merge from 'lodash.merge';
 
+
+const INIT_ACTION = '@ngrx/store/init';
+const UPDATE_ACTION = '@ngrx/store/update-reducers';
+
+// bugfix: Rehydratation changes all store references on UPDATE_ACTION
+// https://github.com/btroncone/ngrx-store-localstorage/issues/128#issuecomment-613975060
+const mergeReducer = (state: any, rehydratedState: any, action: any) => {
+  if ((action.type === INIT_ACTION || action.type === UPDATE_ACTION) && rehydratedState) {
+    state = merge(state, rehydratedState); // <-- this line was changed to not clone
+  }
+  return state;
+};
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
-    keys: [{ wallet: ['wallet', 'walletStatus'] }],
+    keys: [
+      { mint: ['pastOrders', 'pastCreatedInscriptions'] },
+      { wallet: ['wallet', 'walletStatus'] },
+    ],
     rehydrate: true,
+    // mergeReducer,
     storageKeySerializer: (key) => `cube_${key}`
   })(reducer);
 }

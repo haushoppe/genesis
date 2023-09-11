@@ -51,7 +51,7 @@ export class MintEffects {
           switchMap(fees =>
             this.mintService.placeOrder(cubeDetails, receiveAddress, code, fees.halfHourFee).pipe(
               tap(orderResponse => this.router.navigate(['/order', orderResponse.id])),
-              map(orderResponse => MintActions.placeOrderSuccess({ orderResponse })),
+              map(orderResponse => MintActions.placeOrderSuccess({ orderResponse, createdAt: (new Date()).toISOString() })),
               catchError(error => of(MintActions.placeOrderFailure({ error })))
             )
           )
@@ -69,7 +69,7 @@ export class MintEffects {
           switchMap(fees =>
             this.mintService.createConnectInscription(cubeDetails, fees.halfHourFee).pipe(
               tap(inscriptionResponse => this.router.navigate(['/order-connect', inscriptionResponse.txId])),
-              map(inscriptionResponse => MintActions.createConnectInscriptionSuccess({ inscriptionResponse })),
+              map(inscriptionResponse => MintActions.createConnectInscriptionSuccess({ inscriptionResponse, createdAt: (new Date()).toISOString() })),
               catchError(error => of(MintActions.createConnectInscriptionFailure({ error })))
             )
           )
@@ -120,7 +120,7 @@ export class MintEffects {
     return this.actions.pipe(
       ofRoute(['order-connect/:txId']),
       mapToParam('txId'),
-      map(txId => MintActions.createConnectInscriptionSuccess({ inscriptionResponse: { txId } }))
+      map(txId => MintActions.updateConnectInscriptionStatus({ inscriptionResponse: { txId } }))
     )
   });
 

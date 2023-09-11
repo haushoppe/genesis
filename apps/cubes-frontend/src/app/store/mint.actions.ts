@@ -38,15 +38,17 @@ export const MintActions = createActionGroup({
     'Load Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
     'Place Order': props<{ cubeDetails: CubeDetails, receiveAddress: string, code: string }>(),
-    'Place Order Success': props<{ orderResponse: InscriptionOrder }>(),
+    'Place Order Success': props<{ orderResponse: InscriptionOrder, createdAt: string }>(),
     'Place Order Failure': props<{ error: HttpErrorResponse }>(),
     'Update Order Status': props<{ orderResponse: InscriptionOrder }>(),
     'Order Not Found': props<{ error: HttpErrorResponse }>(),
     'Order Completed': emptyProps(),
 
     'Create Connect Inscription': props<{ cubeDetails: CubeDetails }>(),
-    'Create Connect Inscription Success': props<{ inscriptionResponse: CreateInscriptionResponse }>(),
+    'Create Connect Inscription Success': props<{ inscriptionResponse: CreateInscriptionResponse, createdAt: string }>(),
     'Create Connect Inscription Failure': props<{ error: Error }>(),
+    'Update Connect Inscription Status': props<{ inscriptionResponse: CreateInscriptionResponse }>(),
+
 
     'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),
 

@@ -24,9 +24,11 @@ export interface State {
 
   orderResponse: InscriptionOrder | undefined;
   orderStatus: SubmittableState;
+  pastOrders: { id: string, createdAt: string }[];
 
   createInscriptionResponse: CreateInscriptionResponse | undefined;
   createInscriptionStatus: SubmittableState;
+  pastCreatedInscriptions: { txId: string, createdAt: string }[];
 
   knownInscriptionIds: { [inscriptionNumber: string]: string };
   knownInscriptionIdStatus: SubmittableState;
@@ -46,15 +48,18 @@ export const initialState: State = {
   // orderResponse: examplePaidResponse as OrderResponse,
   // orderResponse: exampleUnpaidResponse as OrderResponse,
   orderStatus: getInitialState(),
+  pastOrders: [],
 
   createInscriptionResponse: undefined,
-  createInscriptionStatus:getInitialState(),
+  createInscriptionStatus: getInitialState(),
+  pastCreatedInscriptions: [],
 
   knownInscriptionIds: {},
   knownInscriptionIdStatus: getInitialState(),
 
   price: undefined,
-  priceStatus: getInitialState(),};
+  priceStatus: getInitialState()
+};
 
 
 export const mintFeature = createFeature({
@@ -85,9 +90,9 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadInscription, state => ({
       ...state,
-       // reset previous singleInscription to not show outdated data while loading!
-       inscription: undefined,
-       inscriptionStatus: getSubmittingState()
+      // reset previous singleInscription to not show outdated data while loading!
+      inscription: undefined,
+      inscriptionStatus: getSubmittingState()
     })),
 
     on(MintActions.loadInscriptionSuccess, (state, { inscription }) => ({
@@ -115,16 +120,27 @@ export const mintFeature = createFeature({
     })),
 
     on(MintActions.placeOrderSuccess,
-       MintActions.updateOrderStatus, (state, { orderResponse }) => ({
+      MintActions.updateOrderStatus, (state, { orderResponse }) => ({
+        ...state,
+        orderResponse,
+        orderStatus: getSuccessfulState()
+      })),
+
+    on(MintActions.placeOrderSuccess, (state, { orderResponse, createdAt }) => ({
       ...state,
-      orderResponse,
-      orderStatus: getSuccessfulState()
+      pastOrders: [
+        ...state.pastOrders,
+        {
+          id: orderResponse.id,
+          createdAt
+        }
+      ]
     })),
 
     on(MintActions.orderNotFound, (state, { error }) => ({
-     ...state,
-     orderResponse: undefined,
-     orderStatus: getFailureState(error)
+      ...state,
+      orderResponse: undefined,
+      orderStatus: getFailureState(error)
     })),
 
     on(MintActions.placeOrderFailure, (state, { error }) => ({
@@ -141,10 +157,22 @@ export const mintFeature = createFeature({
       createInscriptionStatus: getSubmittingState()
     })),
 
-    on(MintActions.createConnectInscriptionSuccess, (state, { inscriptionResponse }) => ({
+    on(MintActions.createConnectInscriptionSuccess,
+      MintActions.updateConnectInscriptionStatus, (state, { inscriptionResponse }) => ({
+        ...state,
+        createInscriptionResponse: inscriptionResponse,
+        createInscriptionStatus: getSuccessfulState()
+    })),
+
+    on(MintActions.createConnectInscriptionSuccess, (state, { inscriptionResponse, createdAt }) => ({
       ...state,
-      createInscriptionResponse: inscriptionResponse,
-      createInscriptionStatus: getSuccessfulState()
+      pastCreatedInscriptions: [
+        ...state.pastCreatedInscriptions,
+        {
+          txId: inscriptionResponse.txId,
+          createdAt
+        }
+      ]
     })),
 
     on(MintActions.createConnectInscriptionFailure, (state, { error }) => ({
@@ -180,7 +208,7 @@ export const mintFeature = createFeature({
     on(MintActions.lookupInscriptionIdSuccess, (state, { inscriptionNumber, inscriptionId }) => ({
       ...state,
       knownInscriptionIds: {
-        ... state.knownInscriptionIds,
+        ...state.knownInscriptionIds,
         [inscriptionNumber]: inscriptionId
       },
       knownInscriptionIdStatus: getSuccessfulState()

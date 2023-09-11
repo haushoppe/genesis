@@ -39,6 +39,7 @@ export class MintFacade {
   createInscriptionResponse$ = this.store.select(selectCreateInscriptionResponse);
   createInscriptionStatus$ = this.store.select(selectCreateInscriptionStatus);
 
+
   file$ = this.store.select(selectFile);
   isOrderPending$ = this.store.select(selectIsOrderPending);
   bestOrderId$ = this.store.select(selectBestOrderId);

@@ -1,0 +1,27 @@
+<div *rxLet="mintFacade.createInscriptionResponse$; let inscriptionResponse" class="bg-dark p-3 mt-4 col-lg-8 mx-auto">
+
+  <h3>Your Cube Inscription</h3>
+
+  Transaction ID: {{ inscriptionResponse?.txId }}<br>
+  <br>
+
+  Your inscription was successfully broadcast.<br>
+  It will be available when <a href="https://mempool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">this transaction</a> is confirmed!<br>
+
+  <hr>
+
+  The Inscription ID of your cube is:
+
+  <a [href]="environment.ordinalsExplorerMarketplace + inscriptionResponse?.txId + 'i0'" target="_blank"
+    role="navigation"
+    attr.aria-label="Visit marketplace for Inscription {{ inscriptionResponse?.txId }}i0">
+    {{ inscriptionResponse?.txId }}i0
+  </a>
+</div>
+
+
+
+
+<div class="mt-4 col-lg-8 mx-auto">
+  <a routerLink="/" class="btn btn btn-primary fw-bold mt-4 mb-4">« Back</a>
+</div>

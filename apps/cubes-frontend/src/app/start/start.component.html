@@ -35,7 +35,7 @@
   <!-- and your receive address (which starts with <code class="fs-6">bc1p</code>) -->
   The six inscriptions must contain an image.<br class="d-none d-md-block">
   <!-- If a side of the cube turns black, then the image format is not supported. -->
-  You will find great images on <a href="https://magiceden.io/ordinals" target="_blank">Magic Eden</a> or <a href="https://www.ord.io/?contentType=image" target="_blank">Ord.io</a>.<br>
+  You will find great images on <a href="https://magiceden.io/ordinals" target="_blank">Magic Eden</a> and <a href="https://www.ord.io/?contentType=image" target="_blank">Ord.io</a>.<br>
 </p>
 
 <ng-container *rxLet="walletFacade.useConnectInscription$; let useConnectInscription">
@@ -64,8 +64,8 @@
 
           <div class="ms-1">
             You have the Xverse wallet installed.
-            To use its new inscription feature, <a (click)="walletFacade.connectWallet()" href="javascript:void()">please connect your wallet</a>.<br class="d-none d-md-block">
-            This method is ensuring the best cost-efficiency for you.
+            To utilize its new inscription feature, <a (click)="walletFacade.connectWallet()" href="javascript:void()">please connect your wallet</a>.<br class="d-none d-md-block">
+            This method ensures the best cost-efficiency for you.
           </div>
         </div>
 
@@ -105,7 +105,24 @@
   </div>
 
 
-  <h2 class="mt-2">Frequently Asked Questions</h2>
+  <h2 class="mt-2">Rarity</h2>
+
+  <p class="mb-3">
+    Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities.
+    However, the thrill of collecting intensifies when considering rarity.
+    To highlight this, all cubes will soon receive a Rarity Score based on the following criteria::
+  </p>
+  <ul>
+    <li>The first 100 cubes are granted an elevated score. <strong>You are still early!</strong></li>
+    <li>Each side of a cube should display distinct inscriptions.</li>
+    <li>Cubes featuring inscriptions that have already been claimed by others won't receive a score and will be labeled "cursed".<br>In essence, each cube stakes an exclusive claim to its inscriptions. <strong>First is first.</strong></li>
+    <li>Cubes should present inscriptions all from the same collection.</li>
+    <li>Cubes should display popular collections.<br>Popularity is gauged by the number of cubes that display inscriptions from that specific collection.</li>
+    <li>The experiment draws to a close after 10,000 valid cubes have been minted.</li>
+  </ul>
+
+
+  <h2 class="mt-5">Frequently Asked Questions</h2>
 
   <p class="mb-2">
     If you have any outstanding questions,

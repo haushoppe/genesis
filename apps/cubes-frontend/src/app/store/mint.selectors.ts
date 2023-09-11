@@ -41,3 +41,4 @@ export function selectInscriptionId(inscriptionNumber: string) {
     knownInscriptionIds  => knownInscriptionIds[inscriptionNumber]
   );
 }
+

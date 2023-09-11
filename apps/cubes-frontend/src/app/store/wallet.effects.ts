@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { catchError, concatMap, distinctUntilChanged, interval, map, of, switchMap, take } from 'rxjs';
+import { catchError, concatMap, distinctUntilChanged, interval, map, of, switchMap, take, timer } from 'rxjs';
 
 import { WalletService } from '../services/wallet-service';
 import { WalletActions } from './wallet.actions';
@@ -14,17 +14,17 @@ export class WalletEffects {
   walletService = inject(WalletService);
   store = inject(Store);
 
-  checkInstalledWallets$ = createEffect(() =>
-    interval(500) // Start immediately and repeat every 500ms
-    .pipe(
-      take(4), // Take 4 intervals only, i.e., perform the check four times
-      map(() => this.walletService.getInstalledWallets()),
-      distinctUntilChanged((prev, curr) => {
-        return JSON.stringify(prev) === JSON.stringify(curr);
-      }),
-      map(installedWallets => WalletActions.installedWalletsChanged({ installedWallets }))
-    )
-  );
+  checkInstalledWallets$ = createEffect(() => {
+    return timer(0, 500) // Start immediately and repeat every 500ms
+      .pipe(
+        take(4), // Take 4 intervals only, i.e., perform the check four times
+        map(() => this.walletService.getInstalledWallets()),
+        distinctUntilChanged((prev, curr) => {
+          return JSON.stringify(prev) === JSON.stringify(curr);
+        }),
+        map(installedWallets => WalletActions.installedWalletsChanged({ installedWallets }))
+      )
+  });
 
   connectWallet$ = createEffect(() => {
     return this.actions.pipe(

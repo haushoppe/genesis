@@ -6,7 +6,6 @@ import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore, routerReducer } from '@ngrx/router-store';
 import { provideState, provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
-import { NotificationModule } from '@progress/kendo-angular-notification';
 
 import { environment } from '../environments/environment';
 import { ApiModule, Configuration } from './openapi-client';
@@ -29,7 +28,6 @@ export const appConfig: ApplicationConfig = {
           })
       )
     ),
-    importProvidersFrom(NotificationModule),
     provideRouter(
       [
         {

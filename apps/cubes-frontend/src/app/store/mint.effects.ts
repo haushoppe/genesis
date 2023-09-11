@@ -2,7 +2,6 @@ import { inject, Injectable, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { NotificationService } from '@progress/kendo-angular-notification';
 import { defer, EMPTY, from, of, timer } from 'rxjs';
 import {
   catchError,
@@ -40,7 +39,6 @@ export class MintEffects {
   mintService = inject(MintService);
   mempoolService = inject(MempoolService);
   store = inject(Store);
-  notificationService = inject(NotificationService);
   ngZone = inject(NgZone);
   router = inject(Router);
 
@@ -70,7 +68,7 @@ export class MintEffects {
           retry({ count: 3, delay: 1000 }),
           switchMap(fees =>
             this.mintService.createConnectInscription(cubeDetails, fees.halfHourFee).pipe(
-              // tap(inscriptionResponse => this.router.navigate(['/order-connect', inscriptionResponse.txId])),
+              tap(inscriptionResponse => this.router.navigate(['/order-connect', inscriptionResponse.txId])),
               map(inscriptionResponse => MintActions.createConnectInscriptionSuccess({ inscriptionResponse })),
               catchError(error => of(MintActions.createConnectInscriptionFailure({ error })))
             )
@@ -117,6 +115,14 @@ export class MintEffects {
       map(() => MintActions.orderCompleted())
     )
   );
+
+  orderConnectDetailsPage$ = createEffect(() => {
+    return this.actions.pipe(
+      ofRoute(['order-connect/:txId']),
+      mapToParam('txId'),
+      map(txId => MintActions.createConnectInscriptionSuccess({ inscriptionResponse: { txId } }))
+    )
+  });
 
   // TODO
   /*
@@ -183,25 +189,18 @@ export class MintEffects {
   //   );
   // });
 
-  showNotification$ = createEffect(() => {
+  showConfettiFirework$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(MintActions.orderCompleted),
+      ofType(
+        MintActions.orderCompleted,
+        MintActions.createConnectInscriptionSuccess),
       tap(() => {
-
-        this.notificationService.show({
-          content: 'We received your payment and submitted a transaction that will inscribe your cube!',
-          hideAfter: 10000,
-          position: { horizontal: 'center', vertical: 'top' },
-          animation: { type: 'slide', duration: 400 },
-          type: { style: 'success', icon: true },
-          // closable: true
-        });
-
         this.ngZone.runOutsideAngular(() => confettiFirework());
       })
     )
   }, { dispatch: false });
 
+  // number to ID
   lookupInscriptionId$ = createEffect(() => {
     return this.actions.pipe(
       ofType(MintActions.lookupInscriptionId),

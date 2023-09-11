@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ActivatedRoute, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { BannerComponent } from './layout/banner/banner.component';
 import { FooterComponent } from './layout/footer/footer.component';
 import { HeaderComponent } from './layout/header/header.component';
 import { CustomScrollService } from './custom-scroll.service';
-import { map } from 'rxjs';
+import { filter, map, switchMap } from 'rxjs';
 import { PushModule } from '@rx-angular/template/push';
 import { NgIf } from '@angular/common';
 
@@ -22,11 +22,22 @@ import { NgIf } from '@angular/common';
     PushModule,
     NgIf
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  // changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent {
   customScroll = inject(CustomScrollService);
-  hideBanner$ = inject(ActivatedRoute).paramMap.pipe(
-    map(x => !!x.get('hideBanner'))
-  )
+
+  router = inject(Router);
+
+  hideBanner$ = this.router.events.pipe(
+    filter((event: any) => event instanceof NavigationEnd),
+    switchMap((event: NavigationEnd) => {
+      let route = this.router.routerState.root;
+      while (route.firstChild) {
+        route = route.firstChild;
+      }
+      return route.data;
+    }),
+    map(data => !!data.hideBanner)
+  );
 }

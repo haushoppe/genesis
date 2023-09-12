@@ -10,6 +10,6 @@ export const ORDINAL_ROUTES: Routes = [
   // { path: 'nft/:tokenId', component: DetailsComponent }
   { path: 'faq', component: FaqComponent },
   { path: 'order/:orderId', component: OrderDetailsComponent, data: { hideBanner: true } },
-  { path: 'order-connect/:txId', component: OrderConnectDetailsComponent, data: { hideBanner: false } },
+  { path: 'order-connect/:txId', component: OrderConnectDetailsComponent, data: { hideBanner: true } },
   { path: '**', component: StartComponent },
 ];

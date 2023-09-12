@@ -9,7 +9,7 @@ import { PushModule } from '@rx-angular/template/push';
 import { TrimValueAccessorDirective } from '../../trim-value-accessor.directive';
 import { UuidValidator } from '../../uuid-validator';
 
-
+// not used anymore!
 @Component({
     selector: 'app-order-select',
     templateUrl: './order-select.component.html',

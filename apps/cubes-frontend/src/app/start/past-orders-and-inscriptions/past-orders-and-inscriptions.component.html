@@ -1,0 +1,42 @@
+<ng-container *rxLet="pastFacade.pastOrders$; let pastOrders">
+
+  <h2 class="mt-5">Your last Cube orders</h2>
+
+  <p class="mb-2">
+    You have already ordered
+    {{ pastOrders.length === 1 ? 'a cube' : pastOrders.length + ' cubes' }}.
+    Here you can check the status of your
+    {{ pastOrders.length === 1 ? 'order' : 'orders' }}.
+  </p>
+
+  <ul>
+    <li *ngFor="let pastOrder of pastOrders">
+      <strong class="me-2"><a [routerLink]="['/order', pastOrder.id]">{{ pastOrder.id }}</a></strong>
+      <span>{{ pastOrder.createdAt | date: 'medium' }}</span>
+    </li>
+  </ul>
+
+</ng-container>
+
+
+<ng-container *rxLet="pastFacade.pastCreatedInscriptions$; let pastCreatedInscriptions">
+
+  <h2 class="mt-5">Your last Cube inscriptions</h2>
+
+  <p class="mb-2">
+    You have already inscribed
+    {{ pastCreatedInscriptions.length === 1 ? 'a cube' : pastCreatedInscriptions.length + ' cubes' }}.
+    Here you can check the status of your
+    {{ pastCreatedInscriptions.length === 1 ? 'inscription' : 'inscriptions' }}.
+  </p>
+
+  <ul>
+    <li *ngFor="let inscriptions of pastCreatedInscriptions">
+      <strong class="text-truncate me-2"><a [routerLink]="['/order-connect', inscriptions.txId]">{{ inscriptions.txId }}</a></strong>
+      <span>{{ inscriptions.createdAt | date: 'medium' }}</span>
+    </li>
+  </ul>
+
+</ng-container>
+
+

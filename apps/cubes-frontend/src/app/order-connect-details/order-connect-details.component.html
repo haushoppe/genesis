@@ -1,25 +1,33 @@
-<div *rxLet="mintFacade.createInscriptionResponse$; let inscriptionResponse" class="bg-dark p-3 mt-4 col-lg-8 mx-auto">
+<div class="d-flex justify-content-center align-items-center" style="min-height: 65vh;">
 
-  <h3>Your Cube Inscription</h3>
+  <div *rxLet="mintFacade.createInscriptionResponse$; let inscriptionResponse" class="bg-dark p-3 mt-4 col-lg-8">
 
-  Transaction ID: {{ inscriptionResponse?.txId }}<br>
-  <br>
+    <h3>Your Cube Inscription</h3>
 
-  Your inscription was successfully broadcast.<br>
-  It will be available when <a href="https://mempool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">this transaction</a> is confirmed!<br>
+    <div class="text-truncate" style="width: 70vw;">
+      Transaction ID: {{ inscriptionResponse?.txId }}
+    </div>
 
-  <hr>
+    <br>
 
-  The Inscription ID of your cube is:
+    Your inscription was successfully broadcast.<br>
+    It will be available when <a href="https://mempool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">this transaction</a> is confirmed!<br>
 
-  <a [href]="environment.ordinalsExplorerMarketplace + inscriptionResponse?.txId + 'i0'" target="_blank"
-    role="navigation"
-    attr.aria-label="Visit marketplace for Inscription {{ inscriptionResponse?.txId }}i0">
-    {{ inscriptionResponse?.txId }}i0
-  </a>
+    <hr>
+
+    The Inscription ID of your cube is:
+
+    <div class="text-truncate" style="width: 70vw;">
+      <a [href]="environment.ordinalsExplorerMarketplace + inscriptionResponse?.txId + 'i0'" target="_blank"
+        role="navigation"
+        attr.aria-label="Visit marketplace for Inscription {{ inscriptionResponse?.txId }}i0">
+        {{ inscriptionResponse?.txId }}i0
+      </a>
+    </div>
+
+  </div>
+
 </div>
-
-
 
 
 <div class="mt-4 col-lg-8 mx-auto">

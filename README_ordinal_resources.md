@@ -17,6 +17,12 @@ Search:
 * https://api.ordinalnovus.com/api/inscription?content_type=text&apiKey=85b1f7f4-3099-4cf7-8e38-8d3ba494a3ad&content=cubes.haushoppe.art
 
 
+# Inscription Parser
+
+* https://github.com/michaelshimeles/ordconnect
+* Some scripts to parse the Witness data from a Bitcoin Txn to uncover the hidden Ordinals
+  https://github.com/crustyapples/ordinals-playground/blob/main/inscription-parser.py
+
 # Magiceden Ordinal Collections:
 
 [

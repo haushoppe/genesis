@@ -13,7 +13,7 @@ import { MintFacade } from '../store/mint.facade';
 import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
-import { OrderSelectComponent } from './order-select/order-select.component';
+import { PastOrdersAndInscriptionsComponent } from './past-orders-and-inscriptions/past-orders-and-inscriptions.component';
 
 
 @Component({
@@ -33,7 +33,7 @@ import { OrderSelectComponent } from './order-select/order-select.component';
       PushModule,
       MintFormComponent,
       RouterLink,
-      OrderSelectComponent
+      PastOrdersAndInscriptionsComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

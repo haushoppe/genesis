@@ -113,15 +113,7 @@
   </p>
 
 
-  <ng-container *ngIf="!useConnectInscription">
-    <h2 class="mt-5">Your last order</h2>
-
-    <p class="mb-2">
-      If you want to check the status of an existing order, then enter the Order ID here:
-    </p>
-
-    <app-order-select />
-  </ng-container>
+  <app-past-orders-and-inscriptions />
 
 </ng-container>
 

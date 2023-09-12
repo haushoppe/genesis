@@ -144,7 +144,7 @@ Our camera is positioned on the positive z-axis, at a slightly elevated position
 We have two lights in our scene:
 
 1. A point light positioned directly above the cube along the y-axis, which casts shadows.
-2. A front point light positioned in front of the cube along the positive z-axis, which provides additional illumination.
+2. A point light positioned in front of the cube along the positive z-axis, which provides additional illumination.
 `
     },
     {

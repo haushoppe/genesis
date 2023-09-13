@@ -171,6 +171,9 @@
       It will be available when <a href="https://mempool.space/tx/{{ (mintFacade.file$ | push)?.sent }}" target="_blank">this transaction</a> is confirmed!<br>
 
       <ng-container *ngIf="(mintFacade.file$ | push)?.tx?.inscription as inscriptionId">
+
+        <hr>
+
         The Inscription ID of your cube is:
 
         <a [href]="environment.ordinalsExplorerMarketplace + inscriptionId" target="_blank"

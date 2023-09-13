@@ -7,7 +7,7 @@
       <iframe
         class="responsive-iframe"
         appToggleIframe
-        [toggleSrc]="environment.ordinalsExplorerIframe + inscription.inscriptionId"
+        [toggleSrc]="environment.ordinalsExplorerIframe + inscription.inscriptionId + '?cache-buster'"
       ></iframe>
     </div>
 

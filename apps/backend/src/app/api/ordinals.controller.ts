@@ -30,9 +30,14 @@ import {
   saveReferralCode,
   searchForText,
 } from '../model/ordinals/ordinalsbot';
+import {
+  MagicEdenService
+} from '../model/ordinals/magic-eden-service';
 import { validateReferralCode } from '../model/ordinals/validate-referral-code';
 import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
 import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
+import { CubeSuggestion } from '../types/ordinals/cube-suggestion';
+
 import { Inscription } from '../types/ordinals/inscription';
 import { InscriptionSimple } from '../types/ordinals/inscription-simple';
 import { Price } from '../types/ordinals/price';
@@ -43,12 +48,13 @@ import { Price } from '../types/ordinals/price';
 export class OrdinalsController {
 
   constructor(private configService: ConfigService,
-    private cacheService: CacheService) {
+    private cacheService: CacheService,
+    private magicEdenService: MagicEdenService) {
     this.getCubes();
   }
 
   /**
-   * Creating an Inscription Order
+   * Creating an Inscription Order via OrdinalsBot
    */
   @Post(['ordinals/createHtmlInscriptionOrder'])
   @ApiOperation({ operationId: 'createHtmlInscriptionOrder' })
@@ -72,7 +78,7 @@ export class OrdinalsController {
   }
 
   /**
-   * Get inscription order updates
+   * Get inscription order updates from OrdinalsBot
    */
   @Get(['ordinals/getOrderStatus/:id'])
   @ApiOperation({ operationId: 'getOrderStatus' })
@@ -150,7 +156,7 @@ export class OrdinalsController {
   }
 
   /**
-   * Get price in sats (cached!)
+   * Get OrdinalsBot price in sats (cached!)
    */
   @Get(['ordinals/getPrice/:fee/:size/:code?'])
   @ApiOperation({ operationId: 'getPrice' })
@@ -187,6 +193,28 @@ export class OrdinalsController {
       };
     }, oneMinuteInSeconds);
   }
+
+  /**
+   * Get cube suggestion from MagicEden
+   */
+    @Get(['ordinals/getCubeSuggestion/:collectionSymbol?'])
+    @ApiOperation({ operationId: 'getCubeSuggestion' })
+    @ApiParam({ name: 'collectionSymbol', type: 'string', required: false })
+    @ApiOkResponse({ type: Price })
+    @Header('Cache-Control', 'no-cache')
+    async getCubeSuggestion(
+      @Param('collectionSymbol') collectionSymbol?: string): Promise<any> /* Promise<CubeSuggestion>*/ {
+
+        // return this.magicEdenService.fetchPopularCollections({ window: '7d', limit: 12*3 });
+        // return this.magicEdenService.fetchCollectionDetails('omb');
+        // return this.magicEdenService.fetchCollectionStats('omb');
+        return this.magicEdenService.fetchTokens({
+          limit: 20,
+          offset: 0,
+          sortBy: 'inscriptionNumberAsc',
+          collectionSymbol: 'omb'
+        });
+    }
 
   /**
    * Saving Referral Code

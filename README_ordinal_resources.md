@@ -59,7 +59,6 @@ https://magiceden.io/ordinals
 https://ordinals.market/ --> https://github.com/ordinals-wallet/ordinals-collections
 
 
-
 Collection Submission Form
 
 email: johannes@haushoppe.art
@@ -78,3 +77,9 @@ OrdinalsBot Affiliate Program
 https://ordinalsbot.com?ref=haushoppecubeangels0
 https://ordinalsbot.com?ref=haushoppe
 ???
+
+
+## Magic Eden API
+
+* https://docs.magiceden.io/reference/ordinals-overview 
+* https://gist.github.com/nftkitten/85023ef77aacd9842bedbb05a9301398

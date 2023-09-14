@@ -12,6 +12,7 @@ import { AllowlistService } from './model/allowlist.service';
 import { CacheService } from './model/cache.service';
 import { ImageService } from './model/image.service';
 import { MetadataGenesisService } from './model/metadata-genesis.service';
+import { MagicEdenService } from './model/ordinals/magic-eden-service';
 import { KnownTokenName, allKnownTokenNames } from '../../../shared/known-token-name';
 import { ContractService } from './model/contract.service';
 import { MetadataService } from './model/metadata-service';
@@ -53,6 +54,7 @@ import { OrdinalsController } from './api/ordinals.controller';
   providers: [
     AllowlistService,
     MetadataGenesisService,
+    MagicEdenService,
     ImageService,
     CacheService,
     ...allKnownTokenNames.map((tokenName: KnownTokenName) => ({

@@ -34,7 +34,7 @@ export class MintService {
 
       // pop up wallet notification to sign
       const signature = await signer.signMessage(message);
-      console.log(signature)
+      // console.log(signature)
 
       // verify that signature matches wallet address
       const validMessage = ethers.verifyMessage(message, signature) == walletAddress;

@@ -46,6 +46,18 @@ export class MagicEdenService {
   }
 
   /**
+   * Fetches ALL (!!!) collections from MagicEden
+   *
+   * @param collectionSymbol - The symbol representing the specific collection.
+   * @returns A promise that resolves to the details of the requested collection.
+   */
+  async fetchAllCollectionsDetails(): Promise<CollectionDetails> {
+
+    const response = await this.apiClient.get<CollectionDetails>(`/btc/collections`);
+    return response.data;
+  }
+
+  /**
    * Fetches details of a specific collection from MagicEden using the collection symbol.
    *
    * @param collectionSymbol - The symbol representing the specific collection.

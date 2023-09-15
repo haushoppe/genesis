@@ -20,9 +20,15 @@ export class CustomScrollService {
       ).subscribe((e) => {
 
         // directly jump to top, no waiting required
-        if (e.position == null) {
+        if (!e.position && !e.anchor) {
           // console.log('Jumping to top!')
           window.scrollTo({ top: 0, left:0, behavior: "instant"} as unknown as ScrollToOptions)
+          return;
+        }
+
+        // is the anchor already in the page?
+        if (e.anchor && document.querySelector('#' + e.anchor)) {
+          viewportScroller.scrollToAnchor(e.anchor);
           return;
         }
 

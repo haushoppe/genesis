@@ -21,6 +21,7 @@ import {
   hideUnwantedProperties as hideUnwantedOrderProperties,
   searchResultToCubeInscriptionMeta,
 } from '../model/ordinals/cube-helper';
+import { CubeSuggestionService } from '../model/ordinals/cube-suggestion.service';
 import {
   createInscriptionRequestForHtml,
   getFxrate,
@@ -30,14 +31,10 @@ import {
   saveReferralCode,
   searchForText,
 } from '../model/ordinals/ordinalsbot';
-import {
-  MagicEdenService
-} from '../model/ordinals/magic-eden-service';
 import { validateReferralCode } from '../model/ordinals/validate-referral-code';
 import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
-import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
 import { CubeSuggestion } from '../types/ordinals/cube-suggestion';
-
+import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
 import { Inscription } from '../types/ordinals/inscription';
 import { InscriptionSimple } from '../types/ordinals/inscription-simple';
 import { Price } from '../types/ordinals/price';
@@ -49,7 +46,7 @@ export class OrdinalsController {
 
   constructor(private configService: ConfigService,
     private cacheService: CacheService,
-    private magicEdenService: MagicEdenService) {
+    private cubeSuggestionService: CubeSuggestionService) {
     this.getCubes();
   }
 
@@ -199,21 +196,17 @@ export class OrdinalsController {
    */
     @Get(['ordinals/getCubeSuggestion/:collectionSymbol?'])
     @ApiOperation({ operationId: 'getCubeSuggestion' })
-    @ApiParam({ name: 'collectionSymbol', type: 'string', required: false })
-    @ApiOkResponse({ type: Price })
+    @ApiParam({ name: 'collectionSymbol', type: 'string', description: 'Searches only within a specific collection, or in the top collections (EMPTY string).' })
+    @ApiOkResponse({ type: CubeSuggestion })
+    @ApiNotFoundResponse({ description: 'Could not find enough unclaimed tokens.' })
     @Header('Cache-Control', 'no-cache')
-    async getCubeSuggestion(
-      @Param('collectionSymbol') collectionSymbol?: string): Promise<any> /* Promise<CubeSuggestion>*/ {
+    async getCubeSuggestion(@Param('collectionSymbol') collectionSymbol?: string): Promise<CubeSuggestion> {
 
-        // return this.magicEdenService.fetchPopularCollections({ window: '7d', limit: 12*3 });
-        // return this.magicEdenService.fetchCollectionDetails('omb');
-        // return this.magicEdenService.fetchCollectionStats('omb');
-        return this.magicEdenService.fetchTokens({
-          limit: 20,
-          offset: 0,
-          sortBy: 'inscriptionNumberAsc',
-          collectionSymbol: 'omb'
-        });
+      try {
+        return await this.cubeSuggestionService.getCubeSuggestion(collectionSymbol);
+      } catch (exception) {
+        throw new NotFoundException(exception.message);
+      }
     }
 
   /**

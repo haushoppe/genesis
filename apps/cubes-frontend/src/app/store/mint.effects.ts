@@ -22,7 +22,7 @@ import { MempoolService } from '../services/mempool-service';
 import { MintService } from '../services/mint-service';
 import { confettiFirework } from './helper/confetti-firework';
 import { MintActions } from './mint.actions';
-import { selectKnownInscriptionIds } from './mint.reducer';
+import { selectAllInscriptions, selectKnownInscriptionIds } from './mint.reducer';
 import { PageActions } from './page.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -142,10 +142,16 @@ export class MintEffects {
 
   loadInitialDataOnRouting$ = createEffect(() => {
     return this.actions.pipe(
-      ofRoute(['']),
-      concatMap(() => [
-        MintActions.loadAllInscriptions(),
-        MintActions.loadPrice({ code: '', size: 557 }) // lowest possible size
+      ofRoute([
+        '',
+        ':collectionSymbol'
+      ]),
+      mapToParam('collectionSymbol'),
+      withLatestFrom(this.store.select(selectAllInscriptions)),
+      concatMap(([collectionSymbol, allInscriptions]) => [
+        ...(allInscriptions?.length ? [] : [MintActions.loadAllInscriptions()]),
+        // MintActions.loadPrice({ code: '', size: 557 }), // lowest possible size
+        MintActions.loadCubeSuggestion({ collectionSymbol: collectionSymbol || '' })
       ]),
     );
   });
@@ -240,6 +246,19 @@ export class MintEffects {
               catchError(error => of(MintActions.loadPriceFailure({ error })))
             )
           )
+        )
+      )
+    )
+  );
+
+  loadCubeSuggestion$ = createEffect(() =>
+    this.actions.pipe(
+      ofType(MintActions.loadCubeSuggestion),
+      switchMap(({ collectionSymbol }) =>
+        this.ordinalsService.getCubeSuggestion(collectionSymbol).pipe(
+          retry({ count: 5, delay: 1000 }),
+          map(cubeSuggestion => MintActions.loadCubeSuggestionSuccess({ cubeSuggestion })),
+          catchError(error => of(MintActions.loadCubeSuggestionFailure({ error })))
         )
       )
     )

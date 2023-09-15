@@ -39,8 +39,14 @@ export class CubeSuggestion {
   inscriptionId6: string;
 
   @ApiProperty({
-    description: 'Title for the Cube',
-    example: 'Demo Cube'
+    description: 'Name of the Collection',
+    example: 'Ordinal Cubes by HAUS HOPPE'
   })
-  title: string;
+  collectionName: string;
+
+  @ApiProperty({
+    description: 'Symbol of the Collection',
+    example: 'ordinal-cubes-by-haus-hoppe'
+  })
+  collectionSymbol: string;
 }

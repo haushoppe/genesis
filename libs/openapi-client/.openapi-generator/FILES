@@ -15,6 +15,7 @@ model/attribute.ts
 model/chain.ts
 model/configDetails.ts
 model/configResponse.ts
+model/cubeSuggestion.ts
 model/htmlInscriptionRequest.ts
 model/inscription.ts
 model/inscriptionMeta.ts

@@ -28,11 +28,11 @@ export function getSuccessfulState() {
   }
 }
 
-// eth_estimateGas has a very detailed error object with a helpful & short "reason" property
 export function getFailureState(error: {message: string } | Error | Error & { reason: string}) {
   return {
     ...initialSubmittableState,
     submitStatus: SubmitStatus.Failure,
-    submitErrorText: (error as { reason: string})?.reason || error.message || 'Unknown Error'
+    // --> httpClient returns error.error.message
+    submitErrorText: (error as unknown as { error: { message: string }})?.error?.message || (error as { reason: string})?.reason || error.message || 'Unknown Error'
   }
 }

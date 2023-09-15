@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
 import { Inscription, InscriptionOrder } from '../ordinalsbot';
-import { InscriptionSimple, Price } from '../openapi-client';
+import { CubeSuggestion, InscriptionSimple, Price } from '../openapi-client';
 import { MempoolTransaction } from '../services/mempool-service';
 import { CreateInscriptionResponse } from 'sats-connect';
 
@@ -37,7 +37,7 @@ export const MintActions = createActionGroup({
     'Load Inscription Success': props<{ inscription: Inscription }>(),
     'Load Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
-    'Place Order': props<{ cubeDetails: CubeDetails, receiveAddress: string, code: string }>(),
+    'Place Order': props<{ cubeDetails: CubeDetails, receiveAddress: string, code: string | ''}>(),
     'Place Order Success': props<{ orderResponse: InscriptionOrder, createdAt: string }>(),
     'Place Order Failure': props<{ error: HttpErrorResponse }>(),
     'Update Order Status': props<{ orderResponse: InscriptionOrder }>(),
@@ -56,8 +56,12 @@ export const MintActions = createActionGroup({
     'Lookup Inscription Id Success': props<{ inscriptionNumber: string, inscriptionId: string }>(),
     'Lookup Inscription Id Failure':  props<{ error: HttpErrorResponse }>(),
 
-    'Load Price': props<{ code: string, size: number }>(),
+    'Load Price': props<{ code: string | '', size: number }>(),
     'Load Price Success': props<{ price: Price }>(),
-    'Load Price Failure':  props<{ error: HttpErrorResponse }>()
+    'Load Price Failure':  props<{ error: HttpErrorResponse }>(),
+
+    'Load Cube Suggestion': props<{ collectionSymbol: string | '' }>(),
+    'Load Cube Suggestion Success': props<{ cubeSuggestion: CubeSuggestion }>(),
+    'Load Cube Suggestion Failure':  props<{ error: HttpErrorResponse }>(),
   }
 });

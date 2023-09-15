@@ -19,6 +19,8 @@ import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
 // @ts-ignore
+import { CubeSuggestion } from '../model/cubeSuggestion';
+// @ts-ignore
 import { HtmlInscriptionRequest } from '../model/htmlInscriptionRequest';
 // @ts-ignore
 import { Inscription } from '../model/inscription';
@@ -99,7 +101,7 @@ export class OrdinalsService {
 
     /**
      * 
-     * Creating an Inscription Order
+     * Creating an Inscription Order via OrdinalsBot
      * @param htmlInscriptionRequest 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -222,6 +224,65 @@ export class OrdinalsService {
 
     /**
      * 
+     * Get cube suggestion from MagicEden
+     * @param collectionSymbol 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public getCubeSuggestion(collectionSymbol: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<CubeSuggestion>;
+    public getCubeSuggestion(collectionSymbol: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<CubeSuggestion>>;
+    public getCubeSuggestion(collectionSymbol: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<CubeSuggestion>>;
+    public getCubeSuggestion(collectionSymbol: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (collectionSymbol === null || collectionSymbol === undefined) {
+            throw new Error('Required parameter collectionSymbol was null or undefined when calling getCubeSuggestion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/ordinals/getCubeSuggestion/${this.configuration.encodeParam({name: "collectionSymbol", value: collectionSymbol, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        return this.httpClient.request<CubeSuggestion>('get', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * 
      * Get known cubes (cached!)
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -277,7 +338,7 @@ export class OrdinalsService {
 
     /**
      * 
-     * Get known cubes metadata (cached!)
+     * Get known cubes metadata (cached!) – format of MagicEden and other
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
@@ -332,7 +393,7 @@ export class OrdinalsService {
 
     /**
      * 
-     * Get inscription order updates
+     * Get inscription order updates from OrdinalsBot
      * @param id order Id
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -445,7 +506,7 @@ export class OrdinalsService {
 
     /**
      * 
-     * Get price in sats (cached!)
+     * Get OrdinalsBot price in sats (cached!)
      * @param fee 
      * @param size 
      * @param code 

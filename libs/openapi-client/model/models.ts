@@ -2,6 +2,7 @@ export * from './attribute';
 export * from './chain';
 export * from './configDetails';
 export * from './configResponse';
+export * from './cubeSuggestion';
 export * from './htmlInscriptionRequest';
 export * from './inscription';
 export * from './inscriptionMeta';

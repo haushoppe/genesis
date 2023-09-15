@@ -20,6 +20,7 @@ import { TrimValueAccessorDirective } from '../../trim-value-accessor.directive'
 import { BtcAddressValidator } from './btc-address.validator';
 import { CorrectCodeValidator } from './correct-code.validator';
 import { InscriptionIdValidator } from './inscription-id.validator';
+import { CubeSuggestion } from '../../openapi-client';
 
 function containsOnlyNumbers(str: string) {
   const reg = /^\d+$/;
@@ -56,15 +57,29 @@ export class MintFormComponent implements OnInit {
   @Input()
   useConnectInscription = false;
 
+  _cubeSuggestion: CubeSuggestion | undefined;
+
+  @Input()
+  public set cubeSuggestion(cubeSuggestion: CubeSuggestion | undefined) {
+    this._cubeSuggestion = cubeSuggestion;
+    this.form.patchValue({
+      inscriptionId1: cubeSuggestion?.inscriptionId1 || '',
+      inscriptionId2: cubeSuggestion?.inscriptionId2 || '',
+      inscriptionId3: cubeSuggestion?.inscriptionId3 || '',
+      inscriptionId4: cubeSuggestion?.inscriptionId4 || '',
+      inscriptionId5: cubeSuggestion?.inscriptionId5 || '',
+      inscriptionId6: cubeSuggestion?.inscriptionId6 || '',
+      title: cubeSuggestion?.collectionName || ''
+     });
+  }
+
   @Input()
   public set walletAddress(address: string | undefined) {
     this.form.patchValue({ receiveAddress: address });
     if (address) {
       this.c.receiveAddress.disable();
-      this.useConnectInscription = true;
     } else {
       this.c.receiveAddress.enable();
-      this.useConnectInscription = false;
     }
   }
 
@@ -100,11 +115,11 @@ export class MintFormComponent implements OnInit {
     const r = this.c.receiveAddress;
 
     if (r.hasError('required')) {
-      return '';
+      return 'Please provide an Ordinals receive address!';
     }
 
     if (r.hasError('pattern')) {
-      return 'Please provide your Taproot address for receiving Ordinals, which always starts with "bc1p…"!';
+      return 'Please provide a Taproot address for receiving Ordinals, which always starts with "bc1p…"!';
     }
 
     if (r.hasError('invalidBtcAddress')) {
@@ -225,6 +240,12 @@ export class MintFormComponent implements OnInit {
   }
 
   mint() {
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
     const cubeDetails = this.getCubeDetails();
     const receiveAddress = this.c.receiveAddress.value;
     const code = this.c.code.value;

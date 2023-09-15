@@ -2,6 +2,7 @@ import { createFeatureSelector, createSelector } from '@ngrx/store';
 
 import { selectKnownInscriptionIds, selectOrderResponse } from './mint.reducer';
 import { RouterReducerState } from '@ngrx/router-store';
+import { selectRouteParam } from './utils-ngrx-router/router.selectors';
 export const selectRouter = createFeatureSelector<RouterReducerState<any>>('router');
 
 
@@ -30,7 +31,7 @@ export const selectBestOrderId = createSelector(
   selectRouter,
   (orderResponse, { state: { params }}: {
     state: {
-      params: { [parm: string]: string }
+      params: { [parm: string]: string | undefined }
     }
   }) => orderResponse?.id || params.orderId
 );
@@ -41,4 +42,19 @@ export function selectInscriptionId(inscriptionNumber: string) {
     knownInscriptionIds  => knownInscriptionIds[inscriptionNumber]
   );
 }
+
+
+// NOT WORKING?!?!
+// export const selectCollectionSymbol = selectRouteParam('collectionSymbol');
+
+// the suggestion is fixed, if the collectionSymbol is in the route
+export const selectCubeSuggestionFixed = createSelector(
+  selectRouter,
+  ({ state: { params }}: {
+    state: {
+      params: { [parm: string]: string | undefined }
+    }
+  }) => !!params.collectionSymbol
+)
+
 

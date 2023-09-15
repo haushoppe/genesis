@@ -7,6 +7,8 @@ import {
   selectAllInscriptionsStatus,
   selectCreateInscriptionResponse,
   selectCreateInscriptionStatus,
+  selectCubeSuggestion,
+  selectCubeSuggestionStatus,
   selectInscription,
   selectInscriptionStatus,
   selectKnownInscriptionIdStatus,
@@ -15,7 +17,7 @@ import {
   selectPrice,
   selectPriceStatus,
 } from './mint.reducer';
-import { selectBestOrderId, selectFile, selectInscriptionId, selectIsOrderPending } from './mint.selectors';
+import { selectBestOrderId, selectCubeSuggestionFixed, selectFile, selectInscriptionId, selectIsOrderPending } from './mint.selectors';
 import { MintService } from '../services/mint-service';
 
 
@@ -49,6 +51,10 @@ export class MintFacade {
   price$ = this.store.select(selectPrice);
   priceStatus$ = this.store.select(selectPriceStatus);
 
+  cubeSuggestion$ = this.store.select(selectCubeSuggestion);
+  cubeSuggestionStatus$ = this.store.select(selectCubeSuggestionStatus);
+  cubeSuggestionFixed$ = this.store.select(selectCubeSuggestionFixed);
+
 
   placeOrder(cubeDetails: CubeDetails, receiveAddress: string, code: string) {
     this.store.dispatch(MintActions.placeOrder({
@@ -71,6 +77,10 @@ export class MintFacade {
 
   loadPrice(size: number, code = '') {
     this.store.dispatch(MintActions.loadPrice({ code, size }));
+  }
+
+  loadCubeSuggestion(collectionSymbol = '') {
+    this.store.dispatch(MintActions.loadCubeSuggestion({ collectionSymbol }));
   }
 
   getCubeHtml(cubeDetails: CubeDetails) {

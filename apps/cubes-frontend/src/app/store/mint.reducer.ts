@@ -1,7 +1,7 @@
 import { routerNavigatedAction } from '@ngrx/router-store';
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { InscriptionSimple, Price } from '../openapi-client';
+import { CubeSuggestion, InscriptionSimple, Price } from '../openapi-client';
 import { Inscription, InscriptionOrder } from '../ordinalsbot';
 import { MintActions } from './mint.actions';
 import {
@@ -33,6 +33,9 @@ export interface State {
 
   price: Price | undefined;
   priceStatus: SubmittableState;
+
+  cubeSuggestion: CubeSuggestion | undefined;
+  cubeSuggestionStatus: SubmittableState;
 }
 
 export const initialState: State = {
@@ -54,7 +57,10 @@ export const initialState: State = {
   knownInscriptionIdStatus: getInitialState(),
 
   price: undefined,
-  priceStatus: getInitialState()
+  priceStatus: getInitialState(),
+
+  cubeSuggestion: undefined,
+  cubeSuggestionStatus: getInitialState()
 };
 
 
@@ -210,6 +216,26 @@ export const mintFeature = createFeature({
       ...state,
       priceStatus: getFailureState(error)
     })),
+
+    // Load Cube Suggestion
+
+    on(MintActions.loadCubeSuggestion, state => ({
+      ...state,
+      cubeSuggestionStatus: getSubmittingState()
+    })),
+
+    on(MintActions.loadCubeSuggestionSuccess, (state, { cubeSuggestion }) => ({
+      ...state,
+      cubeSuggestion,
+      // cubeSuggestionStatus: getSuccessfulState()
+      // !!! always resets to initial state, so that the app-loading-indicator-button encourages people to click it again
+      cubeSuggestionStatus: getInitialState()
+    })),
+
+    on(MintActions.loadCubeSuggestionFailure, (state, { error }) => ({
+      ...state,
+      cubeSuggestionStatus: getFailureState(error)
+    }))
   )
 });
 
@@ -231,6 +257,11 @@ export const {
 
   selectKnownInscriptionIds,
   selectKnownInscriptionIdStatus,
+
   selectPrice,
-  selectPriceStatus
+  selectPriceStatus,
+
+  selectCubeSuggestion,
+  selectCubeSuggestionStatus
+
 } = mintFeature;

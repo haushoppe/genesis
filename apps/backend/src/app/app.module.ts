@@ -3,20 +3,21 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
+import { allKnownTokenNames, KnownTokenName } from '../../../shared/known-token-name';
 import { ApiController } from './api/api.controller';
 import { CubeController } from './api/cube.controller';
+import { OrdinalsController } from './api/ordinals.controller';
 import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
 import { AllowlistService } from './model/allowlist.service';
 import { CacheService } from './model/cache.service';
+import { ContractService } from './model/contract.service';
 import { ImageService } from './model/image.service';
 import { MetadataGenesisService } from './model/metadata-genesis.service';
-import { MagicEdenService } from './model/ordinals/magic-eden-service';
-import { KnownTokenName, allKnownTokenNames } from '../../../shared/known-token-name';
-import { ContractService } from './model/contract.service';
 import { MetadataService } from './model/metadata-service';
-import { OrdinalsController } from './api/ordinals.controller';
+import { CubeSuggestionService } from './model/ordinals/cube-suggestion.service';
+import { MagicEdenService } from './model/ordinals/magic-eden.service';
 
 
 @Module({
@@ -54,8 +55,9 @@ import { OrdinalsController } from './api/ordinals.controller';
   providers: [
     AllowlistService,
     MetadataGenesisService,
-    MagicEdenService,
     ImageService,
+    MagicEdenService,
+    CubeSuggestionService,
     CacheService,
     ...allKnownTokenNames.map((tokenName: KnownTokenName) => ({
       provide: tokenName,

@@ -144,7 +144,7 @@ export class MintEffects {
     return this.actions.pipe(
       ofRoute([
         '',
-        ':collectionSymbol'
+        'mint/:collectionSymbol'
       ]),
       mapToParam('collectionSymbol'),
       withLatestFrom(this.store.select(selectAllInscriptions)),

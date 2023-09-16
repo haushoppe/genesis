@@ -127,9 +127,10 @@
                       [state]="cubeSuggestionStatus"
                       [buttonText]="'Craft another cube'"
                       defaultIconClass="bi bi-arrow-clockwise"
-                      class="mb-2 mb-md-0 me-md-4 d-flex"
+                      class="mb-4 mb-md-0 me-md-4 d-flex"
                     />
 
+                    <!-- Non-Breaking Unicode Whitespace here -->
                     <app-loading-indicator-button
                       *ngIf="!useConnectInscription"
                       [disabled]="knownInscriptionIdStatus.submitStatus === SubmitStatus.Submitting ||
@@ -137,7 +138,7 @@
                       [showAlertOnError]="true"
                       (buttonClick)="mint()"
                       [state]="orderStatus"
-                      [buttonText]="orderStatus.submitStatus === SubmitStatus.Successful ? 'Cube submitted' : 'Mint my cube!'"
+                      [buttonText]="orderStatus.submitStatus === SubmitStatus.Successful ? 'Cube submitted' : ' Mint my cube! '"
                       defaultIconClass="bi bi-box"
                       class="d-flex"
                     />
@@ -149,7 +150,7 @@
                       [showAlertOnError]="true"
                       (buttonClick)="mint()"
                       [state]="createInscriptionStatus"
-                      [buttonText]="createInscriptionStatus.submitStatus === SubmitStatus.Successful ? 'Cube submitted' : 'Mint my cube!'"
+                      [buttonText]="createInscriptionStatus.submitStatus === SubmitStatus.Successful ? 'Cube submitted' : ' Mint my cube! '"
                       defaultIconClass="bi bi-box"
                       class="d-flex"
                     />

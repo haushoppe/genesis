@@ -19,6 +19,11 @@ export class CustomScrollService {
         map(e => e as Scroll) // fixing type
       ).subscribe((e) => {
 
+        // disables scrolling at all
+        if(e.anchor === 'x') {
+          return;
+        }
+
         // directly jump to top, no waiting required
         if (!e.position && !e.anchor) {
           // console.log('Jumping to top!')

@@ -29,13 +29,13 @@
                   <ng-container *ngIf="!cubeSuggestionFixed">
                     If not, let's craft a new cube
                     <a href="javascript:void(0)" (click)="mintFacade.loadCubeSuggestion('')">from another collection</a> or
-                    <a [routerLink]="['/', cubeSuggestion.collectionSymbol]" fragment="mint">from this collection</a>!
+                    <a [routerLink]="['/mint', cubeSuggestion.collectionSymbol]" fragment="x">from this collection</a>!
                   </ng-container>
 
                   <ng-container *ngIf="cubeSuggestionFixed">
                     If not, let's craft a new cube
                     <a href="javascript:void(0)" (click)="mintFacade.loadCubeSuggestion(cubeSuggestion.collectionSymbol)">from this collection</a> or
-                    <a [routerLink]="['/']" fragment="mint">from another collection</a>!
+                    <a [routerLink]="['/']" fragment="x">from another collection</a>!
                   </ng-container>
 
                 </ng-container>
@@ -139,7 +139,7 @@
 </ul>
 <p class="mb-3">
   If you have any outstanding questions,
-  <a routerLink="/faq">please refer to our FAQ (Frequently Asked Questions) section.</a>
+  <a routerLink="/faq">please refer to our FAQ section.</a>
 </p>
 
 

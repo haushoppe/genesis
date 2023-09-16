@@ -34,6 +34,7 @@ import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-reque
 import { Inscription } from '../types/ordinals/inscription';
 import { InscriptionSimple } from '../types/ordinals/inscription-simple';
 import { Price } from '../types/ordinals/price';
+import { MagicEdenService } from '../model/ordinals/magic-eden.service';
 
 
 @ApiTags('ordinals')
@@ -43,7 +44,8 @@ export class OrdinalsController {
   constructor(private configService: ConfigService,
     private cacheService: CacheService,
     private cubeService: CubeService,
-    private cubeSuggestionService: CubeSuggestionService) {
+    private cubeSuggestionService: CubeSuggestionService,
+    private magicEdenService: MagicEdenService) {
   }
 
   /**
@@ -175,20 +177,33 @@ export class OrdinalsController {
   /**
    * Get cube suggestion from MagicEden
    */
-    @Get(['ordinals/getCubeSuggestion/:collectionSymbol?'])
-    @ApiOperation({ operationId: 'getCubeSuggestion' })
-    @ApiParam({ name: 'collectionSymbol', type: 'string', description: 'Searches only within a specific collection, or in the top collections (EMPTY string).' })
-    @ApiOkResponse({ type: CubeSuggestion })
-    @ApiNotFoundResponse({ description: 'Could not find enough unclaimed tokens.' })
-    @Header('Cache-Control', 'no-cache')
-    async getCubeSuggestion(@Param('collectionSymbol') collectionSymbol?: string): Promise<CubeSuggestion> {
+  @Get(['ordinals/getCubeSuggestion/:collectionSymbol?'])
+  @ApiOperation({ operationId: 'getCubeSuggestion' })
+  @ApiParam({ name: 'collectionSymbol', type: 'string', description: 'Searches only within a specific collection, or in the top collections (EMPTY string).' })
+  @ApiOkResponse({ type: CubeSuggestion })
+  @ApiNotFoundResponse({ description: 'Could not find enough unclaimed tokens.' })
+  @Header('Cache-Control', 'no-cache')
+  async getCubeSuggestion(@Param('collectionSymbol') collectionSymbol?: string): Promise<CubeSuggestion> {
 
-      try {
-        return await this.cubeSuggestionService.getCubeSuggestion(collectionSymbol);
-      } catch (exception) {
-        throw new NotFoundException(exception.message);
-      }
+    try {
+      return await this.cubeSuggestionService.getCubeSuggestion(collectionSymbol);
+    } catch (exception) {
+      throw new NotFoundException(exception.message);
     }
+  }
+
+  // /**
+  //  * fetchPopularCollections from MagicEden (testing)
+  //  */
+  // @Get(['ordinals/fetchPopularCollections/:window/:limit'])
+  // @ApiOperation({ operationId: 'fetchPopularCollections' })
+  // @ApiParam({ name: 'window', type: 'string' })
+  // @ApiParam({ name: 'limit', type: 'number' })
+  // @Header('Cache-Control', 'no-cache')
+  // async fetchPopularCollections(@Param('window') window: string, @Param('limit') limit: number): Promise<any> {
+  //   const all = (await this.magicEdenService.fetchPopularCollections({ window: (window as any), limit })).map(x => x.name);
+  //   return [all.length, ...all]
+  // }
 
   /**
    * Saving Referral Code
@@ -229,20 +244,20 @@ export class OrdinalsController {
    *
    * Use this endpoint create an new API key for api.ordinalnovus.com
    */
-    @Post(['ordinals/createOrdinalnovusApiKey'])
-    @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-    @ApiOperation({ operationId: 'createOrdinalnovusApiKey' })
-    async createOrdinalnovusApiKey(): Promise<{
-      message: string,
-      apiKey: string
-    }> {
+  @Post(['ordinals/createOrdinalnovusApiKey'])
+  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+  @ApiOperation({ operationId: 'createOrdinalnovusApiKey' })
+  async createOrdinalnovusApiKey(): Promise<{
+    message: string,
+    apiKey: string
+  }> {
 
-      if (this.configService.get('environment') !== 'development') {
-        throw new ForbiddenException('This method should not be called on production');
-      }
+    if (this.configService.get('environment') !== 'development') {
+      throw new ForbiddenException('This method should not be called on production');
+    }
 
-      // ??? - Xverse Account 1: Ordinals address
-      return apikeyCreate('???')
+    // ??? - Xverse Account 1: Ordinals address
+    return apikeyCreate('???')
   }
 
   /**
@@ -273,16 +288,16 @@ export class OrdinalsController {
    *
    * Use this endpoint query all details for our API key
    */
-    @Post(['ordinals/ordinalnovusSearchForText'])
-    @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-    @ApiOperation({ operationId: 'ordinalnovusSearchForText' })
-    async ordinalnovusSearchForText(): Promise<any> {
+  @Post(['ordinals/ordinalnovusSearchForText'])
+  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
+  @ApiOperation({ operationId: 'ordinalnovusSearchForText' })
+  async ordinalnovusSearchForText(): Promise<any> {
 
-      if (this.configService.get('environment') !== 'development') {
-        throw new ForbiddenException('This method should not be called on production');
-      }
-
-      return ordinalnovusSearchForText('cubes.haushoppe.art');
+    if (this.configService.get('environment') !== 'development') {
+      throw new ForbiddenException('This method should not be called on production');
     }
+
+    return ordinalnovusSearchForText('cubes.haushoppe.art');
+  }
 }
 

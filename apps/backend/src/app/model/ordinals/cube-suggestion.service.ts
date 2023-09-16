@@ -41,7 +41,7 @@ export class CubeSuggestionService {
     if (!onlyCollectionSymbol) {
       collections = await this.magicEdenService.fetchPopularCollections({
         window: '7d',
-        limit: 48
+        limit: 120 // max possible number
       });
     } else {
       const singleCollection = await this.magicEdenService.fetchCollectionDetails(onlyCollectionSymbol);

@@ -7,8 +7,6 @@
   <ng-container *ngIf="order">
     Price: &nbsp;<strong>{{ order.charge.amount | number }} sats</strong>
     <!-- (which equals to {{ order?.charge?.fiat_value }} USD) -->
-    <span *ngIf="order.code"><br>
-      Code: {{ order.code }}</span>
   </ng-container>
 
   <div class="mt-4 mb-4">

@@ -1,5 +1,4 @@
 import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
-import { REFERRALS } from '../../../../../shared/referral-code';
 import { InscriptionSimple } from '../../types/ordinals/inscription-simple';
 
 
@@ -19,8 +18,8 @@ export function hideUnwantedProperties({ charge, files, paid, referral }: OrderR
       sent,
       tx
     })),
-    paid,
-    code: referral === REFERRALS[0].code ? '' : referral
+    paid
+    // code: referral === REFERRALS[0].code ? '' : referral
   };
 }
 

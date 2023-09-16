@@ -200,6 +200,6 @@ export interface InscriptionOrder {
   },
   files: InscriptionFile[];
   paid: boolean;
-  code?: string;
+  // code?: string; // hiding it
 }
 

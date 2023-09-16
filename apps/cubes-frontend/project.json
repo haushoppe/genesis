@@ -23,8 +23,10 @@
           "node_modules/@fontsource/yantramanav/300.css",
           "node_modules/@fontsource/yantramanav/500.css",
           "node_modules/@fontsource/yantramanav/700.css",
+
           "node_modules/@fontsource/merriweather/300.css",
-          "node_modules/@fontsource/merriweather/400.css",
+          "node_modules/@fontsource/merriweather/700.css",
+
           "node_modules/bootstrap-icons/font/bootstrap-icons.css",
           "apps/cubes-frontend/src/styles.scss"
         ],

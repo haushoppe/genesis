@@ -24,7 +24,14 @@ strong {
 }
 
 h1, h2, h3, h4 {
-  font-family: "Merriweather", sans-serif;
+  // font-family: "Merriweather", sans-serif;
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
+
+  background: linear-gradient(to right, #dbdbdb, #5c5e62);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  // display: inline-block;
 }
 
 /* text-justify has been removed in Bootstrap 5 */

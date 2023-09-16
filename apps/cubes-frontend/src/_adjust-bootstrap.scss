@@ -35,4 +35,9 @@ $theme-colors: (
 $enable-rounded: false;
 $enable-negative-margins: true;
 
+$my-h1-font-size-base: 1.5rem;
+$h1-font-size: $my-h1-font-size-base * 2.5 !default;
+$h2-font-size: $my-h1-font-size-base * 2 !default;
+
+
 

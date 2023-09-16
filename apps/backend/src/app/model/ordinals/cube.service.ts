@@ -54,8 +54,10 @@ export class CubeService {
       .map(x => {
         const attributes = parseCube(x.contentstr);
         if (attributes) {
+          // console.log(x);
           return {
             inscriptionId: x.inscriptionid,
+            // inscriptionNumber: x.inscriptionnumber,
             attributes
           }
         }

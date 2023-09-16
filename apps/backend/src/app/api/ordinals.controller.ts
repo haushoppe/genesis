@@ -4,7 +4,6 @@ import {
   ForbiddenException,
   Get,
   Header,
-  Logger,
   NotFoundException,
   Param,
   ParseIntPipe,
@@ -17,11 +16,9 @@ import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../..
 import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinalsbot-order-response';
 import { CacheService } from '../model/cache.service';
 import { limitArray } from '../model/limit-array';
-import {
-  hideUnwantedProperties as hideUnwantedOrderProperties,
-  searchResultToCubeInscriptionMeta,
-} from '../model/ordinals/cube-helper';
+import { hideUnwantedProperties } from '../model/ordinals/cube-helper';
 import { CubeSuggestionService } from '../model/ordinals/cube-suggestion.service';
+import { CubeService } from '../model/ordinals/cube.service';
 import {
   createInscriptionRequestForHtml,
   getFxrate,
@@ -29,10 +26,9 @@ import {
   getPrice,
   getReferralStatus,
   saveReferralCode,
-  searchForText,
 } from '../model/ordinals/ordinalsbot';
 import { validateReferralCode } from '../model/ordinals/validate-referral-code';
-import { oneMinuteInSeconds, tenMinutesInSeconds } from '../types/constants';
+import { oneMinuteInSeconds } from '../types/constants';
 import { CubeSuggestion } from '../types/ordinals/cube-suggestion';
 import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
 import { Inscription } from '../types/ordinals/inscription';
@@ -46,8 +42,8 @@ export class OrdinalsController {
 
   constructor(private configService: ConfigService,
     private cacheService: CacheService,
+    private cubeService: CubeService,
     private cubeSuggestionService: CubeSuggestionService) {
-    this.getCubes();
   }
 
   /**
@@ -71,7 +67,7 @@ export class OrdinalsController {
       request.code
     );
 
-    return hideUnwantedOrderProperties(orderResponseFull);
+    return hideUnwantedProperties(orderResponseFull);
   }
 
   /**
@@ -92,7 +88,7 @@ export class OrdinalsController {
     if (isErrorResponse(orderResponseFull)) {
       throw new NotFoundException(orderResponseFull.error);
     } else {
-      return hideUnwantedOrderProperties(orderResponseFull);
+      return hideUnwantedProperties(orderResponseFull);
     }
   }
 
@@ -109,27 +105,15 @@ export class OrdinalsController {
 
     const simpleResult = async () => {
 
-      const searchResult = await searchForText('cubes.haushoppe.art');
-      const meta = searchResultToCubeInscriptionMeta(searchResult)
-        .reverse();
-
-      Logger.log('Fetched ' + meta.length + ' cubes', 'ordinals_cubes');
-
-      this.lastBackup = meta;
-      return meta;
+      const meta = (await this.cubeService.getAllCubes()).reverse();
+      return limitArray(meta, 12);
     };
 
-    try {
-      const fullArray = await this.cacheService.loadCached('ordinal_cubes', simpleResult, tenMinutesInSeconds);
-      return limitArray(fullArray, 12);
-
-    } catch {
-      return this.lastBackup;
-    }
+    return await this.cacheService.loadCached('ordinal_cubes', simpleResult, oneMinuteInSeconds);
   }
 
   /**
-   * Get known cubes metadata (cached!) – format of MagicEden and other
+   * Get known cubes metadata (cached!) – format of MagicEden and others
    */
   @Get(['ordinals/getCubesMetadata'])
   @ApiOperation({ operationId: 'getCubesMetadata' })
@@ -139,17 +123,14 @@ export class OrdinalsController {
 
     const simpleResult = async () => {
 
-      const searchResult = await searchForText('cubes.haushoppe.art');
-      const meta = searchResultToCubeInscriptionMeta(searchResult);
-
+      const meta = (await this.cubeService.getAllCubes());
       return meta.map(x => ({
         id: x.inscriptionId,
         meta: x.meta
       }));
     };
 
-    return this.cacheService.loadCached('ordinal_cubes_metadata', simpleResult, tenMinutesInSeconds);
-
+    return this.cacheService.loadCached('ordinal_cubes_metadata', simpleResult, oneMinuteInSeconds);
   }
 
   /**

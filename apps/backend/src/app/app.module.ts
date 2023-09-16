@@ -17,7 +17,9 @@ import { ImageService } from './model/image.service';
 import { MetadataGenesisService } from './model/metadata-genesis.service';
 import { MetadataService } from './model/metadata-service';
 import { CubeSuggestionService } from './model/ordinals/cube-suggestion.service';
+import { CubeService } from './model/ordinals/cube.service';
 import { MagicEdenService } from './model/ordinals/magic-eden.service';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 @Module({
@@ -34,6 +36,7 @@ import { MagicEdenService } from './model/ordinals/magic-eden.service';
       load: [configuration],
       validationSchema
     }),
+    ScheduleModule.forRoot()
     // MongooseModule.forRootAsync({
     //   imports: [ConfigModule],
     //   // TODO
@@ -57,6 +60,7 @@ import { MagicEdenService } from './model/ordinals/magic-eden.service';
     MetadataGenesisService,
     ImageService,
     MagicEdenService,
+    CubeService,
     CubeSuggestionService,
     CacheService,
     ...allKnownTokenNames.map((tokenName: KnownTokenName) => ({

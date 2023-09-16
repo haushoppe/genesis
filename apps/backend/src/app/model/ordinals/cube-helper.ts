@@ -1,7 +1,6 @@
-import { OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
 import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
-import { parseCube } from '../../../../../shared/parse-cube';
 import { REFERRALS } from '../../../../../shared/referral-code';
+import { InscriptionSimple } from '../../types/ordinals/inscription-simple';
 
 
 export function hideUnwantedProperties({ charge, files, paid, referral }: OrderResponse): InscriptionOrder {
@@ -25,49 +24,24 @@ export function hideUnwantedProperties({ charge, files, paid, referral }: OrderR
   };
 }
 
-export function searchResultToCubeInscriptionMeta(searchResult: OrdinalsbotInscriptionSearchResult) {
+/**
+ * Collects all IDs based on specified trait types from a given data array.
+ *
+ * @param {Array} data - The array containing the data.
+ * @returns {Array} An array of IDs corresponding to the specified trait types.
+ */
+export function collectClaimedInscriptionIds(data: InscriptionSimple[]) {
 
-  const meta = searchResult.results
+  const traitTypes = ['Side 1', 'Side 2', 'Side 3', 'Side 4', 'Side 5', 'Side 6'];
+  const ids = [];
 
-    // filter all out without correct prefex
-    .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'))
-
-    // get attributes OR null for invalid cubes
-    .map(x => {
-      const attributes = parseCube(x.contentstr);
-      if (attributes) {
-        return {
-          inscriptionId: x.inscriptionid,
-          attributes
-        }
+  for (const entry of data) {
+    for (const attribute of entry.meta.attributes) {
+      if (traitTypes.includes(attribute.trait_type)) {
+        ids.push(attribute.value);
       }
-      console.log('Invalid cube! ' +  x.inscriptionid);
-      return null;
-    })
-
-    // remove invalid cubes
-    .filter(x => !!x)
-
-    // assemble Metadata
-    .map((x, index) => {
-
-      let name = 'Ordinal Cube #' + index;
-
-      const titleTrait = x.attributes.find(t => t.trait_type === 'Title');
-      if (titleTrait) {
-        name = `${ name } (${ titleTrait.value })`
-      }
-
-      return {
-        inscriptionId: x.inscriptionId,
-        meta: {
-          name,
-          attributes: x.attributes
-        }
-      };
     }
-  );
+  }
 
-
-  return meta;
+  return ids;
 }

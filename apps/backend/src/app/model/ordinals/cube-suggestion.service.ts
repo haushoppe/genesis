@@ -1,15 +1,18 @@
-import { Injectable } from '@nestjs/common';
-import { MagicEdenService } from './magic-eden.service';  // assuming the service is in the same folder, otherwise adjust the path
+import { Injectable, Logger } from '@nestjs/common';
+
 import { CubeSuggestion } from '../../types/ordinals/cube-suggestion';
 import { CollectionDetails, CollectionStat } from '../../types/ordinals/types-magic-eden';
+import { CubeService } from './cube.service';
+import { MagicEdenService } from './magic-eden.service';
+import { collectClaimedInscriptionIds } from './cube-helper';
 
 @Injectable()
 export class CubeSuggestionService {
 
-  private claimedTokenIds: string[] = [];  // pre-existing claimedTokenIds
   private readonly TOKEN_GOAL = 6;
 
-  constructor(private magicEdenService: MagicEdenService) {}
+  constructor(private magicEdenService: MagicEdenService,
+    private cubeService: CubeService) {}
 
   async getCubeSuggestion(onlyCollectionSymbol: string | undefined): Promise<CubeSuggestion | undefined> {
 
@@ -29,6 +32,9 @@ export class CubeSuggestionService {
   }
 
   async findUnclaimedTokens(onlyCollectionSymbol: string | undefined): Promise<{ tokenIds: string[], collectionName: string, collectionSymbol: string  } | undefined> {
+
+    const allCubes = await this.cubeService.getAllCubes();
+    const claimedTokenIds = collectClaimedInscriptionIds(allCubes);
 
     let collections: CollectionStat[] | CollectionDetails[] = [];
 
@@ -79,9 +85,13 @@ export class CubeSuggestionService {
         }
 
         for (const token of tokens.tokens) {
-          if (!this.claimedTokenIds.includes(token.id)) {
+          if (!claimedTokenIds.includes(token.id)) {
             tokenIdMatches.push(token.id);
             // console.log('Adding ContentType', token.contentType);
+            // Logger.verbose('Added: Inscription ' + token.id)
+
+          } else {
+            Logger.verbose('Inscription is already claimed. Skipping: ' + token.id)
           }
           if (tokenIdMatches.length === this.TOKEN_GOAL) {
             break;  // break out of the loop if we have found enough tokens

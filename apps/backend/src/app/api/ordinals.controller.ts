@@ -107,8 +107,9 @@ export class OrdinalsController {
 
     const simpleResult = async () => {
 
-      const meta = (await this.cubeService.getAllCubes()).reverse();
-      return limitArray(meta, 12);
+      const meta = (await this.cubeService.getAllCubes());
+      const reverseMeta = [...meta].reverse();
+      return limitArray(reverseMeta, 12);
     };
 
     return await this.cacheService.loadCached('ordinal_cubes', simpleResult, oneMinuteInSeconds);

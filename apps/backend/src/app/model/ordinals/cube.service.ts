@@ -18,6 +18,8 @@ export class CubeService {
   async onModuleInit() {
     Logger.log('Initializing CubeService', 'ordinals_cubes');
     await this.handleInterval(); // immediate execution upon module initialization
+
+    Logger.verbose('Fetched ' + this.allCubes.length + ' cubes', 'ordinals_cubes');
   }
 
   @Interval(1000 * 60 * 5) // every 5 minutes
@@ -39,8 +41,6 @@ export class CubeService {
   private async serchForAllCubes() {
     const searchResult = await searchForText('cubes.haushoppe.art');
     this.allCubes = this.searchResultToCubeInscriptionMeta(searchResult);
-
-    Logger.verbose('Fetched ' + this.allCubes.length + ' cubes', 'ordinals_cubes');
   }
 
   private searchResultToCubeInscriptionMeta(searchResult: OrdinalsbotInscriptionSearchResult): InscriptionSimple[] {

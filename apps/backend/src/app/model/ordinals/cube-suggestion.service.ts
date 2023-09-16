@@ -91,7 +91,7 @@ export class CubeSuggestionService {
             // Logger.verbose('Added: Inscription ' + token.id)
 
           } else {
-            Logger.verbose('Inscription is already claimed. Skipping: ' + token.id)
+            // Logger.verbose('Inscription is already claimed. Skipping: ' + token.id)
           }
           if (tokenIdMatches.length === this.TOKEN_GOAL) {
             break;  // break out of the loop if we have found enough tokens

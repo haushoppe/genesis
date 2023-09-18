@@ -7,7 +7,7 @@ import { PushModule } from '@rx-angular/template/push';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { MintFacade } from '../store/mint.facade';
 import { environment } from '../../environments/environment';
-import { BitcoinInscriptionService } from '../services/inscription-service';
+import { BitcoinInscriptionService } from '../services/bitcoin-inscription-service';
 import { decodeBase64DataURI } from '../order-details/decode-base64-data-uri';
 
 
@@ -43,13 +43,11 @@ export class OrderConnectDetailsComponent {
 
   constructor(route: ActivatedRoute, cd: ChangeDetectorRef) {
 
-    const txId = route.snapshot.paramMap.get('txId') || '';
-    this.bitcoinInscriptionService.getInscription(txId).then(data =>  {
-      this.data = data;
-      this.decoded = decodeBase64DataURI(data) || '';
-
-
-      cd.detectChanges();
-    });
+    // const txId = route.snapshot.paramMap.get('txId') || '';
+    // this.bitcoinInscriptionService.getInscription(txId).then(data =>  {
+    //   this.data = data;
+    //   this.decoded = decodeBase64DataURI(data) || '';
+    //   cd.detectChanges();
+    // });
   }
 }

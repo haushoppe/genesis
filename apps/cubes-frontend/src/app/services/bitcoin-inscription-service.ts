@@ -21,6 +21,15 @@ const OP_ENDIF = 0x68; // Ends an if/else block.
  * Extracts the first inscription from a Bitcoin transaction.
  * Advanced envelopes with extra data (eg Quadkey inscriptions) are supported, but the extra data is ignored.
  *
+ *
+ * ++ Example of usage:
+ *
+ * const txId = '78fa9d6e9b2b49fbb9f4838e1792dba7c1ec836f22e3206561e2d52759708251';
+ * const service = new BitcoinInscriptionService();
+ * const dataBase64 = await service.getInscription(txId);
+ * console.log(dataBase64);
+ *
+ *
  * ++ Simple envelope:
  *
  * OP_FALSE
@@ -225,7 +234,7 @@ export class BitcoinInscriptionService {
     }
 
     // for debugging text-based inscriptions
-    console.log(',', this.uint8ArrayToString(combinedData), ',');
+    // console.log(',', this.uint8ArrayToString(combinedData), ',');
 
     const base64Data = window.btoa(String.fromCharCode(...combinedData));
     return `data:${contentType};base64,${base64Data}`;

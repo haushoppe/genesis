@@ -8,9 +8,8 @@
       Transaction ID: {{ inscriptionResponse?.txId }}
     </div>
 
-    <ng-container *ngIf="inscriptionResponse">
-      {{ bitcoinInscriptionService.getInscription(inscriptionResponse.txId) | async | json }}
-    </ng-container>
+    {{ data }}
+    {{ decoded }}
 
     <br>
 

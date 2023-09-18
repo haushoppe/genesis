@@ -126,6 +126,8 @@ export class CubeSuggestionService {
     throw new Error('Could not find enough unclaimed tokens!');
   }
 
+  // check all possible content types here:
+  // see: https://github.com/ordinals/ord/blob/05c10a73f2d29838b894e3c56849762dbe6dc51c/src/media.rs#L20
   isImageContentType(contentType: string): boolean {
     const supportedTypes = [
       'image/jpeg',

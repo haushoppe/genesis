@@ -149,7 +149,7 @@ export class MintEffects {
               map(({ txid, vin, status }) => MintActions.updateConnectInscriptionStatus({ inscriptionResponse: {
                 txId: txid,
                 firstVin: vin[0],
-                status: { ...status, confirmed: false }
+                status
               }})),
               catchError((error: HttpErrorResponse) => {
                 if (error.status === 404) {

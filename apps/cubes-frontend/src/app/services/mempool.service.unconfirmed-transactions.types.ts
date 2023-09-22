@@ -1,7 +1,3 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
 export interface MempoolTransaction {
   txid: string;
   version: number;
@@ -43,24 +39,4 @@ export interface Vout {
 
 export interface Status {
   confirmed: boolean;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class MempoolService {
-  private readonly baseApiUrl = 'https://mempool.space/api/address';
-
-  http = inject(HttpClient);
-
-  /**
-   * Gets unconfirmed transaction history for the specified address/scripthash.
-   * Returns up to 50 transactions.
-   *
-   * @param address The bitcoin address or scripthash
-   * @returns An observable array of unconfirmed transactions
-   */
-  getUnconfirmedTransactions(address: string): Observable<MempoolTransaction[]> {
-    return this.http.get<MempoolTransaction[]>(`${this.baseApiUrl}/${address}/txs/mempool`);
-  }
 }

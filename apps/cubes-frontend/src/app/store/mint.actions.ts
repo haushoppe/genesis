@@ -1,10 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
-import { Inscription, InscriptionOrder } from '../ordinalsbot';
 import { CubeSuggestion, InscriptionSimple, Price } from '../openapi-client';
-import { MempoolTransaction } from '../services/mempool-service';
-import { CreateInscriptionResponse } from 'sats-connect';
+import { Inscription, InscriptionOrder } from '../ordinalsbot';
+import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 
 export interface SixInscriptionIds {
   inscriptionId1: string;
@@ -45,12 +44,16 @@ export const MintActions = createActionGroup({
     'Order Completed': emptyProps(),
 
     'Create Connect Inscription': props<{ cubeDetails: CubeDetails }>(),
-    'Create Connect Inscription Success': props<{ inscriptionResponse: CreateInscriptionResponse, createdAt: string }>(),
+    'Create Connect Inscription Success': props<{ inscriptionResponse: { txId: string }, createdAt: string }>(),
     'Create Connect Inscription Failure': props<{ error: Error }>(),
-    'Update Connect Inscription Status': props<{ inscriptionResponse: CreateInscriptionResponse }>(),
+    'Update Connect Inscription Status': props<{ inscriptionResponse: {
+      txId: string,
+      firstVin?: VinEntry,
+      status?: TransactionStatus
+    }}>(),
+    'Connect Inscription Not Found': props<{ error: Error }>(),
+    'Connect Inscription Confirmed': emptyProps(),
 
-
-    'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),
 
     'Lookup Inscription Id': props<{ inscriptionNumber: string }>(),
     'Lookup Inscription Id Success': props<{ inscriptionNumber: string, inscriptionId: string }>(),
@@ -63,5 +66,8 @@ export const MintActions = createActionGroup({
     'Load Cube Suggestion': props<{ collectionSymbol: string | '' }>(),
     'Load Cube Suggestion Success': props<{ cubeSuggestion: CubeSuggestion }>(),
     'Load Cube Suggestion Failure':  props<{ error: HttpErrorResponse }>(),
+
+
+     // 'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),
   }
 });

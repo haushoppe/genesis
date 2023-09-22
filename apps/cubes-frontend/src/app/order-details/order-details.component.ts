@@ -1,19 +1,18 @@
 import { DecimalPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Input } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
 import { QRCodeModule } from 'angularx-qrcode';
 
+import { parseCube } from '../../../../shared/parse-cube';
+import { environment } from '../../environments/environment';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { ChargeStatus, InscriptionOrder } from '../ordinalsbot';
-import { getSubmittingState } from '../store/submittable/submittable-state';
-import { MintFacade } from '../store/mint.facade';
-import { LetModule } from '@rx-angular/template/let';
-import { RouterLink } from '@angular/router';
-import { environment } from '../../environments/environment';
-import { decodeBase64DataURI } from './decode-base64-data-uri';
 import { SafeHtmlPipe } from '../safe-html.pipe';
-import { parseCube } from '../../../../shared/parse-cube';
-
+import { MintFacade } from '../store/mint.facade';
+import { getSubmittingState } from '../store/submittable/submittable-state';
+import { decodeBase64DataURI } from './decode-base64-data-uri';
 
 
 @Component({
@@ -61,7 +60,7 @@ export class OrderDetailsComponent {
     return 'lightning:' + order.charge.lightning_invoice.payreq;
   }
 
-  getDecoded(dataURL: string): string {
+  getDecodedCube(dataURL: string): string {
     if (!dataURL) return '';
 
     const decoded = decodeBase64DataURI(dataURL) || '';

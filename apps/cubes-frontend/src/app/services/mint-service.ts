@@ -1,17 +1,16 @@
 import { inject, Injectable } from '@angular/core';
-import { parseCube } from '../../../../shared/parse-cube';
 import { map, Observable, throwError } from 'rxjs';
+import { BitcoinNetworkType, createInscription, CreateInscriptionResponse } from 'sats-connect';
 
+import { parseCube } from '../../../../shared/parse-cube';
+import { REFERRALS } from '../../../../shared/referral-code';
 import { OrdinalsService } from '../openapi-client';
 import { InscriptionOrder } from '../ordinalsbot';
 import { CubeDetails } from '../store/mint.actions';
 import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
-import { HiroService } from './hiro-service';
-import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
+import { HiroService } from './hiro.service';
 import { isValidInscriptionId } from './is-valid-inscription-id';
-
-import { BitcoinNetworkType, createInscription, CreateInscriptionResponse } from 'sats-connect'
-import { REFERRALS } from '../../../../shared/referral-code';
+import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
 
 
 @Injectable({

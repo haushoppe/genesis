@@ -3,6 +3,7 @@ import { createFeature, createReducer, on } from '@ngrx/store';
 
 import { CubeSuggestion, InscriptionSimple, Price } from '../openapi-client';
 import { Inscription, InscriptionOrder } from '../ordinalsbot';
+import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 import { MintActions } from './mint.actions';
 import {
   getFailureState,
@@ -11,7 +12,6 @@ import {
   getSuccessfulState,
   SubmittableState,
 } from './submittable/submittable-state';
-import { CreateInscriptionResponse } from 'sats-connect';
 
 
 export interface State {
@@ -25,7 +25,11 @@ export interface State {
   orderResponse: InscriptionOrder | undefined;
   orderStatus: SubmittableState;
 
-  createInscriptionResponse: CreateInscriptionResponse | undefined;
+  createInscriptionResponse: {
+    txId: string,
+    firstVin?: VinEntry,
+    status?: TransactionStatus
+  } | undefined;
   createInscriptionStatus: SubmittableState;
 
   knownInscriptionIds: { [inscriptionNumber: string]: string };
@@ -128,17 +132,13 @@ export const mintFeature = createFeature({
         orderStatus: getSuccessfulState()
       })),
 
-    on(MintActions.orderNotFound, (state, { error }) => ({
+    on(MintActions.orderNotFound,
+      MintActions.placeOrderFailure, (state, { error }) => ({
       ...state,
       orderResponse: undefined,
       orderStatus: getFailureState(error)
     })),
 
-    on(MintActions.placeOrderFailure, (state, { error }) => ({
-      ...state,
-      orderResponse: undefined,
-      orderStatus: getFailureState(error)
-    })),
 
     // Sats Connect Inscription (Xverse)
 
@@ -148,14 +148,21 @@ export const mintFeature = createFeature({
       createInscriptionStatus: getSubmittingState()
     })),
 
-    on(MintActions.createConnectInscriptionSuccess,
-      MintActions.updateConnectInscriptionStatus, (state, { inscriptionResponse }) => ({
+     // save Response but keep submitting state until first load of Mempool Data
+    on(MintActions.createConnectInscriptionSuccess, (state, { inscriptionResponse }) => ({
+        ...state,
+        createInscriptionResponse: inscriptionResponse,
+        createInscriptionStatus: getSubmittingState() // !!!
+    })),
+
+    on(MintActions.updateConnectInscriptionStatus, (state, { inscriptionResponse }) => ({
         ...state,
         createInscriptionResponse: inscriptionResponse,
         createInscriptionStatus: getSuccessfulState()
-      })),
+    })),
 
-    on(MintActions.createConnectInscriptionFailure, (state, { error }) => ({
+    on(MintActions.createConnectInscriptionFailure,
+       MintActions.connectInscriptionNotFound, (state, { error }) => ({
       ...state,
       createInscriptionResponse: undefined,
       createInscriptionStatus: getFailureState(error)

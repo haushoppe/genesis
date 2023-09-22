@@ -1,15 +1,17 @@
-import { AsyncPipe, DecimalPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { JsonPipe, NgClass, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
 
-import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
-import { MintFacade } from '../store/mint.facade';
+import { parseCube } from '../../../../shared/parse-cube';
 import { environment } from '../../environments/environment';
-import { BitcoinInscriptionService, ParsedInscription } from '../services/bitcoin-inscription.service';
-import { decodeBase64DataURI } from '../order-details/decode-base64-data-uri';
-
+import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
+import { placeholderAsString } from '../layout/toggle-iframe.directive';
+import { SafeHtmlPipe } from '../safe-html.pipe';
+import { InscriptionParserService } from '../services/inscription-parser.service';
+import { VinEntry } from '../services/mempool.service.transaction-details.types';
+import { MintFacade } from '../store/mint.facade';
 
 
 @Component({
@@ -26,28 +28,31 @@ import { decodeBase64DataURI } from '../order-details/decode-base64-data-uri';
       NgIf,
       LetModule,
       RouterLink,
-      DecimalPipe,
-      JsonPipe,
-      AsyncPipe
+      SafeHtmlPipe,
+      JsonPipe
     ]
 })
 export class OrderConnectDetailsComponent {
 
   mintFacade = inject(MintFacade);
-  bitcoinInscriptionService = inject(BitcoinInscriptionService);
-
-  inscription?: ParsedInscription;
-  decoded = '';
+  inscriptionParserService = inject(InscriptionParserService);
 
   environment = environment;
 
-  // constructor(route: ActivatedRoute, cd: ChangeDetectorRef) {
+  getDecodedCube(firstVin: VinEntry | undefined) {
 
-  //   const txId = route.snapshot.paramMap.get('txId') || '';
-  //   this.bitcoinInscriptionService.getInscription(txId).then(i =>  {
-  //     this.inscription = i;
-  //     this.decoded = decodeBase64DataURI(i.dataUri) || '';
-  //     cd.detectChanges();
-  //   });
-  // }
+    if (!firstVin) {
+      return placeholderAsString;
+    }
+
+    const inscription = this.inscriptionParserService.parseInscription(firstVin);
+    const content = inscription.contentString;
+
+    // only 100% valid cubes will be displayed here, for XSS security reasons
+    if (!parseCube(content)) {
+      return placeholderAsString;
+    }
+
+    return content;
+  }
 }

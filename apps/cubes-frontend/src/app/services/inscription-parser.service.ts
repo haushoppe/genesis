@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import axios from 'axios';
+import { VinEntry } from './mempool.service.transaction-details.types';
 
 /**
  * Bitcoin Script Opcodes
@@ -18,21 +19,13 @@ const OP_ENDIF = 0x68; // Ends an if/else block.
 export interface ParsedInscription {
   contentType: string;
   contentString: string;
-  fields: { [key: string]: Uint8Array };
-  dataUri: string;
+  // fields: { [key: string]: Uint8Array };
+  // dataUri: string;
 }
 
 /**
  * Extracts the first inscription from a Bitcoin transaction.
  * Advanced envelopes with extra data (eg Quadkey inscriptions) are supported, but the extra data is ignored.
- *
- *
- * ++ Example of usage:
- *
- * const txId = '78fa9d6e9b2b49fbb9f4838e1792dba7c1ec836f22e3206561e2d52759708251';
- * const service = new BitcoinInscriptionService();
- * const dataBase64 = await service.getInscription(txId);
- * console.log(dataBase64);
  *
  *
  * ++ Simple envelope:
@@ -82,7 +75,7 @@ export interface ParsedInscription {
  *
  */
 @Injectable({ providedIn: 'root' })
-export class BitcoinInscriptionService {
+export class InscriptionParserService {
 
   private pointer = 0;
   private raw: Uint8Array = new Uint8Array();
@@ -105,19 +98,6 @@ export class BitcoinInscriptionService {
   static uint8ArrayToString(bytes: Uint8Array): string {
     const decoder = new TextDecoder('utf-8');
     return decoder.decode(bytes);
-  }
-
-  /**
-   * Fetches raw transaction data from the mempool.space API.
-   *
-   * @param txId - The transaction ID.
-   * @returns A promise that resolves to the raw data.
-   */
-  static async getRawData(txId: string): Promise<Uint8Array> {
-    const url = `https://mempool.space/api/tx/${txId}`;
-    const response = await axios.get(url);
-    const txWitness = response.data.vin[0].witness.join('');
-    return BitcoinInscriptionService.hexStringToUint8Array(txWitness);
   }
 
   /**
@@ -193,14 +173,16 @@ export class BitcoinInscriptionService {
    * @param txId - The transaction ID.
    * @returns A promise that resolves to the inscription as a data-uri.
    */
-  async getInscription(txId: string): Promise<ParsedInscription> {
-    this.raw = await BitcoinInscriptionService.getRawData(txId);
+  parseInscription(vin: VinEntry): ParsedInscription {
+
+    const txWitness = vin.witness.join('');
+    this.raw = InscriptionParserService.hexStringToUint8Array(txWitness);
     this.pointer = this.getInitialPosition();
 
     // Process fields until OP_0 is encountered
     const fields: { [key: string]: Uint8Array } = {};
     while (this.pointer < this.raw.length && this.raw[this.pointer] !== OP_0) {
-      const tag = BitcoinInscriptionService.uint8ArrayToString(this.readPushdata());
+      const tag = InscriptionParserService.uint8ArrayToString(this.readPushdata());
       const value = this.readPushdata();
 
       fields[tag] = value;
@@ -229,16 +211,16 @@ export class BitcoinInscriptionService {
       idx += segment.length;
     }
 
-    const contentType = BitcoinInscriptionService.uint8ArrayToString(fields["\u0001"]);
-    const contentString = BitcoinInscriptionService.uint8ArrayToString(combinedData);
-    const base64Data = window.btoa(String.fromCharCode(...combinedData));
-    const dataUri = `data:${contentType};base64,${base64Data}`;
+    const contentType = InscriptionParserService.uint8ArrayToString(fields["\u0001"]);
+    const contentString = InscriptionParserService.uint8ArrayToString(combinedData);
+    // const base64Data = window.btoa(String.fromCharCode(...combinedData));
+    // const dataUri = `data:${contentType};base64,${base64Data}`;
 
     return {
       contentType,
       contentString,
-      fields,
-      dataUri
+      // fields,
+      // dataUri
     };
   }
 }

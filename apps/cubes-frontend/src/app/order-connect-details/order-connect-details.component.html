@@ -5,21 +5,47 @@
     <h3>Your Cube Inscription</h3>
 
     <div class="text-truncate" style="width: 70vw;">
-      Transaction ID: {{ inscriptionResponse?.txId }}
+      Transaction ID: {{ mintFacade.bestInscriptionId$ | push }}
     </div>
 
-    <!-- {{ inscription?.contentType }}
-    <hr>
-    {{ inscription?.fields | json }}
-    <hr>
-    {{ inscription?.contentString }}
-    <hr>
-    {{ decoded }} -->
+    <div class="mt-4 mb-4">
+      <app-loading-indicator
+        [state]="mintFacade.createInscriptionStatus$ | push"
+        sendDataText="Loading transaction details…"
+      />
+    </div>
 
-    <br>
+    Status:
+    <span class="badge ps-2 pe-2 rounded-pill"
+      [ngClass]="{
+        'bg-success': inscriptionResponse?.status?.confirmed,
+        'bg-danger': !inscriptionResponse?.status?.confirmed,
+      }"
+      *ngIf="inscriptionResponse?.status?.confirmed !== null">
+      {{ inscriptionResponse?.status?.confirmed ? 'Confirmed' : 'Unconfirmend' }}
+    </span><br>
+
+    Preview:
+
+    <iframe
+      [srcdoc]="getDecodedCube(inscriptionResponse?.firstVin) | safeHtml"
+      sandbox="allow-scripts"
+      width="100%"
+      height="300"
+      class="d-block mx-auto mb-4"
+    ></iframe>
 
     Your inscription was successfully broadcast.<br>
-    It will be available when <a href="https://mempool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">this transaction</a> is confirmed!<br>
+
+    <ng-container *ngIf="inscriptionResponse?.status?.confirmed !== null">
+
+      <ng-container *ngIf="!inscriptionResponse?.status?.confirmed">It will be available when <a href="https://mempool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">this transaction</a> is confirmed!<br></ng-container>
+      <ng-container *ngIf="inscriptionResponse?.status?.confirmed">The <a href="https://mempool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">transaction</a> is confirmed and your cube is in your wallet!<br></ng-container>
+    </ng-container>
+
+    <ng-container *ngIf="inscriptionResponse?.status?.confirmed === null">
+      &nbsp;<br>
+    </ng-container>
 
     <!-- <hr>
 

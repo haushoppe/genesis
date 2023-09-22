@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 
+import { MintService } from '../services/mint-service';
 import { CubeDetails, MintActions } from './mint.actions';
 import {
   selectAllInscriptions,
@@ -17,8 +18,14 @@ import {
   selectPrice,
   selectPriceStatus,
 } from './mint.reducer';
-import { selectBestOrderId, selectCubeSuggestionFixed, selectFile, selectInscriptionId, selectIsOrderPending } from './mint.selectors';
-import { MintService } from '../services/mint-service';
+import {
+  selectBestInscriptionId,
+  selectBestOrderId,
+  selectCubeSuggestionFixed,
+  selectFile,
+  selectInscriptionId,
+  selectIsOrderPending,
+} from './mint.selectors';
 
 
 @Injectable({
@@ -45,6 +52,8 @@ export class MintFacade {
   file$ = this.store.select(selectFile);
   isOrderPending$ = this.store.select(selectIsOrderPending);
   bestOrderId$ = this.store.select(selectBestOrderId);
+  bestInscriptionId$ = this.store.select(selectBestInscriptionId);
+
 
   knownInscriptionIdStatus$ = this.store.select(selectKnownInscriptionIdStatus);
 

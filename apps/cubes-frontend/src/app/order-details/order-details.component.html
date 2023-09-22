@@ -22,7 +22,7 @@
     Preview:
 
       <iframe
-        [srcdoc]="getDecoded(dataURL) | safeHtml"
+        [srcdoc]="getDecodedCube(dataURL) | safeHtml"
         sandbox="allow-scripts"
         width="100%"
         height="300"
@@ -174,11 +174,13 @@
 
         The Inscription ID of your cube is:
 
-        <a [href]="environment.ordinalsExplorerMarketplace + inscriptionId" target="_blank"
-          role="navigation"
-          attr.aria-label="Visit marketplace for Inscription {{ inscriptionId }}">
-          {{ inscriptionId }}
-        </a>
+        <div class="text-truncate" style="width: 70vw;">
+          <a [href]="environment.ordinalsExplorerMarketplace + inscriptionId" target="_blank"
+            role="navigation"
+            attr.aria-label="Visit marketplace for Inscription {{ inscriptionId }}">
+            {{ inscriptionId }}
+          </a>
+        </div>
       </ng-container> -->
 
 

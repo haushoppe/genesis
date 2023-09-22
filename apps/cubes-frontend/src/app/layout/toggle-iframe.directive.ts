@@ -1,6 +1,6 @@
 import { Directive, ElementRef, OnInit, OnDestroy, Input } from '@angular/core';
 
-const placeholderAsString =
+export const placeholderAsString =
 `<html>
   <head>
     <style>

@@ -15,6 +15,7 @@
     <iframe
       *ngIf="nft.metadata.animation_url"
       [src]="nft.metadata.animation_url | safeResourceUrl"
+      sandbox="allow-scripts"
     ></iframe>
 
     <img *ngIf="!nft.metadata.animation_url" [src]="nft.metadata.image">

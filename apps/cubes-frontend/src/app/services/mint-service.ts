@@ -152,23 +152,8 @@ export class MintService {
       throw 'InscriptionId is missing!'
     }
 
-    const contentType = 'text/markdown';
-const content = `
-# Ordinal Cubes
-
-\`\`\`
-    +-------+
-   /|      /|
-  +-+-----+ |
-  | |     | |
-  | +-----+-+
-  |/      |/
-  +-------+
-\`\`\`
-
-The world's smallest onchain gallery, visualized as a 3D cube. Permissionless. Immutable. Forever existing. Choose six inscriptions and claim them with your own cube!
-
-**https://cubes.haushoppe.art/**`;
+    const contentType = 'text/html';
+    const content = this.getCubeHtml(cubeDetails);
     const payloadType = 'PLAIN_TEXT';
 
     const appFeeAddress = REFERRALS[0].address; // the address where the inscription fee should go
@@ -184,6 +169,8 @@ The world's smallest onchain gallery, visualized as a 3D cube. Permissionless. I
           contentType,
           content,
           payloadType,
+          appFeeAddress,
+          appFee,
           suggestedMinerFeeRate,
         },
         onFinish: (response) => {

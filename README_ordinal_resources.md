@@ -83,3 +83,10 @@ https://ordinalsbot.com?ref=haushoppe
 
 * https://docs.magiceden.io/reference/ordinals-overview 
 * https://gist.github.com/nftkitten/85023ef77aacd9842bedbb05a9301398
+
+
+## More
+
+Ordinal Public Goods
+A list of js libraries and other js and css resources inscribed on bitcoin.
+https://github.com/jokie88/ordinalpublicgoods

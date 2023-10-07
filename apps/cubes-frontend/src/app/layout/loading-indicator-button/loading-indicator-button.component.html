@@ -1,7 +1,8 @@
 <ng-container *ngIf="state">
   <ng-container *ngIf="state.submitStatus === SubmitStatus.Submitting">
 
-    <button class="btn btn-labeled btn-primary" type="button" [disabled]="disabled">
+    <button class="btn btn-labeled btn-primary" type="button" [disabled]="disabled"
+      (click)="buttonClick.emit($event)">
       <span class="btn-label"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></span>
       <span class="btn-label-text">{{ buttonText }}</span>
     </button>

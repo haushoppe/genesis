@@ -97,7 +97,10 @@
                 </div>
 
                 <div class="form-group row" *rxLet="mintFacade.price$; let price">
-                  <label for="price" class="col-4 col-form-label"><ng-container *ngIf="useConnectInscription"> Estimated</ng-container> Price:</label>
+                  <label for="price" class="col-4 col-form-label">
+                    <ng-container *ngIf="!useConnectInscription">Price:</ng-container>
+                    <ng-container *ngIf="useConnectInscription">Estimated Price:</ng-container>
+                  </label>
                   <div class="col-8" *rxLet="mintFacade.priceStatus$; let priceStatus">
 
 
@@ -108,10 +111,17 @@
                       />
                     </div>
 
-                    <strong class="d-block mt-2">
+                    <strong class="d-block mt-2" *ngIf="!useConnectInscription">
                       {{ price?.priceInSats | number }} sats
                     </strong>
-                    <span class="text-muted mt-n1 d-block">equals to {{ price?.priceInUsd | number : '1.2-2' }} USD</span>
+
+                    <strong class="d-block mt-2" *ngIf="useConnectInscription">
+                      {{ (price && price.priceInSats ? price.priceInSats - 1000 : 0) | number }} sats
+                    </strong>
+
+                    <span class="text-primary mt-n1 d-block">equals to {{ price?.priceInUsd | number : '1.2-2' }} USD</span>
+                    <span class="text-muted mt-n1 d-block" *ngIf="!useConnectInscription">(without payment fees)</span>
+                    <span class="text-muted mt-n1 d-block" *ngIf="useConnectInscription">(all fees included)</span>
 
                     <input class="d-none" id="price">
                   </div>

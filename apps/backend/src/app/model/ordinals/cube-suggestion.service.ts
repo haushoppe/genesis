@@ -130,11 +130,14 @@ export class CubeSuggestionService {
   // see: https://github.com/ordinals/ord/blob/05c10a73f2d29838b894e3c56849762dbe6dc51c/src/media.rs#L20
   isImageContentType(contentType: string): boolean {
     const supportedTypes = [
+      'image/apng',
+      'image/avif',
+      'image/gif',
       'image/jpeg',
       'image/png',
-      'image/bmp',
-      'image/gif',
-      'image/webp'
+      'image/svg+xml', // TODO: iframe!
+      'image/webp',
+      'image/bmp', // let's assume someone is crazy enough to do this :D
     ];
     return supportedTypes.includes(contentType);
   }

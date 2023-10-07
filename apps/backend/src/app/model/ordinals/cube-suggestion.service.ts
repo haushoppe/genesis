@@ -137,7 +137,7 @@ export class CubeSuggestionService {
       'image/png',
       'image/svg+xml', // TODO: iframe!
       'image/webp',
-      'image/bmp', // let's assume someone is crazy enough to do this :D
+      'image/bmp'  // let's assume someone is crazy enough to do this :D
     ];
     return supportedTypes.includes(contentType);
   }

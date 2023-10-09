@@ -39,8 +39,8 @@
 
     <ng-container *ngIf="inscriptionResponse?.status?.confirmed !== null">
 
-      <ng-container *ngIf="!inscriptionResponse?.status?.confirmed">It will be available when <a href="https://mempool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">this transaction</a> is confirmed!<br></ng-container>
-      <ng-container *ngIf="inscriptionResponse?.status?.confirmed">The <a href="https://mempool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">transaction</a> is confirmed and your cube is in your wallet!<br></ng-container>
+      <ng-container *ngIf="!inscriptionResponse?.status?.confirmed">It will be available when <a href="https://ordinals-mempool.haushoppe.art/tx/{{ inscriptionResponse?.txId }}" target="_blank">this transaction</a> is confirmed!<br></ng-container>
+      <ng-container *ngIf="inscriptionResponse?.status?.confirmed">The <a href="https://ordinals-mempool.haushoppe.art/tx/{{ inscriptionResponse?.txId }}" target="_blank">transaction</a> is confirmed and your cube is in your wallet!<br></ng-container>
     </ng-container>
 
     <ng-container *ngIf="inscriptionResponse?.status?.confirmed === null">

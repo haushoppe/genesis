@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 
 @Component({
@@ -8,7 +9,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-
+      RouterLink
     ]
 })
 export class PresskitComponent {

@@ -16,6 +16,8 @@ import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../..
 import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinalsbot-order-response';
 import { CacheService } from '../model/cache.service';
 import { limitArray } from '../model/limit-array';
+import { paginateArray } from '../model/paginate-array';
+
 import { hideUnwantedProperties } from '../model/ordinals/cube-helper';
 import { CubeSuggestionService } from '../model/ordinals/cube-suggestion.service';
 import { CubeService } from '../model/ordinals/cube.service';
@@ -109,6 +111,10 @@ export class OrdinalsController {
 
       const meta = (await this.cubeService.getAllCubes());
       const reverseMeta = [...meta].reverse();
+
+      // const itemsPerPage = 6;
+      // const currentPage = 8;
+      // return paginateArray(reverseMeta, itemsPerPage, currentPage);
       return limitArray(reverseMeta, 12);
     };
 

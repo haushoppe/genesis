@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
 import { CubeSuggestion, InscriptionSimple, Price } from '../openapi-client';
-import { Inscription, InscriptionOrder } from '../ordinalsbot';
+import { OrdinalsbotInscription, InscriptionOrder } from '../ordinalsbot';
 import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 
 export interface SixInscriptionIds {
@@ -33,7 +33,7 @@ export const MintActions = createActionGroup({
     'Load All Inscriptions Failure': props<{ error: HttpErrorResponse }>(),
 
     'Load Inscription': props<{ inscriptionId: string }>(),
-    'Load Inscription Success': props<{ inscription: Inscription }>(),
+    'Load Inscription Success': props<{ inscription: OrdinalsbotInscription }>(),
     'Load Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
     'Place Order': props<{ cubeDetails: CubeDetails, receiveAddress: string, code: string | ''}>(),

@@ -25,11 +25,11 @@
 }
 */
 
-export interface Inscription {
+export interface OrdinalsbotInscription {
   txid: string,
   inputindex: number,
   inscriptionid: string,
-  inscriptionnumber: null, // WARNING: sometimes null, reported bug!
+  inscriptionnumber: number, // WARNING: sometimes null, reported bug!
   blockheight: number,
   contentstr: string,
   contenttypestr: string,
@@ -41,5 +41,5 @@ export interface Inscription {
 export interface OrdinalsbotInscriptionSearchResult {
   status: string,
   count: number,
-  results: Inscription[]
+  results: OrdinalsbotInscription[]
 }

@@ -60,7 +60,7 @@ export async function ordinalnovusSearchForText(text: string): Promise<LooksLike
       content
     }) => ({
       inscriptionid: inscriptionId,
-      inscriptionnumber: number.toString(),
+      inscriptionnumber: number,
       contentstr: content
     }));
 

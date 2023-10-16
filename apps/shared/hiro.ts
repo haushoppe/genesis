@@ -1,6 +1,5 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import axios from 'axios';
+import { OrdinalnovusInscription, OrdinalnovusInscriptionSearchResult, LooksLikeOrdinalsbotInscription } from './ordinalnovus-inscription-search-result'
 
 /**
  * Represents an inscription object.
@@ -58,26 +57,27 @@ export interface HiroInscription {
 }
 
 /**
- * The service responsible for interacting with the Hiro.so ordinals API.
+ * Fetches the inscription data for the given id from the Hiro API.
+ *
+ * @param id - The inscription ID or number.
+ * @returns A promise that resolves to the inscription data.
  */
-@Injectable({
-  providedIn: 'root'
-})
-export class HiroService {
+export async function getInscriptionFromHiro(id: string): Promise<HiroInscription> {
 
-  /**
-   * Constructs the HiroService.
-   * @param {HttpClient} http - Angular's HttpClient for making API requests.
-   */
-  constructor(private http: HttpClient) { }
+  const response = await axios.get(`https://api.hiro.so/ordinals/v1/inscriptions/${id}`)
+  return response.data;
+}
 
-  /**
-   * Fetches the inscription data for the given id from the Hiro API.
-   *
-   * @param {string} id - The inscription ID or number.
-   * @returns {Observable<HiroInscription>} - An Observable that resolves to the inscription data.
-   */
-  getInscription(id: string): Observable<HiroInscription> {
-    return this.http.get<HiroInscription>(`https://api.hiro.so/ordinals/v1/inscriptions/${id}`);
-  }
+/**
+ * Fetches the inscription text content for the given id from the Hiro API.
+ *
+ * @param id - The inscription ID or number.
+ * @returns A promise that resolves to the inscription text content.
+ */
+export async function getInscriptionContentFromHiro(id: string): Promise<string> {
+
+  const response = await axios.get(`https://api.hiro.so/ordinals/v1/inscriptions/${id}/content`, {
+    responseType: 'text',
+  })
+  return response.data;
 }

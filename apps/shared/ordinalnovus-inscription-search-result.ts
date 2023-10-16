@@ -18,6 +18,6 @@ export interface OrdinalnovusInscriptionSearchResult {
 
 export interface LooksLikeOrdinalsbotInscription {
   inscriptionid: string,
-  inscriptionnumber: string
+  inscriptionnumber: number
   contentstr: string
 };

@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
-import { OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
 import { parseCube } from '../../../../../shared/parse-cube';
 import { InscriptionSimple } from '../../types/ordinals/inscription-simple';
 import { searchForText } from './ordinalsbot';
+import { ordinalnovusSearchForText } from '../../../../../shared/ordinalnovus';
+import { LooksLikeOrdinalsbotInscription } from '../../../../..//shared/ordinalnovus-inscription-search-result';
+import { getInscriptionFromHiro, getInscriptionContentFromHiro } from '../../../../../shared/hiro';
 
 
 @Injectable()
@@ -39,16 +41,43 @@ export class CubeService {
    * Filters invalid data
    */
   private async serchForAllCubes() {
-    const searchResult = await searchForText('cubes.haushoppe.art');
-    this.allCubes = this.searchResultToCubeInscriptionMeta(searchResult);
+
+    const searchResultOrdinalsbot = (await searchForText('cubes.haushoppe.art')).results;
+    const ordinalsbotResultFiltered = searchResultOrdinalsbot
+      .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
+
+    // fix Result! (inscriptionnumber always NULL)
+    await Promise.all(
+      ordinalsbotResultFiltered.map(async x => {
+        const hiroInscription = await getInscriptionFromHiro(x.inscriptionid)
+        x.inscriptionnumber = hiroInscription.number;
+      })
+    );
+    ordinalsbotResultFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
+    // console.log("Numbers Ordinalsbot!\n\n", ordinalsbotResultFiltered.map(x => x.inscriptionnumber).join('\n'));
+
+    /*
+    const searchResultOrdinalnovus = await ordinalnovusSearchForText('cubes.haushoppe.art');
+    const ordinalnovusFiltered = searchResultOrdinalnovus
+      .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
+
+    // fix Result! (contentString has cloudflare snippet)
+    await Promise.all(
+      ordinalnovusFiltered.map(async x => {
+        const hiroInscriptionContent = await getInscriptionContentFromHiro(x.inscriptionid)
+        x.contentstr = hiroInscriptionContent;
+      })
+    );
+    ordinalnovusFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
+    console.log("Numbers Ordinalnovus!\n\n", ordinalnovusFiltered.map(x => x.inscriptionnumber).join('\n'));
+    */
+
+    this.allCubes = this.searchResultToCubeInscriptionMeta(ordinalsbotResultFiltered);
   }
 
-  private searchResultToCubeInscriptionMeta(searchResult: OrdinalsbotInscriptionSearchResult): InscriptionSimple[] {
+  private searchResultToCubeInscriptionMeta(searchResultsFiltered: LooksLikeOrdinalsbotInscription[]): InscriptionSimple[] {
 
-    const meta = searchResult.results
-
-      // filter all out without correct prefex
-      .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'))
+    const meta = searchResultsFiltered
 
       // get attributes OR null for invalid cubes
       .map(x => {

@@ -42,6 +42,7 @@ export class CubeService {
    */
   private async serchForAllCubes() {
 
+    /*
     const searchResultOrdinalsbot = (await searchForText('cubes.haushoppe.art')).results;
     const ordinalsbotResultFiltered = searchResultOrdinalsbot
       .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
@@ -54,9 +55,10 @@ export class CubeService {
       })
     );
     ordinalsbotResultFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
-    // console.log("Numbers Ordinalsbot!\n\n", ordinalsbotResultFiltered.map(x => x.inscriptionnumber).join('\n'));
+    console.log("Numbers Ordinalsbot!");
+    console.log(ordinalsbotResultFiltered.map(x => x.inscriptionnumber).join('\n'));
+    */
 
-    /*
     const searchResultOrdinalnovus = await ordinalnovusSearchForText('cubes.haushoppe.art');
     const ordinalnovusFiltered = searchResultOrdinalnovus
       .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
@@ -69,10 +71,10 @@ export class CubeService {
       })
     );
     ordinalnovusFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
-    console.log("Numbers Ordinalnovus!\n\n", ordinalnovusFiltered.map(x => x.inscriptionnumber).join('\n'));
-    */
+    // console.log("\n\n\nNumbers Ordinalnovus!");
+    // console.log(ordinalnovusFiltered.map(x => x.inscriptionnumber).join('\n'));
 
-    this.allCubes = this.searchResultToCubeInscriptionMeta(ordinalsbotResultFiltered);
+    this.allCubes = this.searchResultToCubeInscriptionMeta(ordinalnovusFiltered);
   }
 
   private searchResultToCubeInscriptionMeta(searchResultsFiltered: LooksLikeOrdinalsbotInscription[]): InscriptionSimple[] {
@@ -90,7 +92,7 @@ export class CubeService {
             attributes
           }
         }
-        console.log('Invalid cube! ' +  x.inscriptionid);
+        console.log('Invalid cube! ' +  x.inscriptionid + ' --- ' +  x.contentstr);
         return null;
       })
 

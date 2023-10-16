@@ -29,7 +29,7 @@ export async function getApikeyDetails(): Promise<{
 
 export async function ordinalnovusSearchForText(text: string): Promise<LooksLikeOrdinalsbotInscription[]> {
 
-  const limit = 100;
+  const limit = 1000;
   let start = 0;
   let allInscriptions: LooksLikeOrdinalsbotInscription[] = [];
 
@@ -40,11 +40,11 @@ export async function ordinalnovusSearchForText(text: string): Promise<LooksLike
         params: {
           apiKey,
           content: text,
-          content_type: 'text/html;charset=utf-8',
+          // content_type: 'text/html;charset=utf-8', --- DON'T use this, XVerse makes only text/html, Ordinalsbot +charset=utf-8
           match: 'regex',
           // possible params
           // apiKey (required), sha, inscriptionId, content_type, _id, officialCollection, sat, sat_name, rarity, block, content, content_type, sat_offset, number, show, _limit, _start, _sort
-          show: 'inscriptionId,number,content',
+          show: 'inscriptionId,number,content,content_type',
           _limit: limit,
           _start: start
         }

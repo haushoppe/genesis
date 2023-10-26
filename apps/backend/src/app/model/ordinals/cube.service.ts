@@ -7,6 +7,7 @@ import { searchForText } from './ordinalsbot';
 import { ordinalnovusSearchForText } from '../../../../../shared/ordinalnovus';
 import { LooksLikeOrdinalsbotInscription } from '../../../../..//shared/ordinalnovus-inscription-search-result';
 import { getInscriptionFromHiro, getInscriptionContentFromHiro } from '../../../../../shared/hiro';
+import { OrdinalsbotInscription } from 'apps/shared/ordinalsbot-inscription-search-result';
 
 
 @Injectable()
@@ -18,10 +19,10 @@ export class CubeService {
    * Performing async tasks before controllers are available
    */
   async onModuleInit() {
-    Logger.log('Initializing CubeService', 'ordinals_cubes');
+    Logger.log('Initializing CubeService', 'ordinal_cubes');
     await this.handleInterval(); // immediate execution upon module initialization
 
-    Logger.verbose('Fetched ' + this.allCubes.length + ' cubes', 'ordinals_cubes');
+    Logger.verbose('Fetched ' + this.allCubes.length + ' cubes', 'ordinal_cubes');
   }
 
   @Interval(1000 * 60 * 5) // every 5 minutes
@@ -42,39 +43,56 @@ export class CubeService {
    */
   private async serchForAllCubes() {
 
-    /*
-    const searchResultOrdinalsbot = (await searchForText('cubes.haushoppe.art')).results;
-    const ordinalsbotResultFiltered = searchResultOrdinalsbot
-      .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
+    let ordinalsbotResultFiltered: OrdinalsbotInscription[] = [];
+    let ordinalnovusFiltered: LooksLikeOrdinalsbotInscription[] = [];
 
-    // fix Result! (inscriptionnumber always NULL)
-    await Promise.all(
-      ordinalsbotResultFiltered.map(async x => {
-        const hiroInscription = await getInscriptionFromHiro(x.inscriptionid)
-        x.inscriptionnumber = hiroInscription.number;
-      })
-    );
-    ordinalsbotResultFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
-    console.log("Numbers Ordinalsbot!");
-    console.log(ordinalsbotResultFiltered.map(x => x.inscriptionnumber).join('\n'));
-    */
+    try {
 
-    const searchResultOrdinalnovus = await ordinalnovusSearchForText('cubes.haushoppe.art');
-    const ordinalnovusFiltered = searchResultOrdinalnovus
-      .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
+      const searchResultOrdinalsbot = (await searchForText('cubes.haushoppe.art')).results;
+      ordinalsbotResultFiltered = searchResultOrdinalsbot
+        .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
 
-    // fix Result! (contentString has cloudflare snippet)
-    await Promise.all(
-      ordinalnovusFiltered.map(async x => {
-        const hiroInscriptionContent = await getInscriptionContentFromHiro(x.inscriptionid)
-        x.contentstr = hiroInscriptionContent;
-      })
-    );
-    ordinalnovusFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
-    // console.log("\n\n\nNumbers Ordinalnovus!");
-    // console.log(ordinalnovusFiltered.map(x => x.inscriptionnumber).join('\n'));
+      // fix Result! (inscriptionnumber always NULL)
+      await Promise.all(
+        ordinalsbotResultFiltered.map(async x => {
+          const hiroInscription = await getInscriptionFromHiro(x.inscriptionid)
+          x.inscriptionnumber = hiroInscription.number;
+        })
+      );
+      ordinalsbotResultFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
+      Logger.log("Amount of cubes found by Ordinalsbot: " + ordinalsbotResultFiltered.length);
 
-    this.allCubes = this.searchResultToCubeInscriptionMeta(ordinalnovusFiltered);
+    } catch (ex: unknown) {
+      Logger.warn('Error loading cubes via Ordinalsbot!' + ex, 'ordinal_cubes');
+    }
+
+    try {
+
+      const searchResultOrdinalnovus = await ordinalnovusSearchForText('cubes.haushoppe.art');
+      ordinalnovusFiltered = searchResultOrdinalnovus
+        .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
+
+      // fix Result! (contentString has cloudflare snippet)
+      await Promise.all(
+        ordinalnovusFiltered.map(async x => {
+          const hiroInscriptionContent = await getInscriptionContentFromHiro(x.inscriptionid)
+          x.contentstr = hiroInscriptionContent;
+        })
+      );
+      ordinalnovusFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
+      Logger.log("Amount of cubes found by Ordinalnovus: " + ordinalnovusFiltered.length);
+
+    } catch (ex: unknown) {
+      Logger.warn('Error loading cubes via Ordinalnovus!' + ex, 'ordinal_cubes');
+    }
+
+    if (ordinalsbotResultFiltered.length >= ordinalnovusFiltered.length) {
+      Logger.log("Using Ordinalsbot!");
+      this.allCubes = this.searchResultToCubeInscriptionMeta(ordinalsbotResultFiltered);
+    } else {
+      Logger.log("Using Ordinalnovus!");
+      this.allCubes = this.searchResultToCubeInscriptionMeta(ordinalnovusFiltered);
+    }
   }
 
   private searchResultToCubeInscriptionMeta(searchResultsFiltered: LooksLikeOrdinalsbotInscription[]): InscriptionSimple[] {
@@ -92,7 +110,7 @@ export class CubeService {
             attributes
           }
         }
-        console.log('Invalid cube! ' +  x.inscriptionid + ' --- ' +  x.contentstr);
+        console.log('Invalid cube! ' + x.inscriptionid + ' --- ' + x.contentstr);
         return null;
       })
 
@@ -106,7 +124,7 @@ export class CubeService {
 
         const titleTrait = x.attributes.find(t => t.trait_type === 'Title');
         if (titleTrait) {
-          name = `${ name } (${ titleTrait.value })`
+          name = `${name} (${titleTrait.value})`
         }
 
         return {
@@ -117,7 +135,7 @@ export class CubeService {
           }
         };
       }
-    );
+      );
 
     return meta;
   }

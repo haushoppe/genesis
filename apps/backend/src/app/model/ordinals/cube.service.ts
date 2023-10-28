@@ -48,7 +48,7 @@ export class CubeService {
 
     try {
 
-      const searchResultOrdinalsbot = (await searchForText('cubes.haushoppe.art')).results;
+      const searchResultOrdinalsbot = (await searchForText('cubes.haushoppe.art'));
       ordinalsbotResultFiltered = searchResultOrdinalsbot
         .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
 

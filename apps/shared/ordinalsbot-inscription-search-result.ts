@@ -39,7 +39,10 @@ export interface OrdinalsbotInscription {
 };
 
 export interface OrdinalsbotInscriptionSearchResult {
-  status: string,
-  count: number,
-  results: OrdinalsbotInscription[]
+  status: string;
+  results: OrdinalsbotInscription[];
+  count: number;
+  offset?: number;
+  itemsPerPage?: number;
+  currentPage?: number;
 }

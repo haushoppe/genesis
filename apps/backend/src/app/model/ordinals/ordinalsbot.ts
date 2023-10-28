@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 import { OrdinalsbotFxrateResult } from '../../../../../shared/ordinalsbot-fxrate-result';
-import { OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
+import { OrdinalsbotInscription, OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
 import { ErrorResponse, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
 import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../../../shared/ordinalsbot-price-result';
 import { REFERRALS } from '../../../../../shared/referral-code';
@@ -107,15 +107,42 @@ export async function getOrderStatus(id: string): Promise<OrderResponse | ErrorR
   return response.data;
 }
 
-export async function searchForText(text: string): Promise<OrdinalsbotInscriptionSearchResult> {
+/**
+ * Searches for the given text in the Ordinalsbot API and retrieves all results by handling pagination internally.
+ *
+ * @param {string} text - The text to search for.
+ * @returns {Promise<OrdinalsbotInscription[]>} - A promise that resolves to an array of all search results.
+ */
+export async function searchForText(text: string): Promise<OrdinalsbotInscription[]> {
+  let page = 1;
+  let allResults: OrdinalsbotInscription[] = [];
 
-  const response = await axios.get('https://api.ordinalsbot.com/search',
-    {
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const response = await axios.get<OrdinalsbotInscriptionSearchResult>('https://api.ordinalsbot.com/search', {
       params: {
-        text
+        text,
+        page
       }
     });
-  return response.data;
+
+    const data = response.data;
+
+    if (data.results && data.results.length > 0) {
+      allResults = allResults.concat(data.results);
+
+      // Check if we've retrieved all results
+      if (allResults.length >= data.count) {
+        break;
+      } else {
+        page++; // Go to the next page
+      }
+    } else {
+      break; // No more results
+    }
+  }
+
+  return allResults;
 }
 
 export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPriceRequestParams): Promise<OrdinalsbotPriceResult> {

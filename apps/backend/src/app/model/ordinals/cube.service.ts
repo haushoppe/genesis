@@ -7,7 +7,8 @@ import { searchForText } from './ordinalsbot';
 import { ordinalnovusSearchForText } from '../../../../../shared/ordinalnovus';
 import { LooksLikeOrdinalsbotInscription } from '../../../../..//shared/ordinalnovus-inscription-search-result';
 import { getInscriptionFromHiro, getInscriptionContentFromHiro } from '../../../../../shared/hiro';
-import { OrdinalsbotInscription } from 'apps/shared/ordinalsbot-inscription-search-result';
+import { OrdinalsbotInscription } from '../../../../../shared/ordinalsbot-inscription-search-result';
+import { sortInscriptions } from './cube-helper';
 
 
 @Injectable()
@@ -59,8 +60,9 @@ export class CubeService {
           x.inscriptionnumber = hiroInscription.number;
         })
       );
-      ordinalsbotResultFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
+      sortInscriptions(ordinalsbotResultFiltered);
       Logger.log("Amount of cubes found by Ordinalsbot: " + ordinalsbotResultFiltered.length);
+      // ordinalsbotResultFiltered.forEach(x => console.log(x.inscriptionnumber));
 
     } catch (ex: unknown) {
       Logger.warn('Error loading cubes via Ordinalsbot!' + ex, 'ordinal_cubes');
@@ -79,8 +81,9 @@ export class CubeService {
           x.contentstr = hiroInscriptionContent;
         })
       );
-      ordinalnovusFiltered.sort((a, b) => a.inscriptionnumber - b.inscriptionnumber);
+      sortInscriptions(ordinalnovusFiltered);
       Logger.log("Amount of cubes found by Ordinalnovus: " + ordinalnovusFiltered.length);
+      // ordinalnovusFiltered.forEach(x => console.log(x.inscriptionnumber));
 
     } catch (ex: unknown) {
       Logger.warn('Error loading cubes via Ordinalnovus!' + ex, 'ordinal_cubes');

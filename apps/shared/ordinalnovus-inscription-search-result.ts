@@ -4,7 +4,8 @@ export interface OrdinalnovusInscription {
   _id: string, // looks like a MongoDB ObjectId
   inscriptionId: string,
   number: number,
-  content: string
+  content: string,
+  block: number
 }
 
 export interface OrdinalnovusInscriptionSearchResult {
@@ -18,6 +19,7 @@ export interface OrdinalnovusInscriptionSearchResult {
 
 export interface LooksLikeOrdinalsbotInscription {
   inscriptionid: string,
-  inscriptionnumber: number
-  contentstr: string
+  inscriptionnumber: number,
+  contentstr: string,
+  blockheight: number
 };

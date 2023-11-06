@@ -1,3 +1,4 @@
+import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinalnovus-inscription-search-result';
 import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
 import { InscriptionSimple } from '../../types/ordinals/inscription-simple';
 
@@ -43,4 +44,22 @@ export function collectClaimedInscriptionIds(data: InscriptionSimple[]) {
   }
 
   return ids;
+}
+
+/**
+ * Sorts an array of LooksLikeOrdinalsbotInscription objects.
+ * The primary sort key is the blockheight, and the secondary sort key (when blockheights are equal) is inscriptionnumber.
+ *
+ * @param {LooksLikeOrdinalsbotInscription[]} inscriptions - The array of inscriptions to sort.
+ * @returns {LooksLikeOrdinalsbotInscription[]} - The sorted array of inscriptions.
+ */
+export function sortInscriptions(inscriptions: LooksLikeOrdinalsbotInscription[]): LooksLikeOrdinalsbotInscription[] {
+  return inscriptions.sort((a, b) => {
+    // Sort by blockheight
+    if (a.blockheight !== b.blockheight) {
+      return a.blockheight - b.blockheight;
+    }
+    // If blockheights are equal, sort by inscriptionnumber
+    return a.inscriptionnumber - b.inscriptionnumber;
+  });
 }

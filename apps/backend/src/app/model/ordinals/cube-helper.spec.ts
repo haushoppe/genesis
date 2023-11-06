@@ -1,4 +1,5 @@
-import { collectClaimedInscriptionIds } from './cube-helper';
+import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinalnovus-inscription-search-result';
+import { collectClaimedInscriptionIds, sortInscriptions } from './cube-helper';
 
 describe('collectClaimedInscriptionIds', () => {
 
@@ -106,4 +107,32 @@ describe('collectClaimedInscriptionIds', () => {
     expect(result).toEqual(expected);
   });
 
+});
+
+
+describe('sortInscriptions', () => {
+  it('should sort the inscriptions primarily by blockheight and secondarily by inscriptionnumber', () => {
+    const inscriptions: LooksLikeOrdinalsbotInscription[] = [
+      { inscriptionid: 'id4', inscriptionnumber: 2, contentstr: 'Content 4', blockheight: 102 },
+      { inscriptionid: 'id2', inscriptionnumber: 1, contentstr: 'Content 2', blockheight: 101 },
+      { inscriptionid: 'id1', inscriptionnumber: 0, contentstr: 'Content 1', blockheight: 100 },
+      { inscriptionid: 'id3', inscriptionnumber: 1, contentstr: 'Content 3', blockheight: 100 },
+      { inscriptionid: 'id5', inscriptionnumber: 3, contentstr: 'Content 5', blockheight: 102 },
+    ];
+
+    const sorted = sortInscriptions(inscriptions);
+    expect(sorted).toEqual([
+      { inscriptionid: 'id1', inscriptionnumber: 0, contentstr: 'Content 1', blockheight: 100 },
+      { inscriptionid: 'id3', inscriptionnumber: 1, contentstr: 'Content 3', blockheight: 100 },
+      { inscriptionid: 'id2', inscriptionnumber: 1, contentstr: 'Content 2', blockheight: 101 },
+      { inscriptionid: 'id4', inscriptionnumber: 2, contentstr: 'Content 4', blockheight: 102 },
+      { inscriptionid: 'id5', inscriptionnumber: 3, contentstr: 'Content 5', blockheight: 102 },
+    ]);
+  });
+
+  it('should handle an empty array', () => {
+    const inscriptions: LooksLikeOrdinalsbotInscription[] = [];
+    const sorted = sortInscriptions(inscriptions);
+    expect(sorted).toEqual([]);
+  });
 });

@@ -44,7 +44,7 @@ export async function ordinalnovusSearchForText(text: string): Promise<LooksLike
           match: 'regex',
           // possible params
           // apiKey (required), sha, inscriptionId, content_type, _id, officialCollection, sat, sat_name, rarity, block, content, content_type, sat_offset, number, show, _limit, _start, _sort
-          show: 'inscriptionId,number,content,content_type',
+          show: 'inscriptionId,number,content,content_type,block',
           _limit: limit,
           _start: start
         }
@@ -57,11 +57,13 @@ export async function ordinalnovusSearchForText(text: string): Promise<LooksLike
     const mapped: LooksLikeOrdinalsbotInscription[] = response.data.inscriptions.map(({
       inscriptionId,
       number,
-      content
+      content,
+      block
     }) => ({
       inscriptionid: inscriptionId,
       inscriptionnumber: number,
-      contentstr: content
+      contentstr: content,
+      blockheight: block
     }));
 
     allInscriptions = allInscriptions.concat(mapped);

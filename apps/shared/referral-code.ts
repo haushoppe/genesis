@@ -27,3 +27,16 @@ export const REFERRALS: ReferralCode[] = [
     address: '???'
   }
 ];
+
+
+// More codes:
+
+// https://api.ordinalsbot.com/referrals?referral=???&address=???
+
+
+
+// Check balances:
+
+// https://www.blockchain.com/explorer/addresses/btc/???
+// https://www.blockchain.com/explorer/addresses/btc/???
+// https://www.blockchain.com/explorer/addresses/btc/???

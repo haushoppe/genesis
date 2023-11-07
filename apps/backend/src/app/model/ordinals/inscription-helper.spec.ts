@@ -1,5 +1,5 @@
 import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinalnovus-inscription-search-result';
-import { collectClaimedInscriptionIds, sortInscriptions } from './cube-helper';
+import { collectClaimedInscriptionIds, findItemByInscriptionId, sortInscriptions } from './inscription-helper';
 
 describe('collectClaimedInscriptionIds', () => {
 
@@ -8,6 +8,8 @@ describe('collectClaimedInscriptionIds', () => {
     const testData = [
       {
         "inscriptionId": "78fa9d6e9b2b49fbb9f4838e1792dba7c1ec836f22e3206561e2d52759708251i0",
+        "inscriptionNumber": 999,
+        "blockHeight": 999,
         "meta": {
           "name": "Ordinal Cube #27 (Johannes x Sylvo, September 12)",
           "attributes": [
@@ -48,6 +50,8 @@ describe('collectClaimedInscriptionIds', () => {
       },
       {
         "inscriptionId": "86497740430199bd98b5007ba2872b4c2bfe2a24351b5ac30b385457e3431053i0",
+        "inscriptionNumber": 888,
+        "blockHeight": 888,
         "meta": {
           "name": "Ordinal Cube #26 (Sylvo x Johannes, September 12)",
           "attributes": [
@@ -136,3 +140,41 @@ describe('sortInscriptions', () => {
     expect(sorted).toEqual([]);
   });
 });
+
+describe('findItemByInscriptionId', () => {
+  const items = [
+    { inscriptionId: '1', name: 'Item 1' },
+    { inscriptionId: '2', name: 'Item 2' },
+    { inscriptionId: '3', name: 'Item 3' },
+    // ...add more items if needed
+  ];
+
+  test('finds the correct item and neighbors', () => {
+    const { previous, current, next } = findItemByInscriptionId(items, '2');
+    expect(current).toEqual({ inscriptionId: 2, name: 'Item 2' });
+    expect(previous).toEqual({ inscriptionId: 1, name: 'Item 1' });
+    expect(next).toEqual({ inscriptionId: 3, name: 'Item 3' });
+  });
+
+  test('returns null for previous if the item is the first one', () => {
+    const { previous, current, next } = findItemByInscriptionId(items, '1');
+    expect(current).toEqual({ inscriptionId: 1, name: 'Item 1' });
+    expect(previous).toBeNull();
+    expect(next).toEqual({ inscriptionId: 2, name: 'Item 2' });
+  });
+
+  test('returns null for next if the item is the last one', () => {
+    const { previous, current, next } = findItemByInscriptionId(items, items[items.length - 1].inscriptionId);
+    expect(current).toEqual(items[items.length - 1]);
+    expect(previous).toEqual(items[items.length - 2]);
+    expect(next).toBeNull();
+  });
+
+  test('returns null for all if the item is not found', () => {
+    const { previous, current, next } = findItemByInscriptionId(items, '999');
+    expect(current).toBeNull();
+    expect(previous).toBeNull();
+    expect(next).toBeNull();
+  });
+});
+

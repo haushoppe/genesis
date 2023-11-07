@@ -4,7 +4,7 @@ import { CubeSuggestion } from '../../types/ordinals/cube-suggestion';
 import { CollectionDetails, CollectionStat } from '../../types/ordinals/types-magic-eden';
 import { CubeService } from './cube.service';
 import { MagicEdenService } from './magic-eden.service';
-import { collectClaimedInscriptionIds } from './cube-helper';
+import { collectClaimedInscriptionIds } from './inscription-helper';
 
 @Injectable()
 export class CubeSuggestionService {

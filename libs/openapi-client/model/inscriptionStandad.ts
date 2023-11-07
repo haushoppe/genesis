@@ -9,14 +9,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { InscriptionMeta } from './inscriptionMeta';
+import { InscriptionStandadMeta } from './inscriptionStandadMeta';
 
 
-export interface Inscription { 
+export interface InscriptionStandad { 
     /**
      * The ID
      */
     id: string;
-    meta: InscriptionMeta;
+    meta: InscriptionStandadMeta;
 }
 

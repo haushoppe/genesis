@@ -17,9 +17,9 @@ model/configDetails.ts
 model/configResponse.ts
 model/cubeSuggestion.ts
 model/htmlInscriptionRequest.ts
-model/inscription.ts
-model/inscriptionMeta.ts
-model/inscriptionSimple.ts
+model/inscriptionExtendedPaginatedResult.ts
+model/inscriptionStandad.ts
+model/inscriptionStandadMeta.ts
 model/listOfOwnedTokens.ts
 model/meta.ts
 model/metadata.ts

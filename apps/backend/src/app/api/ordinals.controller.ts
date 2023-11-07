@@ -15,10 +15,9 @@ import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, A
 import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../../../../shared/ordinalnovus';
 import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinalsbot-order-response';
 import { CacheService } from '../model/cache.service';
-import { limitArray } from '../model/limit-array';
 import { paginateArray } from '../model/paginate-array';
 
-import { hideUnwantedProperties } from '../model/ordinals/cube-helper';
+import { findItemByInscriptionId, hideUnwantedProperties } from '../model/ordinals/inscription-helper';
 import { CubeSuggestionService } from '../model/ordinals/cube-suggestion.service';
 import { CubeService } from '../model/ordinals/cube.service';
 import {
@@ -33,8 +32,8 @@ import { validateReferralCode } from '../model/ordinals/validate-referral-code';
 import { oneMinuteInSeconds } from '../types/constants';
 import { CubeSuggestion } from '../types/ordinals/cube-suggestion';
 import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
-import { Inscription } from '../types/ordinals/inscription';
-import { InscriptionSimple } from '../types/ordinals/inscription-simple';
+import { InscriptionStandad as InscriptionStandard } from '../types/ordinals/inscription-standard';
+import { InscriptionExtended, InscriptionExtendedPaginatedResult, InscriptionExtendedSingleResult } from '../types/ordinals/inscription-extended';
 import { Price } from '../types/ordinals/price';
 import { MagicEdenService } from '../model/ordinals/magic-eden.service';
 
@@ -96,39 +95,65 @@ export class OrdinalsController {
     }
   }
 
-  lastBackup: InscriptionSimple[] = [];
+  lastBackup: InscriptionExtended[] = [];
 
   /**
-   * Get known cubes (cached!)
+   * Get known cubes (paged and cached)
    */
-  @Get(['ordinals/getCubes'])
+  @Get(['ordinals/getCubes/:itemsPerPage/:currentPage'])
   @ApiOperation({ operationId: 'getCubes' })
-  @ApiOkResponse({ type: InscriptionSimple, isArray: true })
+  @ApiParam({ name: 'itemsPerPage', type: 'number', example: 12 })
+  @ApiParam({ name: 'currentPage', type: 'number', example: 1 })
+  @ApiOkResponse({ type: InscriptionExtendedPaginatedResult })
   @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
-  async getCubes(): Promise<InscriptionSimple[]> {
+  async getCubes(
+    @Param('itemsPerPage', ParseIntPipe) itemsPerPage: number,
+    @Param('currentPage', ParseIntPipe) currentPage: number,
+  ): Promise<InscriptionExtendedPaginatedResult> {
 
-    const simpleResult = async () => {
+    const meta = (await this.cubeService.getAllCubes());
+    const reverseMeta = [...meta].reverse();
+    const inscriptions = paginateArray(reverseMeta, itemsPerPage, currentPage);
 
-      const meta = (await this.cubeService.getAllCubes());
-      const reverseMeta = [...meta].reverse();
-
-      // const itemsPerPage = 6;
-      // const currentPage = 8;
-      // return paginateArray(reverseMeta, itemsPerPage, currentPage);
-      return limitArray(reverseMeta, 12);
-    };
-
-    return await this.cacheService.loadCached('ordinal_cubes', simpleResult, oneMinuteInSeconds);
+    return {
+      inscriptions,
+      totalInscriptions: reverseMeta.length,
+      itemsPerPage,
+      currentPage
+    }
   }
 
   /**
-   * Get known cubes metadata (cached!) – format of MagicEden and others
+   * Get a single known cube (cached)
+   */
+  @Get(['ordinals/getSingleCube/:inscriptionId'])
+  @ApiOperation({ operationId: 'getSingleCube' })
+  @ApiParam({ name: 'inscriptionId', type: 'string', example: '00ef588330b57ba4586365c9a3663e14bcc14452819ae6c09f99eec291435831i0' })
+  @ApiOkResponse({ type: InscriptionExtendedPaginatedResult })
+  @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
+  async getSingleCube(
+    @Param('inscriptionId') inscriptionId: string
+  ): Promise<InscriptionExtendedSingleResult> {
+
+    const meta = (await this.cubeService.getAllCubes());
+    const reverseMeta = [...meta].reverse();
+    const inscriptions = findItemByInscriptionId(reverseMeta, inscriptionId);
+
+    return {
+      inscription: inscriptions.current,
+      previousInscriptionId: inscriptions.previous ? inscriptions.previous.inscriptionId : null,
+      nextInscriptionId: inscriptions.next ? inscriptions.next.inscriptionId : null
+    }
+  }
+
+  /**
+   * Get all known cubes metadata (cached) – format of MagicEden and others
    */
   @Get(['ordinals/getCubesMetadata'])
   @ApiOperation({ operationId: 'getCubesMetadata' })
-  @ApiOkResponse({ type: Inscription, isArray: true })
+  @ApiOkResponse({ type: InscriptionStandard, isArray: true })
   @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
-  async getCubesMetadata(): Promise<Inscription[]> {
+  async getCubesMetadata(): Promise<InscriptionStandard[]> {
 
     const simpleResult = async () => {
 
@@ -143,7 +168,7 @@ export class OrdinalsController {
   }
 
   /**
-   * Get OrdinalsBot price in sats (cached!)
+   * Get OrdinalsBot price in sats (cached)
    */
   @Get(['ordinals/getPrice/:fee/:size/:code?'])
   @ApiOperation({ operationId: 'getPrice' })
@@ -198,19 +223,6 @@ export class OrdinalsController {
       throw new NotFoundException(exception.message);
     }
   }
-
-  // /**
-  //  * fetchPopularCollections from MagicEden (testing)
-  //  */
-  // @Get(['ordinals/fetchPopularCollections/:window/:limit'])
-  // @ApiOperation({ operationId: 'fetchPopularCollections' })
-  // @ApiParam({ name: 'window', type: 'string' })
-  // @ApiParam({ name: 'limit', type: 'number' })
-  // @Header('Cache-Control', 'no-cache')
-  // async fetchPopularCollections(@Param('window') window: string, @Param('limit') limit: number): Promise<any> {
-  //   const all = (await this.magicEdenService.fetchPopularCollections({ window: (window as any), limit })).map(x => x.name);
-  //   return [all.length, ...all]
-  // }
 
   /**
    * Saving Referral Code
@@ -288,23 +300,6 @@ export class OrdinalsController {
     }
 
     return getApikeyDetails();
-  }
-
-  /**
-   * Test for search
-   *
-   * Use this endpoint query all details for our API key
-   */
-  @Post(['ordinals/ordinalnovusSearchForText'])
-  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-  @ApiOperation({ operationId: 'ordinalnovusSearchForText' })
-  async ordinalnovusSearchForText(): Promise<any> {
-
-    if (this.configService.get('environment') !== 'development') {
-      throw new ForbiddenException('This method should not be called on production');
-    }
-
-    return ordinalnovusSearchForText('cubes.haushoppe.art');
   }
 }
 

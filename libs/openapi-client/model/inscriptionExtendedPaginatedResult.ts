@@ -9,20 +9,18 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { Attribute } from './attribute';
 
 
-/**
- * The meta information
- */
-export interface InscriptionMeta { 
+export interface InscriptionExtendedPaginatedResult { 
     /**
-     * The name
+     * An array of inscriptions
      */
-    name: string;
+    inscriptions: Array<string>;
     /**
-     * The list of attributes
+     * Total number of all inscriptions
      */
-    attributes: Array<Attribute>;
+    totalInscriptions: number;
+    itemsPerPage: number;
+    currentPage: number;
 }
 

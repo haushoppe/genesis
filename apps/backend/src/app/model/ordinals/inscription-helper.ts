@@ -1,6 +1,6 @@
 import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinalnovus-inscription-search-result';
 import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
-import { InscriptionSimple } from '../../types/ordinals/inscription-simple';
+import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 
 
 export function hideUnwantedProperties({ charge, files, paid, referral }: OrderResponse): InscriptionOrder {
@@ -30,7 +30,7 @@ export function hideUnwantedProperties({ charge, files, paid, referral }: OrderR
  * @param {Array} data - The array containing the data.
  * @returns {Array} An array of IDs corresponding to the specified trait types.
  */
-export function collectClaimedInscriptionIds(data: InscriptionSimple[]) {
+export function collectClaimedInscriptionIds(data: InscriptionExtended[]) {
 
   const traitTypes = ['Side 1', 'Side 2', 'Side 3', 'Side 4', 'Side 5', 'Side 6'];
   const ids = [];
@@ -62,4 +62,29 @@ export function sortInscriptions(inscriptions: LooksLikeOrdinalsbotInscription[]
     // If blockheights are equal, sort by inscriptionnumber
     return a.inscriptionnumber - b.inscriptionnumber;
   });
+}
+
+/**
+ * Finds an item by inscriptionId in an array and returns the item, as well as the previous and next items.
+ *
+ * @param {Array<{ inscriptionId: number; [key: string]: any }>} array - The array of items with an 'inscriptionId' property.
+ * @param {string} inscriptionId - The inscriptionId of the item to find.
+ * @returns {{ previous: T | null; current: T | null; next: T | null }} - An object with the previous, current, and next items.
+ * @template T - The type of the array elements.
+ */
+export function findItemByInscriptionId<T extends { inscriptionId: string }>(
+  array: T[],
+  inscriptionId: string
+): { previous: T | null; current: T | null; next: T | null } {
+  const index = array.findIndex(item => item.inscriptionId === inscriptionId);
+
+  if (index === -1) {
+    return { previous: null, current: null, next: null };
+  }
+
+  const previous = index > 0 ? array[index - 1] : null;
+  const current = array[index];
+  const next = index < array.length - 1 ? array[index + 1] : null;
+
+  return { previous, current, next };
 }

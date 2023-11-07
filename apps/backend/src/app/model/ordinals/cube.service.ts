@@ -2,19 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
 import { parseCube } from '../../../../../shared/parse-cube';
-import { InscriptionSimple } from '../../types/ordinals/inscription-simple';
+import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 import { searchForText } from './ordinalsbot';
 import { ordinalnovusSearchForText } from '../../../../../shared/ordinalnovus';
 import { LooksLikeOrdinalsbotInscription } from '../../../../..//shared/ordinalnovus-inscription-search-result';
 import { getInscriptionFromHiro, getInscriptionContentFromHiro } from '../../../../../shared/hiro';
 import { OrdinalsbotInscription } from '../../../../../shared/ordinalsbot-inscription-search-result';
-import { sortInscriptions } from './cube-helper';
+import { sortInscriptions } from './inscription-helper';
 
 
 @Injectable()
 export class CubeService {
 
-  private allCubes: InscriptionSimple[] = [];
+  private allCubes: InscriptionExtended[] = [];
 
   /**
    * Performing async tasks before controllers are available
@@ -34,7 +34,7 @@ export class CubeService {
   /**
    * Retrieves all known cubes (cached)
    */
-  async getAllCubes(): Promise<InscriptionSimple[]> {
+  async getAllCubes(): Promise<InscriptionExtended[]> {
     return Promise.resolve(this.allCubes);
   }
 
@@ -68,6 +68,8 @@ export class CubeService {
       Logger.warn('Error loading cubes via Ordinalsbot!' + ex, 'ordinal_cubes');
     }
 
+    /*
+    // disabled, since the API does not return all results and is going to break soon
     try {
 
       const searchResultOrdinalnovus = await ordinalnovusSearchForText('cubes.haushoppe.art');
@@ -88,6 +90,7 @@ export class CubeService {
     } catch (ex: unknown) {
       Logger.warn('Error loading cubes via Ordinalnovus!' + ex, 'ordinal_cubes');
     }
+    */
 
     if (ordinalsbotResultFiltered.length >= ordinalnovusFiltered.length) {
       Logger.log("Using Ordinalsbot!");
@@ -98,7 +101,7 @@ export class CubeService {
     }
   }
 
-  private searchResultToCubeInscriptionMeta(searchResultsFiltered: LooksLikeOrdinalsbotInscription[]): InscriptionSimple[] {
+  private searchResultToCubeInscriptionMeta(searchResultsFiltered: LooksLikeOrdinalsbotInscription[]): InscriptionExtended[] {
 
     const meta = searchResultsFiltered
 
@@ -109,7 +112,8 @@ export class CubeService {
           // console.log(x);
           return {
             inscriptionId: x.inscriptionid,
-            // inscriptionNumber: x.inscriptionnumber,
+            inscriptionNumber: x.inscriptionnumber,
+            blockHeight: x.blockheight,
             attributes
           }
         }
@@ -132,6 +136,8 @@ export class CubeService {
 
         return {
           inscriptionId: x.inscriptionId,
+          inscriptionNumber: x.inscriptionNumber,
+          blockHeight: x.blockHeight,
           meta: {
             name,
             attributes: x.attributes

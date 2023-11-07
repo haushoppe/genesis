@@ -9,11 +9,20 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { Meta } from './meta';
+import { Attribute } from './attribute';
 
 
-export interface InscriptionSimple { 
-    inscriptionId: string;
-    meta: Meta;
+/**
+ * The meta information
+ */
+export interface InscriptionStandadMeta { 
+    /**
+     * The name
+     */
+    name: string;
+    /**
+     * The list of attributes
+     */
+    attributes: Array<Attribute>;
 }
 

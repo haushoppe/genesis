@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
-import { CubeSuggestion, InscriptionSimple, Price } from '../openapi-client';
+import { CubeSuggestion, InscriptionExtendedPaginatedResult, Price } from '../openapi-client';
 import { OrdinalsbotInscription, InscriptionOrder } from '../ordinalsbot';
 import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 
@@ -29,7 +29,7 @@ export const MintActions = createActionGroup({
   events: {
 
     'Load All Inscriptions': emptyProps(),
-    'Load All Inscriptions Success':  props<{ allInscriptions: InscriptionSimple[] }>(),
+    'Load All Inscriptions Success':  props<{ allInscriptions: InscriptionExtendedPaginatedResult[] }>(),
     'Load All Inscriptions Failure': props<{ error: HttpErrorResponse }>(),
 
     'Load Inscription': props<{ inscriptionId: string }>(),

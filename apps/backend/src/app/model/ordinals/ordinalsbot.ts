@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-import { OrdinalsbotFxrateResult } from '../../../../../shared/ordinalsbot-fxrate-result';
-import { OrdinalsbotInscription, OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinalsbot-inscription-search-result';
-import { ErrorResponse, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
-import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../../../shared/ordinalsbot-price-result';
-import { REFERRALS } from '../../../../../shared/referral-code';
+import { OrdinalsbotFxrateResult } from '../../../../../shared/ordinals/ordinalsbot-fxrate-result';
+import { OrdinalsbotInscription, OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
+import { ErrorResponse, OrderResponse } from '../../../../../shared/ordinals/ordinalsbot-order-response';
+import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../../../shared/ordinals/ordinalsbot-price-result';
+import { REFERRALS } from '../../../../../shared/ordinals/referral-code';
 import { validateReferralCode } from './validate-referral-code';
 
 export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api.ordinalsbot.com/order';

@@ -1,7 +1,7 @@
 import { routerNavigatedAction } from '@ngrx/router-store';
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { CubeSuggestion, InscriptionSimple, Price } from '../openapi-client';
+import { CubeSuggestion, InscriptionExtendedPaginatedResult, Price } from '../openapi-client';
 import { OrdinalsbotInscription, InscriptionOrder } from '../ordinalsbot';
 import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 import { MintActions } from './mint.actions';
@@ -15,7 +15,7 @@ import {
 
 
 export interface State {
-  allInscriptions: InscriptionSimple[];
+  allInscriptions: InscriptionExtendedPaginatedResult[];
   allInscriptionsStatus: SubmittableState;
 
   // info about one single inscription, used for the details page

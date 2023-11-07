@@ -5,7 +5,7 @@ import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
 import { QRCodeModule } from 'angularx-qrcode';
 
-import { parseCube } from '../../../../shared/parse-cube';
+import { parseCube } from '../../../../shared/ordinals/parse-cube';
 import { environment } from '../../environments/environment';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { ChargeStatus, InscriptionOrder } from '../ordinalsbot';

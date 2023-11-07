@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
-import { parseCube } from '../../../../../shared/parse-cube';
+import { parseCube } from '../../../../../shared/ordinals/parse-cube';
 import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 import { searchForText } from './ordinalsbot';
-import { ordinalnovusSearchForText } from '../../../../../shared/ordinalnovus';
-import { LooksLikeOrdinalsbotInscription } from '../../../../..//shared/ordinalnovus-inscription-search-result';
-import { getInscriptionFromHiro, getInscriptionContentFromHiro } from '../../../../../shared/hiro';
-import { OrdinalsbotInscription } from '../../../../../shared/ordinalsbot-inscription-search-result';
+import { ordinalnovusSearchForText } from '../../../../../shared/ordinals/ordinalnovus';
+import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalnovus-inscription-search-result';
+import { getInscriptionFromHiro, getInscriptionContentFromHiro } from '../../../../../shared/ordinals/hiro';
+import { OrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
 import { sortInscriptions } from './inscription-helper';
 
 

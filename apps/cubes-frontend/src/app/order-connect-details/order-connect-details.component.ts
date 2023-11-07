@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
 
-import { parseCube } from '../../../../shared/parse-cube';
+import { parseCube } from '../../../../shared/ordinals/parse-cube';
 import { environment } from '../../environments/environment';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { placeholderAsString } from '../layout/toggle-iframe.directive';

@@ -1,5 +1,5 @@
-import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinalnovus-inscription-search-result';
-import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinalsbot-order-response';
+import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalnovus-inscription-search-result';
+import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinals/ordinalsbot-order-response';
 import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 
 

@@ -12,8 +12,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../../../../shared/ordinalnovus';
-import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinalsbot-order-response';
+import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../../../../shared/ordinals/ordinalnovus';
+import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
 import { CacheService } from '../model/cache.service';
 import { paginateArray } from '../model/paginate-array';
 

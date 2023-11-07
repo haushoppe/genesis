@@ -11,7 +11,7 @@ export class InscriptionExtended {
 
 export class InscriptionExtendedPaginatedResult {
 
-  @ApiProperty({ description: 'An array of inscriptions' })
+  @ApiProperty({ description: 'An array of inscriptions', type: InscriptionExtended, isArray: true })
   inscriptions: InscriptionExtended[];
 
   @ApiProperty({ example: 100, description: 'Total number of all inscriptions' })

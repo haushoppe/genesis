@@ -5,11 +5,12 @@ import { FaqComponent } from './faq/faq.component';
 import { OrderDetailsComponent } from './order-details/order-details.component';
 import { OrderConnectDetailsComponent } from './order-connect-details/order-connect-details.component';
 import { PresskitComponent } from './presskit/presskit.component';
+import { DetailsComponent } from './details/details.component';
 
 export const ORDINAL_ROUTES: Routes = [
   { path: '', component: StartComponent },
   { path: 'mint/:collectionSymbol', component: StartComponent },
-  // { path: 'nft/:tokenId', component: DetailsComponent }
+  { path: 'inscription/:inscriptionId', component: DetailsComponent, data: { hideBanner: true } },
   { path: 'faq', component: FaqComponent },
   { path: 'presskit', component: PresskitComponent },
   { path: 'order/:orderId', component: OrderDetailsComponent, data: { hideBanner: true } },

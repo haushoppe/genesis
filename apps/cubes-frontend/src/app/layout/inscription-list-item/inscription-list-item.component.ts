@@ -2,7 +2,7 @@ import { NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { InscriptionExtendedPaginatedResult } from '../../openapi-client';
+import { InscriptionExtended } from '../../openapi-client';
 import { environment } from '../../../../src/environments/environment';
 import { ToggleIframeDirective } from '../toggle-iframe.directive';
 
@@ -21,6 +21,6 @@ import { ToggleIframeDirective } from '../toggle-iframe.directive';
 })
 export class InscriptionListItemComponent  {
 
-  @Input() inscription?: InscriptionExtendedPaginatedResult;
-  environment = environment
+  @Input() inscription?: InscriptionExtended;
+  environment = environment;
 }

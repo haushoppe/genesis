@@ -14,6 +14,7 @@ import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
 import { PastOrdersAndInscriptionsComponent } from './past-orders-and-inscriptions/past-orders-and-inscriptions.component';
+import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 
 
 @Component({
@@ -33,7 +34,8 @@ import { PastOrdersAndInscriptionsComponent } from './past-orders-and-inscriptio
       PushModule,
       MintFormComponent,
       RouterLink,
-      PastOrdersAndInscriptionsComponent
+      PastOrdersAndInscriptionsComponent,
+      NgbPagination
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

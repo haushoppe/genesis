@@ -1,8 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
-import { CubeSuggestion, InscriptionExtendedPaginatedResult, Price } from '../openapi-client';
-import { OrdinalsbotInscription, InscriptionOrder } from '../ordinalsbot';
+import { CubeSuggestion, InscriptionExtendedPaginatedResult, InscriptionExtendedSingleResult, Price } from '../openapi-client';
+import { InscriptionOrder } from '../ordinalsbot';
 import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 
 export interface SixInscriptionIds {
@@ -28,13 +28,13 @@ export const MintActions = createActionGroup({
   source: 'Mint',
   events: {
 
-    'Load All Inscriptions': emptyProps(),
-    'Load All Inscriptions Success':  props<{ allInscriptions: InscriptionExtendedPaginatedResult[] }>(),
-    'Load All Inscriptions Failure': props<{ error: HttpErrorResponse }>(),
+    'Load Inscriptions': props<{ itemsPerPage: number, currentPage: number }>(),
+    'Load Inscriptions Success':  props<{ inscriptions: InscriptionExtendedPaginatedResult }>(),
+    'Load Inscriptions Failure': props<{ error: HttpErrorResponse }>(),
 
-    'Load Inscription': props<{ inscriptionId: string }>(),
-    'Load Inscription Success': props<{ inscription: OrdinalsbotInscription }>(),
-    'Load Inscription Failure': props<{ error: HttpErrorResponse }>(),
+    'Load Single Inscription': props<{ inscriptionId: string }>(),
+    'Load Single Inscription Success': props<{ singleInscription: InscriptionExtendedSingleResult }>(),
+    'Load Single Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
     'Place Order': props<{ cubeDetails: CubeDetails, receiveAddress: string, code: string | ''}>(),
     'Place Order Success': props<{ orderResponse: InscriptionOrder, createdAt: string }>(),

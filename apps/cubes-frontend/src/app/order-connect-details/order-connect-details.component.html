@@ -5,7 +5,7 @@
     <h3>Your Cube Inscription</h3>
 
     <div class="text-truncate" style="width: 70vw;">
-      Transaction ID: {{ mintFacade.bestInscriptionId$ | push }}
+      Transaction ID: {{ mintFacade.bestTransactionId$ | push }}
     </div>
 
     <div class="mt-4 mb-4">
@@ -39,25 +39,13 @@
 
     <ng-container *ngIf="inscriptionResponse?.status?.confirmed !== null">
 
-      <ng-container *ngIf="!inscriptionResponse?.status?.confirmed">It will be available when <a href="https://ordpool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">this transaction</a> is confirmed!<br></ng-container>
-      <ng-container *ngIf="inscriptionResponse?.status?.confirmed">The <a href="https://ordpool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">transaction</a> is confirmed and your cube is in your wallet!<br></ng-container>
+      <ng-container *ngIf="!inscriptionResponse?.status?.confirmed">It will be available when <a href="https://ordpool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">🟧 this transaction</a> is confirmed!<br></ng-container>
+      <ng-container *ngIf="inscriptionResponse?.status?.confirmed">The <a href="https://ordpool.space/tx/{{ inscriptionResponse?.txId }}" target="_blank">🟧 transaction</a> is confirmed and your cube is in your wallet!<br></ng-container>
     </ng-container>
 
     <ng-container *ngIf="inscriptionResponse?.status?.confirmed === null">
       &nbsp;<br>
     </ng-container>
-
-    <!-- <hr>
-
-    The Inscription ID of your cube is:
-
-    <div class="text-truncate" style="width: 70vw;">
-      <a [href]="environment.ordinalsExplorerMarketplace + inscriptionResponse?.txId + 'i0'" target="_blank"
-        role="navigation"
-        attr.aria-label="Visit marketplace for Inscription {{ inscriptionResponse?.txId }}i0">
-        {{ inscriptionResponse?.txId }}i0
-      </a>
-    </div> -->
 
   </div>
 

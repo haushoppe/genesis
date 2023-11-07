@@ -1,8 +1,8 @@
 import { routerNavigatedAction } from '@ngrx/router-store';
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { CubeSuggestion, InscriptionExtendedPaginatedResult, Price } from '../openapi-client';
-import { OrdinalsbotInscription, InscriptionOrder } from '../ordinalsbot';
+import { CubeSuggestion, InscriptionExtendedPaginatedResult, InscriptionExtendedSingleResult, Price } from '../openapi-client';
+import { InscriptionOrder } from '../ordinalsbot';
 import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 import { MintActions } from './mint.actions';
 import {
@@ -15,12 +15,12 @@ import {
 
 
 export interface State {
-  allInscriptions: InscriptionExtendedPaginatedResult[];
-  allInscriptionsStatus: SubmittableState;
+  inscriptions: InscriptionExtendedPaginatedResult;
+  inscriptionsStatus: SubmittableState;
 
   // info about one single inscription, used for the details page
-  inscription: OrdinalsbotInscription | undefined;
-  inscriptionStatus: SubmittableState;
+  singleInscription: InscriptionExtendedSingleResult | undefined;
+  singleInscriptionStatus: SubmittableState;
 
   orderResponse: InscriptionOrder | undefined;
   orderStatus: SubmittableState;
@@ -43,11 +43,16 @@ export interface State {
 }
 
 export const initialState: State = {
-  allInscriptions: [],
-  allInscriptionsStatus: getInitialState(),
+  inscriptions: {
+    inscriptions: [],
+    currentPage: 0,
+    itemsPerPage: 0,
+    totalInscriptions: 0
+  },
+  inscriptionsStatus: getInitialState(),
 
-  inscription: undefined,
-  inscriptionStatus: getInitialState(),
+  singleInscription: undefined,
+  singleInscriptionStatus: getInitialState(),
 
   orderResponse: undefined,
   // orderResponse: examplePaidResponse as OrderResponse,
@@ -73,48 +78,43 @@ export const mintFeature = createFeature({
   reducer: createReducer(
     initialState,
 
-    // Load All Inscriptions
+    // Load Paged Inscriptions
 
-    on(MintActions.loadAllInscriptions, state => ({
+    on(MintActions.loadInscriptions, state => ({
       ...state,
       // no reset
-      allInscriptionsStatus: getSubmittingState()
+      inscriptionsStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadAllInscriptionsSuccess, (state, { allInscriptions }) => ({
+    on(MintActions.loadInscriptionsSuccess, (state, { inscriptions }) => ({
       ...state,
-      allInscriptions,
-      allInscriptionsStatus: getSuccessfulState()
+      inscriptions,
+      inscriptionsStatus: getSuccessfulState()
     })),
 
-    on(MintActions.loadAllInscriptionsFailure, (state, { error }) => ({
+    on(MintActions.loadInscriptionsFailure, (state, { error }) => ({
       ...state,
-      allInscriptionsStatus: getFailureState(error)
+      inscriptionsStatus: getFailureState(error)
     })),
 
     // Load Inscription
 
-    on(MintActions.loadInscription, state => ({
+    on(MintActions.loadSingleInscription, state => ({
       ...state,
       // reset previous singleInscription to not show outdated data while loading!
-      inscription: undefined,
-      inscriptionStatus: getSubmittingState()
+      singleInscription: undefined,
+      singleInscriptionStatus: getSubmittingState()
     })),
 
-    on(MintActions.loadInscriptionSuccess, (state, { inscription }) => ({
+    on(MintActions.loadSingleInscriptionSuccess, (state, { singleInscription }) => ({
       ...state,
-      inscription,
-      inscriptionStatus: getSuccessfulState()
+      singleInscription,
+      singleInscriptionStatus: getSuccessfulState()
     })),
 
-    on(MintActions.loadInscriptionFailure, (state, { error }) => ({
+    on(MintActions.loadSingleInscriptionFailure, (state, { error }) => ({
       ...state,
-      inscriptionStatus: getFailureState(error)
-    })),
-
-    on(MintActions.loadInscriptionFailure, (state, { error }) => ({
-      ...state,
-      inscriptionStatus: getFailureState(error)
+      singleInscriptionStatus: getFailureState(error)
     })),
 
     // Place Order
@@ -251,10 +251,10 @@ export const {
   reducer,
   selectMintState,
 
-  selectAllInscriptions,
-  selectAllInscriptionsStatus,
-  selectInscription,
-  selectInscriptionStatus,
+  selectInscriptions,
+  selectInscriptionsStatus,
+  selectSingleInscription,
+  selectSingleInscriptionStatus,
 
   selectOrderResponse,
   selectOrderStatus,

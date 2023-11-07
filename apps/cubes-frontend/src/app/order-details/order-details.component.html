@@ -166,23 +166,7 @@
       </p>
 
       We have sent your inscription to you.<br>
-      It will be available when <a href="https://ordpool.space/tx/{{ (mintFacade.file$ | push)?.sent }}" target="_blank">this transaction</a> is confirmed!<br>
-
-      <!-- <ng-container *ngIf="(mintFacade.file$ | push)?.tx?.inscription as inscriptionId">
-
-        <hr>
-
-        The Inscription ID of your cube is:
-
-        <div class="text-truncate" style="width: 70vw;">
-          <a [href]="environment.ordinalsExplorerMarketplace + inscriptionId" target="_blank"
-            role="navigation"
-            attr.aria-label="Visit marketplace for Inscription {{ inscriptionId }}">
-            {{ inscriptionId }}
-          </a>
-        </div>
-      </ng-container> -->
-
+      It will be available when <a href="https://ordpool.space/tx/{{ (mintFacade.file$ | push)?.sent }}" target="_blank">🟧 this transaction</a> is confirmed!<br>
 
     </ng-container>
 

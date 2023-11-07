@@ -9,13 +9,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { InscriptionExtended } from './inscriptionExtended';
 
 
 export interface InscriptionExtendedPaginatedResult { 
     /**
      * An array of inscriptions
      */
-    inscriptions: Array<string>;
+    inscriptions: Array<InscriptionExtended>;
     /**
      * Total number of all inscriptions
      */

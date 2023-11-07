@@ -104,27 +104,40 @@
 </ng-container>
 
 
-<h2 class="mt-5" id="latest">Latest cubes</h2>
+<ng-container *rxLet="mintFacade.inscriptions$; let i">
 
-<p class="mb-3">
-  Here you see the newest cubes that have been inscribed.
-  <!-- Please note that this list is updated periodically for better performance,
-  so the data you're seeing might be a few minutes old. -->
-  You can find the full collection on <a target="_blank" href="https://magiceden.io/ordinals/marketplace/ordinal-cubes-by-haus-hoppe">MagicEden</a>.
-</p>
+  <h2 class="mt-5" id="latest">Minted cubes</h2>
 
-<div class="row">
+  <p class="mb-3">
+    Here you see all {{ i.totalInscriptions }} cubes that have been inscribed so far.
+    You can find the full collection on <a target="_blank" href="https://magiceden.io/ordinals/marketplace/ordinal-cubes-by-haus-hoppe">MagicEden</a>, too.
+  </p>
 
-  <div *rxFor="let inscription of mintFacade.allInscriptions$" class="col-6 col-md-4 col-lg-3">
-    <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
+  <div class="row">
+
+    <div *ngFor="let inscription of i.inscriptions" class="col-6 col-md-4 col-lg-3">
+      <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
+    </div>
+
+    <ngb-pagination
+      class="mt-4 d-flex justify-content-center"
+      [collectionSize]="i.totalInscriptions"
+      [page]="i.currentPage"
+      [pageSize]="i.itemsPerPage"
+      aria-label="Page Cubes"
+      [maxSize]="5"
+      [rotate]="true"
+      (pageChange)="mintFacade.loadInscriptions(i.itemsPerPage, $event)">
+    </ngb-pagination>
+
+    <app-loading-indicator
+      [state]="mintFacade.inscriptionsStatus$ | push" class="mb-5"
+      sendDataText="Loading latest cubes…"
+    />
+
   </div>
 
-  <app-loading-indicator
-    [state]="mintFacade.allInscriptionsStatus$ | push" class="mb-5"
-    sendDataText="Loading latest cubes…"
-  />
-
-</div>
+</ng-container>
 
 
 <h2 class="mt-2">Rarity & FAQs</h2>

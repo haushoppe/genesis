@@ -49,6 +49,7 @@
     "@nestjs/schedule": "^3.0.3",
     "@nestjs/serve-static": "^4.0.0",
     "@nestjs/swagger": "7.1.10",
+    "@ng-bootstrap/ng-bootstrap": "^15.1.2",
     "@ngrx/effects": "16.0.1",
     "@ngrx/router-store": "16.0.1",
     "@ngrx/store": "16.0.1",

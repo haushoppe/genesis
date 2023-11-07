@@ -4,14 +4,14 @@ import { Store } from '@ngrx/store';
 import { MintService } from '../services/mint-service';
 import { CubeDetails, MintActions } from './mint.actions';
 import {
-  selectAllInscriptions,
-  selectAllInscriptionsStatus,
+  selectInscriptions,
+  selectInscriptionsStatus,
   selectCreateInscriptionResponse,
   selectCreateInscriptionStatus,
   selectCubeSuggestion,
   selectCubeSuggestionStatus,
-  selectInscription,
-  selectInscriptionStatus,
+  selectSingleInscription,
+  selectSingleInscriptionStatus,
   selectKnownInscriptionIdStatus,
   selectOrderResponse,
   selectOrderStatus,
@@ -19,7 +19,7 @@ import {
   selectPriceStatus,
 } from './mint.reducer';
 import {
-  selectBestInscriptionId,
+  selectBestTransactionId,
   selectBestOrderId,
   selectCubeSuggestionFixed,
   selectFile,
@@ -36,11 +36,11 @@ export class MintFacade {
   store = inject(Store);
   mintService = inject(MintService);
 
-  allInscriptions$ = this.store.select(selectAllInscriptions);
-  allInscriptionsStatus$ = this.store.select(selectAllInscriptionsStatus);
+  inscriptions$ = this.store.select(selectInscriptions);
+  inscriptionsStatus$ = this.store.select(selectInscriptionsStatus);
 
-  inscription$ = this.store.select(selectInscription);
-  inscriptionStatus$ = this.store.select(selectInscriptionStatus);
+  singleInscription$ = this.store.select(selectSingleInscription);
+  singleInscriptionStatus$ = this.store.select(selectSingleInscriptionStatus);
 
   orderResponse$ = this.store.select(selectOrderResponse);
   orderStatus$ = this.store.select(selectOrderStatus);
@@ -52,7 +52,7 @@ export class MintFacade {
   file$ = this.store.select(selectFile);
   isOrderPending$ = this.store.select(selectIsOrderPending);
   bestOrderId$ = this.store.select(selectBestOrderId);
-  bestInscriptionId$ = this.store.select(selectBestInscriptionId);
+  bestTransactionId$ = this.store.select(selectBestTransactionId);
 
 
   knownInscriptionIdStatus$ = this.store.select(selectKnownInscriptionIdStatus);
@@ -94,5 +94,11 @@ export class MintFacade {
 
   getCubeHtml(cubeDetails: CubeDetails) {
     return this.mintService.getCubeHtml(cubeDetails);
+  }
+
+  loadInscriptions(itemsPerPage: number, currentPage: number) {
+    if (itemsPerPage) {
+      this.store.dispatch(MintActions.loadInscriptions({ itemsPerPage, currentPage }));
+    }
   }
 }

@@ -14,6 +14,7 @@ import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, A
 
 import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../../../../shared/ordinals/ordinalnovus';
 import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
+import { KnownCollectionName } from '../../../../shared/ordinals/known-collection-name';
 import { CacheService } from '../model/cache.service';
 import { paginateArray } from '../model/paginate-array';
 
@@ -98,20 +99,31 @@ export class OrdinalsController {
   lastBackup: InscriptionExtended[] = [];
 
   /**
-   * Get known cubes (paged and cached)
+   * Get all known inscriptions (paged and cached)
    */
-  @Get(['ordinals/getCubes/:itemsPerPage/:currentPage'])
-  @ApiOperation({ operationId: 'getCubes' })
+  @Get(['ordinals/getInscriptions/:collectionName/:itemsPerPage/:currentPage'])
+  @ApiOperation({ operationId: 'getInscriptions' })
+  @ApiParam({
+    name: 'collectionName',
+    enum: KnownCollectionName,
+    example: KnownCollectionName.cubes,
+  })
   @ApiParam({ name: 'itemsPerPage', type: 'number', example: 12 })
   @ApiParam({ name: 'currentPage', type: 'number', example: 1 })
   @ApiOkResponse({ type: InscriptionExtendedPaginatedResult })
   @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
-  async getCubes(
+  async getInscriptions(
+    @Param('collectionName') collectionName: KnownCollectionName,
     @Param('itemsPerPage', ParseIntPipe) itemsPerPage: number,
     @Param('currentPage', ParseIntPipe) currentPage: number,
   ): Promise<InscriptionExtendedPaginatedResult> {
 
-    const meta = (await this.cubeService.getAllCubes());
+    let meta: InscriptionExtended[] = [];
+
+    if (collectionName === KnownCollectionName.cubes) {
+      meta = await this.cubeService.getAllCubes();
+    }
+
     const reverseMeta = [...meta].reverse();
     const inscriptions = paginateArray(reverseMeta, itemsPerPage, currentPage);
 
@@ -124,18 +136,29 @@ export class OrdinalsController {
   }
 
   /**
-   * Get a single known cube (cached)
+   * Get a single known inscription (cached)
    */
-  @Get(['ordinals/getSingleCube/:inscriptionId'])
-  @ApiOperation({ operationId: 'getSingleCube' })
+  @Get(['ordinals/getSingleInscription/:collectionName/:inscriptionId'])
+  @ApiOperation({ operationId: 'getSingleInscription' })
+  @ApiParam({
+    name: 'collectionName',
+    enum: KnownCollectionName,
+    example: KnownCollectionName.cubes,
+  })
   @ApiParam({ name: 'inscriptionId', type: 'string', example: '00ef588330b57ba4586365c9a3663e14bcc14452819ae6c09f99eec291435831i0' })
-  @ApiOkResponse({ type: InscriptionExtendedPaginatedResult })
+  @ApiOkResponse({ type: InscriptionExtendedSingleResult })
   @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
-  async getSingleCube(
+  async getSingleInscription(
+    @Param('collectionName') collectionName: KnownCollectionName,
     @Param('inscriptionId') inscriptionId: string
   ): Promise<InscriptionExtendedSingleResult> {
 
-    const meta = (await this.cubeService.getAllCubes());
+    let meta: InscriptionExtended[] = [];
+
+    if (collectionName === KnownCollectionName.cubes) {
+      meta = await this.cubeService.getAllCubes();
+    }
+
     const reverseMeta = [...meta].reverse();
     const inscriptions = findItemByInscriptionId(reverseMeta, inscriptionId);
 
@@ -147,24 +170,31 @@ export class OrdinalsController {
   }
 
   /**
-   * Get all known cubes metadata (cached) – format of MagicEden and others
+   * Get all known inscription metadata (cached) – format of MagicEden and other marketplaces
    */
-  @Get(['ordinals/getCubesMetadata'])
-  @ApiOperation({ operationId: 'getCubesMetadata' })
+  @Get(['ordinals/getInscriptionsMetadata/:collectionName'])
+  @ApiOperation({ operationId: 'getInscriptionsMetadata' })
+  @ApiParam({
+    name: 'collectionName',
+    enum: KnownCollectionName,
+    example: KnownCollectionName.cubes,
+  })
   @ApiOkResponse({ type: InscriptionStandard, isArray: true })
   @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
-  async getCubesMetadata(): Promise<InscriptionStandard[]> {
+  async getInscriptionsMetadata(
+    @Param('collectionName') collectionName: KnownCollectionName
+  ): Promise<InscriptionStandard[]> {
 
-    const simpleResult = async () => {
+    let meta: InscriptionExtended[] = [];
 
-      const meta = (await this.cubeService.getAllCubes());
-      return meta.map(x => ({
-        id: x.inscriptionId,
-        meta: x.meta
-      }));
-    };
+    if (collectionName === KnownCollectionName.cubes) {
+      meta = await this.cubeService.getAllCubes();
+    }
 
-    return this.cacheService.loadCached('ordinal_cubes_metadata', simpleResult, oneMinuteInSeconds);
+    return meta.map(x => ({
+      id: x.inscriptionId,
+      meta: x.meta
+    }));
   }
 
   /**

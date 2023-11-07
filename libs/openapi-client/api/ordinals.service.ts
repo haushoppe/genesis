@@ -25,6 +25,8 @@ import { HtmlInscriptionRequest } from '../model/htmlInscriptionRequest';
 // @ts-ignore
 import { InscriptionExtendedPaginatedResult } from '../model/inscriptionExtendedPaginatedResult';
 // @ts-ignore
+import { InscriptionExtendedSingleResult } from '../model/inscriptionExtendedSingleResult';
+// @ts-ignore
 import { InscriptionStandad } from '../model/inscriptionStandad';
 // @ts-ignore
 import { Price } from '../model/price';
@@ -283,21 +285,25 @@ export class OrdinalsService {
 
     /**
      * 
-     * Get known cubes (paged and cached)
+     * Get all known inscriptions (paged and cached)
+     * @param collectionName 
      * @param itemsPerPage 
      * @param currentPage 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getCubes(itemsPerPage: number, currentPage: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<InscriptionExtendedPaginatedResult>;
-    public getCubes(itemsPerPage: number, currentPage: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<InscriptionExtendedPaginatedResult>>;
-    public getCubes(itemsPerPage: number, currentPage: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<InscriptionExtendedPaginatedResult>>;
-    public getCubes(itemsPerPage: number, currentPage: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public getInscriptions(collectionName: 'cubes' | 'edge', itemsPerPage: number, currentPage: number, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<InscriptionExtendedPaginatedResult>;
+    public getInscriptions(collectionName: 'cubes' | 'edge', itemsPerPage: number, currentPage: number, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<InscriptionExtendedPaginatedResult>>;
+    public getInscriptions(collectionName: 'cubes' | 'edge', itemsPerPage: number, currentPage: number, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<InscriptionExtendedPaginatedResult>>;
+    public getInscriptions(collectionName: 'cubes' | 'edge', itemsPerPage: number, currentPage: number, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (collectionName === null || collectionName === undefined) {
+            throw new Error('Required parameter collectionName was null or undefined when calling getInscriptions.');
+        }
         if (itemsPerPage === null || itemsPerPage === undefined) {
-            throw new Error('Required parameter itemsPerPage was null or undefined when calling getCubes.');
+            throw new Error('Required parameter itemsPerPage was null or undefined when calling getInscriptions.');
         }
         if (currentPage === null || currentPage === undefined) {
-            throw new Error('Required parameter currentPage was null or undefined when calling getCubes.');
+            throw new Error('Required parameter currentPage was null or undefined when calling getInscriptions.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -331,7 +337,7 @@ export class OrdinalsService {
             }
         }
 
-        let localVarPath = `/ordinals/getCubes/${this.configuration.encodeParam({name: "itemsPerPage", value: itemsPerPage, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "currentPage", value: currentPage, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}`;
+        let localVarPath = `/ordinals/getInscriptions/${this.configuration.encodeParam({name: "collectionName", value: collectionName, in: "path", style: "simple", explode: false, dataType: "'cubes' | 'edge'", dataFormat: undefined})}/${this.configuration.encodeParam({name: "itemsPerPage", value: itemsPerPage, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}/${this.configuration.encodeParam({name: "currentPage", value: currentPage, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: undefined})}`;
         return this.httpClient.request<InscriptionExtendedPaginatedResult>('get', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
@@ -346,14 +352,18 @@ export class OrdinalsService {
 
     /**
      * 
-     * Get all known cubes metadata (cached) – format of MagicEden and others
+     * Get all known inscription metadata (cached) – format of MagicEden and other marketplaces
+     * @param collectionName 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getCubesMetadata(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<InscriptionStandad>>;
-    public getCubesMetadata(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<InscriptionStandad>>>;
-    public getCubesMetadata(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<InscriptionStandad>>>;
-    public getCubesMetadata(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public getInscriptionsMetadata(collectionName: 'cubes' | 'edge', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<InscriptionStandad>>;
+    public getInscriptionsMetadata(collectionName: 'cubes' | 'edge', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<InscriptionStandad>>>;
+    public getInscriptionsMetadata(collectionName: 'cubes' | 'edge', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<InscriptionStandad>>>;
+    public getInscriptionsMetadata(collectionName: 'cubes' | 'edge', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (collectionName === null || collectionName === undefined) {
+            throw new Error('Required parameter collectionName was null or undefined when calling getInscriptionsMetadata.');
+        }
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -386,7 +396,7 @@ export class OrdinalsService {
             }
         }
 
-        let localVarPath = `/ordinals/getCubesMetadata`;
+        let localVarPath = `/ordinals/getInscriptionsMetadata/${this.configuration.encodeParam({name: "collectionName", value: collectionName, in: "path", style: "simple", explode: false, dataType: "'cubes' | 'edge'", dataFormat: undefined})}`;
         return this.httpClient.request<Array<InscriptionStandad>>('get', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
@@ -636,17 +646,21 @@ export class OrdinalsService {
 
     /**
      * 
-     * Get a single known cube (cached)
+     * Get a single known inscription (cached)
+     * @param collectionName 
      * @param inscriptionId 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getSingleCube(inscriptionId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<InscriptionExtendedPaginatedResult>;
-    public getSingleCube(inscriptionId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<InscriptionExtendedPaginatedResult>>;
-    public getSingleCube(inscriptionId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<InscriptionExtendedPaginatedResult>>;
-    public getSingleCube(inscriptionId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+    public getSingleInscription(collectionName: 'cubes' | 'edge', inscriptionId: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<InscriptionExtendedSingleResult>;
+    public getSingleInscription(collectionName: 'cubes' | 'edge', inscriptionId: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<InscriptionExtendedSingleResult>>;
+    public getSingleInscription(collectionName: 'cubes' | 'edge', inscriptionId: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<InscriptionExtendedSingleResult>>;
+    public getSingleInscription(collectionName: 'cubes' | 'edge', inscriptionId: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (collectionName === null || collectionName === undefined) {
+            throw new Error('Required parameter collectionName was null or undefined when calling getSingleInscription.');
+        }
         if (inscriptionId === null || inscriptionId === undefined) {
-            throw new Error('Required parameter inscriptionId was null or undefined when calling getSingleCube.');
+            throw new Error('Required parameter inscriptionId was null or undefined when calling getSingleInscription.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -680,8 +694,8 @@ export class OrdinalsService {
             }
         }
 
-        let localVarPath = `/ordinals/getSingleCube/${this.configuration.encodeParam({name: "inscriptionId", value: inscriptionId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
-        return this.httpClient.request<InscriptionExtendedPaginatedResult>('get', `${this.configuration.basePath}${localVarPath}`,
+        let localVarPath = `/ordinals/getSingleInscription/${this.configuration.encodeParam({name: "collectionName", value: collectionName, in: "path", style: "simple", explode: false, dataType: "'cubes' | 'edge'", dataFormat: undefined})}/${this.configuration.encodeParam({name: "inscriptionId", value: inscriptionId, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
+        return this.httpClient.request<InscriptionExtendedSingleResult>('get', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

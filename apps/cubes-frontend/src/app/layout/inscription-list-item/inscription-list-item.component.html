@@ -1,7 +1,7 @@
 <ng-container *ngIf="inscription">
-  <a [href]="environment.ordinalsExplorerMarketplace + inscription.inscriptionId" target="_blank"
+  <a [routerLink]="['inscription', inscription.inscriptionId]"
     role="navigation"
-    attr.aria-label="Visit marketplace for Inscription {{ inscription.inscriptionId }}">
+    attr.aria-label="Details for Inscription {{ inscription.inscriptionId }}">
 
     <div class="iframe-container">
       <iframe
@@ -12,20 +12,9 @@
       ></iframe>
     </div>
 
-    <div class="one-line fs-6 lh-sm mt-2 ps-1 one-line">
+    <div class="one-line fs-6 lh-sm mt-2 ps-1 pb-4 one-line">
       {{ inscription.meta.name }}
     </div>
 
   </a>
-
-  <div class="one-line fs-6 lh-sm mt-2 ps-1 one-line mb-4 mt-n1">
-    Side:
-
-    <ng-container *ngFor="let attribute of inscription.meta.attributes; index as i">
-      <a [href]="environment.ordinalsExplorerMarketplace + attribute.value" *ngIf="i < 6" target="_blank">
-        {{ i+1 }}
-      </a>
-    </ng-container>
-  </div>
-
 </ng-container>

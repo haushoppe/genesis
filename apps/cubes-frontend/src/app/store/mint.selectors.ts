@@ -1,7 +1,7 @@
 import { RouterReducerState } from '@ngrx/router-store';
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 
-import { selectInscription, selectKnownInscriptionIds, selectOrderResponse } from './mint.reducer';
+import { selectCreateInscriptionResponse, selectKnownInscriptionIds, selectOrderResponse } from './mint.reducer';
 
 export const selectRouter = createFeatureSelector<RouterReducerState<any>>('router');
 
@@ -36,14 +36,14 @@ export const selectBestOrderId = createSelector(
   }) => orderResponse?.id || params.orderId
 );
 
-export const selectBestInscriptionId = createSelector(
-  selectInscription,
+export const selectBestTransactionId = createSelector(
+  selectCreateInscriptionResponse,
   selectRouter,
   (inscriptionResponse, { state: { params }}: {
     state: {
       params: { [parm: string]: string | undefined }
     }
-  }) => inscriptionResponse?.txid || params.txId
+  }) => inscriptionResponse?.txId || params.txId
 );
 
 export function selectInscriptionId(inscriptionNumber: string) {

@@ -23,12 +23,14 @@ import { MempoolService } from '../services/mempool.service';
 import { MintService } from '../services/mint-service';
 import { confettiFirework } from './helper/confetti-firework';
 import { MintActions } from './mint.actions';
-import { selectAllInscriptions, selectKnownInscriptionIds } from './mint.reducer';
+import { selectInscriptions, selectKnownInscriptionIds } from './mint.reducer';
 import { PageActions } from './page.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
+import { KnownCollectionName } from '../../../../shared/ordinals/known-collection-name';
 
 
 
+const collectionName = KnownCollectionName.cubes;
 
 
 @Injectable()
@@ -197,53 +199,55 @@ export class MintEffects {
         'mint/:collectionSymbol'
       ]),
       mapToParam('collectionSymbol'),
-      withLatestFrom(this.store.select(selectAllInscriptions)),
-      concatMap(([collectionSymbol, allInscriptions]) => [
-        ...(allInscriptions?.length ? [] : [MintActions.loadAllInscriptions()]),
+      withLatestFrom(this.store.select(selectInscriptions)),
+      concatMap(([collectionSymbol, inscriptions]) => [
+        ...(inscriptions?.inscriptions.length ? [] : [MintActions.loadInscriptions({
+          itemsPerPage: 8,
+          currentPage: 1
+        })]),
         // MintActions.loadPrice({ code: '', size: 557 }), // lowest possible size
         MintActions.loadCubeSuggestion({ collectionSymbol: collectionSymbol || '' })
       ]),
     );
   });
 
-  loadAllInscriptions$ = createEffect(() => {
+  loadInscriptions$ = createEffect(() => {
     return this.actions.pipe(
-      ofType(MintActions.loadAllInscriptions),
-      switchMap(() =>
-        this.ordinalsService.getCubes().pipe(
+      ofType(MintActions.loadInscriptions),
+      switchMap(({ itemsPerPage, currentPage }) =>
+        this.ordinalsService.getInscriptions(collectionName, itemsPerPage, currentPage).pipe(
           retry({ count: 3, delay: 1000 }),
-          concatMap(allInscriptions => [
-            MintActions.loadAllInscriptionsSuccess({ allInscriptions: allInscriptions }),
+          concatMap(inscriptions => [
+            MintActions.loadInscriptionsSuccess({ inscriptions }),
             PageActions.ready()
           ]),
-          catchError(error => of(MintActions.loadAllInscriptionsFailure({ error }))))
+          catchError(error => of(MintActions.loadInscriptionsFailure({ error }))))
       )
     );
   });
 
+  loadSingleInscriptionOnRouting$ = createEffect(() => {
+    return this.actions.pipe(
+      ofRoute(['inscription/:inscriptionId']),
+      mapToParam('inscriptionId'),
+      map(inscriptionId => MintActions.loadSingleInscription({ inscriptionId }))
+    );
+  });
 
-  // loadTokenMetadataOnRouting$ = createEffect(() => {
-  //   return this.actions.pipe(
-  //     ofRoute(['nft/:tokenId']),
-  //     mapToParam('tokenId'),
-  //     map(tokenId => MintActions.loadTokenMetadata({ tokenId: +tokenId })),
-  //   );
-  // });
-
-  // loadTokenMetadata$ = createEffect(() => {
-  //   return this.actions.pipe(
-  //     ofType(MintActions.loadTokenMetadata),
-  //     switchMap(() =>
-  //       this.apiService.tokenMetadata().pipe(
-  //         retry({ count: 3, delay: 1000 }),
-  //         concatMap(tokenMetadataAndOwner => [
-  //           MintActions.loadTokenMetadataSuccess(),
-  //           PageActions.ready()
-  //         ]),
-  //         catchError(error => of(MintActions.loadTokenMetadataFailure({ error }))))
-  //     )
-  //   );
-  // });
+  loadSingleInscription$ = createEffect(() => {
+    return this.actions.pipe(
+      ofType(MintActions.loadSingleInscription),
+      switchMap(({ inscriptionId }) =>
+        this.ordinalsService.getSingleInscription(collectionName, inscriptionId).pipe(
+          retry({ count: 3, delay: 1000 }),
+          concatMap(singleInscription => [
+            MintActions.loadSingleInscriptionSuccess({ singleInscription }),
+            PageActions.ready()
+          ]),
+          catchError(error => of(MintActions.loadSingleInscriptionFailure({ error }))))
+      )
+    );
+  });
 
   showConfettiFirework$ = createEffect(() => {
     return this.actions.pipe(

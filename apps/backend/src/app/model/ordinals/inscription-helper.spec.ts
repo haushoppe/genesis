@@ -1,4 +1,4 @@
-import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinalnovus-inscription-search-result';
+import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalnovus-inscription-search-result';
 import { collectClaimedInscriptionIds, findItemByInscriptionId, sortInscriptions } from './inscription-helper';
 
 describe('collectClaimedInscriptionIds', () => {
@@ -151,16 +151,16 @@ describe('findItemByInscriptionId', () => {
 
   test('finds the correct item and neighbors', () => {
     const { previous, current, next } = findItemByInscriptionId(items, '2');
-    expect(current).toEqual({ inscriptionId: 2, name: 'Item 2' });
-    expect(previous).toEqual({ inscriptionId: 1, name: 'Item 1' });
-    expect(next).toEqual({ inscriptionId: 3, name: 'Item 3' });
+    expect(current).toEqual({ inscriptionId: '2', name: 'Item 2' });
+    expect(previous).toEqual({ inscriptionId: '1', name: 'Item 1' });
+    expect(next).toEqual({ inscriptionId: '3', name: 'Item 3' });
   });
 
   test('returns null for previous if the item is the first one', () => {
     const { previous, current, next } = findItemByInscriptionId(items, '1');
-    expect(current).toEqual({ inscriptionId: 1, name: 'Item 1' });
+    expect(current).toEqual({ inscriptionId: '1', name: 'Item 1' });
     expect(previous).toBeNull();
-    expect(next).toEqual({ inscriptionId: 2, name: 'Item 2' });
+    expect(next).toEqual({ inscriptionId: '2', name: 'Item 2' });
   });
 
   test('returns null for next if the item is the last one', () => {

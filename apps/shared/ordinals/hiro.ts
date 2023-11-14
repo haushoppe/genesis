@@ -59,6 +59,8 @@ export interface HiroInscription {
 /**
  * Fetches the inscription data for the given id from the Hiro API.
  *
+ * Often Returns 429: Too Many Requests!
+ *
  * @param id - The inscription ID or number.
  * @returns A promise that resolves to the inscription data.
  */
@@ -70,6 +72,8 @@ export async function getInscriptionFromHiro(id: string): Promise<HiroInscriptio
 
 /**
  * Fetches the inscription text content for the given id from the Hiro API.
+ *
+ * Often Returns 429: Too Many Requests!
  *
  * @param id - The inscription ID or number.
  * @returns A promise that resolves to the inscription text content.

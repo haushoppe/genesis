@@ -83,6 +83,7 @@
     "bootstrap": "^5.3.1",
     "bootstrap-icons": "^1.10.5",
     "canvas-confetti": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
     "ethers": "^6.4.0",
     "joi": "^17.7.0",
     "marked": "^4.2.12",

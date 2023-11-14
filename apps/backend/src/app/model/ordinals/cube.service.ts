@@ -4,9 +4,8 @@ import { Interval } from '@nestjs/schedule';
 import { parseCube } from '../../../../../shared/ordinals/parse-cube';
 import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 import { searchForText } from './ordinalsbot';
-import { ordinalnovusSearchForText } from '../../../../../shared/ordinals/ordinalnovus';
 import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalnovus-inscription-search-result';
-import { getInscriptionFromHiro, getInscriptionContentFromHiro } from '../../../../../shared/ordinals/hiro';
+import { getInscriptionFromOrd } from '../../../../../shared/ordinals/ord';
 import { OrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
 import { sortInscriptions } from './inscription-helper';
 
@@ -56,8 +55,9 @@ export class CubeService {
       // fix Result! (inscriptionnumber always NULL)
       await Promise.all(
         ordinalsbotResultFiltered.map(async x => {
-          const hiroInscription = await getInscriptionFromHiro(x.inscriptionid)
-          x.inscriptionnumber = hiroInscription.number;
+          const ordInscription = await getInscriptionFromOrd(x.inscriptionid)
+          // console.log(ordInscription);
+          x.inscriptionnumber = ordInscription.inscriptionNumber;
         })
       );
       sortInscriptions(ordinalsbotResultFiltered);
@@ -66,6 +66,7 @@ export class CubeService {
 
     } catch (ex: unknown) {
       Logger.warn('Error loading cubes via Ordinalsbot!' + ex, 'ordinal_cubes');
+      console.log(ex)
     }
 
     /*

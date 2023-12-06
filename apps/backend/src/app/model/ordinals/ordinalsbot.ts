@@ -132,7 +132,7 @@ export async function searchForText(text: string): Promise<OrdinalsbotInscriptio
       allResults = allResults.concat(data.results);
 
       // Check if we've retrieved all results
-      if (allResults.length >= data.count) {
+      if (allResults.length >= data.totalItems) {
         break;
       } else {
         page++; // Go to the next page

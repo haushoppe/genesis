@@ -34,7 +34,7 @@ function parseInscriptionHtmlPage(html: string): ParsedInscriptionData {
       // Extracting the Inscription number from the <h1> tag
       inscriptionNumber: parseInt($('h1').text().trim().replace('Inscription ', '')),
 
-      // Extracting furhter data
+      // Extracting further data
       prevInscriptionId: $('a.prev').attr('href').split('/').pop(),
       nextInscriptionId: $('a.next').attr('href').split('/').pop(),
       inscriptionId: getValue('id'),

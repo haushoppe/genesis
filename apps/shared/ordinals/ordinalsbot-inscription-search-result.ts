@@ -38,11 +38,22 @@ export interface OrdinalsbotInscription {
   createdat: string
 };
 
-export interface OrdinalsbotInscriptionSearchResult {
+/*
+export interface OldOrdinalsbotInscriptionSearchResult {
   status: string;
   results: OrdinalsbotInscription[];
   count: number;
   offset?: number;
   itemsPerPage?: number;
   currentPage?: number;
+}
+*/
+
+export interface OrdinalsbotInscriptionSearchResult {
+  status: string;
+  results: OrdinalsbotInscription[];
+  count: number;
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
 }

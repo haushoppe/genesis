@@ -50,7 +50,8 @@ export async function createInscriptionRequestForHtml(
   console.log('Creating order with referral code: ' + referral.code + ' and bonus ' + referral.bonus);
 
   try {
-    const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, {
+
+    let order: any = {
       fee,
       files: [
         {
@@ -63,16 +64,24 @@ export async function createInscriptionRequestForHtml(
       ],
       lowPostage: true,
       receiveAddress,
-      referral: referral.code,
-      additionalFee: referral.bonus
-    });
+      referral: referral.code
+    };
+
+    if (referral.bonus) {
+      order = {
+        ...order,
+        additionalFee: referral.bonus
+      };
+    }
+
+    const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, order);
 
     return response.data;
 
-  } catch (exception) {
+  } catch (error) {
     Logger.error('*** ERROR on createInscriptionRequestForHtml!! ***');
-    Logger.error(exception);
-    throw exception;
+    Logger.error(error.response.data);
+    throw error;
   }
 }
 

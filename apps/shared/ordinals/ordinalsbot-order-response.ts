@@ -139,6 +139,7 @@ export interface InscriptionFile {
 }
 
 export interface OrderResponse {
+  id: string;
   // fee: number | string;   // choosen fee rate in sats/byte
   charge: {
 

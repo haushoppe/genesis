@@ -3,12 +3,12 @@ import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinals/
 import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 
 
-export function hideUnwantedProperties({ charge, files, paid, referral }: OrderResponse): InscriptionOrder {
+export function hideUnwantedProperties({ id, charge, files, paid, referral }: OrderResponse): InscriptionOrder {
 
-  const { id, amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = charge;
+  const { amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = charge;
 
   return {
-    id, // id at the root, and not down below charge!
+    id,
     charge: {
       amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value
     },

@@ -12,7 +12,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { apikeyCreate, getApikeyDetails, ordinalnovusSearchForText } from '../../../../shared/ordinals/ordinalnovus';
+import { apikeyCreate, getApikeyDetails } from '../../../../shared/ordinals/ordinalnovus';
 import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
 import { KnownCollectionName } from '../../../../shared/ordinals/known-collection-name';
 import { CacheService } from '../model/cache.service';
@@ -36,7 +36,6 @@ import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-reque
 import { InscriptionStandad as InscriptionStandard } from '../types/ordinals/inscription-standard';
 import { InscriptionExtended, InscriptionExtendedPaginatedResult, InscriptionExtendedSingleResult } from '../types/ordinals/inscription-extended';
 import { Price } from '../types/ordinals/price';
-import { MagicEdenService } from '../model/ordinals/magic-eden.service';
 
 
 @ApiTags('ordinals')
@@ -46,8 +45,7 @@ export class OrdinalsController {
   constructor(private configService: ConfigService,
     private cacheService: CacheService,
     private cubeService: CubeService,
-    private cubeSuggestionService: CubeSuggestionService,
-    private magicEdenService: MagicEdenService) {
+    private cubeSuggestionService: CubeSuggestionService) {
   }
 
   /**
@@ -246,11 +244,10 @@ export class OrdinalsController {
   @ApiNotFoundResponse({ description: 'Could not find enough unclaimed tokens.' })
   @Header('Cache-Control', 'no-cache')
   async getCubeSuggestion(@Param('collectionSymbol') collectionSymbol?: string): Promise<CubeSuggestion> {
-
     try {
       return await this.cubeSuggestionService.getCubeSuggestion(collectionSymbol);
     } catch (exception) {
-      throw new NotFoundException(exception.message);
+      throw new NotFoundException(exception);
     }
   }
 

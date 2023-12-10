@@ -19,6 +19,7 @@ export class CubeService {
    * Performing async tasks before controllers are available
    */
   async onModuleInit() {
+    // return; // while debugging
     Logger.log('Initializing CubeService', 'ordinal_cubes');
     await this.handleInterval(); // immediate execution upon module initialization
 

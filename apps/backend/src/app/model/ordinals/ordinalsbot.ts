@@ -6,6 +6,8 @@ import { ErrorResponse, OrderResponse } from '../../../../../shared/ordinals/ord
 import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../../../shared/ordinals/ordinalsbot-price-result';
 import { REFERRALS } from '../../../../../shared/ordinals/referral-code';
 import { validateReferralCode } from './validate-referral-code';
+import { Logger } from '@nestjs/common';
+
 
 export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api.ordinalsbot.com/order';
 // export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://signet.ordinalsbot.com/api/order'
@@ -47,23 +49,31 @@ export async function createInscriptionRequestForHtml(
   const referral = validateReferralCode(code);
   console.log('Creating order with referral code: ' + referral.code + ' and bonus ' + referral.bonus);
 
-  const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, {
-    fee,
-    files: [
-      {
-        dataURL: `data:text/html;base64,${contentB64}`,
-        name: `cube.html`,
-        size,
-        type: 'text/html',
-        url: '',
-      },
-    ],
-    lowPostage: true,
-    receiveAddress,
-    referral: referral.code,
-    additionalFee: referral.bonus
-  });
-  return response.data;
+  try {
+    const response = await axios.post(INSCRIPTION_REQUESTS_SERVICE_URL, {
+      fee,
+      files: [
+        {
+          dataURL: `data:text/html;base64,${contentB64}`,
+          name: `cube.html`,
+          size,
+          type: 'text/html',
+          url: '',
+        },
+      ],
+      lowPostage: true,
+      receiveAddress,
+      referral: referral.code,
+      additionalFee: referral.bonus
+    });
+
+    return response.data;
+
+  } catch (exception) {
+    Logger.error('*** ERROR on createInscriptionRequestForHtml!! ***');
+    Logger.error(exception);
+    throw exception;
+  }
 }
 
 export async function saveReferralCode(): Promise<any> {

@@ -36,13 +36,20 @@ export class CubeSuggestionService {
     const allCubes = await this.cubeService.getAllCubes();
     const claimedTokenIds = collectClaimedInscriptionIds(allCubes);
 
-    let collections: CollectionStat[] | CollectionDetails[] = [];
+    let collections: CollectionStat[] |
+                     CollectionDetails[] |
+                     { name: string; symbol: string }[] = [];
 
     if (!onlyCollectionSymbol) {
-      collections = await this.magicEdenService.fetchPopularCollections({
-        window: '7d',
-        limit: 120 // max possible number
-      });
+      try {
+        collections = await this.magicEdenService.fetchPopularCollections({
+          window: '7d',
+          limit: 120 // max possible number
+        });
+      } catch(exception) {
+        Logger.error('Error fetchPopularCollections' + exception);
+        throw exception;
+      }
     } else {
       const singleCollection = await this.magicEdenService.fetchCollectionDetails(onlyCollectionSymbol);
       if (!singleCollection) {

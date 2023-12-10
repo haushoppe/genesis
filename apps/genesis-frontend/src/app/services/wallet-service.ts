@@ -2,7 +2,7 @@ import { EventEmitter, Injectable } from '@angular/core';
 import coinbaseModule from '@web3-onboard/coinbase';
 import Onboard, { OnboardAPI } from '@web3-onboard/core';
 import injectedModule from '@web3-onboard/injected-wallets';
-import ledgerModule from '@web3-onboard/ledger';
+// import ledgerModule from '@web3-onboard/ledger';
 import trezorModule from '@web3-onboard/trezor';
 // import walletConnectModule from '@web3-onboard/walletconnect';
 import { map } from 'rxjs';
@@ -14,7 +14,7 @@ import { getLocalStore, setLocalStore } from './local-storage';
 
 
 const injected = injectedModule();
-const ledger = ledgerModule();
+// const ledger = ledgerModule();
 const trezor = trezorModule({ email: 'team@haushoppe.art', appUrl: 'https://genesis.haushoppe.art' });
 
 // TODO: update walletConnect to v2 and make it working again
@@ -107,7 +107,7 @@ export class WalletService {
     this.onboard = Onboard({
       wallets: [
         injected,
-        ledger,
+        // ledger,
         trezor,
         // walletConnect,
         coinbase

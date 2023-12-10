@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { OrdinalnovusInscription, OrdinalnovusInscriptionSearchResult, LooksLikeOrdinalsbotInscription } from './ordinalnovus-inscription-search-result'
 
 /**
  * Represents an inscription object.

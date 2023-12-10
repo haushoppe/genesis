@@ -1,6 +1,3 @@
-import { ChargeStatus } from './ordinalsbot-charge-status'
-
-
 /*
 RESPONSE of POST https://api.ordinalsbot.com/order
 AND

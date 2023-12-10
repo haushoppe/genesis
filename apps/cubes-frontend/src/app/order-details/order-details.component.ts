@@ -8,7 +8,7 @@ import { QRCodeModule } from 'angularx-qrcode';
 import { parseCube } from '../../../../shared/ordinals/parse-cube';
 import { environment } from '../../environments/environment';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
-import { ChargeStatus, InscriptionOrder } from '../ordinalsbot';
+import { InscriptionOrder } from '../ordinalsbot';
 import { SafeHtmlPipe } from '../safe-html.pipe';
 import { MintFacade } from '../store/mint.facade';
 import { getSubmittingState } from '../store/submittable/submittable-state';
@@ -40,7 +40,6 @@ export class OrderDetailsComponent {
   mintFacade = inject(MintFacade);
   environment = environment;
 
-  ChargeStatus = ChargeStatus;
   submittingState = getSubmittingState();
   cd = inject(ChangeDetectorRef);
 

@@ -1,4 +1,3 @@
-
 /**
  * Parses the given cube HTML string and extracts the attributes.
  *

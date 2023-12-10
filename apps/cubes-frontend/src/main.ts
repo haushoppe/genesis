@@ -5,7 +5,6 @@ import { AppComponent } from './app/app.component';
 import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
 
-// import { ApiModule, Configuration } from './app/openapi-client';
 if (environment.production) {
   enableProdMode();
 }

@@ -3,7 +3,7 @@
     "x-target": "https://ordinals.com/",
     "y-target": "https://ord-mirror.magiceden.dev/",
     "z-target": "https://www.ord.io/",
-    "target": "https://ordinals.com/",
+    "target": "https://explorer.ordinalsbot.com/",
     "secure": false,
     "logLevel": "debug",
     "changeOrigin": true

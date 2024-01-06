@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   api: 'http://localhost:3333',
-  ordinalsExplorerIframe: 'https://ordinals.com/content/',
+  ordinalsExplorerIframe: 'https://explorer.ordinalsbot.com/content/',
   ordinalsExplorerDetails: 'https://ordinals.com/inscription/',
   ordinalsExplorerMarketplace: 'https://magiceden.io/ordinals/item-details/'
 };

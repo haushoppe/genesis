@@ -4,6 +4,7 @@
 * https://ordinals.com/
 * https://cleverord.com/stats/
 * https://ordapi.xyz – HTTP API for Ordinals metadata
++ https://explorer.ordinalsbot.com/ --> fast mirror
 
 
 # All in One Ordinals Explorer (always down)
@@ -57,7 +58,7 @@ https://magiceden.io/ordinals
 
 
 https://ordinals.market/ --> https://github.com/ordinals-wallet/ordinals-collections
-
+OKX --> https://github.com/okx/ordinals-collections
 
 Collection Submission Form
 

@@ -65,7 +65,7 @@ function parseInscriptionHtmlPage(html: string): ParsedInscriptionData {
  */
 export async function getInscriptionFromOrd(id: string): Promise<any> {
 
-  const response = await axios.get(`https://ordinals.com/inscription/${id}`, {
+  const response = await axios.get(`https://explorer.ordinalsbot.com/inscription/${id}`, {
     headers: {
       // 'Accept': 'application/json'
     }});

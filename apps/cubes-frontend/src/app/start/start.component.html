@@ -60,7 +60,7 @@
                 <!-- Hint: You can enter any Taproot address as the recipient, even someone else's, if you want to gift them a cube. -->
               </p>
 
-              <hr *ngIf="!xverseInstalled">
+              <!-- <hr *ngIf="!xverseInstalled">
               <p *ngIf="!xverseInstalled">
 
                 <svg class="bi" style="margin-top: -2px"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img">
@@ -70,19 +70,15 @@
                 You do not have the Xverse wallet installed.
                 To take advantage of its new inscription feature, <a href="https://www.xverse.app" target="_blank">please install it</a>.<br class="d-none d-md-block">
                 With Xverse, you can pay directly to a commit address, eliminating unnecessary fees and wait times!
-              </p>
+              </p> -->
 
-              <div *ngIf="xverseInstalled && !xverseConnected" class="alert alert-warning d-flex align-items-center bg-dark text-light w-75 mt-4 ms-auto me-auto" role="alert">
-
-                <svg class="bi flex-shrink-0 me-2"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="24" height="24" role="img">
-                  <path fill="#FF9900" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                </svg>
+              <div *ngIf="xverseInstalled && !xverseConnected">
+                <hr>
 
                 <div class="ms-1">
                   You have the Xverse wallet installed.
-                  To utilize its new inscription feature, <a (click)="walletFacade.connectWallet()" href="javascript:void(0)">please connect your wallet</a>.<br class="d-none d-md-block">
-                  <!-- This method ensures the best cost-efficiency for you. -->
-                  With Xverse, you pay directly to a commit address, eliminating unnecessary fees and waiting times!
+                  To utilize its self-custodial inscription feature, <a (click)="walletFacade.connectWallet()" href="javascript:void(0)">please connect your wallet</a>.<br class="d-none d-md-block">
+                  When connected with Xverse, you pay directly to a commit address, so everything happes directly from you wallet!
                 </div>
               </div>
 

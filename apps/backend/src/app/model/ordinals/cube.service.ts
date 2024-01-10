@@ -8,12 +8,22 @@ import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinals/
 import { getInscriptionFromOrd } from '../../../../../shared/ordinals/ord';
 import { OrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
 import { sortInscriptions } from './inscription-helper';
+import { ConfigService } from '@nestjs/config';
+import { ordinalnovusSearchForText } from '../../../../../shared/ordinals/ordinalnovus';
+import { getInscriptionContentFromHiro } from '../../../../../shared/ordinals/hiro';
 
 
 @Injectable()
 export class CubeService {
 
   private allCubes: InscriptionExtended[] = [];
+  private ordinalsbotApiKey: string;
+  private ordinalnovusApiKey: string;
+
+  constructor(private configService: ConfigService) {
+    this.ordinalsbotApiKey = this.configService.get<string>('ORDINALSBOT_API_KEY');
+    this.ordinalnovusApiKey = this.configService.get<string>('ORDINALNOVUS_API_KEY');
+  }
 
   /**
    * Performing async tasks before controllers are available
@@ -44,62 +54,85 @@ export class CubeService {
    */
   private async serchForAllCubes() {
 
-    let ordinalsbotResultFiltered: OrdinalsbotInscription[] = [];
-    let ordinalnovusFiltered: LooksLikeOrdinalsbotInscription[] = [];
+    const ordinalsbotResultFiltered = await this.searchAndFilterViaOrdinalsBot();
+    // const ordinalnovusFiltered = await this.searchAndFilterViaOrdinalnovous();
+    const ordinalnovusFiltered = [];
+    let newInscriptionExtended: InscriptionExtended[];
+
+    if (ordinalsbotResultFiltered.length >= ordinalnovusFiltered.length) {
+      newInscriptionExtended = this.searchResultToCubeInscriptionMeta(ordinalsbotResultFiltered);
+      Logger.log(`Choosing Ordinalsbot with ${ newInscriptionExtended.length } cubes!`);
+
+    } else {
+      newInscriptionExtended = this.searchResultToCubeInscriptionMeta(ordinalnovusFiltered);
+      Logger.log(`Choosing Ordinalnovus with ${ newInscriptionExtended.length } cubes!`);
+    }
+
+    if (this.allCubes.length < newInscriptionExtended.length) {
+      Logger.log(`Updating cached cubes!`);
+      this.allCubes = newInscriptionExtended;
+    }
+  }
+
+  /**
+   * Returns empty array on any error!
+   */
+  private async searchAndFilterViaOrdinalnovous(): Promise<LooksLikeOrdinalsbotInscription[]> {
 
     try {
 
-      const searchResultOrdinalsbot = (await searchForText('cubes.haushoppe.art'));
-      ordinalsbotResultFiltered = searchResultOrdinalsbot
-        .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
+      const searchResult = await ordinalnovusSearchForText('cubes.haushoppe.art');
+      const filtered = searchResult.filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
+
+      // fix Result! (contentString has cloudflare snippet)
+      await Promise.all(
+        filtered.map(async (x) => {
+          const hiroInscriptionContent = await getInscriptionContentFromHiro(x.inscriptionid);
+          x.contentstr = hiroInscriptionContent;
+        })
+      );
+
+      sortInscriptions(filtered);
+      Logger.log("Amount of cubes found by Ordinalnovus: " + filtered.length);
+      // ordinalnovusFiltered.forEach(x => console.log(x.inscriptionnumber));
+
+      return filtered;
+
+    } catch (ex: unknown) {
+      Logger.warn('Error loading cubes via Ordinalnovus!' + ex, 'ordinal_cubes');
+      console.log(ex);
+      return [];
+    }
+  }
+
+  /**
+   * Returns empty array on any error!
+   */
+  private async searchAndFilterViaOrdinalsBot(): Promise<OrdinalsbotInscription[]> {
+    try {
+
+      const searchResult = (await searchForText('cubes.haushoppe.art', this.ordinalsbotApiKey));
+      const filtered = searchResult.filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
 
       // fix Result! (inscriptionnumber always NULL)
       await Promise.all(
-        ordinalsbotResultFiltered.map(async x => {
-          const ordInscription = await getInscriptionFromOrd(x.inscriptionid)
+        filtered.map(async (x) => {
+          const ordInscription = await getInscriptionFromOrd(x.inscriptionid);
           // console.log(ordInscription);
           x.inscriptionnumber = ordInscription.inscriptionNumber;
         })
       );
-      sortInscriptions(ordinalsbotResultFiltered);
-      Logger.log("Amount of cubes found by Ordinalsbot: " + ordinalsbotResultFiltered.length);
+
+      sortInscriptions(filtered);
+      Logger.log("Amount of cubes found by Ordinalsbot: " + filtered.length);
       // ordinalsbotResultFiltered.forEach(x => console.log(x.inscriptionnumber));
+
+      return filtered;
 
     } catch (ex: unknown) {
       Logger.warn('Error loading cubes via Ordinalsbot!' + ex, 'ordinal_cubes');
-      console.log(ex)
-    }
-
-    /*
-    // disabled, since the API does not return all results and is going to break soon
-    try {
-
-      const searchResultOrdinalnovus = await ordinalnovusSearchForText('cubes.haushoppe.art');
-      ordinalnovusFiltered = searchResultOrdinalnovus
-        .filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
-
-      // fix Result! (contentString has cloudflare snippet)
-      await Promise.all(
-        ordinalnovusFiltered.map(async x => {
-          const hiroInscriptionContent = await getInscriptionContentFromHiro(x.inscriptionid)
-          x.contentstr = hiroInscriptionContent;
-        })
-      );
-      sortInscriptions(ordinalnovusFiltered);
-      Logger.log("Amount of cubes found by Ordinalnovus: " + ordinalnovusFiltered.length);
-      // ordinalnovusFiltered.forEach(x => console.log(x.inscriptionnumber));
-
-    } catch (ex: unknown) {
-      Logger.warn('Error loading cubes via Ordinalnovus!' + ex, 'ordinal_cubes');
-    }
-    */
-
-    if (ordinalsbotResultFiltered.length >= ordinalnovusFiltered.length) {
-      Logger.log("Using Ordinalsbot!");
-      this.allCubes = this.searchResultToCubeInscriptionMeta(ordinalsbotResultFiltered);
-    } else {
-      Logger.log("Using Ordinalnovus!");
-      this.allCubes = this.searchResultToCubeInscriptionMeta(ordinalnovusFiltered);
+      console.log(ex);
+      return [];
     }
   }
 

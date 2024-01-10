@@ -132,16 +132,19 @@ export async function getOrderStatus(id: string): Promise<OrderResponse | ErrorR
  * @param {string} text - The text to search for.
  * @returns {Promise<OrdinalsbotInscription[]>} - A promise that resolves to an array of all search results.
  */
-export async function searchForText(text: string): Promise<OrdinalsbotInscription[]> {
+export async function searchForText(text: string, apiKey): Promise<OrdinalsbotInscription[]> {
   let page = 1;
   let allResults: OrdinalsbotInscription[] = [];
-
+console.log(apiKey);
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const response = await axios.get<OrdinalsbotInscriptionSearchResult>('https://api.ordinalsbot.com/search', {
       params: {
         text,
         page
+      },
+      headers: {
+        'x-api-key': apiKey
       }
     });
 

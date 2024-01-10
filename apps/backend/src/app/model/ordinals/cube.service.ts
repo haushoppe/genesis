@@ -81,7 +81,7 @@ export class CubeService {
 
     try {
 
-      const searchResult = await ordinalnovusSearchForText('cubes.haushoppe.art');
+      const searchResult = await ordinalnovusSearchForText('cubes.haushoppe.art', this.ordinalnovusApiKey);
       const filtered = searchResult.filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
 
       // fix Result! (contentString has cloudflare snippet)

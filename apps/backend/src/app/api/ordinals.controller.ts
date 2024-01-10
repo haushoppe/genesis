@@ -12,7 +12,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { apikeyCreate, getApikeyDetails } from '../../../../shared/ordinals/ordinalnovus';
 import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
 import { KnownCollectionName } from '../../../../shared/ordinals/known-collection-name';
 import { CacheService } from '../model/cache.service';
@@ -283,50 +282,6 @@ export class OrdinalsController {
     }
 
     return getReferralStatus();
-  }
-
-  /**
-   * Create Ordinalnovus API key
-   *
-   * Use this endpoint create an new API key for api.ordinalnovus.com
-   */
-  @Post(['ordinals/createOrdinalnovusApiKey'])
-  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-  @ApiOperation({ operationId: 'createOrdinalnovusApiKey' })
-  async createOrdinalnovusApiKey(): Promise<{
-    message: string,
-    apiKey: string
-  }> {
-
-    if (this.configService.get('environment') !== 'development') {
-      throw new ForbiddenException('This method should not be called on production');
-    }
-
-    // ??? - Xverse Account 1: Ordinals address
-    return apikeyCreate('???')
-  }
-
-  /**
-   * Get Ordinalnovus API key details
-   *
-   * Use this endpoint query all details for our API key
-   */
-  @Post(['ordinals/getOrdinalnovusApiKeyDetails'])
-  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-  @ApiOperation({ operationId: 'getOrdinalnovusApiKeyDetails' })
-  async getOrdinalnovusApiKeyDetails(): Promise<{
-    success: boolean,
-    usage: number,
-    userType: string,
-    rateLimit: number,
-    expirationDate: string
-  }> {
-
-    if (this.configService.get('environment') !== 'development') {
-      throw new ForbiddenException('This method should not be called on production');
-    }
-
-    return getApikeyDetails();
   }
 }
 

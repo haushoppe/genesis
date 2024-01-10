@@ -1,33 +1,11 @@
 import axios from 'axios';
-import { OrdinalnovusInscription, OrdinalnovusInscriptionSearchResult, LooksLikeOrdinalsbotInscription } from './ordinalnovus-inscription-search-result'
+import { OrdinalnovusInscriptionSearchResult, LooksLikeOrdinalsbotInscription } from './ordinalnovus-inscription-search-result'
 
-const apiHost = 'https://api.ordinalnovus.com/api';
+const apiHost = 'https://ordinalnovus.com/api/v2';
 
-// const apiKey = '85b1f7f4-3099-4cf7-8e38-8d3ba494a3ad'; // golden example API key
-const apiKey = '0bf2eced-5ab2-4595-b353-41de8d2627d6';
+// const apiKey = '85b1f7f4-3099-4cf7-8e38-8d3ba494a3ad'; // golden example API key from the docs
 
-export async function apikeyCreate(wallet: string): Promise<{
-  message: string,
-  apiKey: string
-}> {
-
-  const response = await axios.post(`${apiHost}/apikey/create`, { wallet });
-  return response.data;
-}
-
-export async function getApikeyDetails(): Promise<{
-  success: boolean,
-  usage: number,
-  userType: string,
-  rateLimit: number,
-  expirationDate: string
-}> {
-
-  const response = await axios.get(`${apiHost}/apikey/${apiKey}`)
-  return response.data;
-}
-
-export async function ordinalnovusSearchForText(text: string): Promise<LooksLikeOrdinalsbotInscription[]> {
+export async function ordinalnovusSearchForText(searchText: string, apiKey: string): Promise<LooksLikeOrdinalsbotInscription[]> {
 
   const limit = 1000;
   let start = 0;
@@ -38,15 +16,12 @@ export async function ordinalnovusSearchForText(text: string): Promise<LooksLike
     const response: { data: OrdinalnovusInscriptionSearchResult } = await axios.get(`${apiHost}/inscription`,
       {
         params: {
-          apiKey,
-          content: text,
-          // content_type: 'text/html;charset=utf-8', --- DON'T use this, XVerse makes only text/html, Ordinalsbot +charset=utf-8
+          show: 'inscription_id,inscription_number,content,block',
           match: 'regex',
-          // possible params
-          // apiKey (required), sha, inscriptionId, content_type, _id, officialCollection, sat, sat_name, rarity, block, content, content_type, sat_offset, number, show, _limit, _start, _sort
-          show: 'inscriptionId,number,content,content_type,block',
+          content: searchText,
           _limit: limit,
-          _start: start
+          _start: start,
+          apikey: apiKey
         }
       });
 
@@ -54,14 +29,17 @@ export async function ordinalnovusSearchForText(text: string): Promise<LooksLike
       break;  // No more data to fetch
     }
 
+    console.log(response);
+
+
     const mapped: LooksLikeOrdinalsbotInscription[] = response.data.inscriptions.map(({
-      inscriptionId,
-      number,
+      inscription_id,
+      inscription_number,
       content,
       block
     }) => ({
-      inscriptionid: inscriptionId,
-      inscriptionnumber: number,
+      inscriptionid: inscription_id,
+      inscriptionnumber: inscription_number,
       contentstr: content,
       blockheight: block
     }));

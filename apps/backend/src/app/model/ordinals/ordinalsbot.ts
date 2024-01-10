@@ -135,7 +135,7 @@ export async function getOrderStatus(id: string): Promise<OrderResponse | ErrorR
 export async function searchForText(text: string, apiKey): Promise<OrdinalsbotInscription[]> {
   let page = 1;
   let allResults: OrdinalsbotInscription[] = [];
-console.log(apiKey);
+
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const response = await axios.get<OrdinalsbotInscriptionSearchResult>('https://api.ordinalsbot.com/search', {

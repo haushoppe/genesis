@@ -12,7 +12,6 @@ import { createFilledArray, extractMintInfo, extractSimpleTokenOwner, extractSim
 import { ZERO_ADDRESS } from './ethers-utils';
 import { Metadata } from '../types/metadata';
 import { MetadataService } from './metadata-service';
-import { error } from 'console';
 
 @Injectable()
 export class ContractService {

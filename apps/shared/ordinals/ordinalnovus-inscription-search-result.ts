@@ -2,8 +2,8 @@
 // shortest version, more possible params that can be requested:
 export interface OrdinalnovusInscription {
   _id: string, // looks like a MongoDB ObjectId
-  inscriptionId: string,
-  number: number,
+  inscription_id: string,
+  inscription_number: number,
   content: string,
   block: number
 }

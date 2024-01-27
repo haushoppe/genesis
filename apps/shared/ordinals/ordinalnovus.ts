@@ -16,7 +16,7 @@ export async function ordinalnovusSearchForText(searchText: string, apiKey: stri
     const response: { data: OrdinalnovusInscriptionSearchResult } = await axios.get(`${apiHost}/inscription`,
       {
         params: {
-          show: 'inscription_id,inscription_number,content,block',
+          // show: 'inscription_id,inscription_number,content,block',
           match: 'regex',
           content: searchText,
           _limit: limit,
@@ -29,7 +29,7 @@ export async function ordinalnovusSearchForText(searchText: string, apiKey: stri
       break;  // No more data to fetch
     }
 
-    console.log(response);
+    // console.log(response.data.inscriptions);
 
 
     const mapped: LooksLikeOrdinalsbotInscription[] = response.data.inscriptions.map(({

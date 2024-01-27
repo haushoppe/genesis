@@ -146,7 +146,6 @@ describe('findItemByInscriptionId', () => {
     { inscriptionId: '1', name: 'Item 1' },
     { inscriptionId: '2', name: 'Item 2' },
     { inscriptionId: '3', name: 'Item 3' },
-    // ...add more items if needed
   ];
 
   test('finds the correct item and neighbors', () => {

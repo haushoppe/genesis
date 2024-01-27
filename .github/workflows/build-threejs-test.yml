@@ -28,5 +28,5 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-threejs-test-build.git --branch=main --name="The Buildbot" --email=noreply@haushoppe.art --message="Auto-generated commit"
+        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cube-threejs-test-build.git --branch=main --name="The Buildbot" --email=noreply@haushoppe.art --no-notfound --no-nojekyll
 

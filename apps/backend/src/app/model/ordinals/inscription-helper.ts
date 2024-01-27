@@ -27,8 +27,8 @@ export function hideUnwantedProperties({ id, charge, files, paid, referral }: Or
 /**
  * Collects all IDs based on specified trait types from a given data array.
  *
- * @param {Array} data - The array containing the data.
- * @returns {Array} An array of IDs corresponding to the specified trait types.
+ * @param data - The array containing the data.
+ * @returns An array of IDs corresponding to the specified trait types.
  */
 export function collectClaimedInscriptionIds(data: InscriptionExtended[]) {
 
@@ -50,8 +50,8 @@ export function collectClaimedInscriptionIds(data: InscriptionExtended[]) {
  * Sorts an array of LooksLikeOrdinalsbotInscription objects.
  * The primary sort key is the blockheight, and the secondary sort key (when blockheights are equal) is inscriptionnumber.
  *
- * @param {LooksLikeOrdinalsbotInscription[]} inscriptions - The array of inscriptions to sort.
- * @returns {LooksLikeOrdinalsbotInscription[]} - The sorted array of inscriptions.
+ * @param inscriptions - The array of inscriptions to sort.
+ * @returns The sorted array of inscriptions.
  */
 export function sortInscriptions(inscriptions: LooksLikeOrdinalsbotInscription[]): LooksLikeOrdinalsbotInscription[] {
   return inscriptions.sort((a, b) => {
@@ -67,10 +67,9 @@ export function sortInscriptions(inscriptions: LooksLikeOrdinalsbotInscription[]
 /**
  * Finds an item by inscriptionId in an array and returns the item, as well as the previous and next items.
  *
- * @param {Array<{ inscriptionId: number; [key: string]: any }>} array - The array of items with an 'inscriptionId' property.
- * @param {string} inscriptionId - The inscriptionId of the item to find.
- * @returns {{ previous: T | null; current: T | null; next: T | null }} - An object with the previous, current, and next items.
- * @template T - The type of the array elements.
+ * @param array - The array of items with an 'inscriptionId' property.
+ * @param inscriptionId - The inscriptionId of the item to find.
+ * @returns An object with the previous, current, and next items.
  */
 export function findItemByInscriptionId<T extends { inscriptionId: string }>(
   array: T[],

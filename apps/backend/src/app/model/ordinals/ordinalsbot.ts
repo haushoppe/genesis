@@ -58,8 +58,7 @@ export async function createInscriptionRequestForHtml(
           dataURL: `data:text/html;base64,${contentB64}`,
           name: `cube.html`,
           size,
-          type: 'text/html',
-          url: '',
+          type: 'text/html'
         },
       ],
       lowPostage: true,

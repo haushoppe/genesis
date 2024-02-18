@@ -5,7 +5,7 @@
       "src": "/assets/logo-google-touch-icon.png",
       "sizes": "512x512"
   }],
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "display": "fullscreen"
 }

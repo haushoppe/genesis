@@ -58,7 +58,10 @@ https://magiceden.io/ordinals
 
 
 https://ordinals.market/ --> https://github.com/ordinals-wallet/ordinals-collections
+Deprecated, see: https://ordinalswallet.com/creator-dashboard
+
 OKX --> https://github.com/okx/ordinals-collections
+Unisat --> https://github.com/unisat-wallet/ordinals-collections
 
 Collection Submission Form
 

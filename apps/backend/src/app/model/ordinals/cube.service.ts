@@ -120,6 +120,9 @@ export class CubeService {
           const ordInscription = await getInscriptionFromOrd(x.inscriptionid);
           // console.log(ordInscription);
           x.inscriptionnumber = ordInscription.inscriptionNumber;
+
+          // they now also screwed this up with a nasty cloudflare snipped
+          x.contentstr = x.contentstr.replace(/<script defer.*/, '');
         })
       );
 

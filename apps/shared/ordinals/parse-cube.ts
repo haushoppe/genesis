@@ -11,6 +11,10 @@ export function parseCube(cubeHtmlRaw: string): { trait_type: string; value: str
     return null;
   }
 
+  // trim newline at the end. somehow cube 0dace1ce3a82a49db3709198e45e40d0ba2c861af143db43226b68cb17b50157i0
+  // has a trailing newline??
+  cubeHtmlRaw = cubeHtmlRaw.trim();
+
   const regexFull = /^<html><!--cubes\.haushoppe\.art-->(<head><title>([^<>]*)<\/title><\/head>)?<body><script>t='([^']*)'<\/script><script src=\/content\/([^>]*)><\/script>$/;
   const matchFull = cubeHtmlRaw.match(regexFull);
 

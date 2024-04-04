@@ -1,5 +1,5 @@
 /*
-  RESPONSE of GET https://ordinalsbot.com/api/price?fee=60&size=557&count=1&lowPostage=true&rareSats=random
+  RESPONSE of GET https://api.ordinalsbot.com/price?fee=60&size=557&count=1&lowPostage=true&rareSats=random
 
   {
     "status": "ok",

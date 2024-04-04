@@ -1,5 +1,5 @@
 /*
-  RESPONSE of GET https://ordinalsbot.com/api/fxrate?ids=bitcoin&vs_currencies=usd
+  RESPONSE of GET https://api.ordinalsbot.com/fxrate?ids=bitcoin&vs_currencies=usd
 
   {
     "bitcoin": {

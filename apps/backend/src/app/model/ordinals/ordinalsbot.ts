@@ -10,7 +10,6 @@ import { Logger } from '@nestjs/common';
 
 
 export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://api.ordinalsbot.com/order';
-// export const INSCRIPTION_REQUESTS_SERVICE_URL = 'https://signet.ordinalsbot.com/api/order'
 
 /*
 
@@ -88,7 +87,7 @@ export async function saveReferralCode(): Promise<any> {
 
   return await Promise.all(
     REFERRALS.map(async r => {
-      const response = await axios.post('https://ordinalsbot.com/api/referrals', {
+      const response = await axios.post('https://api.ordinalsbot.com/referrals', {
         referral: r.code,
         address: r.address
       });
@@ -102,7 +101,7 @@ export async function getReferralStatus(): Promise<any> {
 
   return await Promise.all(
     REFERRALS.map(async r => {
-      const response = await axios.get('https://ordinalsbot.com/api/referrals', {
+      const response = await axios.get('https://api.ordinalsbot.com/referrals', {
         params: {
           referral: r.code,
           address: r.address
@@ -168,7 +167,7 @@ export async function searchForText(text: string, apiKey): Promise<OrdinalsbotIn
 
 export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPriceRequestParams): Promise<OrdinalsbotPriceResult> {
 
-  const response = await axios.get('https://ordinalsbot.com/api/price',
+  const response = await axios.get('https://api.ordinalsbot.com/price',
     {
       params: { fee, size, count, lowPostage }
     });
@@ -178,7 +177,7 @@ export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPric
 
 export async function getFxrate(): Promise<OrdinalsbotFxrateResult> {
 
-  const response = await axios.get('https://ordinalsbot.com/api/fxrate',
+  const response = await axios.get('https://api.ordinalsbot.com/fxrate',
     {
       params: {
         ids: 'bitcoin',
@@ -190,7 +189,7 @@ export async function getFxrate(): Promise<OrdinalsbotFxrateResult> {
 }
 
 /*
-GET https://ordinalsbot.com/api/inventory
+GET https://api.ordinalsbot.com/inventory
 
 Example reponse!
 Pizza is out of stock! :-/

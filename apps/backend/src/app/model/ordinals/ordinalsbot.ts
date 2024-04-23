@@ -169,7 +169,13 @@ export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPric
 
   const response = await axios.get('https://api.ordinalsbot.com/price',
     {
-      params: { fee, size, count, lowPostage }
+      params: {
+        fee,
+        size,
+        count,
+        lowPostage,
+        rareSats: 'random'
+      }
     });
 
   return response.data;

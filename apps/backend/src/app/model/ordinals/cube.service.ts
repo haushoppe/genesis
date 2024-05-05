@@ -31,7 +31,10 @@ export class CubeService {
   async onModuleInit() {
     // return; // while debugging
     Logger.log('Initializing CubeService', 'ordinal_cubes');
-    await this.handleInterval(); // immediate execution upon module initialization
+
+    // if (process.env.NODE_ENV !== 'development') {
+    //   await this.handleInterval(); // immediate execution upon module initialization
+    // }
 
     Logger.verbose('Fetched ' + this.allCubes.length + ' cubes', 'ordinal_cubes');
   }

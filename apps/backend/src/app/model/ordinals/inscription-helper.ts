@@ -2,7 +2,7 @@ import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinals/
 import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinals/ordinalsbot-order-response';
 import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 
-
+// FUCK OFF! THEY CHANGED ONCE AGAIN THE FORMAT! FUCK THEM! FUCK! FUCK! FUCK!!!!
 export function hideUnwantedProperties({ id, charge, files, paid, referral }: OrderResponse): InscriptionOrder {
 
   const { amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value } = charge;
@@ -12,13 +12,15 @@ export function hideUnwantedProperties({ id, charge, files, paid, referral }: Or
     charge: {
       amount, hosted_checkout_url, chain_invoice, lightning_invoice, fiat_value
     },
-    files: files.map(({ completed, dataURL, iqueued, sent, tx }) => ({
-      completed,
-      dataURL, // warning! this could contain malicious HTML! parse it!
-      iqueued,
-      sent,
-      tx
-    })),
+    // FUCK OFF! THEY CHANGED ONCE AGAIN THE FORMAT! - no preview for now... :-/
+    // files: files.map(({ completed, dataURL, iqueued, sent, tx }) => ({
+    //   completed,
+    //   dataURL,
+    //   iqueued,
+    //   sent,
+    //   tx
+    // })),
+    files: [],
     paid
     // code: referral === REFERRALS[0].code ? '' : referral
   };

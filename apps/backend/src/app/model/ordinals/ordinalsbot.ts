@@ -167,6 +167,7 @@ export async function searchForText(text: string, apiKey): Promise<OrdinalsbotIn
 
 export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPriceRequestParams): Promise<OrdinalsbotPriceResult> {
 
+  // https://docs.ordinalsbot.com/api/getting-prices/getting-prices-legacy
   const response = await axios.get('https://api.ordinalsbot.com/price',
     {
       params: {
@@ -174,7 +175,8 @@ export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPric
         size,
         count,
         lowPostage,
-        rareSats: 'random'
+        rareSats: 'random',
+        type: 'bulk'
       }
     });
 

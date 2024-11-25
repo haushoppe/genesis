@@ -3,5 +3,5 @@
   * and N is the index of the inscription in the reveal transaction.
   */
 export function isValidInscriptionId(id: string) {
-  return /^[a-fA-F0-9]{64}i\d{1,}$/.test(id);
+  return /^[a-f0-9]{64}i\d{1,}$/.test(id);
 }

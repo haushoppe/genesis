@@ -24,7 +24,7 @@
   <ng-container *ngIf="nft">
     <iframe
       *ngIf="nft.metadata.animation_url"
-      [src]="nft.metadata.animation_url | safeResourceUrl"
+      [src]="nft.metadata.animation_url | safeUrl"
     ></iframe>
 
     <img *ngIf="!nft.metadata.animation_url" [src]="nft.metadata.image">

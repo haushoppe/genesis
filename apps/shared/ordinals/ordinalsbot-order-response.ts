@@ -120,14 +120,10 @@ export const examplePaidResponse = {
   "status": "ok"
 }
 
-
-
-// see https://developers.opennode.com/reference/create-charge
-// see https://developers.opennode.com/docs/charge-lifecycle
-
 export interface InscriptionFile {
   completed?: boolean;
   dataURL?: string;
+  url: string; // hosted S3 bucket URL
   iqueued?: boolean;  // we use to show that the money was received
   sent?: string;      // we use this to check if an order is completed!
   tx?: {
@@ -138,6 +134,25 @@ export interface InscriptionFile {
   }
 }
 
+/**
+ * original response from OrdinalsBot
+ * https://docs.ordinalsbot.com/api/get-order-status
+ *
+ * Their example:
+ * {
+ *     status: 'ok',
+ *     paid: true, // order payment successfully received
+ *     underpaid: true, // order is underpaid => user needs to complete the payment.
+ *     expired: true, // order payment is not received in the allocated time,
+ *     tx: {
+ *         "commit": "edc...be9",
+ *         "fees": 157840,
+ *         "inscription": "dff...5i0",
+ *         "reveal": "dff...0c5"
+ *     }, // inscription data as returned by ord wallet
+ *     sent: '4axxxdeadbeef', // order is inscribed and sent to the provided address
+ * }
+ */
 export interface OrderResponse {
   id: string;
   // fee: number | string;   // choosen fee rate in sats/byte
@@ -176,12 +191,18 @@ export function isErrorResponse(response: any): response is ErrorResponse {
   return response && response.status === 'error' && typeof response.error === 'string';
 }
 
+/**
+ * Cleaned version of OrderResponse, with some properties removed
+ * There are two differenc places where this interface is used:
+ * 1. POST https://api.ordinalsbot.com/order -- id exists
+ * 2. GET https://api.ordinalsbot.com/order?id=XXX -- id does not exist in the response
+ */
 export interface InscriptionOrder {
-  id: string;      // save this to poll against https://api.ordinalsbot.com/order?id=XXX
-  // fee: number | string;   // choosen fee rate in sats/byte
+  // warning: can be undefined!
+  id: string;
+
   charge: {
 
-    // status: ChargeStatus; // IS ALWAYS "UNPAID!!! :-()
     amount: number;  // amount to pay in satoshis
     hosted_checkout_url: string;
 
@@ -194,10 +215,8 @@ export interface InscriptionOrder {
       payreq: string;
     },
     fiat_value: number; // amount in USD
-    // ttl: number; // TTL (time to live) in minutes. Min: 10, Max: 1440 (24H), Default: 1440
   },
   files: InscriptionFile[];
   paid: boolean;
-  // code?: string; // hiding it
 }
 

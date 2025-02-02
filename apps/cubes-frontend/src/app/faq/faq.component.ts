@@ -6,7 +6,7 @@ import { PushModule } from '@rx-angular/template/push';
 
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { ParseMarkdownPipe } from '../parse-markdown.pipe';
-import { SafeResourceUrlPipe } from '../safe-url.pipe';
+import { SafeUrlPipe } from '../safe-url.pipe';
 
 interface Faq {
   question: string;
@@ -19,18 +19,13 @@ interface Faq {
   styleUrls: ['./faq.component.scss'],
   standalone: true,
   imports: [
-    AsyncPipe,
-    LoadingIndicatorComponent,
-    NgIf,
     ParseMarkdownPipe,
     RouterLink,
-    SafeResourceUrlPipe,
     LetModule,
     PushModule,
     NgFor,
-    KeyValuePipe,
     NgClass
-  ],
+],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FaqComponent {

@@ -1,4 +1,4 @@
-import { DecimalPipe, JsonPipe, NgClass, NgIf } from '@angular/common';
+import { DecimalPipe, NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
@@ -13,6 +13,7 @@ import { SafeHtmlPipe } from '../safe-html.pipe';
 import { MintFacade } from '../store/mint.facade';
 import { getSubmittingState } from '../store/submittable/submittable-state';
 import { decodeBase64DataURI } from './decode-base64-data-uri';
+import { SafeUrlPipe } from '../safe-url.pipe';
 
 
 @Component({
@@ -24,7 +25,6 @@ import { decodeBase64DataURI } from './decode-base64-data-uri';
     imports: [
         NgIf,
         PushModule,
-        JsonPipe,
         NgClass,
         LoadingIndicatorComponent,
         NgIf,
@@ -32,7 +32,8 @@ import { decodeBase64DataURI } from './decode-base64-data-uri';
         LetModule,
         RouterLink,
         SafeHtmlPipe,
-        DecimalPipe
+        DecimalPipe,
+        SafeUrlPipe
     ]
 })
 export class OrderDetailsComponent {

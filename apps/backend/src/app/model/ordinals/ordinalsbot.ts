@@ -125,6 +125,34 @@ export async function getOrderStatus(id: string): Promise<OrderResponse | ErrorR
 }
 
 /**
+ * Fetches the content of a hosted file and converts it into a base64-encoded data URL.
+ *
+ * This function makes an HTTP GET request to the given `url` and retrieves the response as text.
+ * If the request succeeds and returns valid content, it encodes the response in Base64 format and
+ * returns it as a `data:text/html;base64,...` string, suitable for embedding in an iframe or other HTML contexts.
+ *
+ * @param url The URL of the hosted file to fetch.
+ * @returns A Base64-encoded `data:text/html;base64,...` string if successful, otherwise an empty string.
+ */
+export async function loadHostedContent(url: string) {
+  try {
+    const response = await axios.get(url, { responseType: 'text' });
+
+    if (response.status !== 200 || !response.data) {
+      return ''; // Fail silently if content is invalid
+    }
+
+    const htmlContent = response.data;
+    const dataURL = 'data:text/html;base64,' + Buffer.from(htmlContent).toString('base64');
+
+    return dataURL;
+  } catch (error) {
+    console.error(`Failed to fetch file content from ${url}:`, error.message);
+    return ''; // Fail silently
+  }
+}
+
+/**
  * Searches for the given text in the Ordinalsbot API and retrieves all results by handling pagination internally.
  *
  * @param {string} text - The text to search for.

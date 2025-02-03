@@ -12,7 +12,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
+import { InscriptionFile, InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
 import { KnownCollectionName } from '../../../../shared/ordinals/known-collection-name';
 import { CacheService } from '../model/cache.service';
 import { paginateArray } from '../model/paginate-array';
@@ -26,6 +26,7 @@ import {
   getOrderStatus,
   getPrice,
   getReferralStatus,
+  loadHostedContent,
   saveReferralCode,
 } from '../model/ordinals/ordinalsbot';
 import { validateReferralCode } from '../model/ordinals/validate-referral-code';
@@ -88,12 +89,33 @@ export class OrdinalsController {
 
     if (isErrorResponse(orderResponseFull)) {
       throw new NotFoundException(orderResponseFull.error);
-    } else {
-      return hideUnwantedProperties(orderResponseFull);
     }
+
+    const fileOne: InscriptionFile | undefined = orderResponseFull.files[0];
+
+    // Fetch and cache dataUrl if not already available
+    if (fileOne && fileOne.url && !fileOne.dataURL) {
+
+      const base64encodedHtml = await this.fetchAndCacheFileContent(fileOne.url)
+
+    if (base64encodedHtml) {
+        fileOne.dataURL = base64encodedHtml;
+      }
+    }
+
+    return hideUnwantedProperties(orderResponseFull);
   }
 
-  lastBackup: InscriptionExtended[] = [];
+  /**
+   * Fetches and caches the content of a given URL as a dataURL
+   * @param url The file URL to fetch
+   * @returns Base64-encoded HTML content or an empty string on failure
+   */
+  private async fetchAndCacheFileContent(url: string): Promise<string> {
+      const cacheKey = `file:${url}`;
+      const TTL = 2 * 60 * 60; // 2 hours in seconds
+      return this.cacheService.loadCached(cacheKey, async () => loadHostedContent(url), TTL);
+  }
 
   /**
    * Get all known inscriptions (paged and cached)

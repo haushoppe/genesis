@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "nx run-many --target=serve --projects=backend,genesis-frontend,cubes-frontend,scales-dashboard-frontend",
-    "start:all": "concurrently --raw \"nx run-many --target=serve --projects=backend,genesis-frontend,scales-dashboard-frontend\" \"npm run start:hardhat\"",
-    "build": "nx run-many --target=build --projects=backend,genesis-frontend,scales-dashboard-frontend",
-    "test": "nx run-many --target=test --projects=backend,genesis-frontend,cubes-frontend,scales-dashboard-frontend",
+    "start": "nx run-many --target=serve --projects=backend,genesis-frontend,cubes-frontend",
+    "start:all": "concurrently --raw \"nx run-many --target=serve --projects=backend,genesis-frontend\" \"npm run start:hardhat\"",
+    "build": "nx run-many --target=build --projects=backend,genesis-frontend",
+    "test": "nx run-many --target=test --projects=backend,genesis-frontend,cubes-frontend",
     "start:backend": "nx serve --project=backend",
     "start:hardhat": "cd contracts && npm run hardhat:start-localhost-network",
     "build:backend": "nx build --project=backend",
@@ -20,10 +20,7 @@
     "build:cubes-frontend": "nx build --project=cubes-frontend",
     "build:cubes-frontend:production": "nx build --project=cubes-frontend --configuration=production",
     "test:cubes-frontend": "nx test --project=cubes-frontend",
-    "start:scales-dashboard-frontend": "nx serve --project=scales-dashboard-frontend",
-    "build:scales-dashboard-frontend": "nx build --project=scales-dashboard-frontend",
-    "build:scales-dashboard-frontend:production": "nx build --project=scales-dashboard-frontend --configuration=production",
-    "test:scales-dashboard-frontend": "nx test --project=scales-dashboard-frontend"
+    "build:openapi-generator": "cd tools/generators/openapi-generator && npm run start"
   },
   "engines": {
     "node": "20.x"

@@ -6,7 +6,7 @@
 * https://assets.haushoppe.art/  (Cloudflare Pages)
 
 Unfinished projects:
-* https://scales-dashboard.theangelswing.art/  (Cloudflare Pages)
+* https://scales-dashboard.theangelswing.art/  (Cloudflare Pages, Deleted)
 * https://cube-threejs-test-build.pages.dev/  (Cloudflare Pages)
 
 

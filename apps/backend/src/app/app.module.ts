@@ -5,9 +5,7 @@ import { join } from 'path';
 
 import { allKnownTokenNames, KnownTokenName } from '../../../shared/known-token-name';
 import { ApiController } from './api/api.controller';
-import { CubeController } from './api/cube.controller';
 import { OrdinalsController } from './api/ordinals.controller';
-import { ScalesController } from './api/scales.controller';
 import { configuration, validationSchema } from './app.configuration';
 import { AppController } from './app.controller';
 import { AllowlistService } from './model/allowlist.service';
@@ -51,8 +49,6 @@ import { ScheduleModule } from '@nestjs/schedule';
   controllers: [
     AppController,
     ApiController,
-    ScalesController,
-    CubeController,
     OrdinalsController
   ],
   providers: [

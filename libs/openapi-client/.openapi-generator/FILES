@@ -4,9 +4,7 @@ README.md
 api.module.ts
 api/api.service.ts
 api/api.ts
-api/cube.service.ts
 api/ordinals.service.ts
-api/scales.service.ts
 configuration.ts
 encoder.ts
 git_push.sh

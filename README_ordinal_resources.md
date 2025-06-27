@@ -2,20 +2,7 @@
 
 * https://www.ord.io/
 * https://ordinals.com/
-* https://cleverord.com/stats/
-* https://ordapi.xyz – HTTP API for Ordinals metadata
 + https://explorer.ordinalsbot.com/ --> fast mirror
-
-
-# All in One Ordinals Explorer (always down)
-
-I am currently building an all in one Ordinals explorer with features being actively added to it. Please visit the site and suggest suggestions to improve it.
-
-Website link: https://ordinalnovus.com/
-Twitter: https://twitter.com/ordscanxyz
-
-Search:
-* https://api.ordinalnovus.com/api/inscription?content_type=text&apiKey=85b1f7f4-3099-4cf7-8e38-8d3ba494a3ad&content=cubes.haushoppe.art
 
 
 # Inscription Parser

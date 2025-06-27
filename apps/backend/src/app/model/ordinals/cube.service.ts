@@ -4,13 +4,10 @@ import { Interval } from '@nestjs/schedule';
 import { parseCube } from '../../../../../shared/ordinals/parse-cube';
 import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 import { searchForText } from './ordinalsbot';
-import { LooksLikeOrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalnovus-inscription-search-result';
 import { getInscriptionFromOrd } from '../../../../../shared/ordinals/ord';
 import { OrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
 import { sortInscriptions } from './inscription-helper';
 import { ConfigService } from '@nestjs/config';
-import { ordinalnovusSearchForText } from '../../../../../shared/ordinals/ordinalnovus';
-import { getInscriptionContentFromHiro } from '../../../../../shared/ordinals/hiro';
 
 
 @Injectable()
@@ -18,25 +15,16 @@ export class CubeService {
 
   private allCubes: InscriptionExtended[] = [];
   private ordinalsbotApiKey: string;
-  private ordinalnovusApiKey: string;
 
   constructor(private configService: ConfigService) {
     this.ordinalsbotApiKey = this.configService.get<string>('ORDINALSBOT_API_KEY');
-    this.ordinalnovusApiKey = this.configService.get<string>('ORDINALNOVUS_API_KEY');
   }
 
   /**
    * Performing async tasks before controllers are available
    */
   async onModuleInit() {
-    // return; // while debugging
-    Logger.log('Initializing CubeService', 'ordinal_cubes');
-
-    // if (process.env.NODE_ENV !== 'development') {
-    //   await this.handleInterval(); // immediate execution upon module initialization
-    // }
-
-    Logger.verbose('Fetched ' + this.allCubes.length + ' cubes', 'ordinal_cubes');
+    Logger.log('Initializing CubeService. First run will be in 5 minutes', 'ordinal_cubes');
   }
 
   @Interval(1000 * 60 * 5) // every 5 minutes
@@ -58,53 +46,11 @@ export class CubeService {
   private async serchForAllCubes() {
 
     const ordinalsbotResultFiltered = await this.searchAndFilterViaOrdinalsBot();
-    // const ordinalnovusFiltered = await this.searchAndFilterViaOrdinalnovous();
-    const ordinalnovusFiltered = [];
-    let newInscriptionExtended: InscriptionExtended[];
-
-    if (ordinalsbotResultFiltered.length >= ordinalnovusFiltered.length) {
-      newInscriptionExtended = this.searchResultToCubeInscriptionMeta(ordinalsbotResultFiltered);
-      Logger.log(`Choosing Ordinalsbot with ${ newInscriptionExtended.length } cubes!`);
-
-    } else {
-      newInscriptionExtended = this.searchResultToCubeInscriptionMeta(ordinalnovusFiltered);
-      Logger.log(`Choosing Ordinalnovus with ${ newInscriptionExtended.length } cubes!`);
-    }
+    const newInscriptionExtended = this.searchResultToCubeInscriptionMeta(ordinalsbotResultFiltered);
 
     if (this.allCubes.length < newInscriptionExtended.length) {
       Logger.log(`Updating cached cubes!`);
       this.allCubes = newInscriptionExtended;
-    }
-  }
-
-  /**
-   * Returns empty array on any error!
-   */
-  private async searchAndFilterViaOrdinalnovous(): Promise<LooksLikeOrdinalsbotInscription[]> {
-
-    try {
-
-      const searchResult = await ordinalnovusSearchForText('cubes.haushoppe.art', this.ordinalnovusApiKey);
-      const filtered = searchResult.filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
-
-      // fix Result! (contentString has cloudflare snippet)
-      await Promise.all(
-        filtered.map(async (x) => {
-          const hiroInscriptionContent = await getInscriptionContentFromHiro(x.inscriptionid);
-          x.contentstr = hiroInscriptionContent;
-        })
-      );
-
-      sortInscriptions(filtered);
-      Logger.log("Amount of cubes found by Ordinalnovus: " + filtered.length);
-      // ordinalnovusFiltered.forEach(x => console.log(x.inscriptionnumber));
-
-      return filtered;
-
-    } catch (ex: unknown) {
-      Logger.warn('Error loading cubes via Ordinalnovus!' + ex, 'ordinal_cubes');
-      console.log(ex);
-      return [];
     }
   }
 
@@ -142,7 +88,7 @@ export class CubeService {
     }
   }
 
-  private searchResultToCubeInscriptionMeta(searchResultsFiltered: LooksLikeOrdinalsbotInscription[]): InscriptionExtended[] {
+  private searchResultToCubeInscriptionMeta(searchResultsFiltered: OrdinalsbotInscription[]): InscriptionExtended[] {
 
     const meta = searchResultsFiltered
 

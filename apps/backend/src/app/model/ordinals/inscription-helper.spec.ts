@@ -1,4 +1,4 @@
-import { OrdinalsbotInscription } from 'apps/shared/ordinals/ordinalsbot-inscription-search-result';
+import { OrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
 import { collectClaimedInscriptionIds, findItemByInscriptionId, sortInscriptions } from './inscription-helper';
 
 describe('collectClaimedInscriptionIds', () => {

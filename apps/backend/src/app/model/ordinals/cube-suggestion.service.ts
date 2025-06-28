@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { CubeSuggestion } from '../../types/ordinals/cube-suggestion';
-import { CollectionDetails, CollectionStat } from '../../types/ordinals/types-magic-eden';
+import { GetCollectionResult, GetCollectionStatisticsResult } from '../../types/ordinals/types-magic-eden';
 import { CubeService } from './cube.service';
 import { MagicEdenService } from './magic-eden.service';
 import { collectClaimedInscriptionIds } from './inscription-helper';
@@ -36,22 +36,26 @@ export class CubeSuggestionService {
     const allCubes = await this.cubeService.getAllCubes();
     const claimedTokenIds = collectClaimedInscriptionIds(allCubes);
 
-    let collections: CollectionStat[] |
-                     CollectionDetails[] |
+
+    let collections: GetCollectionStatisticsResult[] |
+                     GetCollectionResult[] |
                      { name: string; symbol: string }[] = [];
 
     if (!onlyCollectionSymbol) {
       try {
-        collections = await this.magicEdenService.fetchPopularCollections({
+        collections = await this.magicEdenService.getCollectionStatistics({
           window: '7d',
-          limit: 120 // max possible number
+          sort: 'volume',
+          direction: 'desc',
+          offset: 0,
+          limit: 250
         });
       } catch(exception) {
         Logger.error('Error fetchPopularCollections' + exception);
         throw exception;
       }
     } else {
-      const singleCollection = await this.magicEdenService.fetchCollectionDetails(onlyCollectionSymbol);
+      const singleCollection = await this.magicEdenService.getCollection(onlyCollectionSymbol);
       if (!singleCollection) {
         throw new Error('Unknown collection!');
       }
@@ -71,7 +75,7 @@ export class CubeSuggestionService {
       let collectionEndReached = false;
 
       while (!collectionEndReached && tokenIdMatches.length < this.TOKEN_GOAL) {
-        const tokens = await this.magicEdenService.fetchTokens({
+        const tokens = await this.magicEdenService.getTokens({
           limit: 40,
           offset,
           sortBy: 'inscriptionNumberAsc',
@@ -133,6 +137,7 @@ export class CubeSuggestionService {
     throw new Error('Could not find enough unclaimed tokens!');
   }
 
+  // TODO: iframe! (one day)
   // check all possible content types here:
   // see: https://github.com/ordinals/ord/blob/05c10a73f2d29838b894e3c56849762dbe6dc51c/src/media.rs#L20
   isImageContentType(contentType: string): boolean {
@@ -142,7 +147,7 @@ export class CubeSuggestionService {
       'image/gif',
       'image/jpeg',
       'image/png',
-      'image/svg+xml', // TODO: iframe!
+      // 'image/svg+xml', too much troubles, too much black cubes
       'image/webp',
       'image/bmp'  // let's assume someone is crazy enough to do this :D
     ];

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
-import { CollectionDetails, CollectionStat, CollectionStats, FetchPopularCollectionsOptions, FetchTokensOptions, FetchTokensResponse } from '../../types/ordinals/types-magic-eden';
+import { GetCollectionResult, GetCollectionStatisticsResult, GetCollectionStatisticsOptions, GetTokensOptions, GetTokensResponse } from '../../types/ordinals/types-magic-eden';
 
 
 @Injectable()
@@ -13,7 +13,7 @@ export class MagicEdenService {
     const bearerToken = this.configService.get<string>('MAGIC_EDEN_API_KEY');
 
     this.apiClient = axios.create({
-      baseURL: 'https://api-mainnet.magiceden.dev/v2/ord',
+      baseURL: 'https://api-mainnet.magiceden.dev',
       headers: {
         'accept': 'application/json',
         'Authorization': `Bearer ${bearerToken}`
@@ -27,80 +27,55 @@ export class MagicEdenService {
   }
 
   /**
-   * Fetches popular collection stats from MagicEden.
+   * Fetches a list of collection statistics from Magic Eden's collection statistics search endpoint.
+   * https://docs.magiceden.io/reference/getcollectionstats-1
+   * GET https://api-mainnet.magiceden.dev/collection_stats/search/bitcoin
    *
-   * @param options - Options for the fetch (window and limit).
-   * @returns A promise that resolves to an array of popular collection stats.
+   * @param options - Options to control the query (window, sort, direction, offset, limit).
+   * @returns A promise resolving to a list of collection statistics.
    */
-  async fetchPopularCollections(options: FetchPopularCollectionsOptions): Promise<CollectionStat[]> {
+  async getCollectionStatistics(options: GetCollectionStatisticsOptions = {}): Promise<GetCollectionStatisticsResult[]> {
+    const response = await this.apiClient.get<GetCollectionStatisticsResult[]>(
+      '/collection_stats/search/bitcoin',
+      { params: options }
+    );
 
-    if (!(options.limit % 12 === 0)) {
-      console.warn('The limit value should be a multiple of 12!');
-    }
-
-    const response = await this.apiClient.get<CollectionStat[]>('/btc/popular_collections', {
-      params: options
-    });
-
-    return response.data;
-  }
-
-  /**
-   * Fetches ALL (!!!) collections from MagicEden
-   *
-   * @param collectionSymbol - The symbol representing the specific collection.
-   * @returns A promise that resolves to the details of the requested collection.
-   */
-  async fetchAllCollectionsDetails(): Promise<CollectionDetails> {
-
-    const response = await this.apiClient.get<CollectionDetails>(`/btc/collections`);
-    return response.data;
+    return response.data.map(x => ({
+        ...x,
+       symbol: x.collectionSymbol
+    }));
   }
 
   /**
    * Fetches details of a specific collection from MagicEden using the collection symbol.
+   * see https://docs.magiceden.io/reference/getcollection-1
+   * GET https://api-mainnet.magiceden.dev/v2/ord/btc/collections/{symbol}
    *
    * @param collectionSymbol - The symbol representing the specific collection.
    * @returns A promise that resolves to the details of the requested collection.
    */
-  async fetchCollectionDetails(collectionSymbol: string): Promise<CollectionDetails> {
+  async getCollection(collectionSymbol: string): Promise<GetCollectionResult> {
     if (!collectionSymbol) {
       throw new Error('Symbol is required to fetch collection details.');
     }
 
-    const response = await this.apiClient.get<CollectionDetails>(`/btc/collections/${collectionSymbol}`);
+    const response = await this.apiClient.get<GetCollectionResult>(`/v2/ord/btc/collections/${collectionSymbol}`);
     return response.data;
   }
+
 
   /**
-   * Fetches statistics of a specific collection from MagicEden using the collection symbol.
-   *
-   * @param collectionSymbol - The symbol representing the specific collection for which stats are to be fetched.
-   * @returns A promise that resolves to the statistics of the requested collection.
-   */
-  async fetchCollectionStats(collectionSymbol: string): Promise<CollectionStats> {
-    if (!collectionSymbol) {
-      throw new Error('Collection symbol is required to fetch collection statistics.');
-    }
-
-    const response = await this.apiClient.get<CollectionStats>('/btc/stat', {
-      params: { collectionSymbol }
-    });
-    return response.data;
-  }
-
-    /**
    * Fetches tokens from MagicEden based on the provided options.
    * !! collectionSymbols, ownerAddresses, inscriptionMin/inscriptionMax, satRarity or tokenId is required!
    *
    * @param options - Options for fetching tokens.
    * @returns A promise that resolves to a FetchTokensResponse containing the list of tokens and total count.
    */
-    async fetchTokens(options: FetchTokensOptions): Promise<FetchTokensResponse> {
-      const response = await this.apiClient.get<FetchTokensResponse>('/btc/tokens', {
-        params: options
-      });
+  async getTokens(options: GetTokensOptions): Promise<GetTokensResponse> {
+    const response = await this.apiClient.get<GetTokensResponse>('/v2/ord/btc/tokens', {
+      params: options
+    });
 
-      return response.data;
-    }
+    return response.data;
+  }
 }

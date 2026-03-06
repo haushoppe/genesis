@@ -346,7 +346,6 @@ async function main() {
     let walletsProcessed = 0;
     let walletsWithNewTokens = 0;
     let consecutiveZeroWallets = 0;
-    const MAX_CONSECUTIVE_ZERO_WALLETS = 500; // bail-out: whales first, so tail is very unlikely to yield
     const batchSize = 100; // save progress every 100 wallets
 
     for (let i = 0; i < pendingWallets.length; i++) {

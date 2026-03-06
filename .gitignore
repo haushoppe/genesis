@@ -45,3 +45,7 @@ Thumbs.db
 kendo-ui-license.txt
 
 .nx/cache
+.playwright-mcp
+
+# Magic Eden archive data (GBs)
+z_extra/magic-eden-archive.zip

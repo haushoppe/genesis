@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(gh repo:*)",
+      "Bash(wc:*)",
+      "WebFetch(domain:docs.magiceden.io)",
+      "WebFetch(domain:magiceden.io)",
+      "WebFetch(domain:next.cdn.magiceden.dev)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_network_requests",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "WebFetch(domain:docs.bestinslot.xyz)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:ordiscan.com)",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_type",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "Bash(cat:*)",
+      "Bash(source:*)",
+      "WebFetch(domain:docs.unisat.io)",
+      "WebFetch(domain:docs.hiro.so)",
+      "WebFetch(domain:geniidata.readme.io)",
+      "WebFetch(domain:bestinslot.xyz)",
+      "WebFetch(domain:docs.xverse.app)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}

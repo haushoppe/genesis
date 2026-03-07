@@ -50,6 +50,21 @@ function loadExtraSymbols(): string[] {
   const manual = [
     'ordinal-cubes-by-haus-hoppe',
     'counterfeit-saints',
+    'ord-signals-in-noise',
+    // Discovered via meta-collections (uncommons, sub-100k)
+    'a_b_c', 'bitx_runes_dex', 'cat20_pass', 'dimons', 'dog-of-bitcoin',
+    'dollar', 'echoes_of_midnight_on_the_ridge', 'haunted_photography',
+    'mdd', 'natsnow', 'ordiapes', 'pikas', 'rns', 'theintensityforlife',
+    // Discovered via phase 1 stats (missed in earlier runs)
+    'labitbus', 'brc20_\u{1F5C1}',
+    // Discovered via summraznboi/magic-eden-data-dump CSV
+    '100m', '490', 'bit-coins', 'block994', 'brc9999', 'brcdiamonds',
+    'btc-jmk_creation_key', 'classifiedcartel', 'egyptian_hieroglyphs',
+    'erl3', 'faces', 'hoodi', 'ittanmoment', 'j-art-collection',
+    'kanetix', 'liquid-art-capital', 'lorn-horde', 'mm9', 'mumu', 'not',
+    'ntendre', 'ogbrc20-domo', 'ogbrc20-meme', 'ogbrc20-pups',
+    'ordinal-exclams', 'proxima', 'rare-sats', 'runesorbit', 'runespace',
+    'scres', 'testingjj', 'watermargin108',
   ];
   for (const s of manual) { symbols.add(s); supplyMap.set(s, 0); }
 

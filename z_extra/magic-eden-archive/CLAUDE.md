@@ -4,51 +4,44 @@
 
 Emergency archive of Magic Eden's ordinals collection data before they shut down their ordinals business. The cubes.haushoppe.art product depends on ME's API for collection browsing and cube suggestions.
 
-## Current Status (2026-03-06)
+## Current Status (2026-03-07)
 
 ### Archive Totals
-- **5,549 token files** (ME + BiS)
-- **~8.65 million tokens** archived
-- **~26 GB** total data
-- **824,836 unique wallet addresses** discovered
+- **5,477 ME token files** + BiS files
+- **~10.3 million+ tokens** archived
+- **5,494 collection detail JSONs** in `data/collections/`
+- **5,497 collection stats JSONs** in `data/collection-stats/`
 - **0 failed** collections across all scripts
+- **0 duplicate tokens** in ME data (11 dupes in BiS bitmap, negligible)
 
 ### Completed Runs
 1. **ME Phase 1-3** (archive-magic-eden.ts): 635 collections via stats discovery — **COMPLETED**
-2. **ME Extras** (archive-me-extras.ts): 4,815 additional collections via v4 search discovery — **COMPLETED**
-3. **BiS Wave 1** (archive-bestinslot.ts): 13 gap collections fully archived (incl. bitmap 920K, btc-name 2M) — **COMPLETED**
+2. **ME Extras** (archive-me-extras.ts): 4,843 collections, 21 not found — **COMPLETED** (2 runs)
+   - Sources: manual list + legacy repo + v4 search + meta-collection discovery + summraznboi CSV dump
+3. **BiS Wave 1** (archive-bestinslot.ts): 13 gap collections — **COMPLETED**
 4. **BiS Wave 2** (archive-bestinslot.ts): 86 gap collections — IN PROGRESS
 5. **ME Multiplex** (archive-me-multiplex.ts): Sort field multiplexing for 19 gap collections — **COMPLETED**
-6. **ME Snowball** (archive-me-snowball.ts): ownerAddress-based gap filler, 2 rounds converged, +328K tokens — **COMPLETED** (final no-limits pass pending)
+6. **ME Snowball** (archive-me-snowball.ts): ownerAddress per-collection snowball — **COMPLETED**
+   - 23 collections processed (19 original + 4 added meta-collections)
+   - Meta-collection explosion: black-uncommons 20K→725K, sub-100 20K→724K, sub-10k 20K→723K, sub-1k 20K→724K, sub-100k 573K→724K
+   - Pure collections: all exhausted with 0 pending wallets
+7. **Collection details** (extract-collection-details.ts): 5,494 detail JSONs + 5,497 stats JSONs — **COMPLETED**
+   - 2 details still missing (API rate limit penalty — retry later)
+   - Stats: all-time data (window param ignored), 100% success rate
+8. **ME Snowball Cross** (archive-me-snowball-cross.ts): cross-collection wallet pool — **READY** (not yet started)
+9. **Symbol extraction** (extract-all-symbols.ts): scanned 10.3M tokens, found 5,456 unique symbols — **COMPLETED**
+10. **Third-party CSV import**: 32 new collections from summraznboi dump, 13 fetched successfully — **COMPLETED**
 
-### Gap Collections After Snowball (2026-03-06)
-Note: ME's `totalSupply` is inaccurate (e.g. uncommons reports 22K but has 22.8K+ tokens).
-
-| Collection | Expected | Archived | Coverage |
-|-----------|----------|----------|----------|
-| domain_dot_bitter | 21,000 | 21,004 | 100.0% |
-| uncommons | 22,000 | 22,892 | 104.1% |
-| sub-100k | 90,000 | 90,767 | 100.9% |
-| domain_dot_xbt | 25,000 | 23,471 | 93.9% |
-| quadkey | 31,000 | 23,292 | 75.1% |
-| domain_dot_ord | 32,000 | 21,384 | 66.8% |
-| kards | 42,000 | 27,834 | 66.3% |
-| thissongaboutnfts | 42,000 | 29,888 | 71.2% |
-| runeratscoin | 50,000 | 31,131 | 62.3% |
-| dogo | 50,000 | 29,577 | 59.2% |
-| ainnrunestar | 94,000 | 26,934 | 28.7% |
-| sat20_rarepizza | 99,000 | 41,578 | 42.0% |
-| gamestone | 113,000 | 29,633 | 26.2% |
-| uniworlds-genesis | 115,000 | 28,077 | 24.4% |
-| brc1024_rootverse | 210,000 | 56,935 | 27.1% |
-| bitman | 210,000 | 55,631 | 26.5% |
-| domain_dot_unisat | 232,033 | 31,458 | 13.6% |
-| rare-sats | 239,240 | 0 | 0.0% |
-| domain_dot_sats | 489,739 | 87,188 | 17.8% |
+### Next Steps
+1. **Retry 2 missing collection details** — wait for API penalty to clear, re-run `extract-collection-details.ts`
+2. **Generate `data/cross-wallets.json`** — whale wallet pool for cross-snowball
+3. **Run cross-collection snowball overnight** — `archive-me-snowball-cross.ts`
+4. **Consider grabbing attribute_stats** — per-trait floor prices (see Undocumented Endpoints below)
+5. **Investigate Dylan's gaps** — `btc-artifacts` (+9,500), `bitcoin-cryptodickbutts` (+4,436)
 
 ## API Key
 
-`MAGIC_EDEN_API_KEY` is in the project root `.env`. Rate limiting tested: ME dev API handles 400ms delay with zero 429s. The adaptive delay system (400ms-2000ms) in archive-me-extras.ts ran the entire 4,815 collection crawl without a single rate limit hit.
+`MAGIC_EDEN_API_KEY` is in the project root `.env`. Rate limiting tested: ME dev API handles 400ms delay with zero 429s for token endpoints. The collection details endpoint is more sensitive — needs 400ms minimum and the API holds penalty state for several minutes after 429 storms.
 
 ## Architecture
 
@@ -61,7 +54,7 @@ Note: ME's `totalSupply` is inaccurate (e.g. uncommons reports 22K but has 22.8K
 - `GET /collection_stats/search/bitcoin` — collection discovery (offset 0-1000, found 635 collections)
 - `GET /v2/ord/btc/collections/{symbol}` — collection metadata
 - Forward+reverse pass strategy: inscriptionNumberAsc from offset 0 + inscriptionNumberDesc from offset 0 = max ~20,080 unique tokens per collection
-- **Rate limiting**: Adaptive 400ms-2000ms works perfectly. 400ms sustained with zero 429s over 4,815 collections.
+- **Rate limiting per endpoint**: Token endpoints handle 100ms fine (heavy responses = natural pacing). Collection detail endpoint needs 400ms minimum — lighter responses fire faster, triggering 429 storms at 100-150ms. After a 429 storm, the API maintains penalty state for several minutes.
 
 #### 2. ME v4 Search API (`api-mainnet.magiceden.io`) — COLLECTION DISCOVERY GOLDMINE
 - `POST /v4/search/search` with `{"pattern":"x","chains":["bitcoin"],"limit":100,"offset":0}`
@@ -90,8 +83,46 @@ Note: ME's `totalSupply` is inaccurate (e.g. uncommons reports 22K but has 22.8K
 - `legacy/collections/` has 535 JSON files, `collections.json` has 174 entries (different format with slug/ids)
 - Marginal value: adds ~167 new IDs for rsic, ~129 for prometheans beyond ME data
 
-### ME Meta-Collections
-Some ME collections are **meta-collections** that group tokens by sat attributes, not by minting origin. Example: `uncommons` contains tokens whose primary `collectionSymbol` is `rare-sats`, `idiots`, `cursed-sharks`, `bitmap`, `nodemonkes`, etc. — ME considers them part of `uncommons` because they sit on uncommon sats. The token's own `collectionSymbol` field reflects the PRIMARY collection, not the queried one. This is normal ME behavior, not data contamination. Most collections (e.g. `kards`, `domain_dot_bitter`) are pure — 100% of tokens have matching `collectionSymbol`. The `uncommons` totalSupply stat (22K) was also inaccurate — actual count exceeded 22.8K.
+#### 6. dylanvanh/magic-eden-collections-archive (third-party)
+- Cloned at `z_extra/magic-eden-archive/magic-eden-collections-archive/` for comparison
+- **751 collections**, ~5.76 GB (inscriptions.json tracked via git-lfs, **LFS budget exceeded** — data inaccessible)
+- Archived 2026-03-05 in a single day. Format: `{slug}/meta.json` + `count.json` + `inscriptions.json`
+- Smart deduplication via `defaults` + `templates` in meta.json
+- **Comparison**: We have 5,450+ collections vs his 751. He has **1 collection we didn't** (`ord-signals-in-noise`, 5K tokens — now grabbed). We have **4,700 he doesn't**. On the 750 overlapping collections, we have more tokens in 32, he has more in 9 (notably `btc-artifacts` +9,500, `bitcoin-cryptodickbutts` +4,436). His `bitmap`/`btc-name`/`runestone` are capped at 10,100 (offset limit) — ours are far larger via BiS.
+
+#### 7. summraznboi/magic-eden-data-dump (third-party CSV)
+- GitHub releases: `collection_name_traits.csv.gz` (369MB compressed)
+- **11.6M rows, 5,487 unique collections**
+- Format: `collectionSymbol, id, name, traits` — minimal fields only
+- **Missing**: owner, contentType, contentURI, listing price, metadata, collection details
+- Value: complete inscription ID lists (full supply) for collections where we're capped at offset limit
+- 32 new collections discovered (not in our v4 search or stats), 13 fetched from ME API
+- Stored at `z_extra/magic-eden-archive/magic-eden-data-dump/collection_name_traits.csv`
+
+#### 8. HTTP/2 Rate Limit Bypass (community gist)
+- Source: `gist.github.com/erc1337-Coffee/af1ddcd03561e1dbdd50950a8c2d33e7`
+- Uses raw HTTP/2 to `api-mainnet.magiceden.io` with browser-like TLS fingerprinting
+- No API key — mimics browser requests to avoid rate limiter
+- Focuses on runes (not relevant for ordinals archive)
+- **Useful discovery**: `/v2/ord/btc/collections/{slug}/attribute_stats` endpoint — returns per-trait floor prices, counts, and sample images
+
+### Undocumented Endpoints
+- **`GET /v2/ord/btc/stat?collectionSymbol={symbol}&window=30d`** — returns all-time collection stats (window param ignored). Fields: totalVolume, owners, supply, floorPrice, totalListed, pendingTransactions, inscriptionNumberMin/Max, symbol. 100% success rate across 5,497 collections.
+- **`GET /v2/ord/btc/collections/{slug}/attribute_stats`** — returns per-trait floor prices, counts, and sample images. Discovered via community gist. Not yet scraped.
+
+### ME Meta-Collections — API Bug
+
+Some ME collections are **meta-collections** that group tokens by sat attributes, not by minting origin. When querying `?ownerAddress=X&collectionSymbol={meta}`, the API **ignores the collectionSymbol filter** and returns the wallet's ENTIRE portfolio. This is why meta-collection snowball runs explode (20K→724K tokens).
+
+**6 known meta-collections** (all impure — 0% of tokens have matching collectionSymbol):
+- `uncommons` — groups by uncommon sats (3,605 unique collectionSymbol values)
+- `sub-100k` — groups by inscription number <100K (1,686 unique values)
+- `black-uncommons` — uncommon sats variant
+- `sub-100` — inscription number <100
+- `sub-10k` — inscription number <10K
+- `sub-1k` — inscription number <1K
+
+**5,459/5,465 collections are 100% pure** — every token's collectionSymbol matches the filename. Only the 6 meta-collections above are impure.
 
 ### Cross-Platform Slug Differences
 ME and BiS use different naming conventions. ~724 BiS slugs don't match ME symbols directly, but they're the SAME collections with different names (e.g. ME `bitcoin-punks` = BiS `bitcoinpunks`). **Always use ME symbols as canonical identifiers.**
@@ -110,7 +141,7 @@ ME and BiS use different naming conventions. ~724 BiS slugs don't match ME symbo
 - **Batch/activities endpoints**: Activities has aggressive separate rate limiter, batch returns same data.
 - **Text search on stats endpoint**: searchQuery/q/search/name/filter params all ignored.
 
-#### Alternative APIs (ALL Dead Ends for these 19 collections)
+#### Alternative APIs (ALL Dead Ends for the 19 gap collections)
 - **Hiro**: No collection concept, deprecating March 9 2026.
 - **Ordiscan**: Only 132 collections, none of ours.
 - **UniSat**: Address-scoped only, no collection-level listing.
@@ -133,8 +164,8 @@ ME and BiS use different naming conventions. ~724 BiS slugs don't match ME symbo
 - Progress: `data/bis-progress.json`, Files: `{meSymbol}.bis.ndjson`
 
 ### `scripts/archive-me-extras.ts` — ME Extra Collections Archiver
-- **COMPLETED**: 4,815 collections, 17 not found, 0 failed
-- Sources: manual list + legacy repo (152) + v4 search discovery (5,460)
+- **COMPLETED** (2 runs): 4,843 collections, 21 not found, 0 failed
+- Sources: manual list (incl. 14 meta-collection discoveries + 32 summraznboi CSV discoveries + labitbus) + legacy repo (152) + v4 search discovery (5,460)
 - Adaptive delay: 400ms-2000ms (auto-adjusts on rate limits, warms up after 50 OK requests)
 - Sorted by supply ascending (small collections first for maximum breadth)
 - **Safety: NEVER overwrites existing `.ndjson` files**
@@ -154,71 +185,115 @@ ME and BiS use different naming conventions. ~724 BiS slugs don't match ME symbo
 - Progress: `data/me-multiplex-progress.json`
 
 ### `scripts/archive-me-snowball.ts` — ME ownerAddress Gap Filler
-- **COMPLETED** (2 rounds converged, +328K tokens) — final no-limits pass pending
+- **COMPLETED** — all 23 collections exhausted
 - Queries known wallet addresses to find tokens in the "unreachable middle"
 - For each known wallet, queries `?ownerAddress={addr}&collectionSymbol={symbol}&limit=100`
 - Each wallet gets its own 10,040 offset window — multiplies reachable tokens
 - Wallets sorted by token count descending (whales first — most likely to yield new tokens)
 - Append-only (never overwrites existing data), re-runnable (skips already-queried wallets)
+- No target exit, no bail-out — queries EVERY wallet exhaustively
 - Progress: `data/me-snowball-progress.json`
+
+### `scripts/extract-collection-details.ts` — Collection Detail + Stats Fetcher
+- **COMPLETED**: 5,494 detail JSONs in `data/collections/`, 5,497 stats JSONs in `data/collection-stats/`
+- Pure API-based: fetches `/v2/ord/btc/collections/{symbol}` for details, `/v2/ord/btc/stat` for stats
+- Skips existing files (check-if-exists, no progress file)
+- Adaptive delay: 400ms-2000ms
+- 4 ghost collections return 404: brc20___, brc20_piin, brc20_xnft, btcfrogs (placeholder files created)
+- Stats endpoint: undocumented, guessed from API surface — returns all-time data (window param ignored)
+
+### `scripts/extract-all-symbols.ts` — Symbol Extraction from Token Data
+- **COMPLETED**: Scanned 10.3M tokens across all ME ndjson files
+- Extracts `collectionSymbol` and `collection.symbol` from every token
+- Compares against file list using both raw and sanitized names
+- Result: 5,456 unique symbols, only 1 new (ordiapes — 404 on ME)
+- Output: `data/all-symbols.txt`
+
+### `scripts/verify-stats.ts` — Stats Data Verification
+- Validates all stats JSON files for syntactical correctness and schema consistency
+- Cross-checks against collection detail files
+- Reports value distributions for key numeric fields
+
+### `scripts/archive-me-snowball-cross.ts` — Cross-Collection Wallet Snowball
+- **READY** (not yet started)
+- Reads wallet pool from `data/cross-wallets.json` (generated separately)
+- Queries each whale wallet against all 19 gap collections
+- Meta-collections prioritized (priority 0: uncommons, sub-100k, black-uncommons)
+- Skips wallets already queried by original snowball (reads both progress files)
+- Same adaptive delay, append-only, resume infrastructure as original snowball
+- Progress: `data/me-snowball-cross-progress.json`
 
 ### `scripts/test-*.ts` — Various API exploration scripts (temporary)
 
 ## Data Format
 
 ### ME tokens (`data/tokens/{symbol}.ndjson`)
-NDJSON, one token per line. Fields include: id (inscription_id), contentURI, contentType, contentBody, contentPreviewURI, satRarity, chain, location, locationBlockHeight, owner, listedPrice, token, collection (nested objects with full ME metadata).
+NDJSON, one token per line. Rich data including: id (inscription_id), contentURI, contentType, contentBody, contentPreviewURI, satRarity, chain, location, locationBlockHeight, owner, listed, listedAt, listedPrice, listedMakerFeeBp, listedSellerReceiveAddress, genesisTransaction, genesisTransactionBlockTime/Hash/Height, inscriptionNumber, outputValue, meta (name + attributes), token, collection (nested objects with full ME metadata).
 
 ### BiS tokens (`data/tokens/{symbol}.bis.ndjson`)
 NDJSON, one token per line. Fields: id, slug, inscription_number, last_sale, inscription_id, wallet, content_type, item_name, is_recursive, listing prices (per marketplace), min_price, holds, render_saved, delegate, inscription_name.
+
+### Collection details (`data/collections/{symbol}.json`)
+Per-collection ME metadata fetched from API. Fields: symbol, name, imageURI, inscriptionIcon, description, supply, social links (twitter, discord, website), createdAt, labels, enableCollectionOffer. **5,494 files**.
+
+### Collection stats (`data/collection-stats/{symbol}.json`)
+All-time collection stats from undocumented endpoint. Fields: totalVolume (string, in sats), owners, supply, floorPrice, totalListed, pendingTransactions, inscriptionNumberMin, inscriptionNumberMax, symbol. **5,497 files**, 100% valid JSON, 0 errors. Some fields may be null for inactive collections.
+
+### Third-party CSV dump (`magic-eden-data-dump/collection_name_traits.csv`)
+11.6M rows. Format: `collectionSymbol,id,name,traits`. Minimal fields — no owner, contentType, listing data. Useful as a complete inscription ID reference for verifying coverage.
 
 ### Other data files
 - `data/phase1-collections.json` — 635 collection stats from ME stats discovery
 - `data/v4-search-collections.json` — 5,460 collections from ME v4 search discovery
 - `data/bis-all-collections.json` — 5,468 collections from BiS collection index
-- `data/collections/{symbol}.json` — per-collection ME metadata
+- `data/all-symbols.txt` — 5,456 unique symbols extracted from token data
+- `data/cross-wallets.json` — whale wallet pool for cross-collection snowball (generate before use)
 - `data/progress.json` — ME archiver progress tracker
 - `data/bis-progress.json` — BiS archiver progress tracker
 - `data/me-extras-progress.json` — ME extras archiver progress tracker
 - `data/v4-search-progress.json` — v4 search discovery progress
 - `data/me-multiplex-progress.json` — ME multiplex archiver progress tracker
 - `data/me-snowball-progress.json` — ME snowball archiver progress tracker
-- `data/archive.log` / `data/bis-archive.log` / `data/me-extras.log` / `data/v4-search.log` / `data/me-multiplex.log` / `data/me-snowball.log`
+- `data/me-snowball-cross-progress.json` — ME cross-collection snowball progress tracker
+- Log files: `data/*.log`
 
-## Validation Results (2026-03-04)
+## Data Integrity (2026-03-07)
 
-### Supply Check
-- **5,148 collections** (94.5%) = 100%+ of expected supply
-- **156 collections** = 95-99% of expected supply
-- **118 collections** have >5% gap (86 being filled by BiS Wave 2)
-- **0 duplicate tokens** in ME data, 11 dupes in BiS bitmap (negligible)
-- **5 empty files**: rare-sats, btcfrogs, brc20___, brc20_piin, brc20_xnft
+- **10.3M+ tokens** across all ME ndjson files
+- **0 duplicate tokens** in ME data
+- **11 duplicates** in BiS bitmap.bis.ndjson (negligible)
 - **0 bad JSON lines** across entire archive
-
-### Unfillable Gaps (not on BiS)
-19 collections with gaps that cannot be filled — no alternative data source found:
-- domain_dot_sats (490K), rare-sats (239K), domain_dot_unisat (232K), bitman (210K), brc1024_rootverse (210K), gamestone (113K), uniworlds-genesis (115K), sat20_rarepizza (99K), ainnrunestar (94K), sub-100k (90K), dogo (50K), runeratscoin (50K), thissongaboutnfts (42K), kards (42K), domain_dot_ord (32K), quadkey (31K), domain_dot_xbt (25K), domain_dot_bitter (21K), uncommons (22K)
+- **5,459/5,465 collections are 100% pure** — every token's collectionSymbol matches filename
+- **6 impure collections** are all meta-collections (expected — see Meta-Collections section)
+- **4 ghost collections**: brc20___, brc20_piin, brc20_xnft, btcfrogs — 404 on ME API, placeholder files created
 
 ## Running
 
+All scripts run from the project root:
 ```bash
 cd /Users/user/Work/haushoppe/genesis
 
-# ME archiver (COMPLETED)
-npx ts-node z_extra/magic-eden-archive/scripts/archive-magic-eden.ts
+# ME extras — grab new collections (add symbols to manual list first)
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-me-extras.ts
 
-# ME extras archiver (COMPLETED — 4,815 collections)
-npx ts-node z_extra/magic-eden-archive/scripts/archive-me-extras.ts
+# Extract collection details + stats from ME API
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/extract-collection-details.ts
 
-# v4 search discovery (COMPLETED — 5,460 collections)
-npx ts-node z_extra/magic-eden-archive/scripts/discover-collections.ts
+# Extract all symbols from token data
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/extract-all-symbols.ts
 
-# BiS archiver — Wave 1 + Wave 2 (Wave 1 complete, Wave 2 in progress)
-npx ts-node z_extra/magic-eden-archive/scripts/archive-bestinslot.ts
+# Verify stats data
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/verify-stats.ts
 
-# ME sort field multiplexing (COMPLETED — 19 gap collections)
-npx ts-node z_extra/magic-eden-archive/scripts/archive-me-multiplex.ts
+# ME cross-collection snowball (generate cross-wallets.json first!)
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-me-snowball-cross.ts
 
-# ME ownerAddress snowball (IN PROGRESS — 19 gap collections)
-npx ts-node z_extra/magic-eden-archive/scripts/archive-me-snowball.ts
+# Completed scripts
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-magic-eden.ts
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-me-multiplex.ts
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-me-snowball.ts
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/discover-collections.ts
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-bestinslot.ts
 ```
+
+**IMPORTANT: NEVER run two ME API scripts in parallel** — causes 429 storms and extended API penalties.

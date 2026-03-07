@@ -14,8 +14,10 @@ import {
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..', '..');
 const DATA_DIR = path.resolve(__dirname, '..', 'data');
 const TOKENS_DIR = path.join(DATA_DIR, 'tokens');
-const PROGRESS_FILE = path.join(DATA_DIR, 'me-snowball-progress.json');
-const LOG_FILE = path.join(DATA_DIR, 'me-snowball.log');
+const CROSS_WALLETS_FILE = path.join(DATA_DIR, 'cross-wallets.json');
+const PROGRESS_FILE = path.join(DATA_DIR, 'me-snowball-cross-progress.json');
+const ORIGINAL_PROGRESS_FILE = path.join(DATA_DIR, 'me-snowball-progress.json');
+const LOG_FILE = path.join(DATA_DIR, 'me-snowball-cross.log');
 
 const DELAY_MIN_MS = 100;
 const DELAY_MAX_MS = 2000;
@@ -26,38 +28,37 @@ const BACKOFF_INITIAL_MS = 30_000;
 const BACKOFF_MAX_MS = 300_000;
 const MAX_RETRIES = 10;
 const MAX_CONSECUTIVE_TIMEOUTS = 3;
-const TOKENS_PAGE_SIZE = 100; // ownerAddress queries can use limit=100
+const TOKENS_PAGE_SIZE = 100;
 
 let currentDelay = DELAY_MIN_MS;
 let okSinceLastAdjust = 0;
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
-// Gap collections to snowball
-const GAP_COLLECTIONS: { symbol: string; expectedSupply: number }[] = [
-  { symbol: 'uncommons', expectedSupply: 22_000 },
-  { symbol: 'domain_dot_bitter', expectedSupply: 21_000 },
-  { symbol: 'domain_dot_xbt', expectedSupply: 25_000 },
-  { symbol: 'quadkey', expectedSupply: 31_000 },
-  { symbol: 'domain_dot_ord', expectedSupply: 32_000 },
-  { symbol: 'kards', expectedSupply: 42_000 },
-  { symbol: 'thissongaboutnfts', expectedSupply: 42_000 },
-  { symbol: 'runeratscoin', expectedSupply: 50_000 },
-  { symbol: 'dogo', expectedSupply: 50_000 },
-  { symbol: 'sub-100k', expectedSupply: 90_000 },
-  { symbol: 'black-uncommons', expectedSupply: 20_000 },
-  { symbol: 'sub-100', expectedSupply: 20_000 },
-  { symbol: 'sub-10k', expectedSupply: 20_000 },
-  { symbol: 'sub-1k', expectedSupply: 20_000 },
-  { symbol: 'ainnrunestar', expectedSupply: 94_000 },
-  { symbol: 'sat20_rarepizza', expectedSupply: 99_000 },
-  { symbol: 'gamestone', expectedSupply: 113_000 },
-  { symbol: 'uniworlds-genesis', expectedSupply: 115_000 },
-  { symbol: 'brc1024_rootverse', expectedSupply: 210_000 },
-  { symbol: 'bitman', expectedSupply: 210_000 },
-  { symbol: 'domain_dot_unisat', expectedSupply: 232_033 },
-  { symbol: 'rare-sats', expectedSupply: 239_240 },
-  { symbol: 'domain_dot_sats', expectedSupply: 489_739 },
+// Gap collections to query — meta-collections first (they reveal cross-collection data)
+const GAP_COLLECTIONS: { symbol: string; expectedSupply: number; priority: number }[] = [
+  // Priority 0: Meta-collections — API ignores collectionSymbol filter, returns entire wallet portfolio
+  { symbol: 'uncommons', expectedSupply: 22_000, priority: 0 },
+  { symbol: 'sub-100k', expectedSupply: 90_000, priority: 0 },
+  { symbol: 'black-uncommons', expectedSupply: 20_000, priority: 0 },
+  // Priority 1: Everything else, sorted by supply ascending at runtime
+  { symbol: 'domain_dot_bitter', expectedSupply: 21_000, priority: 1 },
+  { symbol: 'domain_dot_xbt', expectedSupply: 25_000, priority: 1 },
+  { symbol: 'quadkey', expectedSupply: 31_000, priority: 1 },
+  { symbol: 'domain_dot_ord', expectedSupply: 32_000, priority: 1 },
+  { symbol: 'kards', expectedSupply: 42_000, priority: 1 },
+  { symbol: 'thissongaboutnfts', expectedSupply: 42_000, priority: 1 },
+  { symbol: 'runeratscoin', expectedSupply: 50_000, priority: 1 },
+  { symbol: 'dogo', expectedSupply: 50_000, priority: 1 },
+  { symbol: 'ainnrunestar', expectedSupply: 94_000, priority: 1 },
+  { symbol: 'sat20_rarepizza', expectedSupply: 99_000, priority: 1 },
+  { symbol: 'gamestone', expectedSupply: 113_000, priority: 1 },
+  { symbol: 'uniworlds-genesis', expectedSupply: 115_000, priority: 1 },
+  { symbol: 'brc1024_rootverse', expectedSupply: 210_000, priority: 1 },
+  { symbol: 'bitman', expectedSupply: 210_000, priority: 1 },
+  { symbol: 'domain_dot_unisat', expectedSupply: 232_033, priority: 1 },
+  { symbol: 'rare-sats', expectedSupply: 239_240, priority: 1 },
+  { symbol: 'domain_dot_sats', expectedSupply: 489_739, priority: 1 },
 ];
 
 // ---------------------------------------------------------------------------
@@ -90,17 +91,15 @@ function log(msg: string) {
 // Progress
 // ---------------------------------------------------------------------------
 
-interface SnowballProgress {
-  // symbol → { queriedWallets: string[], round: number }
+interface CrossProgress {
   collections: Record<string, {
     queriedWallets: string[];
-    round: number;
     tokensBefore: number;
     tokensAfter: number;
   }>;
 }
 
-function loadProgress(): SnowballProgress {
+function loadProgress(): CrossProgress {
   try {
     if (fs.existsSync(PROGRESS_FILE)) {
       return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8'));
@@ -109,23 +108,28 @@ function loadProgress(): SnowballProgress {
   return { collections: {} };
 }
 
-function saveProgress(progress: SnowballProgress) {
+function saveProgress(progress: CrossProgress) {
   fs.writeFileSync(PROGRESS_FILE, JSON.stringify(progress, null, 2));
 }
 
+function loadOriginalQueriedWallets(symbol: string): Set<string> {
+  try {
+    if (fs.existsSync(ORIGINAL_PROGRESS_FILE)) {
+      const orig = JSON.parse(fs.readFileSync(ORIGINAL_PROGRESS_FILE, 'utf-8'));
+      const coll = orig.collections?.[symbol];
+      if (coll?.queriedWallets) return new Set(coll.queriedWallets);
+    }
+  } catch { /* ignore */ }
+  return new Set();
+}
+
 // ---------------------------------------------------------------------------
-// Load existing data from .ndjson file (single pass: ids + wallets + counts)
+// Load existing token IDs from .ndjson
 // ---------------------------------------------------------------------------
 
-async function loadExistingData(filePath: string): Promise<{
-  ids: Set<string>;
-  wallets: Set<string>;
-  walletTokenCounts: Map<string, number>;
-}> {
+async function loadExistingIds(filePath: string): Promise<Set<string>> {
   const ids = new Set<string>();
-  const wallets = new Set<string>();
-  const walletTokenCounts = new Map<string, number>();
-  if (!fs.existsSync(filePath)) return { ids, wallets, walletTokenCounts };
+  if (!fs.existsSync(filePath)) return ids;
 
   const stream = fs.createReadStream(filePath, { encoding: 'utf-8' });
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
@@ -135,14 +139,10 @@ async function loadExistingData(filePath: string): Promise<{
     try {
       const obj = JSON.parse(line);
       if (obj.id) ids.add(obj.id);
-      if (obj.owner) {
-        wallets.add(obj.owner);
-        walletTokenCounts.set(obj.owner, (walletTokenCounts.get(obj.owner) || 0) + 1);
-      }
     } catch { /* skip */ }
   }
 
-  return { ids, wallets, walletTokenCounts };
+  return ids;
 }
 
 // ---------------------------------------------------------------------------
@@ -263,7 +263,7 @@ async function fetchOwnerTokens(
     } catch (err: any) {
       if (err.message === 'SHUTDOWN') break;
       const status = err?.response?.status;
-      if (status === 400 && offset >= 10000) break; // offset limit
+      if (status === 400 && offset >= 10000) break;
       if (status === 404 || status === 400) break;
       log(`    Owner ${ownerAddress.slice(0,12)}... ERROR at offset ${offset}: ${err.message}`);
       break;
@@ -293,6 +293,14 @@ async function main() {
     process.exit(1);
   }
 
+  // Load cross-wallet pool
+  if (!fs.existsSync(CROSS_WALLETS_FILE)) {
+    log('FATAL: cross-wallets.json not found. Generate it first.');
+    process.exit(1);
+  }
+  const crossWallets: { address: string; collectionCount: number }[] = JSON.parse(fs.readFileSync(CROSS_WALLETS_FILE, 'utf-8'));
+  log(`Loaded ${crossWallets.length.toLocaleString()} cross-collection wallets`);
+
   fs.mkdirSync(TOKENS_DIR, { recursive: true });
 
   const progress = loadProgress();
@@ -303,12 +311,11 @@ async function main() {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
 
-  // Sort by smallest gap first
-  const sorted = [...GAP_COLLECTIONS].sort((a, b) => a.expectedSupply - b.expectedSupply);
+  const sorted = [...GAP_COLLECTIONS].sort((a, b) => a.priority - b.priority || a.expectedSupply - b.expectedSupply);
 
   log('='.repeat(70));
-  log('ME Snowball Archive — ownerAddress-based gap filler');
-  log(`Collections: ${sorted.length} | Page size: ${TOKENS_PAGE_SIZE}`);
+  log('ME Snowball CROSS — cross-collection wallet pool');
+  log(`Collections: ${sorted.length} | Wallet pool: ${crossWallets.length.toLocaleString()} | Page size: ${TOKENS_PAGE_SIZE}`);
   log(`Delay: adaptive ${DELAY_MIN_MS}-${DELAY_MAX_MS}ms | Dry run: ${DRY_RUN}`);
   log('='.repeat(70));
 
@@ -318,28 +325,22 @@ async function main() {
     const sanitized = sanitizeFilename(symbol);
     const filePath = path.join(TOKENS_DIR, `${sanitized}.ndjson`);
 
-    // Load existing data (single pass: ids + wallets + per-wallet counts)
     log(`\n  Loading "${symbol}"...`);
-    const { ids: seenIds, wallets: knownWallets, walletTokenCounts } = await loadExistingData(filePath);
+    const seenIds = await loadExistingIds(filePath);
     const startCount = seenIds.size;
 
-    // Note: NOT skipping based on expectedSupply — ME's totalSupply is inaccurate
+    // Merge already-queried wallets from BOTH progress files
+    const origQueried = loadOriginalQueriedWallets(symbol);
+    const collProgress = progress.collections[symbol] || { queriedWallets: [], tokensBefore: startCount, tokensAfter: startCount };
+    const crossQueried = new Set(collProgress.queriedWallets);
+    const allQueried = new Set([...origQueried, ...crossQueried]);
 
-    // Get already-queried wallets from progress
-    const collProgress = progress.collections[symbol] || { queriedWallets: [], round: 0, tokensBefore: startCount, tokensAfter: startCount };
-    const queriedWallets = new Set(collProgress.queriedWallets);
+    // Filter pool to unqueried wallets only
+    const pendingWallets = crossWallets
+      .filter(w => !allQueried.has(w.address))
+      .map(w => w.address);
 
-    // Wallets to query = known wallets minus already queried
-    // Sort by token count descending — whales first (most likely to yield new tokens)
-    const pendingWallets = Array.from(knownWallets)
-      .filter(w => !queriedWallets.has(w))
-      .sort((a, b) => (walletTokenCounts.get(b) || 0) - (walletTokenCounts.get(a) || 0));
-
-    log(`  ${symbol}: ${startCount.toLocaleString()} tokens, ${knownWallets.size.toLocaleString()} known wallets, ${pendingWallets.length.toLocaleString()} pending, ${queriedWallets.size.toLocaleString()} already queried`);
-    if (pendingWallets.length > 0) {
-      const topCount = walletTokenCounts.get(pendingWallets[0]) || 0;
-      log(`  Top whale holds ${topCount} tokens in archive — querying whales first`);
-    }
+    log(`  ${symbol}: ${startCount.toLocaleString()} tokens, pool ${crossWallets.length.toLocaleString()}, ${pendingWallets.length.toLocaleString()} pending, ${allQueried.size.toLocaleString()} already queried`);
 
     if (pendingWallets.length === 0) {
       log(`  No pending wallets — already exhausted for ${symbol}`);
@@ -350,18 +351,15 @@ async function main() {
     let walletsProcessed = 0;
     let walletsWithNewTokens = 0;
     let consecutiveZeroWallets = 0;
-    const batchSize = 100; // save progress every 100 wallets
+    const batchSize = 100;
 
     for (let i = 0; i < pendingWallets.length; i++) {
       if (shuttingDown) break;
 
-      // No target exit — ME's totalSupply is inaccurate
-      // No bail-out — query EVERY wallet exhaustively
-
       const wallet = pendingWallets[i];
       const result = await fetchOwnerTokens(client, symbol, wallet, filePath, seenIds);
 
-      queriedWallets.add(wallet);
+      crossQueried.add(wallet);
       walletsProcessed++;
       totalNewTokens += result.newTokens;
 
@@ -372,17 +370,14 @@ async function main() {
         consecutiveZeroWallets++;
       }
 
-      // Progress logging — every 50 wallets, or when a wallet yields 10+ new tokens
       if (walletsProcessed % 50 === 0 || result.newTokens >= 10) {
         const pct = expectedSupply > 0 ? ((seenIds.size / expectedSupply) * 100).toFixed(1) : '?';
-        log(`    [${walletsProcessed}/${pendingWallets.length}] +${totalNewTokens.toLocaleString()} new, ${seenIds.size.toLocaleString()} (${pct}%), ${walletsWithNewTokens} productive wallets, ${consecutiveZeroWallets} consecutive zeros${result.newTokens > 0 ? ` | this wallet +${result.newTokens}` : ''}`);
+        log(`    [${walletsProcessed}/${pendingWallets.length}] +${totalNewTokens.toLocaleString()} new, ${seenIds.size.toLocaleString()} (${pct}%), ${walletsWithNewTokens} productive, ${consecutiveZeroWallets} consecutive zeros${result.newTokens > 0 ? ` | this wallet +${result.newTokens}` : ''}`);
       }
 
-      // Save progress periodically
       if (walletsProcessed % batchSize === 0) {
         progress.collections[symbol] = {
-          queriedWallets: Array.from(queriedWallets),
-          round: 1,
+          queriedWallets: Array.from(crossQueried),
           tokensBefore: startCount,
           tokensAfter: seenIds.size,
         };
@@ -395,10 +390,8 @@ async function main() {
     const pct = expectedSupply > 0 ? ((seenIds.size / expectedSupply) * 100).toFixed(1) : '?';
     log(`  ${symbol}: ${startCount.toLocaleString()} → ${seenIds.size.toLocaleString()} (+${totalNewTokens.toLocaleString()}) = ${pct}% of ${expectedSupply.toLocaleString()}`);
 
-    // Final save
     progress.collections[symbol] = {
-      queriedWallets: Array.from(queriedWallets),
-      round: 1,
+      queriedWallets: Array.from(crossQueried),
       tokensBefore: startCount,
       tokensAfter: seenIds.size,
     };
@@ -406,7 +399,7 @@ async function main() {
   }
 
   log('='.repeat(70));
-  log('SNOWBALL COMPLETE');
+  log('SNOWBALL CROSS COMPLETE');
   log('='.repeat(70));
 }
 

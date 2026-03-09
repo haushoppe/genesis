@@ -12,13 +12,15 @@ const STATS_DIR = path.join(DATA_DIR, 'collection-stats');
 const DELAY_MIN_MS = 400;
 const DELAY_MAX_MS = 2000;
 const DELAY_COOLDOWN_FACTOR = 1.5;
-const DELAY_WARMUP_REQUESTS = 50;
+const DELAY_WARMUP_REQUESTS = 3;
 const DELAY_WARMUP_FACTOR = 0.9;
 const BACKOFF_INITIAL_MS = 30_000;
 const BACKOFF_MAX_MS = 300_000;
 const MAX_RETRIES = 10;
 
-let currentDelay = DELAY_MIN_MS;
+// Start at max delay and warm down — avoids 429 storms when the API
+// rate limiter is still in penalty state from a previous script run.
+let currentDelay = DELAY_MAX_MS;
 let okSinceLastAdjust = 0;
 
 let shuttingDown = false;
@@ -113,6 +115,11 @@ async function main() {
   console.log(`Total API calls: ~${totalCalls} | Delay: adaptive ${DELAY_MIN_MS}-${DELAY_MAX_MS}ms`);
 
   if (totalCalls === 0) { console.log('Nothing to do!'); return; }
+
+  // Startup cooldown — give the API rate limiter time to reset after previous script runs
+  const STARTUP_COOLDOWN_S = 120;
+  console.log(`\nWaiting ${STARTUP_COOLDOWN_S}s startup cooldown (API rate limiter reset)...`);
+  await sleep(STARTUP_COOLDOWN_S * 1000);
 
   let detailFetched = 0, detailNotFound = 0;
   let statsFetched = 0, statsNotFound = 0;

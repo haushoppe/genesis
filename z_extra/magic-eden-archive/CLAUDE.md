@@ -33,15 +33,26 @@ Emergency archive of Magic Eden's ordinals collection data before they shut down
 10. **Third-party CSV import**: 32 new collections from summraznboi dump, 13 fetched successfully — **COMPLETED**
 
 ### Next Steps
-1. **Retry 2 missing collection details** — wait for API penalty to clear, re-run `extract-collection-details.ts`
-2. **Generate `data/cross-wallets.json`** — whale wallet pool for cross-snowball
-3. **Run cross-collection snowball overnight** — `archive-me-snowball-cross.ts`
-4. **Consider grabbing attribute_stats** — per-trait floor prices (see Undocumented Endpoints below)
-5. **Investigate Dylan's gaps** — `btc-artifacts` (+9,500), `bitcoin-cryptodickbutts` (+4,436)
+1. **CSV gap fill running** — `archive-me-csv-fill.ts` filling ~1.9M missing tokens via `tokenIds` batch lookup from summraznboi CSV
+2. **Retry 2 missing collection details** — wait for API penalty to clear, re-run `extract-collection-details.ts`
+3. **Grab attribute_stats for all collections** — `GET /v2/ord/btc/collections/{slug}/attribute_stats` returns per-trait floor prices, counts, and sample images. Script not yet written. ~5,500 collections × 400ms = ~37 min.
+4. **Grab activities/sales history** — `GET /v2/ord/btc/activities?collectionSymbol={symbol}` returns marketplace activity (sales, listings, offers, transfers). Script not yet written. Has aggressive rate limiter.
+5. **Grab floor price sparklines** — `GET /collection_stats/getCollectionSparkline/{symbol}` returns floor price chart data over time. Script not yet written.
+6. **Generate `data/cross-wallets.json`** — whale wallet pool for cross-snowball
+7. **Run cross-collection snowball overnight** — `archive-me-snowball-cross.ts`
+8. **Investigate Dylan's gaps** — `btc-artifacts` (+9,500), `bitcoin-cryptodickbutts` (+4,436)
 
-## API Key
+### API Shutdown Timeline
+- **March 9, 2026**: Marketplace trading stopped
+- **March 27, 2026**: Bitcoin API services terminated
+- **April 1, 2026**: Wallet retired
 
-`MAGIC_EDEN_API_KEY` is in the project root `.env`. Rate limiting tested: ME dev API handles 400ms delay with zero 429s for token endpoints. The collection details endpoint is more sensitive — needs 400ms minimum and the API holds penalty state for several minutes after 429 storms.
+## API Keys
+
+- **Our key**: `MAGIC_EDEN_API_KEY` in project root `.env` — **BANNED** as of 2026-03-09 (429 on all endpoints after 127K requests at 100ms). RIP.
+- **Backup key**: `<REDACTED_ME_KEY>` — found on GitHub (adrianmonad/ElementalsMonad). Works on `.dev` for non-activities endpoints.
+
+Rate limiting tested: ME dev API handles 400ms delay with zero 429s for token endpoints. The collection details endpoint is more sensitive — needs 400ms minimum and the API holds penalty state for several minutes after 429 storms.
 
 ## Architecture
 
@@ -222,6 +233,17 @@ ME and BiS use different naming conventions. ~724 BiS slugs don't match ME symbo
 - Skips wallets already queried by original snowball (reads both progress files)
 - Same adaptive delay, append-only, resume infrastructure as original snowball
 - Progress: `data/me-snowball-cross-progress.json`
+
+### `scripts/archive-me-csv-fill.ts` — CSV Gap Filler via tokenIds Batch Lookup
+- **IN PROGRESS** — filling ~1.9M missing tokens
+- Uses summraznboi CSV dump as source of inscription IDs
+- For each collection where CSV has more tokens, queries missing IDs in batches of 20 via `?tokenIds=id1,...,id20`
+- Bypasses the 10,040 offset limit entirely — looks up specific inscriptions
+- Returns full rich ME token data (owner, listing price, contentType, meta, etc.)
+- Sorted smallest gaps first for maximum breadth
+- Adaptive delay starting at 100ms, append-only, resumable
+- BiS files moved to `data/tokens-bis/` (separate from ME data)
+- Progress: `data/me-csv-fill-progress.json`
 
 ### `scripts/test-*.ts` — Various API exploration scripts (temporary)
 

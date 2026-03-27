@@ -4,43 +4,59 @@
 
 Emergency archive of Magic Eden's ordinals collection data before they shut down their ordinals business. The cubes.haushoppe.art product depends on ME's API for collection browsing and cube suggestions.
 
-## Current Status (2026-03-07)
+## Final Status (2026-03-27) — ARCHIVE COMPLETE
 
 ### Archive Totals
-- **5,477 ME token files** + BiS files
-- **~10.3 million+ tokens** archived
-- **5,494 collection detail JSONs** in `data/collections/`
+- **12.7 million tokens** across 5,480 ME token files + BiS files
+- **5,497 collection detail JSONs** in `data/collections/`
 - **5,497 collection stats JSONs** in `data/collection-stats/`
-- **0 failed** collections across all scripts
+- **5,468 attribute stats JSONs** in `data/collection-attributes/`
+- **5,448 collection images** in `data/collections/` (next to JSONs)
+- **204 collection activity files** in `data/collection-activities/` (315K activity records)
 - **0 duplicate tokens** in ME data (11 dupes in BiS bitmap, negligible)
 
-### Completed Runs
-1. **ME Phase 1-3** (archive-magic-eden.ts): 635 collections via stats discovery — **COMPLETED**
-2. **ME Extras** (archive-me-extras.ts): 4,843 collections, 21 not found — **COMPLETED** (2 runs)
-   - Sources: manual list + legacy repo + v4 search + meta-collection discovery + summraznboi CSV dump
-3. **BiS Wave 1** (archive-bestinslot.ts): 13 gap collections — **COMPLETED**
-4. **BiS Wave 2** (archive-bestinslot.ts): 86 gap collections — IN PROGRESS
-5. **ME Multiplex** (archive-me-multiplex.ts): Sort field multiplexing for 19 gap collections — **COMPLETED**
-6. **ME Snowball** (archive-me-snowball.ts): ownerAddress per-collection snowball — **COMPLETED**
-   - 23 collections processed (19 original + 4 added meta-collections)
-   - Meta-collection explosion: black-uncommons 20K→725K, sub-100 20K→724K, sub-10k 20K→723K, sub-1k 20K→724K, sub-100k 573K→724K
-   - Pure collections: all exhausted with 0 pending wallets
-7. **Collection details** (extract-collection-details.ts): 5,494 detail JSONs + 5,497 stats JSONs — **COMPLETED**
-   - 2 details still missing (API rate limit penalty — retry later)
-   - Stats: all-time data (window param ignored), 100% success rate
-8. **ME Snowball Cross** (archive-me-snowball-cross.ts): cross-collection wallet pool — **READY** (not yet started)
-9. **Symbol extraction** (extract-all-symbols.ts): scanned 10.3M tokens, found 5,456 unique symbols — **COMPLETED**
-10. **Third-party CSV import**: 32 new collections from summraznboi dump, 13 fetched successfully — **COMPLETED**
+### What We Got
+| Data Type | Count | Coverage | Notes |
+|-----------|-------|----------|-------|
+| Tokens (ME) | 12.7M | 5,480 collections | Full rich metadata (owner, listing, contentType, etc.) |
+| Tokens (BiS) | ~3M | 13+ collections | bitmap (920K), btc-name (2M), runestone (112K) |
+| Collection details | 5,497 | 100% | name, description, social links, supply |
+| Collection stats | 5,497 | 100% | totalVolume, floorPrice, owners, supply |
+| Attribute stats | 5,468 | 99.5% | per-trait floor prices, counts, sample images |
+| Collection images | 5,448 | 99.3% | downloaded from imageURI (S3, IPFS, etc.) |
+| Activities/sales | 204 | 3.7% | ME killed the endpoint mid-scrape on March 9 |
 
-### Next Steps
-1. **CSV gap fill running** — `archive-me-csv-fill.ts` filling ~1.9M missing tokens via `tokenIds` batch lookup from summraznboi CSV
-2. **Retry 2 missing collection details** — wait for API penalty to clear, re-run `extract-collection-details.ts`
-3. **Grab attribute_stats for all collections** — `GET /v2/ord/btc/collections/{slug}/attribute_stats` returns per-trait floor prices, counts, and sample images. Script not yet written. ~5,500 collections × 400ms = ~37 min.
-4. **Grab activities/sales history** — `GET /v2/ord/btc/activities?collectionSymbol={symbol}` returns marketplace activity (sales, listings, offers, transfers). Script not yet written. Has aggressive rate limiter.
-5. **Grab floor price sparklines** — `GET /collection_stats/getCollectionSparkline/{symbol}` returns floor price chart data over time. Script not yet written.
-6. **Generate `data/cross-wallets.json`** — whale wallet pool for cross-snowball
-7. **Run cross-collection snowball overnight** — `archive-me-snowball-cross.ts`
-8. **Investigate Dylan's gaps** — `btc-artifacts` (+9,500), `bitcoin-cryptodickbutts` (+4,436)
+### What We Lost
+- **Activities/sales history** — ME shut down `/v4/activity/nft` (404) and `/v2/ord/btc/activities` (empty/429) on March 9, two weeks before the announced March 27 deadline. Only 204 alphabetically-early, low-volume collections were captured before the endpoint died. All top collections (nodemonkes, bitcoin-puppets, quantum_cats, etc.) are missing. Satflow has partial external data (~914 trades for nodemonkes) but not the full history. **This data is permanently lost.**
+- **Sparklines** — `/collection_stats/getCollectionSparkline/{symbol}` was already dead when we tried. Unknown params, not used by ME frontend for ordinals.
+- **40 collection images** — 36 expired Airtable signed URLs, 2 broken ME mirror URLs, 2 invalid URLs. Of these, only 3 have no `inscriptionIcon` fallback (`odnptacosclub`, `shadow-grails`, `shadow-omb`).
+
+### Completed Runs (chronological)
+1. **ME Phase 1-3** (archive-magic-eden.ts): 635 collections via stats discovery — **COMPLETED**
+2. **ME Extras** (archive-me-extras.ts): 4,843 collections, 21 not found — **COMPLETED**
+3. **BiS Wave 1+2** (archive-bestinslot.ts): 99 gap collections — **COMPLETED**
+4. **ME Multiplex** (archive-me-multiplex.ts): Sort field multiplexing for 19 gap collections — **COMPLETED**
+5. **ME Snowball** (archive-me-snowball.ts): ownerAddress per-collection snowball — **COMPLETED**
+6. **Collection details + stats** (extract-collection-details.ts): 5,497 each — **COMPLETED**
+7. **Symbol extraction** (extract-all-symbols.ts): 5,456 unique symbols — **COMPLETED**
+8. **Third-party CSV import**: 32 new collections from summraznboi dump — **COMPLETED**
+9. **CSV gap fill** (archive-me-csv-fill.ts): 2.4M tokens via tokenIds batch lookup — **COMPLETED**
+10. **Missing collection details** (Playwright): col, ol, ordiapes — **COMPLETED**
+11. **Attribute stats** (archive-me-attribute-stats.ts): 5,468 via Playwright — **COMPLETED**
+12. **Activities** (archive-me-activities.ts): 204 collections via v4 endpoint — **PARTIAL** (endpoint killed)
+13. **Collection images** (download-collection-images.ts): 5,448 images — **COMPLETED**
+    - IPFS images recovered via brute-force gateway rotation (w3s.link, 4everland, dweb.link, runfission, best-practice.se, fleek, nftstorage) + Filecoin retrieval via Lassie
+    - All recoverable IPFS content eventually resolved after days of retrying
+    - Remaining 40 are permanently dead (expired Airtable, broken URLs)
+
+### Timeline of Events
+- **2026-03-05**: Archive project started
+- **2026-03-07**: 10.3M tokens, 5,497 collections archived
+- **2026-03-09**: ME marketplace trading stopped. Activities endpoint killed same day (not March 27 as announced). Our API key banned after 127K requests.
+- **2026-03-09**: CSV gap fill completed (2.4M tokens, 0 duplicates). Attribute stats completed (5,468 collections via Playwright).
+- **2026-03-09**: Activities scrape captured 204 collections before v4 endpoint went 404. All top collections missed.
+- **2026-03-18–26**: Collection image download campaign. IPFS brute-force retry loop over 8 days recovered 100% of IPFS-hosted images.
+- **2026-03-27**: ME Bitcoin API officially terminated. Archive declared complete.
 
 ### API Shutdown Timeline
 - **March 9, 2026**: Marketplace trading stopped
@@ -110,7 +126,20 @@ Rate limiting tested: ME dev API handles 400ms delay with zero 429s for token en
 - 32 new collections discovered (not in our v4 search or stats), 13 fetched from ME API
 - Stored at `z_extra/magic-eden-archive/magic-eden-data-dump/collection_name_traits.csv`
 
-#### 8. HTTP/2 Rate Limit Bypass (community gist)
+#### 8. Satflow API (`api.satflow.com` / `backend.satflow.com`)
+- REST API key: `<REDACTED_SATFLOW_KEY>` (5 req/s, 100K/month)
+- `GET /v1/activity/sales?collectionSlug={slug}&external=true` — includes external (ME) marketplace data, but only ~914 trades for nodemonkes (incomplete)
+- tRPC backend at `backend.satflow.com/trpc/activity.list` — same data, no API key needed
+- Collections endpoint: `backend.satflow.com/trpc/collections.get`
+- **Conclusion**: Satflow has partial ME activity data but not the full history. Not useful as a complete ME replacement.
+
+#### 9. Filecoin / Lassie
+- Lassie binary at `/tmp/lassie` (v0.25.0) — retrieves content directly from Filecoin storage providers
+- `lassie fetch -o output.car <CID>` — bypasses IPFS DHT, queries Filecoin indexer
+- ~25% of missing IPFS CIDs were retrievable via Filecoin
+- Used in `download-collection-images.ts` as first retrieval strategy before IPFS gateways
+
+#### 10. HTTP/2 Rate Limit Bypass (community gist)
 - Source: `gist.github.com/erc1337-Coffee/af1ddcd03561e1dbdd50950a8c2d33e7`
 - Uses raw HTTP/2 to `api-mainnet.magiceden.io` with browser-like TLS fingerprinting
 - No API key — mimics browser requests to avoid rate limiter
@@ -119,7 +148,9 @@ Rate limiting tested: ME dev API handles 400ms delay with zero 429s for token en
 
 ### Undocumented Endpoints
 - **`GET /v2/ord/btc/stat?collectionSymbol={symbol}&window=30d`** — returns all-time collection stats (window param ignored). Fields: totalVolume, owners, supply, floorPrice, totalListed, pendingTransactions, inscriptionNumberMin/Max, symbol. 100% success rate across 5,497 collections.
-- **`GET /v2/ord/btc/collections/{slug}/attribute_stats`** — returns per-trait floor prices, counts, and sample images. Discovered via community gist. Not yet scraped.
+- **`GET /v2/ord/btc/collections/{slug}/attribute_stats`** — returns per-trait floor prices, counts, and sample images. Scraped via Playwright (5,468 collections).
+- **`GET /v4/activity/nft`** — v4 activity endpoint with cursor-based pagination. Params: `limit`, `chain=bitcoin`, `activityTypes[]` (ASK_CREATED, ASK_CANCELLED, BID_CREATED, BID_CANCELLED, BURN, CREATE, MINT, TRANSFER, TRADE), `collectionId`, `sortBy=timestamp`, `sortDir=desc`, `cursorTimestamp`. **Killed on March 9** (returns 404).
+- **`GET /v2/ord/btc/activities`** — v2 activity endpoint. **Dead** — returns empty `{"activities":[]}` on `.io`, 429 on `.dev`.
 
 ### ME Meta-Collections — API Bug
 
@@ -235,15 +266,39 @@ ME and BiS use different naming conventions. ~724 BiS slugs don't match ME symbo
 - Progress: `data/me-snowball-cross-progress.json`
 
 ### `scripts/archive-me-csv-fill.ts` — CSV Gap Filler via tokenIds Batch Lookup
-- **IN PROGRESS** — filling ~1.9M missing tokens
+- **COMPLETED**: 24 collections, 2.4M tokens fetched, 0 duplicates
 - Uses summraznboi CSV dump as source of inscription IDs
 - For each collection where CSV has more tokens, queries missing IDs in batches of 20 via `?tokenIds=id1,...,id20`
 - Bypasses the 10,040 offset limit entirely — looks up specific inscriptions
 - Returns full rich ME token data (owner, listing price, contentType, meta, etc.)
 - Sorted smallest gaps first for maximum breadth
 - Adaptive delay starting at 100ms, append-only, resumable
-- BiS files moved to `data/tokens-bis/` (separate from ME data)
 - Progress: `data/me-csv-fill-progress.json`
+
+### `scripts/archive-me-attribute-stats.ts` — Attribute Stats Scraper (Playwright)
+- **COMPLETED**: 5,468 fetched, 12 empty, 0 not found
+- Uses Playwright headless browser on `.io` domain (bypasses API key rate limiting)
+- 1s delay, exponential backoff, per-symbol progress save
+- Output: `data/collection-attributes/{symbol}.json`
+
+### `scripts/archive-me-activities.ts` — Activities/Sales Scraper (Playwright)
+- **PARTIAL**: 204 collections captured before endpoint died
+- Uses v4 endpoint (`/v4/activity/nft`) with cursor-based pagination
+- Adaptive delay with learned floor (starts at 3000ms, warms down, raises floor on 429, decays floor on sustained success)
+- 9 activity types: ASK_CREATED, ASK_CANCELLED, BID_CREATED, BID_CANCELLED, BURN, CREATE, MINT, TRANSFER, TRADE
+- Output: `data/collection-activities/{symbol}.ndjson`
+
+### `scripts/download-collection-images.ts` — Collection Image Downloader
+- **COMPLETED**: 5,448 images downloaded (99.3% of collections with imageURI)
+- Downloads `imageURI` from collection detail JSONs, saves next to JSON file
+- Multi-strategy retrieval for IPFS content:
+  1. Filecoin retrieval via Lassie (`/tmp/lassie` binary)
+  2. Original URL (nftstorage.link)
+  3. 7 alternative IPFS gateways (w3s.link, 4everland, dweb.link, runfission, best-practice.se, fleek, nftstorage path-based)
+- Auto-corrects ME URL typos (`hhttps://` → `https://`)
+- Extension detection from URL + content-type header fallback
+- Brute-force retry loop over 8 days recovered 100% of IPFS content
+- 40 permanently lost: 36 expired Airtable, 2 broken ME mirror, 2 invalid
 
 ### `scripts/test-*.ts` — Various API exploration scripts (temporary)
 
@@ -260,6 +315,15 @@ Per-collection ME metadata fetched from API. Fields: symbol, name, imageURI, ins
 
 ### Collection stats (`data/collection-stats/{symbol}.json`)
 All-time collection stats from undocumented endpoint. Fields: totalVolume (string, in sats), owners, supply, floorPrice, totalListed, pendingTransactions, inscriptionNumberMin, inscriptionNumberMax, symbol. **5,497 files**, 100% valid JSON, 0 errors. Some fields may be null for inactive collections.
+
+### Attribute stats (`data/collection-attributes/{symbol}.json`)
+Per-collection trait data. Fields vary by collection — typically arrays of trait categories with floor prices, counts, and sample inscription images. **5,468 files**.
+
+### Collection images (`data/collections/{symbol}.{ext}`)
+Downloaded collection profile images, stored alongside the JSON detail files. Extensions: png, jpg, jpeg, gif, webp, avif, svg. **5,448 files**.
+
+### Activities (`data/collection-activities/{symbol}.ndjson`)
+NDJSON, one activity per line. Rich v4 data: activityType, timestamp, collection metadata, ask/bid details (price, addresses, inscription IDs, PSBTs), order types. **204 files, 315K records**. Only alphabetically-early collections — endpoint died before reaching top collections.
 
 ### Third-party CSV dump (`magic-eden-data-dump/collection_name_traits.csv`)
 11.6M rows. Format: `collectionSymbol,id,name,traits`. Minimal fields — no owner, contentType, listing data. Useful as a complete inscription ID reference for verifying coverage.
@@ -279,43 +343,29 @@ All-time collection stats from undocumented endpoint. Fields: totalVolume (strin
 - `data/me-snowball-cross-progress.json` — ME cross-collection snowball progress tracker
 - Log files: `data/*.log`
 
-## Data Integrity (2026-03-07)
+## Data Integrity (2026-03-27)
 
-- **10.3M+ tokens** across all ME ndjson files
+- **12.7M tokens** across all ME ndjson files
 - **0 duplicate tokens** in ME data
 - **11 duplicates** in BiS bitmap.bis.ndjson (negligible)
 - **0 bad JSON lines** across entire archive
 - **5,459/5,465 collections are 100% pure** — every token's collectionSymbol matches filename
 - **6 impure collections** are all meta-collections (expected — see Meta-Collections section)
 - **4 ghost collections**: brc20___, brc20_piin, brc20_xnft, btcfrogs — 404 on ME API, placeholder files created
+- **5,448/5,488 collection images** downloaded (99.3% of those with imageURI)
+- **12 collections with no image at all** (no file on disk, no inscriptionIcon): 4 ghosts, 4 domain_dot_*, ordiapes, odnptacosclub, shadow-grails, shadow-omb
 
 ## Running
 
-All scripts run from the project root:
+All scripts run from the project root. **The ME API is now offline (March 27, 2026).** These scripts are preserved for reference only.
+
 ```bash
 cd /Users/user/Work/haushoppe/genesis
 
-# ME extras — grab new collections (add symbols to manual list first)
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-me-extras.ts
+# Image downloader (still useful — retries IPFS gateways for remaining 40)
+node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/download-collection-images.ts
 
-# Extract collection details + stats from ME API
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/extract-collection-details.ts
-
-# Extract all symbols from token data
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/extract-all-symbols.ts
-
-# Verify stats data
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/verify-stats.ts
-
-# ME cross-collection snowball (generate cross-wallets.json first!)
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-me-snowball-cross.ts
-
-# Completed scripts
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-magic-eden.ts
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-me-multiplex.ts
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-me-snowball.ts
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/discover-collections.ts
-node_modules/.bin/ts-node z_extra/magic-eden-archive/scripts/archive-bestinslot.ts
+# All other scripts require the ME API which is now dead
 ```
 
 **IMPORTANT: NEVER run two ME API scripts in parallel** — causes 429 storms and extended API penalties.

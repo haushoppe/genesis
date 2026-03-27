@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as http from 'http';
+import { execSync } from 'child_process';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -11,15 +12,19 @@ const DATA_DIR = path.resolve(__dirname, '..', 'data');
 const COLLECTIONS_DIR = path.join(DATA_DIR, 'collections');
 const LOG_FILE = path.join(DATA_DIR, 'download-collection-images.log');
 
-const DELAY_MS = 200;
+const DELAY_MS = 100;
 const MAX_RETRIES = 3;
-const TIMEOUT_MS = 15_000;
+const TIMEOUT_MS = 8_000;
 
-// Alternative IPFS gateways to try when the original fails (tested 2026-03-19)
+// Alternative IPFS gateways to try when the original fails (tested 2026-03-26)
 const IPFS_GATEWAYS = [
-  'https://{cid}.ipfs.w3s.link/',       // Web3.Storage — 307
-  'https://4everland.io/ipfs/{cid}',     // 4everland — 301
-  'https://dweb.link/ipfs/{cid}',        // dweb.link — 301
+  'https://{cid}.ipfs.w3s.link/',       // Web3.Storage
+  'https://4everland.io/ipfs/{cid}',     // 4everland
+  'https://dweb.link/ipfs/{cid}',        // dweb.link
+  'https://ipfs.runfission.com/ipfs/{cid}', // Fission — 200 direct
+  'https://ipfs.best-practice.se/ipfs/{cid}', // best-practice.se — 200 direct
+  'https://ipfs.fleek.co/ipfs/{cid}',    // Fleek
+  'https://nftstorage.link/ipfs/{cid}',  // nftstorage path-based
 ];
 
 const DRY_RUN = process.argv.includes('--dry-run');
@@ -100,6 +105,42 @@ function getAlternativeUrls(url: string): string[] {
   const cid = extractIpfsCid(url);
   if (!cid) return [];
   return IPFS_GATEWAYS.map(tpl => tpl.replace('{cid}', cid));
+}
+
+const LASSIE_BIN = '/tmp/lassie';
+const HAS_LASSIE = fs.existsSync(LASSIE_BIN);
+
+function fetchViaLassie(cid: string, destPath: string): boolean {
+  if (!HAS_LASSIE) return false;
+  const carPath = `/tmp/lassie_${cid.slice(0, 12)}.car`;
+  try {
+    execSync(`${LASSIE_BIN} fetch -o ${carPath} ${cid}`, { timeout: 15_000, stdio: 'pipe' });
+    // Extract image from CAR file — find image magic bytes
+    const data = fs.readFileSync(carPath);
+    const magics: [Buffer, string][] = [
+      [Buffer.from([0x89, 0x50, 0x4e, 0x47]), 'png'],
+      [Buffer.from([0xff, 0xd8, 0xff]), 'jpg'],
+      [Buffer.from('GIF8'), 'gif'],
+      [Buffer.from('RIFF'), 'webp'],
+      [Buffer.from('<svg'), 'svg'],
+    ];
+    for (const [magic, ext] of magics) {
+      const idx = data.indexOf(magic);
+      if (idx >= 0) {
+        const finalPath = destPath.replace(/\.[^.]+$/, `.${ext}`);
+        fs.writeFileSync(finalPath, data.slice(idx));
+        fs.unlinkSync(carPath);
+        return true;
+      }
+    }
+    // No magic found — try writing raw (skip first 40 bytes of CAR overhead)
+    fs.writeFileSync(destPath, data.slice(40));
+    fs.unlinkSync(carPath);
+    return true;
+  } catch {
+    try { fs.unlinkSync(carPath); } catch { /* ignore */ }
+    return false;
+  }
 }
 
 function downloadFile(url: string, destPath: string): Promise<boolean> {
@@ -218,9 +259,19 @@ async function main() {
     }
 
     let success = false;
-    // Try original URL first
-    await sleep(DELAY_MS);
-    success = await downloadFile(imageURI, destPath);
+
+    // Try Lassie (Filecoin retrieval) first for IPFS content
+    const cid = extractIpfsCid(imageURI);
+    if (cid && !success && !shuttingDown) {
+      success = fetchViaLassie(cid, destPath);
+      if (success) log(`  [${i + 1}/${todo.length}] LASSIE: ${symbol}`);
+    }
+
+    // Try original URL
+    if (!success && !shuttingDown) {
+      await sleep(DELAY_MS);
+      success = await downloadFile(imageURI, destPath);
+    }
 
     // If failed and it's an IPFS URL, try alternative gateways
     if (!success && !shuttingDown) {

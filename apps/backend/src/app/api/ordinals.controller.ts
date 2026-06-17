@@ -256,7 +256,9 @@ export class OrdinalsController {
   }
 
   /**
-   * Get cube suggestion from MagicEden
+   * Get a cube suggestion — six random unclaimed image inscriptions drawn from
+   * a randomly chosen popular collection in the frozen Magic Eden archive
+   * (https://github.com/ordpool-space/magic-eden-ordinals-archive).
    */
   @Get(['ordinals/getCubeSuggestion/:collectionSymbol?'])
   @ApiOperation({ operationId: 'getCubeSuggestion' })

@@ -1,24 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { CubeSuggestion } from '../../types/ordinals/cube-suggestion';
-import { GetCollectionResult, GetCollectionStatisticsResult } from '../../types/ordinals/types-magic-eden';
 import { CubeService } from './cube.service';
-import { MagicEdenService } from './magic-eden.service';
 import { collectClaimedInscriptionIds } from './inscription-helper';
+import { ArchiveCollection, OrdinalsArchiveService } from './ordinals-archive.service';
 
 @Injectable()
 export class CubeSuggestionService {
 
   private readonly TOKEN_GOAL = 6;
+  private readonly TOP_COLLECTION_POOL = 250;
 
-  constructor(private magicEdenService: MagicEdenService,
-    private cubeService: CubeService) {}
+  constructor(
+    private archiveService: OrdinalsArchiveService,
+    private cubeService: CubeService,
+  ) {}
 
   async getCubeSuggestion(onlyCollectionSymbol: string | undefined): Promise<CubeSuggestion | undefined> {
-
-    const unclaimedTokens = await this.findUnclaimedTokens(onlyCollectionSymbol);
-    const { tokenIds, collectionName, collectionSymbol } = unclaimedTokens
-
+    const { tokenIds, collectionName, collectionSymbol } = await this.findUnclaimedTokens(onlyCollectionSymbol);
     return {
       inscriptionId1: tokenIds[0],
       inscriptionId2: tokenIds[1],
@@ -27,111 +26,62 @@ export class CubeSuggestionService {
       inscriptionId5: tokenIds[4],
       inscriptionId6: tokenIds[5],
       collectionName,
-      collectionSymbol
+      collectionSymbol,
     };
   }
 
-  async findUnclaimedTokens(onlyCollectionSymbol: string | undefined): Promise<{ tokenIds: string[], collectionName: string, collectionSymbol: string  } | undefined> {
-
+  async findUnclaimedTokens(onlyCollectionSymbol: string | undefined): Promise<{
+    tokenIds: string[];
+    collectionName: string;
+    collectionSymbol: string;
+  }> {
     const allCubes = await this.cubeService.getAllCubes();
-    const claimedTokenIds = collectClaimedInscriptionIds(allCubes);
+    const claimedTokenIds = new Set(collectClaimedInscriptionIds(allCubes));
 
-
-    let collections: GetCollectionStatisticsResult[] |
-                     GetCollectionResult[] |
-                     { name: string; symbol: string }[] = [];
-
+    let candidates: ArchiveCollection[];
     if (!onlyCollectionSymbol) {
-      try {
-        collections = await this.magicEdenService.getCollectionStatistics({
-          window: '7d',
-          sort: 'volume',
-          direction: 'desc',
-          offset: 0,
-          limit: 250
-        });
-      } catch(exception) {
-        Logger.error('Error fetchPopularCollections' + exception);
-        throw exception;
-      }
+      candidates = await this.archiveService.getTopCollections(this.TOP_COLLECTION_POOL);
     } else {
-      const singleCollection = await this.magicEdenService.getCollection(onlyCollectionSymbol);
-      if (!singleCollection) {
+      const single = await this.archiveService.getCollection(onlyCollectionSymbol);
+      if (!single) {
         throw new Error('Unknown collection!');
       }
-      collections = [singleCollection];
+      candidates = [single];
     }
 
-    while (collections.length > 0) {
+    // Mutable copy — we splice out exhausted collections as we go.
+    const pool = [...candidates];
 
-      // Choose a random collection
-      const collectionIndex = Math.floor(Math.random() * collections.length);
-      const currentCollection = collections[collectionIndex];
-      const collectionSymbol = currentCollection.symbol;
+    while (pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      const current = pool[idx];
 
-      // Fetch the first page of tokens from the chosen collection
-      let offset = 0;
-      const tokenIdMatches: string[] = [];
-      let collectionEndReached = false;
-
-      while (!collectionEndReached && tokenIdMatches.length < this.TOKEN_GOAL) {
-        const tokens = await this.magicEdenService.getTokens({
-          limit: 40,
-          offset,
-          sortBy: 'inscriptionNumberAsc',
-          collectionSymbol
-        });
-
-        if (!tokens.tokens[0]) {
-          break; // for the unrealistic case that a collection is empty
-        }
-
-        this.shuffleArray(tokens.tokens);
-
-        // Check if the contentType of the first token is an image
-        if (!this.isImageContentType(tokens.tokens[0].contentType)) {
-          // console.log(currentCollection.name + '/' + tokens.tokens[0].id + ' has contentType ' + tokens.tokens[0]?.contentType + '! Skipping...')
-          collections.splice(collectionIndex, 1);  // remove collection from the list
-          break;  // break out of the inner loop to choose a new collection
-        }
-
-        for (const token of tokens.tokens) {
-          if (!claimedTokenIds.includes(token.id)) {
-            tokenIdMatches.push(token.id);
-            // console.log('Adding ContentType', token.contentType);
-            // Logger.verbose('Added: Inscription ' + token.id)
-
-          } else {
-            // Logger.verbose('Inscription is already claimed. Skipping: ' + token.id)
-          }
-          if (tokenIdMatches.length === this.TOKEN_GOAL) {
-            break;  // break out of the loop if we have found enough tokens
-          }
-        }
-
-        if (tokens.tokens.length < 20) {
-          collectionEndReached = true;  // this was the last page of the collection
-        } else {
-          offset += 40;  // go to the next page
-        }
+      let inscriptions;
+      try {
+        inscriptions = await this.archiveService.getInscriptions(current.symbol);
+      } catch (err) {
+        Logger.error(`Failed to load inscriptions for ${current.symbol}: ${err}`);
+        pool.splice(idx, 1);
+        continue;
       }
 
-      // If we found enough tokens, return them
-      if (tokenIdMatches.length === this.TOKEN_GOAL) {
-        const collectionName =  currentCollection.name;
-        const collectionSymbol =  currentCollection.symbol;
+      // Keep only image-content inscriptions; drop ones already claimed.
+      const candidatesIds = inscriptions
+        .filter(i => this.isImageContentType(i.contentType))
+        .map(i => i.id)
+        .filter(id => !claimedTokenIds.has(id));
 
-        // console.log('New suggestion', collectionName, collectionSymbol);
-
+      if (candidatesIds.length >= this.TOKEN_GOAL) {
+        this.shuffleArray(candidatesIds);
         return {
-          tokenIds: tokenIdMatches,
-          collectionName,
-          collectionSymbol
+          tokenIds: candidatesIds.slice(0, this.TOKEN_GOAL),
+          collectionName: current.name,
+          collectionSymbol: current.symbol,
         };
       }
 
-      // Otherwise, remove the collection from the list and try a new one in the next iteration
-      collections.splice(collectionIndex, 1);
+      // Not enough unclaimed images here — try another collection.
+      pool.splice(idx, 1);
     }
 
     throw new Error('Could not find enough unclaimed tokens!');
@@ -149,19 +99,19 @@ export class CubeSuggestionService {
       'image/png',
       // 'image/svg+xml', too much troubles, too much black cubes
       'image/webp',
-      'image/bmp'  // let's assume someone is crazy enough to do this :D
+      'image/bmp',  // let's assume someone is crazy enough to do this :D
     ];
     return supportedTypes.includes(contentType);
   }
 
   /**
-   * Randomize array in-place using Durstenfeld shuffle algorithm
+   * Randomize array in-place using Durstenfeld shuffle algorithm.
    * https://stackoverflow.com/a/12646864
    */
   shuffleArray<T>(array: T[]) {
     for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
     }
   }
 }

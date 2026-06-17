@@ -16,7 +16,7 @@ import { MetadataGenesisService } from './model/metadata-genesis.service';
 import { MetadataService } from './model/metadata-service';
 import { CubeSuggestionService } from './model/ordinals/cube-suggestion.service';
 import { CubeService } from './model/ordinals/cube.service';
-import { MagicEdenService } from './model/ordinals/magic-eden.service';
+import { OrdinalsArchiveService } from './model/ordinals/ordinals-archive.service';
 import { ScheduleModule } from '@nestjs/schedule';
 
 
@@ -55,7 +55,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AllowlistService,
     MetadataGenesisService,
     ImageService,
-    MagicEdenService,
+    OrdinalsArchiveService,
     CubeService,
     CubeSuggestionService,
     CacheService,

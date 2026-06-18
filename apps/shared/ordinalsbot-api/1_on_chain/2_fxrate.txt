@@ -1,3 +1,0 @@
-GET https://api.ordinalsbot.com/fxrate?ids=bitcoin&vs_currencies=usd
-
-{"bitcoin":{"usd":30007},"updatedAt":1687524332858}

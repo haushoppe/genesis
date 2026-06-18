@@ -4,63 +4,81 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Nx 16 monorepo for the **Ordinal Cubes by HAUS HOPPE** project — a permissionless 3D cube gallery on Bitcoin Ordinals. Users select 6 existing inscriptions (one per cube side) and mint a new HTML inscription on Bitcoin that renders an interactive 3D cube.
+Repo for the **Ordinal Cubes by HAUS HOPPE** project — a permissionless 3D cube gallery on Bitcoin Ordinals. Users select 6 existing inscriptions (one per cube side) and mint a new HTML inscription on Bitcoin that renders an interactive 3D cube.
 
 **Live product:** https://cubes.haushoppe.art/ (Cloudflare Pages)
 **Backend API:** https://backend.haushoppe.art/ (happysrv via Cloudflare Tunnel — see `ordpool/deploy-happyserver/haushoppe-backend.service`)
 
 The genesis-frontend (Ethereum ERC-721 minting) was never finished and is inactive. The cubes-frontend is the live, active product.
 
+## Layout
+
+Three independent projects + contracts. **No root `npm install`** — each project owns its deps.
+
+```
+apps/
+  backend/            # NestJS API (Node 18). Standalone Nest CLI project.
+  cubes-frontend/     # Angular 16 SPA (the LIVE product). Standalone Angular CLI project.
+  genesis-frontend/   # Angular 16 SPA (INACTIVE, ERC-721 minting). Standalone Angular CLI project.
+contracts/            # Solidity ERC721A smart contracts + Hardhat setup.
+```
+
+Each `apps/*` has its own `package.json`, `tsconfig.json`, build, test, and lint. They share **no** root-level tooling. Shared code (`apps/shared/`, the old `libs/openapi-client/`) used to live at the root — it's now **vendored into each project's `src/shared/` and `src/openapi-client/`**. Drift between copies is acceptable; the surface area is tiny and rarely changes.
+
 ## Commands
 
 ```bash
-# Install
-npm install
+# Install (per project, on first checkout or after a deps change)
+cd apps/backend         && npm ci
+cd apps/cubes-frontend  && npm ci
+cd apps/genesis-frontend && npm ci
 
-# Development — start backend + cubes frontend
-npm run start:backend          # NestJS on port 3333
-npm run start:cubes-frontend   # Angular on port 4203, proxies /content/* to ordinals explorers
+# Development (each in its own terminal)
+cd apps/backend          && npm start       # NestJS on the PORT env var (production: 3344 on happysrv)
+cd apps/cubes-frontend   && npm start       # ng serve on :4203
+cd apps/genesis-frontend && npm start       # ng serve on :4201
 
-# Start everything (backend + both frontends)
-npm start
+# Build (per project — CI does this on push)
+cd apps/backend         && npm run build    # nest build --webpack → dist/main.js
+cd apps/cubes-frontend  && npm run build    # ng build production → dist/*
+cd apps/genesis-frontend && npm run build   # ng build production → dist/*
 
-# Build
-npm run build:backend:production
-npm run build:cubes-frontend:production
+# Test
+cd apps/backend         && npm test         # jest (4 suites, 17 tests)
+cd apps/cubes-frontend  && npm test         # jest + jest-preset-angular (6 suites, 25 tests)
+cd apps/genesis-frontend && npm test        # jest + jest-preset-angular (1 suite, 4 tests)
 
-# Test (Jest via Nx)
-npm run test                   # All projects
-npm run test:backend
-npm run test:cubes-frontend
-
-# Regenerate OpenAPI client (backend must be running on :3333 first)
-npm run build:openapi-generator
-
-# Smart contracts (Hardhat, in contracts/ directory)
+# Smart contracts (Hardhat)
+cd contracts && npm install
 cd contracts && npm run hardhat:start-localhost-network
 cd contracts && npm run hardhat:test
 ```
 
-## Architecture
+The root `package.json` is intentionally a tiny stub with just convenience shortcuts (`npm run start:backend` → `cd apps/backend && npm start`). There are no root devDeps and no root `node_modules`.
 
-### Monorepo Layout
+## apps/backend (NestJS)
 
-```
-apps/
-  cubes-frontend/     # Angular 16 SPA — the LIVE product (Bitcoin Ordinals cube minting)
-  backend/            # NestJS API — serves both frontends
-  genesis-frontend/   # Angular 16 SPA — INACTIVE (Ethereum ERC-721 minting, never finished)
-  shared/             # Shared TypeScript code (not a runnable app)
-libs/
-  openapi-client/     # Auto-generated Angular HTTP client — DO NOT EDIT manually
-contracts/            # Solidity ERC721A smart contracts + Hardhat setup
-tools/
-  generators/openapi-generator/   # Generates libs/openapi-client from backend OpenAPI spec
-```
+**No database** — everything is in-memory or fetched from external APIs.
 
-### Cubes Frontend (the live product)
+**Live endpoints:**
+- `POST /ordinals/createHtmlInscriptionOrder` — creates inscription via OrdinalsBot API
+- `GET /ordinals/getOrderStatus/:id` — polls OrdinalsBot for payment status
+- `GET /ordinals/getPrice/:fee/:size/:code?` — pricing in sats + USD (validates referral code for bonus)
+- `GET /api/...` (12 routes on `ApiController`) — ERC-721 metadata for genesis-frontend (mint tickets, owners, allowlist, token images)
 
-Angular 16 standalone components app. No NgModules — uses `provideRouter()`, `provideStore()`, etc.
+**External APIs:** OrdinalsBot (orders, pricing), api.ordpool.space (BTC/USD fxrate replacement for OrdinalsBot's broken /fxrate, mempool fees). Old Hiro/Magic Eden/cube-suggestion/cube-list integrations are gone — cubes-frontend reads those datasets directly from static GitHub Pages sources now.
+
+**HTTP client:** native `fetch` only. **axios is forbidden** (supply-chain risk).
+
+**Caching:** NodeCache with TTLs — 2h for hosted file content fetched during order polling, 60s for price cache.
+
+**Swagger/OpenAPI:** Available at `/open-api` (UI) and `/open-api-json` (spec).
+
+**Build output:** `apps/backend/dist/main.js` (webpack-bundled) + `apps/backend/dist/assets/` + the project's own `package.json` (15 deps). CI ships this as-is to `haushoppe/backend-build@stage_prod`. No more "trim monorepo deps" build step.
+
+## apps/cubes-frontend (the live product)
+
+Angular 16 standalone-components app. No NgModules — uses `provideRouter()`, `provideStore()`, etc.
 
 **State management:** NgRx with three feature stores:
 - `mint` — inscription list, order state, pricing, cube suggestions, inscription ID cache
@@ -83,66 +101,43 @@ Angular 16 standalone components app. No NgModules — uses `provideRouter()`, `
 
 **Cube HTML format:** `<html><!--cubes.haushoppe.art--><head><title>TITLE</title></head><body><script>t='id1|id2|id3|id4|id5|id6|...'</script><script src=/content/CUBE_RENDERER_INSCRIPTION></script>`
 
-Three cube renderer versions exist (v1, v2, v3) identified by their inscription IDs in `parse-cube.ts`.
+Three cube renderer versions exist (v1, v2, v3) identified by their inscription IDs in `src/shared/ordinals/parse-cube.ts`.
 
 **Form validators:** `inscription-id.validator.ts` (64 hex + `i` + digits), `btc-address.validator.ts` (Taproot `bc1p...` required), `correct-code.validator.ts` (referral codes ending in `_N`).
 
-### Backend (NestJS)
+**Inscription lookup by number** (when the user types `#12345`): `mintService.inscriptionNumberToId()` hits `https://ord.ordpool.space/inscription/{n}` with `Accept: application/json`. Hiro API was sunsetted; the ord-proxy in the ordpool family fills the same role.
 
-**No database** — everything is in-memory or fetched from external APIs.
+**HTTP client:** native `fetch` and Angular `HttpClient`. **axios is forbidden.**
 
-**Ordinals endpoints** (the active part, `OrdinalsController`):
-- `POST /ordinals/createHtmlInscriptionOrder` — creates inscription via OrdinalsBot API
-- `GET /ordinals/getOrderStatus/:id` — polls OrdinalsBot for payment status
-- `GET /ordinals/getInscriptions/:collectionName/:itemsPerPage/:currentPage` — paginated cube list
-- `GET /ordinals/getSingleInscription/:collectionName/:inscriptionId` — single inscription with prev/next
-- `GET /ordinals/getPrice/:fee/:size/:code?` — pricing in sats + USD
-- `GET /ordinals/getCubeSuggestion/:collectionSymbol?` — 6 random unclaimed image inscriptions from Magic Eden
+## apps/genesis-frontend (inactive)
 
-**CubeService:** Runs every 5 minutes (`@Interval`), searches OrdinalsBot for inscriptions containing `cubes.haushoppe.art`, parses them with `parseCube()`, stores in-memory array. Only updates if new count > old count.
-
-**CubeSuggestionService:** Picks random collections from Magic Eden (top 250 by 7-day volume), finds unclaimed image inscriptions not already used in existing cubes. Only accepts image MIME types (no SVG — "too much black cubes").
-
-**External APIs:** OrdinalsBot (inscription orders, search, pricing, FX rates), Magic Eden (collections, tokens), Hiro (inscription lookup by number), ordinals.com/explorer.ordinalsbot.com (scraping inscription metadata via cheerio).
-
-**Caching:** NodeCache with TTLs — 60s for inscription data (HTTP `Cache-Control` headers), 2h for hosted file content, in-memory for cube list (refreshed every 5min). Suggestions use `no-cache`.
-
-**Swagger/OpenAPI:** Available at `/open-api` (UI) and `/open-api-json` (spec).
-
-### Shared Code (`apps/shared/`)
-
-- `ordinals/parse-cube.ts` — validates cube HTML, extracts 6 sides + version + title as trait attributes
-- `ordinals/hiro.ts` — Hiro API client for inscription lookup
-- `ordinals/ord.ts` — scrapes ordinalsbot explorer for inscription metadata (cheerio)
-- `ordinals/referral-code.ts` — referral codes with bonus amounts and Bitcoin addresses
-- `ordinals/ordinalsbot-*.ts` — TypeScript types for OrdinalsBot API responses
-- `known-abis.ts`, `known-token-name.ts`, `known-network-name.ts` — ERC-721 contract definitions
-
-### OpenAPI Client (`libs/openapi-client/`)
-
-Auto-generated from backend spec. Two services: `ApiService` (ERC-721 endpoints) and `OrdinalsService` (Bitcoin endpoints). Regenerate by running the backend then `npm run build:openapi-generator`.
+Angular 16 app for ERC-721 mint flow. Uses Kendo UI components and `@web3-onboard/*` for wallet connection. Custom webpack config (`webpack.config.js`) provides Node-builtin polyfills (`buffer`, `crypto-browserify`, `stream-*`, etc) required by the web3 libs — `angular.json` uses `@angular-builders/custom-webpack:browser` for this.
 
 ## CI/CD & Deployment
 
-GitHub Actions (`.github/workflows/`):
-- **build-cubes-frontend.yml** — triggered on push to main affecting `apps/cubes-frontend/**` or `libs/**`. Runs tests, production build, publishes to `haushoppe/cubes-frontend-build` repo → Cloudflare Pages auto-deploys.
-- **build-backend.yml** — triggered on push to main affecting `apps/backend/**` or `apps/shared/**`. Runs tests, production build, publishes the `dist/apps/backend/` artifact to `haushoppe/backend-build@stage_prod`. happysrv's `haushoppe-backend-deploy.timer` polls that branch every minute and restarts `haushoppe-backend.service` on HEAD change (≤60s lag CI → live).
-- **build-genesis-frontend.yml** — publishes to `haushoppe/genesis-frontend-build` (inactive product).
+`.github/workflows/`:
 
-Workflows use Node 18 and `npm install --force`.
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `build-backend.yml` | push to `apps/backend/**` | `cd apps/backend && npm ci && npm test && npm run build`. Pushes `dist/` + `package.json` + `package-lock.json` to `haushoppe/backend-build@stage_prod`. happysrv's `haushoppe-backend-deploy.timer` polls that branch every minute, runs `npm ci --omit=dev`, restarts `haushoppe-backend.service`. ≤60s lag CI → live. |
+| `build-cubes-frontend.yml` | push to `apps/cubes-frontend/**` | `cd apps/cubes-frontend && npm ci && npm test && npm run build`. Pushes `dist/` to `haushoppe/cubes-frontend-build@main` → Cloudflare Pages auto-deploys to cubes.haushoppe.art. |
+| `build-genesis-frontend.yml` | push to `apps/genesis-frontend/**` | Same shape. Activates Kendo UI license via `npx kendo-ui-license activate`. Pushes to `haushoppe/genesis-frontend-build@main`. |
 
-## Environment
+Workflows use Node 18 + `npm ci`. The `npm install --force` workaround days are gone — each project has its own clean lockfile.
 
-Copy `.env.example` to `.env`. Key variables:
+## Environment (apps/backend)
+
+See `ordpool/deploy-happyserver/haushoppe-backend.env.example`. Required vars:
+- `NODE_ENV=production`
+- `PORT=3344` (server-side; dev defaults to whatever you set)
 - `NETWORK` — `hardhat`, `goerli`, or `mainnet`
-- `SIGNER_KEY_*` — private keys for ERC-721 mint ticket signing (6 token types)
-- `MAGIC_EDEN_API_KEY` — for collection browsing and cube suggestions
-- `ORDINALSBOT_API_KEY` — for inscription creation, search, pricing
+- `SIGNER_KEY_*` — six private keys for ERC-721 mint ticket signing
+- `ALCHEMY_KEY_MAINNET`, `ALCHEMY_KEY_GOERLI`
 
 ## Code Style
 
 - Prettier: single quotes (`"singleQuote": true`)
 - EditorConfig: 2-space indent, LF line endings, UTF-8
-- ESLint with `@nx/enforce-module-boundaries`
+- ESLint: per-project standalone configs (`apps/*/.eslintrc.json`) using `eslint:recommended` + `@typescript-eslint/recommended`. No `@nx/enforce-module-boundaries` anymore.
 - Angular: standalone components, SCSS styles
 - NgRx: `createFeature()` pattern with facade services

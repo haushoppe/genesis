@@ -1,10 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
-    "module": "commonjs",
-    "types": ["jest", "node"],
-    "target": "es2020"
+    "types": ["node", "jest"]
   },
-  "include": ["jest.config.ts", "**/*.test.ts", "**/*.spec.ts", "**/*.d.ts", "/**/*.ts"]
+  "include": ["src/**/*.ts", "../shared/**/*.ts", "jest.config.ts"]
 }

@@ -1,11 +1,12 @@
 name: Build Backend
 
-# Builds the NestJS backend and pushes a slim deploy artifact to
-# `haushoppe/backend-build` on the `stage_prod` branch. The happysrv
-# `haushoppe-backend-deploy.timer` polls that branch every minute and
-# restarts the service on HEAD change. See:
-#   ordpool/deploy-happyserver/haushoppe-backend.service
-#   ordpool/deploy-happyserver/scripts/haushoppe-backend-deploy.sh
+# Builds the standalone NestJS backend (apps/backend/) and pushes the
+# slim deploy artifact to `haushoppe/backend-build@stage_prod`.
+# happysrv's `haushoppe-backend-deploy.timer` polls that branch every
+# minute and restarts the service on HEAD change.
+#
+# No more Nx — backend has its own apps/backend/package.json with only
+# the ~15 runtime deps it actually needs.
 
 on:
   workflow_dispatch:
@@ -14,36 +15,42 @@ on:
     paths:
       - 'apps/backend/**'
       - 'apps/shared/**'
-      - 'tools/build-backend-package.mjs'
-      - '*.json'
       - '.github/workflows/build-backend.yml'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
 
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
         node-version: 18
+        cache: 'npm'
+        cache-dependency-path: apps/backend/package-lock.json
 
-    - run: npm install --force
-    - run: npm install @nrwl/nx-linux-x64-gnu --force #bugfix broken build! 😕
-    - run: npm run test:backend
-    - run: npm run build:backend:production
+    - run: npm ci
+    - run: npm test --if-present
+    - run: npm run build
+
+    - name: Prepare deploy artifact
+      run: |
+        cp package.json package-lock.json dist/
+        echo "=== artifact contents ==="
+        ls -lh dist
+        du -sh dist
 
     - name: Deploy to haushoppe/backend-build@stage_prod
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      # Artifact branch is `stage_prod` (underscore) — same convention as
-      # ordpool-backend / cat21-indexer. Server-side
-      # haushoppe-backend-deploy.sh fetches origin/stage_prod.
       run: |
         npx angular-cli-ghpages \
           --repo=https://github.com/haushoppe/backend-build.git \
           --branch=stage_prod \
-          --dir=dist/apps/backend \
+          --dir=dist \
           --name="The Buildbot" \
           --email=noreply@haushoppe.art \
           --no-notfound \

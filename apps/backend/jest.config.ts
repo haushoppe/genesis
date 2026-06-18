@@ -1,17 +1,12 @@
-/* eslint-disable */
 export default {
   displayName: 'backend',
-  preset: '../../jest.preset.js',
-  globals: {},
   testEnvironment: 'node',
+  rootDir: '.',
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  testRegex: '.*\\.spec\\.ts$',
   transform: {
-    '^.+\\.[tj]s$': [
-      'ts-jest',
-      {
-        tsconfig: '<rootDir>/tsconfig.spec.json',
-      },
-    ],
+    '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
-  moduleFileExtensions: ['ts', 'js', 'html'],
-  coverageDirectory: '../../coverage/apps/backend',
+  collectCoverageFrom: ['src/**/*.ts'],
+  coverageDirectory: './coverage',
 };

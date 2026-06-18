@@ -169,17 +169,17 @@ export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPric
   return response.data;
 }
 
+/**
+ * Sourced from our own infrastructure (api.ordpool.space) — the OrdinalsBot
+ * /fxrate endpoint started returning HTTP 401 in mid-2026 which made the
+ * frontend price block crash with "Cannot read properties of undefined
+ * (reading 'usd')". Shape preserved to avoid a caller change.
+ */
 export async function getFxrate(): Promise<OrdinalsbotFxrateResult> {
-
-  const response = await axios.get('https://api.ordinalsbot.com/fxrate',
-    {
-      params: {
-        ids: 'bitcoin',
-        vs_currencies: 'usd'
-      }
-    });
-
-  return response.data;
+  const response = await axios.get<{ time: number; USD: number; EUR?: number }>(
+    'https://api.ordpool.space/api/v1/prices',
+  );
+  return { bitcoin: { usd: response.data.USD } };
 }
 
 /*

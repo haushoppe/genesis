@@ -1,6 +1,5 @@
-import type { Config } from 'jest';
-
-const config: Config = {
+/** @type {import('jest').Config} */
+module.exports = {
   displayName: 'cubes-frontend',
   preset: 'jest-preset-angular',
   testEnvironment: 'jsdom',
@@ -25,5 +24,3 @@ const config: Config = {
   ],
   coverageDirectory: './coverage',
 };
-
-export default config;

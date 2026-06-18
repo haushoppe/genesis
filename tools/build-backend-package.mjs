@@ -36,6 +36,7 @@ const BACKEND_RUNTIME_DEPS = [
   'papaparse',
   'reflect-metadata',
   'rxjs',
+  'sharp',
   'swagger-ui-express',
 ];
 

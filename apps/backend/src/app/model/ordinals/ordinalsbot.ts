@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 import { OrdinalsbotFxrateResult } from '../../../../../shared/ordinals/ordinalsbot-fxrate-result';
-import { OrdinalsbotInscription, OrdinalsbotInscriptionSearchResult } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
 import { ErrorResponse, OrderResponse } from '../../../../../shared/ordinals/ordinalsbot-order-response';
 import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../../../shared/ordinals/ordinalsbot-price-result';
 import { REFERRALS } from '../../../../../shared/ordinals/referral-code';
@@ -150,47 +149,6 @@ export async function loadHostedContent(url: string) {
     console.error(`Failed to fetch file content from ${url}:`, error.message);
     return ''; // Fail silently
   }
-}
-
-/**
- * Searches for the given text in the Ordinalsbot API and retrieves all results by handling pagination internally.
- *
- * @param {string} text - The text to search for.
- * @returns {Promise<OrdinalsbotInscription[]>} - A promise that resolves to an array of all search results.
- */
-export async function searchForText(text: string, apiKey): Promise<OrdinalsbotInscription[]> {
-  let page = 1;
-  let allResults: OrdinalsbotInscription[] = [];
-
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const response = await axios.get<OrdinalsbotInscriptionSearchResult>('https://api.ordinalsbot.com/search', {
-      params: {
-        text,
-        page
-      },
-      headers: {
-        'x-api-key': apiKey
-      }
-    });
-
-    const data = response.data;
-
-    if (data.results && data.results.length > 0) {
-      allResults = allResults.concat(data.results);
-
-      // Check if we've retrieved all results
-      if (allResults.length >= data.totalItems) {
-        break;
-      } else {
-        page++; // Go to the next page
-      }
-    } else {
-      break; // No more results
-    }
-  }
-
-  return allResults;
 }
 
 export async function getPrice({ fee, size, count, lowPostage }: OrdinalsbotPriceRequestParams): Promise<OrdinalsbotPriceResult> {

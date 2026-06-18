@@ -1,5 +1,4 @@
-import { OrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
-import { collectClaimedInscriptionIds, findItemByInscriptionId, sortInscriptions } from './inscription-helper';
+import { collectClaimedInscriptionIds, findItemByInscriptionId } from './inscription-helper';
 
 describe('collectClaimedInscriptionIds', () => {
 
@@ -113,33 +112,6 @@ describe('collectClaimedInscriptionIds', () => {
 
 });
 
-
-describe('sortInscriptions', () => {
-  it('should sort the inscriptions primarily by blockheight and secondarily by inscriptionnumber', () => {
-    const inscriptions = [
-      { inscriptionid: 'id4', inscriptionnumber: 2, contentstr: 'Content 4', blockheight: 102 },
-      { inscriptionid: 'id2', inscriptionnumber: 1, contentstr: 'Content 2', blockheight: 101 },
-      { inscriptionid: 'id1', inscriptionnumber: 0, contentstr: 'Content 1', blockheight: 100 },
-      { inscriptionid: 'id3', inscriptionnumber: 1, contentstr: 'Content 3', blockheight: 100 },
-      { inscriptionid: 'id5', inscriptionnumber: 3, contentstr: 'Content 5', blockheight: 102 },
-    ] as any as OrdinalsbotInscription[];
-
-    const sorted = sortInscriptions(inscriptions);
-    expect(sorted).toEqual([
-      { inscriptionid: 'id1', inscriptionnumber: 0, contentstr: 'Content 1', blockheight: 100 },
-      { inscriptionid: 'id3', inscriptionnumber: 1, contentstr: 'Content 3', blockheight: 100 },
-      { inscriptionid: 'id2', inscriptionnumber: 1, contentstr: 'Content 2', blockheight: 101 },
-      { inscriptionid: 'id4', inscriptionnumber: 2, contentstr: 'Content 4', blockheight: 102 },
-      { inscriptionid: 'id5', inscriptionnumber: 3, contentstr: 'Content 5', blockheight: 102 },
-    ]);
-  });
-
-  it('should handle an empty array', () => {
-    const inscriptions: OrdinalsbotInscription[] = [];
-    const sorted = sortInscriptions(inscriptions);
-    expect(sorted).toEqual([]);
-  });
-});
 
 describe('findItemByInscriptionId', () => {
   const items = [

@@ -1,4 +1,3 @@
-import { OrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
 import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinals/ordinalsbot-order-response';
 import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
 
@@ -48,24 +47,6 @@ export function collectClaimedInscriptionIds(data: InscriptionExtended[]) {
   }
 
   return ids;
-}
-
-/**
- * Sorts an array of OrdinalsbotInscription objects.
- * The primary sort key is the blockheight, and the secondary sort key (when blockheights are equal) is inscriptionnumber.
- *
- * @param inscriptions - The array of inscriptions to sort.
- * @returns The sorted array of inscriptions.
- */
-export function sortInscriptions(inscriptions: OrdinalsbotInscription[]): OrdinalsbotInscription[] {
-  return inscriptions.sort((a, b) => {
-    // Sort by blockheight
-    if (a.blockheight !== b.blockheight) {
-      return a.blockheight - b.blockheight;
-    }
-    // If blockheights are equal, sort by inscriptionnumber
-    return a.inscriptionnumber - b.inscriptionnumber;
-  });
 }
 
 /**

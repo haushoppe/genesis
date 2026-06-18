@@ -1,138 +1,95 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
-import { parseCube } from '../../../../../shared/ordinals/parse-cube';
 import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
-import { searchForText } from './ordinalsbot';
-import { getInscriptionFromOrd } from '../../../../../shared/ordinals/ord';
-import { OrdinalsbotInscription } from '../../../../../shared/ordinals/ordinalsbot-inscription-search-result';
-import { sortInscriptions } from './inscription-helper';
-import { ConfigService } from '@nestjs/config';
 
-
+/**
+ * Source of truth for known cubes.
+ *
+ * Replaces the previous OrdinalsBot polling implementation, which broke when
+ * OrdinalsBot's search indexer went offline (June 2026). Cube data is now
+ * indexed by a separate, self-hosted pipeline:
+ *
+ *   https://github.com/ordpool-space/ordinal-cubes-index
+ *
+ * A GitHub Action there walks our own ord (ord.ordpool.space) forward via the
+ * inscription `next` linked list, identifies cubes by their HTML marker, and
+ * commits the result to data/cubes.json — served on GitHub Pages.
+ *
+ * This service just pulls that JSON on an interval and caches it in memory.
+ * Tiny, no third-party dependency, easy to reason about.
+ */
 @Injectable()
 export class CubeService {
 
+  private readonly logger = new Logger(CubeService.name);
+  private readonly cubesUrl = 'https://ordpool-space.github.io/ordinal-cubes-index/data/cubes.json';
+
   private allCubes: InscriptionExtended[] = [];
-  private ordinalsbotApiKey: string;
 
-  constructor(private configService: ConfigService) {
-    this.ordinalsbotApiKey = this.configService.get<string>('ORDINALSBOT_API_KEY');
-  }
-
-  /**
-   * Performing async tasks before controllers are available
-   */
   async onModuleInit() {
-    Logger.log('Initializing CubeService. First run will be in 5 minutes', 'ordinal_cubes');
+    this.logger.log('Initializing CubeService. Loading cubes from public index…');
+    // Don't await — let the first fetch happen in the background so app startup
+    // isn't blocked by a slow CDN response. The first request that needs cubes
+    // will see an empty array; subsequent requests get the cached list.
+    void this.refresh();
   }
 
-  @Interval(1000 * 60 * 5) // every 5 minutes
+  /** Hourly refresh — keep in step with the cron that updates cubes-index. */
+  @Interval(1000 * 60 * 60)
   async handleInterval() {
-    await this.serchForAllCubes();
+    await this.refresh();
   }
 
-  /**
-   * Retrieves all known cubes (cached)
-   */
   async getAllCubes(): Promise<InscriptionExtended[]> {
-    return Promise.resolve(this.allCubes);
+    return this.allCubes;
   }
 
-  /**
-   * Uses the OrdinalsBot API to search for the string cubes.haushoppe.art
-   * Filters invalid data
-   */
-  private async serchForAllCubes() {
+  // -------------------------------------------------------------------------
 
-    const ordinalsbotResultFiltered = await this.searchAndFilterViaOrdinalsBot();
-    const newInscriptionExtended = this.searchResultToCubeInscriptionMeta(ordinalsbotResultFiltered);
-
-    if (this.allCubes.length < newInscriptionExtended.length) {
-      Logger.log(`Updating cached cubes!`);
-      this.allCubes = newInscriptionExtended;
-    }
-  }
-
-  /**
-   * Returns empty array on any error!
-   */
-  private async searchAndFilterViaOrdinalsBot(): Promise<OrdinalsbotInscription[]> {
+  private async refresh(): Promise<void> {
     try {
+      const res = await fetch(this.cubesUrl, { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = (await res.json()) as ExternalCube[];
+      const cubes = raw.map(toInscriptionExtended);
 
-      const searchResult = (await searchForText('cubes.haushoppe.art', this.ordinalsbotApiKey));
-      const filtered = searchResult.filter(x => x.contentstr.includes('<html><!--cubes.haushoppe.art-->'));
-
-      // fix Result! (inscriptionnumber always NULL)
-      await Promise.all(
-        filtered.map(async (x) => {
-          const ordInscription = await getInscriptionFromOrd(x.inscriptionid);
-          // console.log(ordInscription);
-          x.inscriptionnumber = ordInscription.inscriptionNumber;
-
-          // they now also screwed this up with a nasty cloudflare snipped
-          x.contentstr = x.contentstr.replace(/<script defer.*/, '');
-        })
-      );
-
-      sortInscriptions(filtered);
-      Logger.log("Amount of cubes found by Ordinalsbot: " + filtered.length);
-      // ordinalsbotResultFiltered.forEach(x => console.log(x.inscriptionnumber));
-
-      return filtered;
-
-    } catch (ex: unknown) {
-      Logger.warn('Error loading cubes via Ordinalsbot!' + ex, 'ordinal_cubes');
-      console.log(ex);
-      return [];
+      // Only swap the cache if we got at least the count we already have — guards
+      // against an upstream regression silently shrinking the list.
+      if (cubes.length >= this.allCubes.length) {
+        this.allCubes = cubes;
+        this.logger.log(`Cubes refreshed: ${cubes.length} loaded`);
+      } else {
+        this.logger.warn(
+          `Refused to overwrite cubes cache: upstream returned ${cubes.length}, ` +
+          `local has ${this.allCubes.length}`,
+        );
+      }
+    } catch (err) {
+      this.logger.warn(`Cube refresh failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
+}
 
-  private searchResultToCubeInscriptionMeta(searchResultsFiltered: OrdinalsbotInscription[]): InscriptionExtended[] {
+// ---------------------------------------------------------------------------
+// Shape of the records in cubes.json (kept private to this service).
+// ---------------------------------------------------------------------------
 
-    const meta = searchResultsFiltered
+interface ExternalCube {
+  inscriptionId: string;
+  inscriptionNumber: number;
+  blockHeight: number;
+  timestamp?: number;
+  contentLength?: number;
+  attributes: { trait_type: string; value: string }[];
+  name: string;
+}
 
-      // get attributes OR null for invalid cubes
-      .map(x => {
-        const attributes = parseCube(x.contentstr);
-        if (attributes) {
-          // console.log(x);
-          return {
-            inscriptionId: x.inscriptionid,
-            inscriptionNumber: x.inscriptionnumber,
-            blockHeight: x.blockheight,
-            attributes
-          }
-        }
-        console.log('Invalid cube! ' + x.inscriptionid + ' --- ' + x.contentstr);
-        return null;
-      })
-
-      // remove invalid cubes
-      .filter(x => !!x)
-
-      // assemble Metadata
-      .map((x, index) => {
-
-        let name = 'Ordinal Cube #' + index;
-
-        const titleTrait = x.attributes.find(t => t.trait_type === 'Title');
-        if (titleTrait) {
-          name = `${name} (${titleTrait.value})`
-        }
-
-        return {
-          inscriptionId: x.inscriptionId,
-          inscriptionNumber: x.inscriptionNumber,
-          blockHeight: x.blockHeight,
-          meta: {
-            name,
-            attributes: x.attributes
-          }
-        };
-      }
-      );
-
-    return meta;
-  }
+function toInscriptionExtended(c: ExternalCube): InscriptionExtended {
+  return {
+    inscriptionId: c.inscriptionId,
+    inscriptionNumber: c.inscriptionNumber,
+    blockHeight: c.blockHeight,
+    meta: { name: c.name, attributes: c.attributes },
+  };
 }

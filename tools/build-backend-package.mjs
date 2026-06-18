@@ -18,7 +18,8 @@
 
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const BACKEND_RUNTIME_DEPS = [
   '@nestjs/common',
@@ -38,7 +39,7 @@ const BACKEND_RUNTIME_DEPS = [
   'swagger-ui-express',
 ];
 
-const ROOT = resolve(import.meta.dirname, '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = resolve(ROOT, 'dist/apps/backend');
 
 const root = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));

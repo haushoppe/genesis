@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 /**
  * Represents an inscription object.
  *
@@ -65,8 +63,11 @@ export interface HiroInscription {
  */
 export async function getInscriptionFromHiro(id: string): Promise<HiroInscription> {
 
-  const response = await axios.get(`https://api.hiro.so/ordinals/v1/inscriptions/${id}`)
-  return response.data;
+  const response = await fetch(`https://api.hiro.so/ordinals/v1/inscriptions/${id}`);
+  if (!response.ok) {
+    throw new Error(`Hiro returned ${response.status} for inscription ${id}`);
+  }
+  return response.json() as Promise<HiroInscription>;
 }
 
 /**
@@ -79,8 +80,9 @@ export async function getInscriptionFromHiro(id: string): Promise<HiroInscriptio
  */
 export async function getInscriptionContentFromHiro(id: string): Promise<string> {
 
-  const response = await axios.get(`https://api.hiro.so/ordinals/v1/inscriptions/${id}/content`, {
-    responseType: 'text',
-  })
-  return response.data;
+  const response = await fetch(`https://api.hiro.so/ordinals/v1/inscriptions/${id}/content`);
+  if (!response.ok) {
+    throw new Error(`Hiro returned ${response.status} for inscription ${id} content`);
+  }
+  return response.text();
 }

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import axios from 'axios';
 import sharp = require('sharp');
 
 import { Metadata } from '../types/metadata';
@@ -80,8 +79,11 @@ export class ImageService {
   async getThumbnail(imagUrl: string, width = 200, height = 200): Promise<Buffer> {
     return this.cacheService.loadCached('thumbnail_' + imagUrl + '_' + width + '_' + height, async () => {
 
-      const response = await axios.get(imagUrl, { responseType: 'arraybuffer' })
-      const buffer = Buffer.from(response.data);
+      const response = await fetch(imagUrl);
+      if (!response.ok) {
+        throw new Error(`Image fetch failed (${response.status}) for ${imagUrl}`);
+      }
+      const buffer = Buffer.from(await response.arrayBuffer());
       return await sharp(buffer).resize({ width, height }).toBuffer();
     });
   }

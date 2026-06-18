@@ -20,6 +20,6 @@
     "lib": ["es2021"],
     "outDir": "./dist"
   },
-  "include": ["src/**/*.ts", "../shared/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "jest.config.ts"]
 }

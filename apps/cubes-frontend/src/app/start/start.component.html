@@ -22,7 +22,9 @@
 
                 <ng-container *ngIf="cubeSuggestion">
                   We've pieced together a recommendation for you, highlighting the art from the
-                  <a href="https://magiceden.io/ordinals/marketplace/{{ cubeSuggestion.collectionSymbol }}" target="_blank">{{ cubeSuggestion.collectionName }}</a>
+                  <!-- TODO: relink to a live marketplace (Satflow is the leading ordinals venue
+                       after Magic Eden shut down in March 2026). For now just the plain name. -->
+                  {{ cubeSuggestion.collectionName }}
                   collection.<br class="d-none d-md-block">
 
                   If it catches your eye, mint it!
@@ -106,7 +108,9 @@
 
   <p class="mb-3">
     Here you see all {{ i.totalInscriptions }} cubes that have been inscribed so far.
-    You can find the full collection on <a target="_blank" href="https://magiceden.io/ordinals/marketplace/ordinal-cubes-by-haus-hoppe">MagicEden</a>, too.
+    <!-- TODO: relink to a live marketplace (likely Satflow) once we pick a
+         successor for Magic Eden, which shut down its ordinals business in
+         March 2026. Until then we just drop the marketplace shoutout. -->
   </p>
 
   <div class="row">

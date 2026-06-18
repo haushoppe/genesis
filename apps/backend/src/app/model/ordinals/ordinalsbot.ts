@@ -1,7 +1,6 @@
 import { OrdinalsbotFxrateResult } from '../../../shared/ordinals/ordinalsbot-fxrate-result';
 import { ErrorResponse, OrderResponse } from '../../../shared/ordinals/ordinalsbot-order-response';
 import { OrdinalsbotPriceRequestParams, OrdinalsbotPriceResult } from '../../../shared/ordinals/ordinalsbot-price-result';
-import { REFERRALS } from '../../../shared/ordinals/referral-code';
 import { validateReferralCode } from './validate-referral-code';
 import { Logger } from '@nestjs/common';
 
@@ -56,33 +55,6 @@ export async function createInscriptionRequestForHtml(
   }
 
   return response.json() as Promise<OrderResponse>;
-}
-
-export async function saveReferralCode(): Promise<any> {
-
-  return await Promise.all(
-    REFERRALS.map(async r => {
-      const response = await fetch('https://api.ordinalsbot.com/referrals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ referral: r.code, address: r.address }),
-      });
-      return { [r.code]: await response.json() };
-    })
-  );
-}
-
-export async function getReferralStatus(): Promise<any> {
-
-  return await Promise.all(
-    REFERRALS.map(async r => {
-      const url = new URL('https://api.ordinalsbot.com/referrals');
-      url.searchParams.set('referral', r.code);
-      url.searchParams.set('address', r.address);
-      const response = await fetch(url);
-      return { [r.code]: await response.json() };
-    })
-  );
 }
 
 export async function getOrderStatus(id: string): Promise<OrderResponse | ErrorResponse> {

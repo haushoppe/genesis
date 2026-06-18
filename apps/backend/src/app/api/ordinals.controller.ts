@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Header,
   NotFoundException,
@@ -9,15 +8,14 @@ import {
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 // Note: the cube read endpoints (getInscriptions, getSingleInscription,
 // getInscriptionsMetadata, getCubeSuggestion) have been removed — the
 // cubes-frontend now reads those datasets directly from public static
 // sources (ordpool-space/ordinal-cubes-index and
 // ordpool-space/magic-eden-ordinals-archive). Only the mint flow's order /
-// price / referral endpoints remain.
+// price endpoints remain.
 
 import { InscriptionFile, InscriptionOrder, isErrorResponse } from '../../shared/ordinals/ordinalsbot-order-response';
 import { CacheService } from '../model/cache.service';
@@ -27,9 +25,7 @@ import {
   getFxrate,
   getOrderStatus,
   getPrice,
-  getReferralStatus,
   loadHostedContent,
-  saveReferralCode,
 } from '../model/ordinals/ordinalsbot';
 import { validateReferralCode } from '../model/ordinals/validate-referral-code';
 import { oneMinuteInSeconds } from '../types/constants';
@@ -41,8 +37,7 @@ import { Price } from '../types/ordinals/price';
 @Controller()
 export class OrdinalsController {
 
-  constructor(private configService: ConfigService,
-    private cacheService: CacheService) {
+  constructor(private cacheService: CacheService) {
   }
 
   /**
@@ -152,39 +147,4 @@ export class OrdinalsController {
       };
     }, oneMinuteInSeconds);
   }
-
-  /**
-   * Saving Referral Code
-   *
-   * Use this endpoint to set a unique referral code for yourself.
-   */
-  @Post(['ordinals/saveReferralCode'])
-  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-  @ApiOperation({ operationId: 'saveReferralCode' })
-  async saveReferralCode() {
-
-    if (this.configService.get('environment') !== 'development') {
-      throw new ForbiddenException('This method should not be called on production');
-    }
-
-    return saveReferralCode();
-  }
-
-  /**
-   * Saving Referral Code
-   *
-   * Use this endpoint to set a unique referral code for yourself.
-   */
-  @Post(['ordinals/getReferralStatus'])
-  @ApiExcludeEndpoint(process.env.NODE_ENV !== 'development')
-  @ApiOperation({ operationId: 'getReferralStatus' })
-  async getReferralStatus() {
-
-    if (this.configService.get('environment') !== 'development') {
-      throw new ForbiddenException('This method should not be called on production');
-    }
-
-    return getReferralStatus();
-  }
 }
-

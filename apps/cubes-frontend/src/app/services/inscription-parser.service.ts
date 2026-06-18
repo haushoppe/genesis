@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import axios from 'axios';
 import { VinEntry } from './mempool.service.transaction-details.types';
 
 /**

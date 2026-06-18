@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable, throwError } from 'rxjs';
+import { from, map, Observable, throwError } from 'rxjs';
 import { BitcoinNetworkType, createInscription, CreateInscriptionResponse } from 'sats-connect';
 
 import { parseCube } from '../../../../shared/ordinals/parse-cube';
@@ -7,10 +7,17 @@ import { REFERRALS } from '../../../../shared/ordinals/referral-code';
 import { OrdinalsService } from '../openapi-client';
 import { InscriptionOrder } from '../ordinalsbot';
 import { CubeDetails } from '../store/mint.actions';
-import BitcoinEsploraApiProvider from './api/esplora/esploraAPiProvider';
-import { HiroService } from './hiro.service';
 import { isValidInscriptionId } from './is-valid-inscription-id';
 import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
+
+
+type RecommendedFees = {
+  fastestFee: number;
+  halfHourFee: number;
+  hourFee: number;
+  economyFee: number;
+  minimumFee: number;
+};
 
 
 @Injectable({
@@ -19,7 +26,6 @@ import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
 export class MintService {
 
   ordinalsService = inject(OrdinalsService);
-  hiroService = inject(HiroService);
 
   readonly template1 = `<html><!--cubes.haushoppe.art--><body><script>t='`;
   readonly template1title = `<html><!--cubes.haushoppe.art--><head><title>__TITLE__</title></head><body><script>t='`;
@@ -97,12 +103,12 @@ export class MintService {
     return html;
   }
 
-  async getFees() {
-
-    const btcClient = new BitcoinEsploraApiProvider({
-      network: 'Mainnet',
-    });
-    return await btcClient.getRecommendedFees();
+  async getFees(): Promise<RecommendedFees> {
+    const response = await fetch('https://api.ordpool.space/api/v1/fees/recommended');
+    if (!response.ok) {
+      throw new Error(`fees/recommended returned ${response.status}`);
+    }
+    return await response.json() as RecommendedFees;
   }
 
   placeOrder(
@@ -184,9 +190,23 @@ export class MintService {
     });
   }
 
-  inscriptionNumberToId(inscriptionNumber: string) {
-    return this.hiroService.getInscription(inscriptionNumber).pipe(
-      map(x => x.id)
+  /**
+   * Resolves an inscription NUMBER (e.g. "248751") into its full
+   * inscription ID by hitting our own ord JSON proxy. Hiro's ordinals API
+   * was sunsetted, so we go through ord.ordpool.space which serves the
+   * standard ord JSON contract.
+   */
+  inscriptionNumberToId(inscriptionNumber: string): Observable<string> {
+    const url = `https://ord.ordpool.space/inscription/${encodeURIComponent(inscriptionNumber)}`;
+    return from(
+      fetch(url, { headers: { Accept: 'application/json' } })
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`ord inscription lookup returned ${response.status} for ${inscriptionNumber}`);
+          }
+          const data = await response.json() as { id: string };
+          return data.id;
+        }),
     );
   }
 }

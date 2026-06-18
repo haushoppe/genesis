@@ -118,7 +118,7 @@ export class WalletService {
         color: ethereumColor
       }],
       appMetadata,
-      i18n,
+      i18n: i18n as any,
       connect,
       theme: lightTheme
     });

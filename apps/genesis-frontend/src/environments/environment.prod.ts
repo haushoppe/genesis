@@ -1,4 +1,4 @@
-import { KnownTokenName } from "../../../shared/known-token-name";
+import { KnownTokenName } from "../shared/known-token-name";
 
 export const environment = {
   production: true,

@@ -1,35 +1,51 @@
 name: Build Genesis Frontend
 
+# Builds the standalone Angular genesis-frontend (apps/genesis-frontend/) and
+# pushes the dist/ artifact to `haushoppe/genesis-frontend-build@main`,
+# which Cloudflare Pages auto-deploys to genesis.haushoppe.art.
+#
+# No more Nx — genesis-frontend has its own package.json with only the
+# Angular + NgRx + web3-onboard + Kendo deps it needs.
+
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
       - 'apps/genesis-frontend/**'
-      - 'libs/**'
-      - '*.json'
       - '.github/workflows/build-genesis-frontend.yml'
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/genesis-frontend
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: 18
+        cache: 'npm'
+        cache-dependency-path: apps/genesis-frontend/package-lock.json
 
-    - run: npm install --force
-    - run: npm install @nrwl/nx-linux-x64-gnu  --force #bugfix broken build! 😕
+    - run: npm ci
     - run: npx kendo-ui-license activate
       env:
         KENDO_UI_LICENSE: ${{ secrets.KENDO_UI_LICENSE }}
-    - run: npm run test:genesis-frontend
-    - run: npm run build:genesis-frontend:production
-    - name: Deploy Frontend to `haushoppe/genesis-frontend-build` repo
+    - run: npm test --if-present
+    - run: npm run build
+
+    - name: Deploy to haushoppe/genesis-frontend-build@main
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/genesis-frontend-build.git --branch=main --dir=dist/apps/genesis-frontend --name="The Buildbot" --email=noreply@haushoppe.art --no-notfound --no-nojekyll
+        npx angular-cli-ghpages \
+          --repo=https://github.com/haushoppe/genesis-frontend-build.git \
+          --branch=main \
+          --dir=dist \
+          --name="The Buildbot" \
+          --email=noreply@haushoppe.art \
+          --no-notfound \
+          --no-nojekyll

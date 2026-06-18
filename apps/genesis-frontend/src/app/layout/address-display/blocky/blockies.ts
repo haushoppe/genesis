@@ -101,7 +101,7 @@ function buildOpts(opts: BlockiesBuildOptions): BlockiesOptions {
 }
 
 function renderIcon(bopts: BlockiesBuildOptions, canvas: HTMLCanvasElement) {
-  const opts = buildOpts(bopts || {});
+  const opts = buildOpts(bopts || ({} as BlockiesBuildOptions));
   const imageData = createImageData(opts.size);
   const width = Math.sqrt(imageData.length);
 

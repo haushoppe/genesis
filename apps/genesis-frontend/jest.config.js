@@ -1,10 +1,12 @@
-/* eslint-disable */
-export default {
+/** @type {import('jest').Config} */
+module.exports = {
   displayName: 'genesis-frontend',
-  preset: '../../jest.preset.js',
+  preset: 'jest-preset-angular',
+  testEnvironment: 'jsdom',
+  rootDir: '.',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  globals: {},
-  coverageDirectory: '../../coverage/apps/genesis-frontend',
+  moduleFileExtensions: ['ts', 'js', 'html'],
+  testRegex: 'src/.+\\.spec\\.ts$',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',
@@ -20,4 +22,5 @@ export default {
     'jest-preset-angular/build/serializers/ng-snapshot',
     'jest-preset-angular/build/serializers/html-comment',
   ],
+  coverageDirectory: './coverage',
 };

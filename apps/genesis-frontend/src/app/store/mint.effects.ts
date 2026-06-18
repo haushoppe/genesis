@@ -18,7 +18,7 @@ import {
   withLatestFrom,
 } from 'rxjs/operators';
 
-import { KnownTokenName } from '../../../../shared/known-token-name';
+import { KnownTokenName } from '../../shared/known-token-name';
 import { environment } from '../../environments/environment';
 import { ApiService } from '../openapi-client';
 import { multiplyWeiPrice } from '../services/ethers-utils';

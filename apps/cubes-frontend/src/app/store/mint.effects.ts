@@ -21,16 +21,13 @@ import { OrdinalsService } from '../openapi-client';
 import { InscriptionOrder } from '../ordinalsbot';
 import { MempoolService } from '../services/mempool.service';
 import { MintService } from '../services/mint-service';
+import { CubesDataService } from '../services/cubes-data/cubes-data.service';
+import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { confettiFirework } from './helper/confetti-firework';
 import { MintActions } from './mint.actions';
 import { selectInscriptions, selectKnownInscriptionIds } from './mint.reducer';
 import { PageActions } from './page.actions';
 import { mapToParam, ofRoute } from './utils-ngrx-router/operators';
-import { KnownCollectionName } from '../../../../shared/ordinals/known-collection-name';
-
-
-
-const collectionName = KnownCollectionName.cubes;
 
 
 @Injectable()
@@ -38,6 +35,8 @@ export class MintEffects {
 
   actions = inject(Actions);
   ordinalsService = inject(OrdinalsService);
+  cubesData = inject(CubesDataService);
+  cubeSuggestion = inject(CubeSuggestionService);
   mintService = inject(MintService);
   mempoolService = inject(MempoolService);
   store = inject(Store);
@@ -215,7 +214,7 @@ export class MintEffects {
     return this.actions.pipe(
       ofType(MintActions.loadInscriptions),
       switchMap(({ itemsPerPage, currentPage }) =>
-        this.ordinalsService.getInscriptions(collectionName, itemsPerPage, currentPage).pipe(
+        this.cubesData.getInscriptions(itemsPerPage, currentPage).pipe(
           retry({ count: 3, delay: 1000 }),
           concatMap(inscriptions => [
             MintActions.loadInscriptionsSuccess({ inscriptions }),
@@ -238,7 +237,7 @@ export class MintEffects {
     return this.actions.pipe(
       ofType(MintActions.loadSingleInscription),
       switchMap(({ inscriptionId }) =>
-        this.ordinalsService.getSingleInscription(collectionName, inscriptionId).pipe(
+        this.cubesData.getSingleInscription(inscriptionId).pipe(
           retry({ count: 3, delay: 1000 }),
           concatMap(singleInscription => [
             MintActions.loadSingleInscriptionSuccess({ singleInscription }),
@@ -309,7 +308,7 @@ export class MintEffects {
     this.actions.pipe(
       ofType(MintActions.loadCubeSuggestion),
       switchMap(({ collectionSymbol }) =>
-        this.ordinalsService.getCubeSuggestion(collectionSymbol).pipe(
+        this.cubeSuggestion.getCubeSuggestion(collectionSymbol).pipe(
           retry({ count: 5, delay: 1000 }),
           map(cubeSuggestion => MintActions.loadCubeSuggestionSuccess({ cubeSuggestion })),
           catchError(error => of(MintActions.loadCubeSuggestionFailure({ error })))

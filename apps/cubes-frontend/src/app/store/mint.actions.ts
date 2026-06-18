@@ -1,7 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
-import { CubeSuggestion, InscriptionExtendedPaginatedResult, InscriptionExtendedSingleResult, Price } from '../openapi-client';
+import { Price } from '../openapi-client';
+import {
+  CubeSuggestion,
+  InscriptionExtendedPaginatedResult,
+  InscriptionExtendedSingleResult,
+} from '../services/cubes-data/types';
 import { InscriptionOrder } from '../ordinalsbot';
 import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 

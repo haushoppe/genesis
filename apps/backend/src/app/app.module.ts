@@ -14,9 +14,6 @@ import { ContractService } from './model/contract.service';
 import { ImageService } from './model/image.service';
 import { MetadataGenesisService } from './model/metadata-genesis.service';
 import { MetadataService } from './model/metadata-service';
-import { CubeSuggestionService } from './model/ordinals/cube-suggestion.service';
-import { CubeService } from './model/ordinals/cube.service';
-import { OrdinalsArchiveService } from './model/ordinals/ordinals-archive.service';
 import { ScheduleModule } from '@nestjs/schedule';
 
 
@@ -55,9 +52,6 @@ import { ScheduleModule } from '@nestjs/schedule';
     AllowlistService,
     MetadataGenesisService,
     ImageService,
-    OrdinalsArchiveService,
-    CubeService,
-    CubeSuggestionService,
     CacheService,
     ...allKnownTokenNames.map((tokenName: KnownTokenName) => ({
       provide: tokenName,

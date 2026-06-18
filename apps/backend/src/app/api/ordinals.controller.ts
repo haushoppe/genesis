@@ -12,14 +12,16 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { InscriptionFile, InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
-import { KnownCollectionName } from '../../../../shared/ordinals/known-collection-name';
-import { CacheService } from '../model/cache.service';
-import { paginateArray } from '../model/paginate-array';
+// Note: the cube read endpoints (getInscriptions, getSingleInscription,
+// getInscriptionsMetadata, getCubeSuggestion) have been removed — the
+// cubes-frontend now reads those datasets directly from public static
+// sources (ordpool-space/ordinal-cubes-index and
+// ordpool-space/magic-eden-ordinals-archive). Only the mint flow's order /
+// price / referral endpoints remain.
 
-import { findItemByInscriptionId, hideUnwantedProperties } from '../model/ordinals/inscription-helper';
-import { CubeSuggestionService } from '../model/ordinals/cube-suggestion.service';
-import { CubeService } from '../model/ordinals/cube.service';
+import { InscriptionFile, InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
+import { CacheService } from '../model/cache.service';
+import { hideUnwantedProperties } from '../model/ordinals/inscription-helper';
 import {
   createInscriptionRequestForHtml,
   getFxrate,
@@ -31,10 +33,7 @@ import {
 } from '../model/ordinals/ordinalsbot';
 import { validateReferralCode } from '../model/ordinals/validate-referral-code';
 import { oneMinuteInSeconds } from '../types/constants';
-import { CubeSuggestion } from '../types/ordinals/cube-suggestion';
 import { HtmlInscriptionRequest } from '../types/ordinals/html-inscription-request';
-import { InscriptionStandad as InscriptionStandard } from '../types/ordinals/inscription-standard';
-import { InscriptionExtended, InscriptionExtendedPaginatedResult, InscriptionExtendedSingleResult } from '../types/ordinals/inscription-extended';
 import { Price } from '../types/ordinals/price';
 
 
@@ -43,9 +42,7 @@ import { Price } from '../types/ordinals/price';
 export class OrdinalsController {
 
   constructor(private configService: ConfigService,
-    private cacheService: CacheService,
-    private cubeService: CubeService,
-    private cubeSuggestionService: CubeSuggestionService) {
+    private cacheService: CacheService) {
   }
 
   /**
@@ -118,105 +115,6 @@ export class OrdinalsController {
   }
 
   /**
-   * Get all known inscriptions (paged and cached)
-   */
-  @Get(['ordinals/getInscriptions/:collectionName/:itemsPerPage/:currentPage'])
-  @ApiOperation({ operationId: 'getInscriptions' })
-  @ApiParam({
-    name: 'collectionName',
-    enum: KnownCollectionName,
-    example: KnownCollectionName.cubes,
-  })
-  @ApiParam({ name: 'itemsPerPage', type: 'number', example: 12 })
-  @ApiParam({ name: 'currentPage', type: 'number', example: 1 })
-  @ApiOkResponse({ type: InscriptionExtendedPaginatedResult })
-  @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
-  async getInscriptions(
-    @Param('collectionName') collectionName: KnownCollectionName,
-    @Param('itemsPerPage', ParseIntPipe) itemsPerPage: number,
-    @Param('currentPage', ParseIntPipe) currentPage: number,
-  ): Promise<InscriptionExtendedPaginatedResult> {
-
-    let meta: InscriptionExtended[] = [];
-
-    if (collectionName === KnownCollectionName.cubes) {
-      meta = await this.cubeService.getAllCubes();
-    }
-
-    const reverseMeta = [...meta].reverse();
-    const inscriptions = paginateArray(reverseMeta, itemsPerPage, currentPage);
-
-    return {
-      inscriptions,
-      totalInscriptions: reverseMeta.length,
-      itemsPerPage,
-      currentPage
-    }
-  }
-
-  /**
-   * Get a single known inscription (cached)
-   */
-  @Get(['ordinals/getSingleInscription/:collectionName/:inscriptionId'])
-  @ApiOperation({ operationId: 'getSingleInscription' })
-  @ApiParam({
-    name: 'collectionName',
-    enum: KnownCollectionName,
-    example: KnownCollectionName.cubes,
-  })
-  @ApiParam({ name: 'inscriptionId', type: 'string', example: '00ef588330b57ba4586365c9a3663e14bcc14452819ae6c09f99eec291435831i0' })
-  @ApiOkResponse({ type: InscriptionExtendedSingleResult })
-  @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
-  async getSingleInscription(
-    @Param('collectionName') collectionName: KnownCollectionName,
-    @Param('inscriptionId') inscriptionId: string
-  ): Promise<InscriptionExtendedSingleResult> {
-
-    let meta: InscriptionExtended[] = [];
-
-    if (collectionName === KnownCollectionName.cubes) {
-      meta = await this.cubeService.getAllCubes();
-    }
-
-    const reverseMeta = [...meta].reverse();
-    const inscriptions = findItemByInscriptionId(reverseMeta, inscriptionId);
-
-    return {
-      inscription: inscriptions.current,
-      previousInscriptionId: inscriptions.previous ? inscriptions.previous.inscriptionId : null,
-      nextInscriptionId: inscriptions.next ? inscriptions.next.inscriptionId : null
-    }
-  }
-
-  /**
-   * Get all known inscription metadata (cached) – format of MagicEden and other marketplaces
-   */
-  @Get(['ordinals/getInscriptionsMetadata/:collectionName'])
-  @ApiOperation({ operationId: 'getInscriptionsMetadata' })
-  @ApiParam({
-    name: 'collectionName',
-    enum: KnownCollectionName,
-    example: KnownCollectionName.cubes,
-  })
-  @ApiOkResponse({ type: InscriptionStandard, isArray: true })
-  @Header('Cache-Control', 'public, max-age=' + oneMinuteInSeconds + ', immutable')
-  async getInscriptionsMetadata(
-    @Param('collectionName') collectionName: KnownCollectionName
-  ): Promise<InscriptionStandard[]> {
-
-    let meta: InscriptionExtended[] = [];
-
-    if (collectionName === KnownCollectionName.cubes) {
-      meta = await this.cubeService.getAllCubes();
-    }
-
-    return meta.map(x => ({
-      id: x.inscriptionId,
-      meta: x.meta
-    }));
-  }
-
-  /**
    * Get OrdinalsBot price in sats (cached)
    */
   @Get(['ordinals/getPrice/:fee/:size/:code?'])
@@ -253,25 +151,6 @@ export class OrdinalsController {
         priceInUsd
       };
     }, oneMinuteInSeconds);
-  }
-
-  /**
-   * Get a cube suggestion — six random unclaimed image inscriptions drawn from
-   * a randomly chosen popular collection in the frozen Magic Eden archive
-   * (https://github.com/ordpool-space/magic-eden-ordinals-archive).
-   */
-  @Get(['ordinals/getCubeSuggestion/:collectionSymbol?'])
-  @ApiOperation({ operationId: 'getCubeSuggestion' })
-  @ApiParam({ name: 'collectionSymbol', type: 'string', description: 'Searches only within a specific collection, or in the top collections (EMPTY string).' })
-  @ApiOkResponse({ type: CubeSuggestion })
-  @ApiNotFoundResponse({ description: 'Could not find enough unclaimed tokens.' })
-  @Header('Cache-Control', 'no-cache')
-  async getCubeSuggestion(@Param('collectionSymbol') collectionSymbol?: string): Promise<CubeSuggestion> {
-    try {
-      return await this.cubeSuggestionService.getCubeSuggestion(collectionSymbol);
-    } catch (exception) {
-      throw new NotFoundException(exception);
-    }
   }
 
   /**

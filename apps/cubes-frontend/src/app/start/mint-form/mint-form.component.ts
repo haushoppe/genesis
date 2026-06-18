@@ -20,7 +20,7 @@ import { TrimValueAccessorDirective } from '../../trim-value-accessor.directive'
 import { BtcAddressValidator } from './btc-address.validator';
 import { CorrectCodeValidator } from './correct-code.validator';
 import { InscriptionIdValidator } from './inscription-id.validator';
-import { CubeSuggestion } from '../../openapi-client';
+import { CubeSuggestion } from '../../services/cubes-data/types';
 
 function containsOnlyNumbers(str: string) {
   const reg = /^\d+$/;

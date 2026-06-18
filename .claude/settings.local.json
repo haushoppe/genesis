@@ -26,7 +26,11 @@
       "WebFetch(domain:geniidata.readme.io)",
       "WebFetch(domain:bestinslot.xyz)",
       "WebFetch(domain:docs.xverse.app)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(gh gist:*)",
+      "WebFetch(domain:gist.github.com)",
+      "Bash(gh search:*)",
+      "WebFetch(domain:docs.satflow.com)"
     ]
   }
 }

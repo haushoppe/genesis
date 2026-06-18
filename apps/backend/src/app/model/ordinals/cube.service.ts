@@ -16,8 +16,10 @@ import { InscriptionExtended } from '../../types/ordinals/inscription-extended';
  * inscription `next` linked list, identifies cubes by their HTML marker, and
  * commits the result to data/cubes.json — served on GitHub Pages.
  *
- * This service just pulls that JSON on an interval and caches it in memory.
- * Tiny, no third-party dependency, easy to reason about.
+ * This service:
+ *   - lazy-loads on the first request (no startup-time race),
+ *   - serves from the in-memory cache afterwards,
+ *   - re-fetches every 5 minutes to pick up new cron-committed cubes.
  */
 @Injectable()
 export class CubeService {
@@ -26,47 +28,59 @@ export class CubeService {
   private readonly cubesUrl = 'https://ordpool-space.github.io/ordinal-cubes-index/data/cubes.json';
 
   private allCubes: InscriptionExtended[] = [];
+  private inflight: Promise<InscriptionExtended[]> | null = null;
 
-  async onModuleInit() {
-    this.logger.log('Initializing CubeService. Loading cubes from public index…');
-    // Don't await — let the first fetch happen in the background so app startup
-    // isn't blocked by a slow CDN response. The first request that needs cubes
-    // will see an empty array; subsequent requests get the cached list.
-    void this.refresh();
-  }
-
-  /** Hourly refresh — keep in step with the cron that updates cubes-index. */
-  @Interval(1000 * 60 * 60)
-  async handleInterval() {
-    await this.refresh();
-  }
-
+  /**
+   * Returns all known cubes. If the cache is empty (typical on first call
+   * after boot), trigger a fetch and await it before returning. Subsequent
+   * concurrent callers share the same in-flight promise.
+   */
   async getAllCubes(): Promise<InscriptionExtended[]> {
-    return this.allCubes;
+    if (this.allCubes.length > 0) return this.allCubes;
+    return this.refresh();
+  }
+
+  /** Periodic refresh — picks up new cubes the hourly cron commits to the index repo. */
+  @Interval(1000 * 60 * 5)
+  async handleInterval() {
+    try {
+      await this.refresh();
+    } catch {
+      // already logged in refresh()
+    }
   }
 
   // -------------------------------------------------------------------------
 
-  private async refresh(): Promise<void> {
+  private async refresh(): Promise<InscriptionExtended[]> {
+    if (this.inflight) return this.inflight;
+    this.inflight = this.doFetch().finally(() => { this.inflight = null; });
+    return this.inflight;
+  }
+
+  private async doFetch(): Promise<InscriptionExtended[]> {
     try {
       const res = await fetch(this.cubesUrl, { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = (await res.json()) as ExternalCube[];
-      const cubes = raw.map(toInscriptionExtended);
+      const next = raw.map(toInscriptionExtended);
 
-      // Only swap the cache if we got at least the count we already have — guards
-      // against an upstream regression silently shrinking the list.
-      if (cubes.length >= this.allCubes.length) {
-        this.allCubes = cubes;
-        this.logger.log(`Cubes refreshed: ${cubes.length} loaded`);
+      // Only swap the cache if upstream is at least as big as what we already
+      // have — guards against an upstream regression silently shrinking the list.
+      if (next.length >= this.allCubes.length) {
+        this.allCubes = next;
+        this.logger.log(`Cubes refreshed: ${next.length} loaded`);
       } else {
         this.logger.warn(
-          `Refused to overwrite cubes cache: upstream returned ${cubes.length}, ` +
-          `local has ${this.allCubes.length}`,
+          `Refused to overwrite cubes cache: upstream returned ${next.length}, local has ${this.allCubes.length}`,
         );
       }
+      return this.allCubes;
     } catch (err) {
       this.logger.warn(`Cube refresh failed: ${err instanceof Error ? err.message : String(err)}`);
+      // Return current cache (possibly empty) — callers that asked for cubes
+      // see "no cubes yet" rather than getting an exception.
+      return this.allCubes;
     }
   }
 }

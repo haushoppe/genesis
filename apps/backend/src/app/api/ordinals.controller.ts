@@ -19,7 +19,7 @@ import { ApiExcludeEndpoint, ApiNotFoundResponse, ApiOkResponse, ApiOperation, A
 // ordpool-space/magic-eden-ordinals-archive). Only the mint flow's order /
 // price / referral endpoints remain.
 
-import { InscriptionFile, InscriptionOrder, isErrorResponse } from '../../../../shared/ordinals/ordinalsbot-order-response';
+import { InscriptionFile, InscriptionOrder, isErrorResponse } from '../../shared/ordinals/ordinalsbot-order-response';
 import { CacheService } from '../model/cache.service';
 import { hideUnwantedProperties } from '../model/ordinals/inscription-helper';
 import {

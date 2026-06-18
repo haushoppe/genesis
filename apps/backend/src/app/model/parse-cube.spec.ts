@@ -1,4 +1,4 @@
-import { parseCube } from '../../../../shared/ordinals/parse-cube';
+import { parseCube } from '../../shared/ordinals/parse-cube';
 
 
 describe('parseCube', () => {

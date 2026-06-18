@@ -1,4 +1,4 @@
-import { ReferralCode, REFERRALS } from '../../../../../shared/ordinals/referral-code';
+import { ReferralCode, REFERRALS } from '../../../shared/ordinals/referral-code';
 import { validateReferralCode } from './validate-referral-code';
 
 describe('validateReferralCode', () => {

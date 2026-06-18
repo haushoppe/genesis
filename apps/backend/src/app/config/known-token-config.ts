@@ -1,5 +1,5 @@
-import { KnownNetworkName } from '../../../../shared/known-network-name';
-import { KnownTokenName } from '../../../../shared/known-token-name';
+import { KnownNetworkName } from '../../shared/known-network-name';
+import { KnownTokenName } from '../../shared/known-token-name';
 
 export interface KnownTokenConfig {
   name: KnownTokenName;

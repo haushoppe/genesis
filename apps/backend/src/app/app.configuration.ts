@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
 
 import { knownTokens } from './config/known-tokens';
-import { KnownNetworkName } from '../../../shared/known-network-name';
+import { KnownNetworkName } from '../shared/known-network-name';
 
 
 export const configuration = () => {

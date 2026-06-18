@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
-import { allKnownTokenNames, KnownTokenName } from '../../../shared/known-token-name';
+import { allKnownTokenNames, KnownTokenName } from '../shared/known-token-name';
 import { ApiController } from './api/api.controller';
 import { OrdinalsController } from './api/ordinals.controller';
 import { configuration, validationSchema } from './app.configuration';

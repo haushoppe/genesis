@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ContractEventPayload, ethers, EventLog } from 'ethers';
 
-import { knownAbis } from '../../../../shared/known-abis';
-import { KnownTokenName } from '../../../../shared/known-token-name';
+import { knownAbis } from '../../shared/known-abis';
+import { KnownTokenName } from '../../shared/known-token-name';
 import { KnownTokenConfig } from '../config/known-token-config';
 import { MintInfo } from '../types/mint-info';
 import { TokenOwner } from '../types/token-owner';

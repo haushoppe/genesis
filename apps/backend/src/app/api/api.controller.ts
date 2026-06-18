@@ -25,7 +25,7 @@ import {
 } from '@nestjs/swagger';
 import * as express from 'express';
 
-import { KnownTokenName } from '../../../../shared/known-token-name';
+import { KnownTokenName } from '../../shared/known-token-name';
 import { KnownChains } from '../config/known-chains';
 import { KnownTokenConfig } from '../config/known-token-config';
 import { AllowlistService } from '../model/allowlist.service';

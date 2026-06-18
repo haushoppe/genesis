@@ -1,4 +1,4 @@
-import { InscriptionOrder, OrderResponse } from '../../../../../shared/ordinals/ordinalsbot-order-response';
+import { InscriptionOrder, OrderResponse } from '../../../shared/ordinals/ordinalsbot-order-response';
 
 /**
  * Project an OrdinalsBot OrderResponse down to the public-facing fields

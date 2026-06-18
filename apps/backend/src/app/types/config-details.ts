@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { KnownNetworkName } from '../../../../shared/known-network-name';
-import { KnownTokenName } from '../../../../shared/known-token-name';
+import { KnownNetworkName } from '../../shared/known-network-name';
+import { KnownTokenName } from '../../shared/known-token-name';
 import { Chain } from './chain';
 
 

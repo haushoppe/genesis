@@ -1,4 +1,4 @@
-import { KnownNetworkName } from "../../../../shared/known-network-name"
+import { KnownNetworkName } from "../../shared/known-network-name"
 import { Chain } from "./chain"
 
 

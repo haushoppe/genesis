@@ -1,22 +1,29 @@
 name: Build Backend
 
+# Builds the NestJS backend and pushes a slim deploy artifact to
+# `haushoppe/backend-build` on the `stage_prod` branch. The happysrv
+# `haushoppe-backend-deploy.timer` polls that branch every minute and
+# restarts the service on HEAD change. See:
+#   ordpool/deploy-happyserver/haushoppe-backend.service
+#   ordpool/deploy-happyserver/scripts/haushoppe-backend-deploy.sh
+
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
       - 'apps/backend/**'
+      - 'apps/shared/**'
       - '*.json'
       - '.github/workflows/build-backend.yml'
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: 18
 
@@ -24,9 +31,19 @@ jobs:
     - run: npm install @nrwl/nx-linux-x64-gnu --force #bugfix broken build! 😕
     - run: npm run test:backend
     - run: npm run build:backend:production
-    - name: Deploy Backend to `haushoppe/backend-build` repo
+
+    - name: Deploy to haushoppe/backend-build@stage_prod
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      # Artifact branch is `stage_prod` (underscore) — same convention as
+      # ordpool-backend / cat21-indexer. Server-side
+      # haushoppe-backend-deploy.sh fetches origin/stage_prod.
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/backend-build.git --branch=main --dir=dist/apps/backend --name="The Buildbot" --email=noreply@haushoppe.art --no-notfound --no-nojekyll
-
+        npx angular-cli-ghpages \
+          --repo=https://github.com/haushoppe/backend-build.git \
+          --branch=stage_prod \
+          --dir=dist/apps/backend \
+          --name="The Buildbot" \
+          --email=noreply@haushoppe.art \
+          --no-notfound \
+          --no-nojekyll

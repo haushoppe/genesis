@@ -10,7 +10,7 @@
     "start:backend": "nx serve --project=backend",
     "start:hardhat": "cd contracts && npm run hardhat:start-localhost-network",
     "build:backend": "nx build --project=backend",
-    "build:backend:production": "nx build --project=backend --configuration=production && cp package* dist/apps/backend/ && jq '.scripts = { start: \"node main.js\" }' dist/apps/backend/package.json > tmp && mv tmp dist/apps/backend/package.json",
+    "build:backend:production": "nx build --project=backend --configuration=production && node tools/build-backend-package.mjs",
     "test:backend": "nx test --project=backend",
     "start:genesis-frontend": "nx serve --project=genesis-frontend",
     "build:genesis-frontend": "nx build --project=genesis-frontend",

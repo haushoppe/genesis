@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Nx 16 monorepo for the **Ordinal Cubes by HAUS HOPPE** project — a permissionless 3D cube gallery on Bitcoin Ordinals. Users select 6 existing inscriptions (one per cube side) and mint a new HTML inscription on Bitcoin that renders an interactive 3D cube.
 
 **Live product:** https://cubes.haushoppe.art/ (Cloudflare Pages)
-**Backend API:** https://backend.haushoppe.art/ (Koyeb)
+**Backend API:** https://backend.haushoppe.art/ (happysrv via Cloudflare Tunnel — see `ordpool/deploy-happyserver/haushoppe-backend.service`)
 
 The genesis-frontend (Ethereum ERC-721 minting) was never finished and is inactive. The cubes-frontend is the live, active product.
 
@@ -126,8 +126,7 @@ Auto-generated from backend spec. Two services: `ApiService` (ERC-721 endpoints)
 
 GitHub Actions (`.github/workflows/`):
 - **build-cubes-frontend.yml** — triggered on push to main affecting `apps/cubes-frontend/**` or `libs/**`. Runs tests, production build, publishes to `haushoppe/cubes-frontend-build` repo → Cloudflare Pages auto-deploys.
-- **build-backend.yml** — triggered on push to main affecting `apps/backend/**`. Runs tests, production build, publishes to `haushoppe/backend-build` repo → Koyeb auto-deploys.
-- **redeploy-backend.yml** — manual workflow dispatch to redeploy Koyeb service via API.
+- **build-backend.yml** — triggered on push to main affecting `apps/backend/**` or `apps/shared/**`. Runs tests, production build, publishes the `dist/apps/backend/` artifact to `haushoppe/backend-build@stage_prod`. happysrv's `haushoppe-backend-deploy.timer` polls that branch every minute and restarts `haushoppe-backend.service` on HEAD change (≤60s lag CI → live).
 - **build-genesis-frontend.yml** — publishes to `haushoppe/genesis-frontend-build` (inactive product).
 
 Workflows use Node 18 and `npm install --force`.

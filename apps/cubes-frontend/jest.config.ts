@@ -1,10 +1,13 @@
-/* eslint-disable */
-export default {
+import type { Config } from 'jest';
+
+const config: Config = {
   displayName: 'cubes-frontend',
-  preset: '../../jest.preset.js',
+  preset: 'jest-preset-angular',
+  testEnvironment: 'jsdom',
+  rootDir: '.',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  globals: {},
-  coverageDirectory: '../../coverage/apps/cubes-frontend',
+  moduleFileExtensions: ['ts', 'js', 'html'],
+  testRegex: 'src/.+\\.spec\\.ts$',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',
@@ -20,4 +23,7 @@ export default {
     'jest-preset-angular/build/serializers/ng-snapshot',
     'jest-preset-angular/build/serializers/html-comment',
   ],
+  coverageDirectory: './coverage',
 };
+
+export default config;

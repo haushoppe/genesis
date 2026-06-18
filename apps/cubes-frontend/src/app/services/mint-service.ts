@@ -2,8 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, throwError } from 'rxjs';
 import { BitcoinNetworkType, createInscription, CreateInscriptionResponse } from 'sats-connect';
 
-import { parseCube } from '../../../../shared/ordinals/parse-cube';
-import { REFERRALS } from '../../../../shared/ordinals/referral-code';
+import { parseCube } from '../../shared/ordinals/parse-cube';
+import { REFERRALS } from '../../shared/ordinals/referral-code';
 import { OrdinalsService } from '../openapi-client';
 import { InscriptionOrder } from '../ordinalsbot';
 import { CubeDetails } from '../store/mint.actions';

@@ -1,6 +1,4 @@
-
-import * as confettiWorkaround from 'canvas-confetti';
-const confetti = (confettiWorkaround as any).default as typeof confettiWorkaround;
+import confetti from 'canvas-confetti';
 
 function randomInRange(min: number, max: number) {
   return Math.random() * (max - min) + min;

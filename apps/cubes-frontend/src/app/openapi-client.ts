@@ -1,1 +1,1 @@
-export * from '../../../../libs/openapi-client';
+export * from '../openapi-client';

@@ -1,32 +1,48 @@
 name: Build Cubes Frontend
 
+# Builds the standalone Angular cubes-frontend (apps/cubes-frontend/) and
+# pushes the dist/ artifact to `haushoppe/cubes-frontend-build@main`,
+# which Cloudflare Pages auto-deploys to cubes.haushoppe.art.
+#
+# No more Nx — cubes-frontend has its own package.json with only the
+# Angular + NgRx + Bitcoin deps it needs.
+
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
       - 'apps/cubes-frontend/**'
-      - 'libs/**'
-      - '*.json'
       - '.github/workflows/build-cubes-frontend.yml'
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/cubes-frontend
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: 18
+        cache: 'npm'
+        cache-dependency-path: apps/cubes-frontend/package-lock.json
 
-    - run: npm install --force
-    - run: npm install @nrwl/nx-linux-x64-gnu  --force #bugfix broken build! 😕
-    - run: npm run test:cubes-frontend
-    - run: npm run build:cubes-frontend:production
-    - name: Deploy Frontend to `haushoppe/cubes-frontend-build` repo
+    - run: npm ci
+    - run: npm test --if-present
+    - run: npm run build
+
+    - name: Deploy to haushoppe/cubes-frontend-build@main
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
-        npx angular-cli-ghpages --repo=https://github.com/haushoppe/cubes-frontend-build.git --branch=main --dir=dist/apps/cubes-frontend --name="The Buildbot" --email=noreply@haushoppe.art --no-notfound --no-nojekyll
+        npx angular-cli-ghpages \
+          --repo=https://github.com/haushoppe/cubes-frontend-build.git \
+          --branch=main \
+          --dir=dist \
+          --name="The Buildbot" \
+          --email=noreply@haushoppe.art \
+          --no-notfound \
+          --no-nojekyll

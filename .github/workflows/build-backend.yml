@@ -14,6 +14,7 @@ on:
     paths:
       - 'apps/backend/**'
       - 'apps/shared/**'
+      - 'tools/build-backend-package.mjs'
       - '*.json'
       - '.github/workflows/build-backend.yml'
 

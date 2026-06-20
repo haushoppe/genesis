@@ -7,17 +7,16 @@ import { environment } from '../../../../src/environments/environment';
 import { ToggleIframeDirective } from '../toggle-iframe.directive';
 
 @Component({
-  selector: 'app-inscription-list-item',
-  templateUrl: './inscription-list-item.component.html',
-  styleUrls: ['./inscription-list-item.component.scss'],
-  standalone: true,
-  imports: [
-    RouterLink,
-    NgIf,
-    NgFor,
-    ToggleIframeDirective
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-inscription-list-item',
+    templateUrl: './inscription-list-item.component.html',
+    styleUrls: ['./inscription-list-item.component.scss'],
+    imports: [
+        RouterLink,
+        NgIf,
+        NgFor,
+        ToggleIframeDirective
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InscriptionListItemComponent  {
 

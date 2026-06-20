@@ -14,19 +14,18 @@ interface Faq {
 }
 
 @Component({
-  selector: 'app-faq',
-  templateUrl: './faq.component.html',
-  styleUrls: ['./faq.component.scss'],
-  standalone: true,
-  imports: [
-    ParseMarkdownPipe,
-    RouterLink,
-    LetModule,
-    PushModule,
-    NgFor,
-    NgClass
-],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-faq',
+    templateUrl: './faq.component.html',
+    styleUrls: ['./faq.component.scss'],
+    imports: [
+        ParseMarkdownPipe,
+        RouterLink,
+        LetModule,
+        PushModule,
+        NgFor,
+        NgClass
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FaqComponent {
 

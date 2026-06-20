@@ -6,10 +6,9 @@ import { RouterLink } from '@angular/router';
     selector: 'app-presskit',
     templateUrl: './presskit.component.html',
     styleUrls: ['./presskit.component.scss'],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-      RouterLink
+        RouterLink
     ]
 })
 export class PresskitComponent {

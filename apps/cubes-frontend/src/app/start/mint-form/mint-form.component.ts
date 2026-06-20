@@ -28,29 +28,28 @@ function containsOnlyNumbers(str: string) {
 }
 
 @Component({
-  selector: 'app-mint-form',
-  templateUrl: './mint-form.component.html',
-  styleUrls: ['./mint-form.component.scss'],
-  standalone: true,
-  imports: [
-    NgIf,
-    LoadingIndicatorButtonComponent,
-    ReactiveFormsModule,
-    LetModule,
-    NgClass,
-    TrimValueAccessorDirective,
-    TrimNumberValueAccessorDirective,
-    CubePreviewComponent,
-    CubePreviewTitleComponent,
-    RouterLink,
-    PushModule,
-    LoadingIndicatorComponent,
-    DecimalPipe,
-    ShortenAddressPipe,
-    JsonPipe,
-    LoadingIndicatorComponent
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-mint-form',
+    templateUrl: './mint-form.component.html',
+    styleUrls: ['./mint-form.component.scss'],
+    imports: [
+        NgIf,
+        LoadingIndicatorButtonComponent,
+        ReactiveFormsModule,
+        LetModule,
+        NgClass,
+        TrimValueAccessorDirective,
+        TrimNumberValueAccessorDirective,
+        CubePreviewComponent,
+        CubePreviewTitleComponent,
+        RouterLink,
+        PushModule,
+        LoadingIndicatorComponent,
+        DecimalPipe,
+        ShortenAddressPipe,
+        JsonPipe,
+        LoadingIndicatorComponent
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MintFormComponent implements OnInit {
 

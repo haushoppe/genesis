@@ -9,20 +9,18 @@ import { PushModule } from '@rx-angular/template/push';
 import { NgIf } from '@angular/common';
 
 @Component({
-  // eslint-disable-next-line @angular-eslint/component-selector
-  selector: 'body',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
-  standalone: true,
-  imports: [
-    BannerComponent,
-    FooterComponent,
-    HeaderComponent,
-    RouterOutlet,
-    PushModule,
-    NgIf
-  ],
-  // changeDetection: ChangeDetectionStrategy.OnPush
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'body',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.scss'],
+    imports: [
+        BannerComponent,
+        FooterComponent,
+        HeaderComponent,
+        RouterOutlet,
+        PushModule,
+        NgIf
+    ]
 })
 export class AppComponent {
   customScroll = inject(CustomScrollService);

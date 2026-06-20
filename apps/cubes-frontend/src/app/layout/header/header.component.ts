@@ -9,19 +9,18 @@ import { LoadingIndicatorButtonComponent } from '../loading-indicator-button/loa
 import { ShortenAddressPipe } from '../shorten-address.pipe';
 
 @Component({
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss'],
-  selector: 'header',
-  standalone: true,
-  imports: [
-    NgIf,
-    RouterLink,
-    RouterLinkActive,
-    LoadingIndicatorButtonComponent,
-    LetModule,
-    ShortenAddressPipe
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './header.component.html',
+    styleUrls: ['./header.component.scss'],
+    selector: 'header',
+    imports: [
+        NgIf,
+        RouterLink,
+        RouterLinkActive,
+        LoadingIndicatorButtonComponent,
+        LetModule,
+        ShortenAddressPipe
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HeaderComponent {
 

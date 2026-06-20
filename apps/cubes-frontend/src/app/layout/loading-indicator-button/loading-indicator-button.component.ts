@@ -6,13 +6,12 @@ import { getInitialState, SubmittableState } from '../../store/submittable/submi
 import { AlertComponent } from '../alert/alert.component';
 
 @Component({
-  selector: 'app-loading-indicator-button',
-  templateUrl: './loading-indicator-button.component.html',
-  standalone: true,
-  imports: [
-    NgIf, NgClass, AlertComponent
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-loading-indicator-button',
+    templateUrl: './loading-indicator-button.component.html',
+    imports: [
+        NgIf, NgClass, AlertComponent
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoadingIndicatorButtonComponent {
 

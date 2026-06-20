@@ -20,7 +20,6 @@ import { SafeUrlPipe } from '../safe-url.pipe';
     selector: 'app-order-details',
     templateUrl: './order-details.component.html',
     styleUrls: ['./order-details.component.scss'],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         NgIf,

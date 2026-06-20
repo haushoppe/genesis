@@ -5,15 +5,14 @@ import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { MintFacade } from '../../store/mint.facade';
 
 @Component({
-  selector: 'app-cube-preview',
-  templateUrl: './cube-preview.component.html',
-  styleUrls: ['./cube-preview.component.scss'],
-  standalone: true,
-  imports: [
-    NgIf,
-    SafeHtmlPipe
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-cube-preview',
+    templateUrl: './cube-preview.component.html',
+    styleUrls: ['./cube-preview.component.scss'],
+    imports: [
+        NgIf,
+        SafeHtmlPipe
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CubePreviewComponent {
 

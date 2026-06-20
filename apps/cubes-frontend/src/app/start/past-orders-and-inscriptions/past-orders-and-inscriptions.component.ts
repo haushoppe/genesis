@@ -10,13 +10,12 @@ import { PastFacade } from '../../store/past.facade';
     selector: 'app-past-orders-and-inscriptions',
     templateUrl: './past-orders-and-inscriptions.component.html',
     styleUrls: ['./past-orders-and-inscriptions.component.scss'],
-    standalone: true,
     imports: [
-      NgIf,
-      NgFor,
-      LetModule,
-      RouterLink,
-      DatePipe
+        NgIf,
+        NgFor,
+        LetModule,
+        RouterLink,
+        DatePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

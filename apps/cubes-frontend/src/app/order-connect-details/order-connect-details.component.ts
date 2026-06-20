@@ -18,18 +18,17 @@ import { MintFacade } from '../store/mint.facade';
     selector: 'app-order-connect-details',
     templateUrl: './order-connect-details.component.html',
     styleUrls: ['./order-connect-details.component.scss'],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-      NgIf,
-      PushModule,
-      NgClass,
-      LoadingIndicatorComponent,
-      NgIf,
-      LetModule,
-      RouterLink,
-      SafeHtmlPipe,
-      JsonPipe
+        NgIf,
+        PushModule,
+        NgClass,
+        LoadingIndicatorComponent,
+        NgIf,
+        LetModule,
+        RouterLink,
+        SafeHtmlPipe,
+        JsonPipe
     ]
 })
 export class OrderConnectDetailsComponent {

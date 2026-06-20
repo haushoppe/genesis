@@ -1,5 +1,3 @@
-import { RxPush } from '@rx-angular/template/push';
-import { RxLet } from '@rx-angular/template/let';
 import { JsonPipe, NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -18,11 +16,9 @@ import { MintFacade } from '../store/mint.facade';
   styleUrls: ['./order-connect-details.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RxPush,
-    NgClass,
+        NgClass,
     LoadingIndicatorComponent,
-    RxLet,
-    RouterLink,
+        RouterLink,
     SafeHtmlPipe,
     JsonPipe,
   ],

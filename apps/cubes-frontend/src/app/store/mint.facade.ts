@@ -36,7 +36,6 @@ export class MintFacade {
   store = inject(Store);
   mintService = inject(MintService);
 
-  // Signal-based selectors (NgRx 21 selectSignal — preferred path).
   inscriptions = this.store.selectSignal(selectInscriptions);
   inscriptionsStatus = this.store.selectSignal(selectInscriptionsStatus);
   singleInscription = this.store.selectSignal(selectSingleInscription);
@@ -56,27 +55,6 @@ export class MintFacade {
   cubeSuggestionStatus = this.store.selectSignal(selectCubeSuggestionStatus);
   cubeSuggestionFixed = this.store.selectSignal(selectCubeSuggestionFixed);
 
-  // Legacy Observable variants — kept during the migration; removed once
-  // every template consumer is on the Signal path.
-  inscriptions$ = this.store.select(selectInscriptions);
-  inscriptionsStatus$ = this.store.select(selectInscriptionsStatus);
-  singleInscription$ = this.store.select(selectSingleInscription);
-  singleInscriptionStatus$ = this.store.select(selectSingleInscriptionStatus);
-  orderResponse$ = this.store.select(selectOrderResponse);
-  orderStatus$ = this.store.select(selectOrderStatus);
-  createInscriptionResponse$ = this.store.select(selectCreateInscriptionResponse);
-  createInscriptionStatus$ = this.store.select(selectCreateInscriptionStatus);
-  file$ = this.store.select(selectFile);
-  isOrderPending$ = this.store.select(selectIsOrderPending);
-  bestOrderId$ = this.store.select(selectBestOrderId);
-  bestTransactionId$ = this.store.select(selectBestTransactionId);
-  knownInscriptionIdStatus$ = this.store.select(selectKnownInscriptionIdStatus);
-  price$ = this.store.select(selectPrice);
-  priceStatus$ = this.store.select(selectPriceStatus);
-  cubeSuggestion$ = this.store.select(selectCubeSuggestion);
-  cubeSuggestionStatus$ = this.store.select(selectCubeSuggestionStatus);
-  cubeSuggestionFixed$ = this.store.select(selectCubeSuggestionFixed);
-
 
   placeOrder(cubeDetails: CubeDetails, receiveAddress: string, code: string) {
     this.store.dispatch(MintActions.placeOrder({
@@ -94,6 +72,8 @@ export class MintFacade {
 
   lookupInscriptionId(inscriptionNumber: string) {
     this.store.dispatch(MintActions.lookupInscriptionId({ inscriptionNumber }));
+    // returns Observable — caller subscribes once to read the resolved
+    // id (one-shot action-result pattern, not state to render reactively).
     return this.store.select(selectInscriptionId(inscriptionNumber));
   }
 

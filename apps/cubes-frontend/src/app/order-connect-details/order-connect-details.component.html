@@ -1,16 +1,17 @@
 <div class="d-flex justify-content-center align-items-center" style="min-height: 60vh;">
 
-  <div *rxLet="mintFacade.createInscriptionResponse$; let inscriptionResponse" class="bg-dark p-3 mt-4 col-lg-8">
+  @let inscriptionResponse = mintFacade.createInscriptionResponse();
+  <div class="bg-dark p-3 mt-4 col-lg-8">
 
     <h3>Your Cube Inscription</h3>
 
     <div class="text-truncate" style="width: 70vw;">
-      Transaction ID: {{ mintFacade.bestTransactionId$ | push }}
+      Transaction ID: {{ mintFacade.bestTransactionId() }}
     </div>
 
     <div class="mt-4 mb-4">
       <app-loading-indicator
-        [state]="mintFacade.createInscriptionStatus$ | push"
+        [state]="mintFacade.createInscriptionStatus()"
         sendDataText="Loading transaction details…"
         />
     </div>

@@ -1,4 +1,3 @@
-import { RxLet } from '@rx-angular/template/let';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -8,7 +7,7 @@ import { PastFacade } from '../../store/past.facade';
   selector: 'app-past-orders-and-inscriptions',
   templateUrl: './past-orders-and-inscriptions.component.html',
   styleUrls: ['./past-orders-and-inscriptions.component.scss'],
-  imports: [RxLet, RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PastOrdersAndInscriptionsComponent {

@@ -1,4 +1,4 @@
-<ng-container *rxLet="mintFacade.singleInscription$; let i">
+@let i = mintFacade.singleInscription();
   <h3 class="mt-2 mb-2">{{ i?.inscription?.meta?.name || 'Ordinal Cube' }}</h3>
 
   <!-- <div class="mt-1 mb-4">
@@ -34,7 +34,7 @@
   </div>
 
   <app-loading-indicator
-    [state]="mintFacade.singleInscriptionStatus$ | push"
+    [state]="mintFacade.singleInscriptionStatus()"
     sendDataText="Loading cube details…"
   ></app-loading-indicator>
 
@@ -110,6 +110,5 @@
     </tr>
     }
   </table>
-</ng-container>
 
 <a routerLink="/" class="btn btn btn-primary fw-bold mt-4 mb-4">« Back</a>

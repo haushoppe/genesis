@@ -1,5 +1,3 @@
-import { RxPush } from '@rx-angular/template/push';
-import { RxLet } from '@rx-angular/template/let';
 import { DecimalPipe, JsonPipe, NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -46,15 +44,13 @@ function containsOnlyNumbers(str: string) {
   imports: [
     LoadingIndicatorButtonComponent,
     ReactiveFormsModule,
-    RxLet,
-    NgClass,
+        NgClass,
     TrimValueAccessorDirective,
     TrimNumberValueAccessorDirective,
     CubePreviewComponent,
     CubePreviewTitleComponent,
     RouterLink,
-    RxPush,
-    LoadingIndicatorComponent,
+        LoadingIndicatorComponent,
     DecimalPipe,
     ShortenAddressPipe,
     JsonPipe,

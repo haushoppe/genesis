@@ -8,162 +8,135 @@
 
 <h2 class="mt-5" id="mint">Mint a cube</h2>
 
-<ng-container *rxLet="walletFacade.useConnectInscription$; let useConnectInscription">
-  <ng-container *rxLet="walletFacade.xverseInstalled$; let xverseInstalled">
-    <ng-container *rxLet="walletFacade.xverseConnected$; let xverseConnected">
-      <ng-container *rxLet="walletFacade.walletAddress$; let walletAddress">
-        <ng-container *rxLet="mintFacade.cubeSuggestion$; let cubeSuggestion">
-          <ng-container *rxLet="mintFacade.cubeSuggestionStatus$; let cubeSuggestionStatus">
-            <ng-container *rxLet="mintFacade.cubeSuggestionFixed$; let cubeSuggestionFixed">
+@let useConnectInscription = walletFacade.useConnectInscription();
+@let xverseInstalled = walletFacade.xverseInstalled();
+@let xverseConnected = walletFacade.xverseConnected();
+@let walletAddress = walletFacade.walletAddress();
+@let cubeSuggestion = mintFacade.cubeSuggestion();
+@let cubeSuggestionStatus = mintFacade.cubeSuggestionStatus();
+@let cubeSuggestionFixed = mintFacade.cubeSuggestionFixed();
 
-              <p class="mb-0">
+<p class="mb-0">
 
-                <!-- Every Ordinal Cube showcases six inscribed images. -->
+  <!-- Every Ordinal Cube showcases six inscribed images. -->
 
-                @if (cubeSuggestion) {
-                  We've pieced together a recommendation for you, highlighting the art from the
-                  <!-- TODO: relink to a live marketplace (Satflow is the leading ordinals venue
-                  after Magic Eden shut down in March 2026). For now just the plain name. -->
-                  {{ cubeSuggestion.collectionName }}
-                  collection.<br class="d-none d-md-block">
-                  If it catches your eye, mint it!
-                  @if (!cubeSuggestionFixed) {
-                    If not, let's craft a new cube
-                    <a href="javascript:void(0)" (click)="mintFacade.loadCubeSuggestion('')">from another collection</a> or
-                    <a [routerLink]="['/mint', cubeSuggestion.collectionSymbol]" fragment="x">from this collection</a>!
-                  }
-                  @if (cubeSuggestionFixed) {
-                    If not, let's craft a new cube
-                    <a href="javascript:void(0)" (click)="mintFacade.loadCubeSuggestion(cubeSuggestion.collectionSymbol)">from this collection</a> or
-                    <a [routerLink]="['/']" fragment="x">from another collection</a>!
-                  }
-                }
+  @if (cubeSuggestion) {
+    We've pieced together a recommendation for you, highlighting the art from the
+    <!-- TODO: relink to a live marketplace (Satflow is the leading ordinals venue
+    after Magic Eden shut down in March 2026). For now just the plain name. -->
+    {{ cubeSuggestion.collectionName }}
+    collection.<br class="d-none d-md-block">
+    If it catches your eye, mint it!
+    @if (!cubeSuggestionFixed) {
+      If not, let's craft a new cube
+      <a href="javascript:void(0)" (click)="mintFacade.loadCubeSuggestion('')">from another collection</a> or
+      <a [routerLink]="['/mint', cubeSuggestion.collectionSymbol]" fragment="x">from this collection</a>!
+    }
+    @if (cubeSuggestionFixed) {
+      If not, let's craft a new cube
+      <a href="javascript:void(0)" (click)="mintFacade.loadCubeSuggestion(cubeSuggestion.collectionSymbol)">from this collection</a> or
+      <a [routerLink]="['/']" fragment="x">from another collection</a>!
+    }
+  }
 
-                <!-- If you have a specific idea for a custom cube, you can directly enter six Inscription Numbers or Inscription IDs into the form. -->
-              </p>
+  <!-- If you have a specific idea for a custom cube, you can directly enter six Inscription Numbers or Inscription IDs into the form. -->
+</p>
 
-              <app-mint-form
-                [walletAddress]="walletAddress"
-                [useConnectInscription]="useConnectInscription"
-                [cubeSuggestion]="cubeSuggestion"
-                />
+<app-mint-form
+  [walletAddress]="walletAddress"
+  [useConnectInscription]="useConnectInscription"
+  [cubeSuggestion]="cubeSuggestion"
+  />
 
-              @if (!walletAddress) {
-                <p class="mt-5">
-                  When you click the "<strong>Mint my cube!</strong>" button,
-                  we will display an invoice that you can pay directly either with ⚡️&nbsp;Lightning (instant) or
-                  onchain with 🟧&nbsp;Bitcoin (BTC).
-                  As soon as the payment is confirmed, we will automatically inscribe your cube on the Bitcoin blockchain and send it to you.
-                  The data for your cube is then fully stored onchain and will remain unchangeable forever.
-                  <strong>Create a digital artifact that lasts forever!</strong>
-                  <!-- Hint: You can enter any Taproot address as the recipient, even someone else's, if you want to gift them a cube. -->
-                </p>
-              }
-
-              <!-- <hr *ngIf="!xverseInstalled">
-              <p *ngIf="!xverseInstalled">
-
-                <svg class="bi" style="margin-top: -2px"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img">
-                  <path fill="white" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                </svg>
-
-                You do not have the Xverse wallet installed.
-                To take advantage of its new inscription feature, <a href="https://www.xverse.app" target="_blank">please install it</a>.<br class="d-none d-md-block">
-                With Xverse, you can pay directly to a commit address, eliminating unnecessary fees and wait times!
-              </p> -->
-
-              @if (xverseInstalled && !xverseConnected) {
-                <div>
-                  <hr>
-                    <div class="ms-1">
-                      You have the Xverse wallet installed.
-                      To utilize its self-custodial inscription feature, <a (click)="walletFacade.connectWallet()" href="javascript:void(0)">please connect your wallet</a>.<br class="d-none d-md-block">
-                      When connected with Xverse, you pay directly to a commit address, so everything happes directly from you wallet!
-                    </div>
-                  </div>
-                }
-
-                @if (xverseConnected) {
-                  <p class="mt-5">
-                    You have successfully connected your Xverse wallet. When you click the "Mint my cube!" button,
-                    a transaction to create your cube is prepared.
-                    If you approve it, the transaction will be immediately broadcast.
-                    Once a miner adds your transaction to a block, the data for your cube is fully stored onchain and will remain unchangeable forever.
-                    <strong>Create a digital artifact that lasts forever!</strong>
-                  </p>
-                }
-
-              </ng-container>
-            </ng-container>
-          </ng-container>
-        </ng-container>
-      </ng-container>
-    </ng-container>
-  </ng-container>
-
-
-  <ng-container *rxLet="mintFacade.inscriptions$; let i">
-
-    <h2 class="mt-5" id="latest">Minted cubes</h2>
-
-    <p class="mb-3">
-      Here you see all {{ i.totalInscriptions }} cubes that have been inscribed so far.
-      <!-- TODO: relink to a live marketplace (likely Satflow) once we pick a
-      successor for Magic Eden, which shut down its ordinals business in
-      March 2026. Until then we just drop the marketplace shoutout. -->
-    </p>
-
-    <div class="row">
-
-      @for (inscription of i.inscriptions; track inscription) {
-        <div class="col-6 col-md-4 col-lg-3">
-          <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
-        </div>
-      }
-
-      <ngb-pagination
-        class="mt-4 d-flex justify-content-center"
-        [collectionSize]="i.totalInscriptions"
-        [page]="i.currentPage"
-        [pageSize]="i.itemsPerPage"
-        aria-label="Page Cubes"
-        [maxSize]="5"
-        [rotate]="true"
-        (pageChange)="mintFacade.loadInscriptions(i.itemsPerPage, $event)">
-      </ngb-pagination>
-
-      <app-loading-indicator
-        [state]="mintFacade.inscriptionsStatus$ | push" class="mb-5"
-        sendDataText="Loading latest cubes…"
-        />
-
-    </div>
-
-  </ng-container>
-
-
-  <h2 class="mt-2">Rarity & FAQs</h2>
-
-  <p>
-    Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities.
-    However, the thrill of collecting intensifies when considering rarity.
-    To highlight this, all cubes will receive a <strong>Rarity Score</strong> when the project has minted out.
+@if (!walletAddress) {
+  <p class="mt-5">
+    When you click the "<strong>Mint my cube!</strong>" button,
+    we will display an invoice that you can pay directly either with ⚡️&nbsp;Lightning (instant) or
+    onchain with 🟧&nbsp;Bitcoin (BTC).
+    As soon as the payment is confirmed, we will automatically inscribe your cube on the Bitcoin blockchain and send it to you.
+    The data for your cube is then fully stored onchain and will remain unchangeable forever.
+    <strong>Create a digital artifact that lasts forever!</strong>
   </p>
-  <ul>
-    <li>The first 100 cubes receive an elevated score. For subsequent tiers, the earlier you get in, the better.</li>
-    <li>Each side of a cube should display distinct inscriptions.</li>
-    <li>Cubes featuring inscriptions that have already been claimed by others won't receive a score and will be labeled "cursed".<br>
-      In essence, <strong>each cube claims six inscriptions</strong>. First is first!</li>
-      <li>Cubes displaying a black side due to a loading error are labeled "cursed", too.</li>
-      <li>Cubes should present inscriptions all from the same collection.</li>
-      <li>Cubes should display popular collections.<br>Popularity is gauged by the number of cubes that display inscriptions from that specific collection.</li>
-      <li>The experiment draws to a close after 10,000 valid cubes have been minted.</li>
-    </ul>
-    <p class="mb-3">
-      If you have any outstanding questions,
-      <a routerLink="/faq">please refer to our FAQ section.</a>
+}
+
+@if (xverseInstalled && !xverseConnected) {
+  <div>
+    <hr>
+      <div class="ms-1">
+        You have the Xverse wallet installed.
+        To utilize its self-custodial inscription feature, <a (click)="walletFacade.connectWallet()" href="javascript:void(0)">please connect your wallet</a>.<br class="d-none d-md-block">
+        When connected with Xverse, you pay directly to a commit address, so everything happes directly from you wallet!
+      </div>
+    </div>
+  }
+
+  @if (xverseConnected) {
+    <p class="mt-5">
+      You have successfully connected your Xverse wallet. When you click the "Mint my cube!" button,
+      a transaction to create your cube is prepared.
+      If you approve it, the transaction will be immediately broadcast.
+      Once a miner adds your transaction to a block, the data for your cube is fully stored onchain and will remain unchangeable forever.
+      <strong>Create a digital artifact that lasts forever!</strong>
     </p>
+  }
 
 
-    <app-past-orders-and-inscriptions />
+@let i = mintFacade.inscriptions();
 
+  <h2 class="mt-5" id="latest">Minted cubes</h2>
+
+  <p class="mb-3">
+    Here you see all {{ i.totalInscriptions }} cubes that have been inscribed so far.
+  </p>
+
+  <div class="row">
+
+    @for (inscription of i.inscriptions; track inscription) {
+      <div class="col-6 col-md-4 col-lg-3">
+        <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
+      </div>
+    }
+
+    <ngb-pagination
+      class="mt-4 d-flex justify-content-center"
+      [collectionSize]="i.totalInscriptions"
+      [page]="i.currentPage"
+      [pageSize]="i.itemsPerPage"
+      aria-label="Page Cubes"
+      [maxSize]="5"
+      [rotate]="true"
+      (pageChange)="mintFacade.loadInscriptions(i.itemsPerPage, $event)">
+    </ngb-pagination>
+
+    <app-loading-indicator
+      [state]="mintFacade.inscriptionsStatus()" class="mb-5"
+      sendDataText="Loading latest cubes…"
+      />
+
+  </div>
+
+
+<h2 class="mt-2">Rarity & FAQs</h2>
+
+<p>
+  Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities.
+  However, the thrill of collecting intensifies when considering rarity.
+  To highlight this, all cubes will receive a <strong>Rarity Score</strong> when the project has minted out.
+</p>
+<ul>
+  <li>The first 100 cubes receive an elevated score. For subsequent tiers, the earlier you get in, the better.</li>
+  <li>Each side of a cube should display distinct inscriptions.</li>
+  <li>Cubes featuring inscriptions that have already been claimed by others won't receive a score and will be labeled "cursed".<br>
+    In essence, <strong>each cube claims six inscriptions</strong>. First is first!</li>
+    <li>Cubes displaying a black side due to a loading error are labeled "cursed", too.</li>
+    <li>Cubes should present inscriptions all from the same collection.</li>
+    <li>Cubes should display popular collections.<br>Popularity is gauged by the number of cubes that display inscriptions from that specific collection.</li>
+    <li>The experiment draws to a close after 10,000 valid cubes have been minted.</li>
+  </ul>
+  <p class="mb-3">
+    If you have any outstanding questions,
+    <a routerLink="/faq">please refer to our FAQ section.</a>
+  </p>
+
+
+  <app-past-orders-and-inscriptions />

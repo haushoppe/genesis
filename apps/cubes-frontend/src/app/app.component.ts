@@ -1,16 +1,16 @@
-import { RxPush } from '@rx-angular/template/push';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
-  ActivatedRoute,
   NavigationEnd,
   Router,
   RouterOutlet,
 } from '@angular/router';
+import { filter, map, switchMap } from 'rxjs';
+
 import { BannerComponent } from './layout/banner/banner.component';
 import { FooterComponent } from './layout/footer/footer.component';
 import { HeaderComponent } from './layout/header/header.component';
 import { CustomScrollService } from './custom-scroll.service';
-import { filter, map, switchMap } from 'rxjs';
 
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
@@ -22,7 +22,6 @@ import { filter, map, switchMap } from 'rxjs';
     FooterComponent,
     HeaderComponent,
     RouterOutlet,
-    RxPush,
   ],
 })
 export class AppComponent {
@@ -30,15 +29,18 @@ export class AppComponent {
 
   router = inject(Router);
 
-  hideBanner$ = this.router.events.pipe(
-    filter((event: any) => event instanceof NavigationEnd),
-    switchMap((event: NavigationEnd) => {
-      let route = this.router.routerState.root;
-      while (route.firstChild) {
-        route = route.firstChild;
-      }
-      return route.data;
-    }),
-    map((data) => !!data.hideBanner)
+  hideBanner = toSignal(
+    this.router.events.pipe(
+      filter((event: any) => event instanceof NavigationEnd),
+      switchMap((event: NavigationEnd) => {
+        let route = this.router.routerState.root;
+        while (route.firstChild) {
+          route = route.firstChild;
+        }
+        return route.data;
+      }),
+      map((data) => !!data.hideBanner),
+    ),
+    { initialValue: false },
   );
 }

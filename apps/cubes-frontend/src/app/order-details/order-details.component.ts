@@ -1,5 +1,3 @@
-import { RxPush } from '@rx-angular/template/push';
-import { RxLet } from '@rx-angular/template/let';
 import { DecimalPipe, NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -26,12 +24,10 @@ import { SafeUrlPipe } from '../safe-url.pipe';
   styleUrls: ['./order-details.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RxPush,
-    NgClass,
+        NgClass,
     LoadingIndicatorComponent,
     QRCodeComponent,
-    RxLet,
-    RouterLink,
+        RouterLink,
     SafeHtmlPipe,
     DecimalPipe,
     SafeUrlPipe,

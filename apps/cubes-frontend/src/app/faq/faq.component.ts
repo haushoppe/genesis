@@ -1,5 +1,3 @@
-import { RxPush } from '@rx-angular/template/push';
-import { RxLet } from '@rx-angular/template/let';
 import { AsyncPipe, KeyValuePipe, NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -16,7 +14,7 @@ interface Faq {
   selector: 'app-faq',
   templateUrl: './faq.component.html',
   styleUrls: ['./faq.component.scss'],
-  imports: [ParseMarkdownPipe, RouterLink, RxLet, RxPush, NgClass],
+  imports: [ParseMarkdownPipe, RouterLink, NgClass],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FaqComponent {

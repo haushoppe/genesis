@@ -1,5 +1,3 @@
-import { RxPush } from '@rx-angular/template/push';
-import { RxLet } from '@rx-angular/template/let';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../src/environments/environment';
@@ -16,9 +14,7 @@ import { MintFacade } from '../store/mint.facade';
     LoadingIndicatorComponent,
     RouterLink,
     SafeUrlPipe,
-    RxLet,
-    RxPush,
-    ShortenAddressPipe,
+            ShortenAddressPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

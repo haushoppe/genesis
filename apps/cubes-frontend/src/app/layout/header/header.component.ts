@@ -1,4 +1,3 @@
-import { RxLet } from '@rx-angular/template/let';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { SubmitStatus } from '../../store/submittable/submit-status';
@@ -14,8 +13,7 @@ import { ShortenAddressPipe } from '../shorten-address.pipe';
     RouterLink,
     RouterLinkActive,
     LoadingIndicatorButtonComponent,
-    RxLet,
-    ShortenAddressPipe,
+        ShortenAddressPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

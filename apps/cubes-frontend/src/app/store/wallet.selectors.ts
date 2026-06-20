@@ -39,16 +39,3 @@ export const selectXverseConnected = createSelector(
     return wallet.label === KnownOrdinalWallets.xverse.label;
   }
 );
-
-
-
-export function addressIsCurrentWallet(address: string | undefined) {
-
-  return createSelector(
-    selectWalletAddress,
-    walletAddress => {
-      if (!walletAddress || !address) { return false; }
-      return walletAddress.toLowerCase() === address.toLowerCase();
-    }
-  );
-}

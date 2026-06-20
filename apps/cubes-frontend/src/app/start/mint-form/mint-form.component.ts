@@ -50,11 +50,9 @@ function containsOnlyNumbers(str: string) {
     CubePreviewComponent,
     CubePreviewTitleComponent,
     RouterLink,
-        LoadingIndicatorComponent,
+    LoadingIndicatorComponent,
     DecimalPipe,
     ShortenAddressPipe,
-    JsonPipe,
-    LoadingIndicatorComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

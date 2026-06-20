@@ -54,3 +54,22 @@ test.describe('SPA fallback', () => {
     await expect(page.getByRole('heading', { name: 'Ordinal Cubes', exact: true })).toBeVisible();
   });
 });
+
+test.describe('Banner visibility (hideBanner signal)', () => {
+  // The `hideBanner` Signal in app.component.ts is fed from router events:
+  // routes marked with `data: { hideBanner: true }` cause <app-banner> to
+  // be omitted from the DOM. This integration test exercises that end-to-end.
+
+  test('banner IS shown on the start page (no hideBanner data)', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('app-banner')).toBeVisible();
+  });
+
+  test('banner is HIDDEN on the inscription detail route (hideBanner: true)', async ({ page }) => {
+    await page.goto(`/inscription/${KNOWN_CUBE_ID}`);
+    // Wait for the detail page to actually mount before asserting the
+    // banner's absence (otherwise we race the initial render).
+    await expect(page.locator('app-details, .cube-detail, [class*="detail"]').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('app-banner')).toHaveCount(0);
+  });
+});

@@ -1,4 +1,4 @@
-import { JsonPipe, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { parseCube } from '../../shared/ordinals/parse-cube';
@@ -16,11 +16,10 @@ import { MintFacade } from '../store/mint.facade';
   styleUrls: ['./order-connect-details.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-        NgClass,
+    NgClass,
     LoadingIndicatorComponent,
-        RouterLink,
+    RouterLink,
     SafeHtmlPipe,
-    JsonPipe,
   ],
 })
 export class OrderConnectDetailsComponent {

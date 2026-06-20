@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import { WalletFacade } from '../../store/wallet.facade';
 import { LoadingIndicatorButtonComponent } from '../loading-indicator-button/loading-indicator-button.component';
@@ -11,9 +11,8 @@ import { ShortenAddressPipe } from '../shorten-address.pipe';
   selector: 'header',
   imports: [
     RouterLink,
-    RouterLinkActive,
     LoadingIndicatorButtonComponent,
-        ShortenAddressPipe,
+    ShortenAddressPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

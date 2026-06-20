@@ -16,7 +16,6 @@ import { SafeHtmlPipe } from '../safe-html.pipe';
 import { MintFacade } from '../store/mint.facade';
 import { getSubmittingState } from '../store/submittable/submittable-state';
 import { decodeBase64DataURI } from './decode-base64-data-uri';
-import { SafeUrlPipe } from '../safe-url.pipe';
 
 @Component({
   selector: 'app-order-details',
@@ -24,13 +23,12 @@ import { SafeUrlPipe } from '../safe-url.pipe';
   styleUrls: ['./order-details.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-        NgClass,
+    NgClass,
     LoadingIndicatorComponent,
     QRCodeComponent,
-        RouterLink,
+    RouterLink,
     SafeHtmlPipe,
     DecimalPipe,
-    SafeUrlPipe,
   ],
 })
 export class OrderDetailsComponent {

@@ -1,4 +1,6 @@
 @let order = mintFacade.orderResponse();
+@let file = mintFacade.file();
+@let isOrderPending = mintFacade.isOrderPending();
 <div class="bg-dark p-3 mt-4 col-lg-8 mx-auto">
 
   <h3>Your Cube Order</h3>
@@ -18,7 +20,7 @@
   </div>
 
   @if (order) {
-    @if (mintFacade.file()?.dataURL; as dataURL) {
+    @if (file?.dataURL; as dataURL) {
       Preview:
       <iframe
         [srcdoc]="getDecodedCube(dataURL) | safeHtml"
@@ -28,7 +30,7 @@
         class="d-block mx-auto mb-4"
       ></iframe>
     }
-    @if (mintFacade.isOrderPending()) {
+    @if (isOrderPending) {
       @if (!order.paid) {
         <p>
           Your order has been created and we are waiting for your payment!
@@ -149,12 +151,12 @@
             <br>
               <app-loading-indicator [state]="submittingState" sendDataText="Order is pending…" />
             }
-            @if (!(mintFacade.isOrderPending())) {
+            @if (!(isOrderPending)) {
               <p class="alert alert-success mt-4 mb-4 fw-bold">
                 <i class="bi bi-check-circle"></i> We received your payment!
               </p>
               We have sent your inscription to you.<br>
-              It will be available when <a href="https://ordpool.space/tx/{{ mintFacade.file()?.sent }}" target="_blank">🟧 this transaction</a> is confirmed!<br>
+              It will be available when <a href="https://ordpool.space/tx/{{ file?.sent }}" target="_blank">🟧 this transaction</a> is confirmed!<br>
             }
           }
 

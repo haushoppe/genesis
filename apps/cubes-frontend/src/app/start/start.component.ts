@@ -1,11 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { AlertComponent } from '../layout/alert/alert.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
-import { LoadingIndicatorButtonComponent } from '../layout/loading-indicator-button/loading-indicator-button.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { MintFacade } from '../store/mint.facade';
-import { SubmitStatus } from '../store/submittable/submit-status';
 import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
 import { PastOrdersAndInscriptionsComponent } from './past-orders-and-inscriptions/past-orders-and-inscriptions.component';
@@ -17,11 +13,8 @@ import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
   styleUrls: ['./start.component.scss'],
   imports: [
     LoadingIndicatorComponent,
-    LoadingIndicatorButtonComponent,
-    AlertComponent,
     InscriptionListItemComponent,
-                MintFormComponent,
-    RouterLink,
+    MintFormComponent,
     PastOrdersAndInscriptionsComponent,
     NgbPagination,
   ],
@@ -30,6 +23,4 @@ import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 export class StartComponent {
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
-
-  SubmitStatus = SubmitStatus;
 }

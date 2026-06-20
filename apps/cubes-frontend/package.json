@@ -8,7 +8,10 @@
     "start": "ng serve",
     "build": "ng build",
     "test": "jest",
-    "lint": "eslint 'src/**/*.ts'"
+    "lint": "eslint 'src/**/*.ts'",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@angular/animations": "16.2.4",
@@ -28,8 +31,10 @@
     "@ngrx/router-store": "16.0.1",
     "@ngrx/store": "16.0.1",
     "@ngrx/store-devtools": "16.0.1",
+    "@rx-angular/cdk": "^1.0.0",
     "@rx-angular/template": "^1.0.0",
     "angularx-qrcode": "^16.0.1",
+    "bignumber.js": "^9.1.2",
     "bitcoin-address-validation": "^2.2.1",
     "bootstrap": "^5.3.1",
     "bootstrap-icons": "^1.10.5",
@@ -40,14 +45,13 @@
     "rxjs": "~7.8.0",
     "sats-connect": "^1.1.1",
     "tslib": "^2.3.0",
-    "zone.js": "0.13.1",
-    "@rx-angular/cdk": "^1.0.0",
-    "bignumber.js": "^9.1.2"
+    "zone.js": "0.13.1"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "16.2.1",
     "@angular/cli": "16.2.1",
     "@angular/compiler-cli": "16.2.4",
+    "@playwright/test": "^1.61.0",
     "@types/canvas-confetti": "^1.6.0",
     "@types/jest": "29.5.4",
     "@types/marked": "^5.0.1",

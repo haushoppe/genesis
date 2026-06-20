@@ -51,3 +51,8 @@ kendo-ui-license.txt
 # Magic Eden archive data (GBs)
 z_extra/magic-eden-archive.zip
 z_extra/magic-eden-archive/magic-eden-data-dump/
+
+# Playwright artifacts
+apps/*/playwright-report
+apps/*/test-results
+apps/*/.playwright

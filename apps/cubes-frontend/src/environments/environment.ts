@@ -7,12 +7,12 @@ export const environment = {
   api: 'http://localhost:3333',
   ordinalsExplorerIframe: 'https://explorer.ordinalsbot.com/content/',
   ordinalsExplorerDetails: 'https://ordinals.com/inscription/',
-  // ord.net IS a marketplace (not just an explorer like ordinals.com) AND it
-  // renders every inscription, listed or not — so the link works for every
-  // cube. Note: ord.net's URLs use the inscription NUMBER, not the ID
-  // (id → number is a 308 redirect on their side, but we save the hop by
-  // passing the number directly).
-  ordinalsExplorerMarketplace: 'https://ord.net/inscription/'
+  // Both marketplaces render every inscription (whether listed or not).
+  // Satflow uses the inscription ID at /ordinal/; ord.net uses the
+  // inscription NUMBER at /inscription/ (id → number is a 308 redirect
+  // there, we save the hop by passing the number directly).
+  satflowMarketplace: 'https://www.satflow.com/ordinal/',
+  ordNetMarketplace: 'https://ord.net/inscription/'
 };
 
 /*

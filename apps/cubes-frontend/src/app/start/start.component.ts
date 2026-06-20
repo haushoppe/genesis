@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { MintFacade } from '../store/mint.facade';
@@ -17,10 +18,32 @@ import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
     MintFormComponent,
     PastOrdersAndInscriptionsComponent,
     NgbPagination,
+    RouterLink,
   ],
+  host: {
+    '(window:keydown)': 'onKeydown($event)',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StartComponent {
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
+
+  onKeydown(event: KeyboardEvent) {
+    if (isTextInputTarget(event.target)) return;
+    const i = this.mintFacade.inscriptions();
+    if (!i?.itemsPerPage) return;
+    const lastPage = Math.ceil(i.totalInscriptions / i.itemsPerPage);
+    if (event.key === 'ArrowLeft' && i.currentPage > 1) {
+      this.mintFacade.loadInscriptions(i.itemsPerPage, i.currentPage - 1);
+    } else if (event.key === 'ArrowRight' && i.currentPage < lastPage) {
+      this.mintFacade.loadInscriptions(i.itemsPerPage, i.currentPage + 1);
+    }
+  }
+}
+
+function isTextInputTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
 }

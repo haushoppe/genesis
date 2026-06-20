@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-// First inscribed cube (the famous Donny cube — cursed inscription #-265038,
-// minted block 778921). Stable test fixture: it exists in the static
-// ordinal-cubes-index forever, so the detail page always has data.
-const KNOWN_CUBE_ID = '72907215a4e32cdbd26dcc5707daaddcf4f6b98a9971fdb6129a46065559226ei0';
+// A mid-list cube that's guaranteed to have BOTH a previous and a next
+// neighbour in the cubes index (i.e. not the first or last entry). Used by
+// the keyboard-navigation tests below; the inscription itself is the
+// 'Bitcoin Burials' cube #266 in our static index.
+const KNOWN_CUBE_ID = '8a675560a7bb323d9c060b075cd9fc4dc8efc16094a63074b7913d975f94a2d4i0';
 
 test.describe('Start page', () => {
   test('renders the heading', async ({ page }) => {
@@ -52,6 +53,46 @@ test.describe('SPA fallback', () => {
   test('unknown route falls through to start (Angular wildcard route)', async ({ page }) => {
     await page.goto('/this-route-does-not-exist-xyz789');
     await expect(page.getByRole('heading', { name: 'Ordinal Cubes', exact: true })).toBeVisible();
+  });
+});
+
+test.describe('Start page links', () => {
+  test('FAQ link renders as an actual <a href> (regression — RouterLink import was missing)', async ({ page }) => {
+    await page.goto('/');
+    const link = page.getByRole('link', { name: /please refer to our FAQ section/i });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', '/faq');
+  });
+});
+
+test.describe('Keyboard navigation', () => {
+  test('details page: ArrowRight navigates to the next cube', async ({ page }) => {
+    await page.goto(`/inscription/${KNOWN_CUBE_ID}`);
+    // Wait for the Previous/Next link container to actually render (proves the
+    // inscription data loaded; otherwise the host listener has no target).
+    const nextLink = page.locator('a:has-text("Next Cube")');
+    await expect(nextLink).toBeVisible({ timeout: 15_000 });
+    const nextHref = await nextLink.getAttribute('href');
+    await page.keyboard.press('ArrowRight');
+    await expect(page).toHaveURL(new RegExp(`${nextHref}$`.replace(/[/.]/g, '\\$&')));
+  });
+
+  test('details page: ArrowLeft navigates to the previous cube', async ({ page }) => {
+    await page.goto(`/inscription/${KNOWN_CUBE_ID}`);
+    const prevLink = page.locator('a:has-text("Previous Cube")');
+    await expect(prevLink).toBeVisible({ timeout: 15_000 });
+    const prevHref = await prevLink.getAttribute('href');
+    await page.keyboard.press('ArrowLeft');
+    await expect(page).toHaveURL(new RegExp(`${prevHref}$`.replace(/[/.]/g, '\\$&')));
+  });
+
+  test('start page: ArrowRight advances the cube list to the next page', async ({ page }) => {
+    await page.goto('/');
+    // Wait for the pagination control to render (means the list has loaded)
+    await expect(page.locator('ngb-pagination .page-item.active')).toBeVisible({ timeout: 15_000 });
+    const before = await page.locator('ngb-pagination .page-item.active').innerText();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('ngb-pagination .page-item.active')).not.toHaveText(before, { timeout: 10_000 });
   });
 });
 

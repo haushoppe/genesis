@@ -1,3 +1,4 @@
+import { RxPush } from '@rx-angular/template/push';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
   ActivatedRoute,
@@ -10,7 +11,6 @@ import { FooterComponent } from './layout/footer/footer.component';
 import { HeaderComponent } from './layout/header/header.component';
 import { CustomScrollService } from './custom-scroll.service';
 import { filter, map, switchMap } from 'rxjs';
-import { PushModule } from '@rx-angular/template/push';
 
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
@@ -22,7 +22,7 @@ import { PushModule } from '@rx-angular/template/push';
     FooterComponent,
     HeaderComponent,
     RouterOutlet,
-    PushModule,
+    RxPush,
   ],
 })
 export class AppComponent {

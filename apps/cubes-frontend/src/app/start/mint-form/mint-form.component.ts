@@ -1,3 +1,5 @@
+import { RxPush } from '@rx-angular/template/push';
+import { RxLet } from '@rx-angular/template/let';
 import { DecimalPipe, JsonPipe, NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -14,8 +16,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { LetModule } from '@rx-angular/template/let';
-import { PushModule } from '@rx-angular/template/push';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 
 import { CubePreviewTitleComponent } from '../../layout/cube-preview/cube-preview-title.component';
@@ -46,14 +46,14 @@ function containsOnlyNumbers(str: string) {
   imports: [
     LoadingIndicatorButtonComponent,
     ReactiveFormsModule,
-    LetModule,
+    RxLet,
     NgClass,
     TrimValueAccessorDirective,
     TrimNumberValueAccessorDirective,
     CubePreviewComponent,
     CubePreviewTitleComponent,
     RouterLink,
-    PushModule,
+    RxPush,
     LoadingIndicatorComponent,
     DecimalPipe,
     ShortenAddressPipe,

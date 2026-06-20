@@ -1,9 +1,8 @@
+import { RxPush } from '@rx-angular/template/push';
+import { RxLet } from '@rx-angular/template/let';
+import { RxFor } from '@rx-angular/template/for';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ForModule } from '@rx-angular/template/for';
-import { LetModule } from '@rx-angular/template/let';
-import { PushModule } from '@rx-angular/template/push';
-
 import { AlertComponent } from '../layout/alert/alert.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 import { LoadingIndicatorButtonComponent } from '../layout/loading-indicator-button/loading-indicator-button.component';
@@ -24,9 +23,9 @@ import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
     LoadingIndicatorButtonComponent,
     AlertComponent,
     InscriptionListItemComponent,
-    LetModule,
-    ForModule,
-    PushModule,
+    RxLet,
+    RxFor,
+    RxPush,
     MintFormComponent,
     RouterLink,
     PastOrdersAndInscriptionsComponent,

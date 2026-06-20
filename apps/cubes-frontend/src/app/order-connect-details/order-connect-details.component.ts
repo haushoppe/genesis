@@ -1,9 +1,8 @@
+import { RxPush } from '@rx-angular/template/push';
+import { RxLet } from '@rx-angular/template/let';
 import { JsonPipe, NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LetModule } from '@rx-angular/template/let';
-import { PushModule } from '@rx-angular/template/push';
-
 import { parseCube } from '../../shared/ordinals/parse-cube';
 import { environment } from '../../environments/environment';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
@@ -19,10 +18,10 @@ import { MintFacade } from '../store/mint.facade';
   styleUrls: ['./order-connect-details.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PushModule,
+    RxPush,
     NgClass,
     LoadingIndicatorComponent,
-    LetModule,
+    RxLet,
     RouterLink,
     SafeHtmlPipe,
     JsonPipe,

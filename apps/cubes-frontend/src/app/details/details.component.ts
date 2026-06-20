@@ -1,8 +1,7 @@
+import { RxPush } from '@rx-angular/template/push';
+import { RxLet } from '@rx-angular/template/let';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LetModule } from '@rx-angular/template/let';
-import { PushModule } from '@rx-angular/template/push';
-
 import { environment } from '../../../src/environments/environment';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { ShortenAddressPipe } from '../layout/shorten-address.pipe';
@@ -17,8 +16,8 @@ import { MintFacade } from '../store/mint.facade';
     LoadingIndicatorComponent,
     RouterLink,
     SafeUrlPipe,
-    LetModule,
-    PushModule,
+    RxLet,
+    RxPush,
     ShortenAddressPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

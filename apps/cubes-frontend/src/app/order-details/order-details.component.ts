@@ -1,3 +1,5 @@
+import { RxPush } from '@rx-angular/template/push';
+import { RxLet } from '@rx-angular/template/let';
 import { DecimalPipe, NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -6,9 +8,7 @@ import {
   inject,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LetModule } from '@rx-angular/template/let';
-import { PushModule } from '@rx-angular/template/push';
-import { QRCodeModule } from 'angularx-qrcode';
+import { QRCodeComponent } from 'angularx-qrcode';
 
 import { parseCube } from '../../shared/ordinals/parse-cube';
 import { environment } from '../../environments/environment';
@@ -26,11 +26,11 @@ import { SafeUrlPipe } from '../safe-url.pipe';
   styleUrls: ['./order-details.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    PushModule,
+    RxPush,
     NgClass,
     LoadingIndicatorComponent,
-    QRCodeModule,
-    LetModule,
+    QRCodeComponent,
+    RxLet,
     RouterLink,
     SafeHtmlPipe,
     DecimalPipe,

@@ -1,9 +1,8 @@
+import { RxPush } from '@rx-angular/template/push';
+import { RxLet } from '@rx-angular/template/let';
 import { AsyncPipe, KeyValuePipe, NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LetModule } from '@rx-angular/template/let';
-import { PushModule } from '@rx-angular/template/push';
-
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { ParseMarkdownPipe } from '../parse-markdown.pipe';
 import { SafeUrlPipe } from '../safe-url.pipe';
@@ -17,7 +16,7 @@ interface Faq {
   selector: 'app-faq',
   templateUrl: './faq.component.html',
   styleUrls: ['./faq.component.scss'],
-  imports: [ParseMarkdownPipe, RouterLink, LetModule, PushModule, NgClass],
+  imports: [ParseMarkdownPipe, RouterLink, RxLet, RxPush, NgClass],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FaqComponent {

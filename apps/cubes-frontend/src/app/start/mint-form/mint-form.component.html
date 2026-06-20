@@ -52,54 +52,76 @@
                   <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.title"class="form-control" id="title" placeholder=""></div>
                 </div>
 
-                <div class="form-group row" *ngIf="c.receiveAddress.enabled">
-                  <label for="receiveAddress" class="col-4 col-form-label">Your Address:</label>
-                  <div class="col-8  position-relative"><input type="text" appTrimValueAccessor [formControl]="c.receiveAddress" class="form-control" id="receiveAddress" placeholder="Receive address, bc1p...">
-                    <div class="invalid-tooltip" *ngIf="getBestAddressError() as error">
-                      {{ error }}
+                @if (c.receiveAddress.enabled) {
+                  <div class="form-group row">
+                    <label for="receiveAddress" class="col-4 col-form-label">Your Address:</label>
+                    <div class="col-8  position-relative"><input type="text" appTrimValueAccessor [formControl]="c.receiveAddress" class="form-control" id="receiveAddress" placeholder="Receive address, bc1p...">
+                      @if (getBestAddressError(); as error) {
+                        <div class="invalid-tooltip">
+                          {{ error }}
+                        </div>
+                      }
                     </div>
                   </div>
-                </div>
+                }
 
-                <div class="form-group row" *ngIf="c.receiveAddress.disabled">
-                  <label for="receiveAddress" class="col-4 col-form-label">Address:</label>
-                  <div class="col-8"><span class="form-control border-dark text-secondary disabled" id="receiveAddress" [title]="c.receiveAddress.value">{{ c.receiveAddress.value | shortenAddress }}</span></div>
-                </div>
+                @if (c.receiveAddress.disabled) {
+                  <div class="form-group row">
+                    <label for="receiveAddress" class="col-4 col-form-label">Address:</label>
+                    <div class="col-8"><span class="form-control border-dark text-secondary disabled" id="receiveAddress" [title]="c.receiveAddress.value">{{ c.receiveAddress.value | shortenAddress }}</span></div>
+                  </div>
+                }
 
-                <div class="form-group row" *ngIf="showCode">
-                  <label for="code" class="col-4 col-form-label">Code:</label>
-                  <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.code" class="form-control" id="code"></div>
-                </div>
+                @if (showCode) {
+                  <div class="form-group row">
+                    <label for="code" class="col-4 col-form-label">Code:</label>
+                    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.code" class="form-control" id="code"></div>
+                  </div>
+                }
 
-                <div class="form-group row" *ngIf="showSecret">
-                  <label for="rotationSpeedX" class="col-4 col-form-label">R Speed X:</label>
-                  <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.rotationSpeedX" class="form-control" id="rotationSpeedX"></div>
-                </div>
+                @if (showSecret) {
+                  <div class="form-group row">
+                    <label for="rotationSpeedX" class="col-4 col-form-label">R Speed X:</label>
+                    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.rotationSpeedX" class="form-control" id="rotationSpeedX"></div>
+                  </div>
+                }
 
-                <div class="form-group row" *ngIf="showSecret">
-                  <label for="rotationSpeedY" class="col-4 col-form-label">R Speed Y:</label>
-                  <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.rotationSpeedY" class="form-control" id="rotationSpeedY"></div>
-                </div>
+                @if (showSecret) {
+                  <div class="form-group row">
+                    <label for="rotationSpeedY" class="col-4 col-form-label">R Speed Y:</label>
+                    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.rotationSpeedY" class="form-control" id="rotationSpeedY"></div>
+                  </div>
+                }
 
-                <div class="form-group row" *ngIf="showSecret">
-                  <label for="colorPane" class="col-4 col-form-label">Color Pane:</label>
-                  <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.colorPane" class="form-control" id="colorPane"></div>
-                </div>
+                @if (showSecret) {
+                  <div class="form-group row">
+                    <label for="colorPane" class="col-4 col-form-label">Color Pane:</label>
+                    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.colorPane" class="form-control" id="colorPane"></div>
+                  </div>
+                }
 
-                <div class="form-group row" *ngIf="showSecret">
-                  <label for="bgColor1" class="col-4 col-form-label">BG Color 1:</label>
-                  <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.bgColor1" class="form-control" id="bgColor1"></div>
-                </div>
+                @if (showSecret) {
+                  <div class="form-group row">
+                    <label for="bgColor1" class="col-4 col-form-label">BG Color 1:</label>
+                    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.bgColor1" class="form-control" id="bgColor1"></div>
+                  </div>
+                }
 
-                <div class="form-group row" *ngIf="showSecret">
-                  <label for="bgColor2" class="col-4 col-form-label">BG Color 2:</label>
-                  <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.bgColor2" class="form-control" id="bgColor2"></div>
-                </div>
+                @if (showSecret) {
+                  <div class="form-group row">
+                    <label for="bgColor2" class="col-4 col-form-label">BG Color 2:</label>
+                    <div class="col-8"><input type="text" appTrimValueAccessor [formControl]="c.bgColor2" class="form-control" id="bgColor2"></div>
+                  </div>
+                }
 
                 <div class="form-group row" *rxLet="mintFacade.price$; let price">
                   <label for="price" class="col-4 col-form-label">
-                    <ng-container *ngIf="!useConnectInscription">Price:</ng-container>
-                    <ng-container *ngIf="useConnectInscription">Estimated Price:</ng-container>
+                    @if (!useConnectInscription) {
+                      Price:
+                    }
+                    @if (useConnectInscription) {
+                      Estimated Price:
+                    }
                   </label>
                   <div class="col-8" *rxLet="mintFacade.priceStatus$; let priceStatus">
 
@@ -108,20 +130,28 @@
                       <app-loading-indicator
                         [state]="priceStatus"
                         sendDataText=""
-                      />
+                        />
                     </div>
 
-                    <strong class="d-block mt-2" *ngIf="!useConnectInscription">
-                      {{ price?.priceInSats | number }} sats
-                    </strong>
+                    @if (!useConnectInscription) {
+                      <strong class="d-block mt-2">
+                        {{ price?.priceInSats | number }} sats
+                      </strong>
+                    }
 
-                    <strong class="d-block mt-2" *ngIf="useConnectInscription">
-                      {{ (price && price.priceInSats ? price.priceInSats - 1000 : 0) | number }} sats
-                    </strong>
+                    @if (useConnectInscription) {
+                      <strong class="d-block mt-2">
+                        {{ (price && price.priceInSats ? price.priceInSats - 1000 : 0) | number }} sats
+                      </strong>
+                    }
 
                     <span class="text-primary mt-n1 d-block">equals to {{ price?.priceInUsd | number : '1.2-2' }} USD</span>
-                    <span class="text-muted mt-n1 d-block" *ngIf="!useConnectInscription">(without payment fees)</span>
-                    <span class="text-muted mt-n1 d-block" *ngIf="useConnectInscription">(all fees included)</span>
+                    @if (!useConnectInscription) {
+                      <span class="text-muted mt-n1 d-block">(without payment fees)</span>
+                    }
+                    @if (useConnectInscription) {
+                      <span class="text-muted mt-n1 d-block">(all fees included)</span>
+                    }
 
                     <input class="d-none" id="price">
                   </div>
@@ -138,63 +168,63 @@
                       [buttonText]="'Craft another cube'"
                       defaultIconClass="bi bi-arrow-clockwise"
                       class="mb-4 mb-md-0 me-md-4 d-flex"
-                    />
+                      />
 
                     <!-- Non-Breaking Unicode Whitespace here -->
-                    <app-loading-indicator-button
-                      *ngIf="!useConnectInscription"
+                    @if (!useConnectInscription) {
+                      <app-loading-indicator-button
                       [disabled]="knownInscriptionIdStatus.submitStatus === SubmitStatus.Submitting ||
                         cubeSuggestionStatus.submitStatus === SubmitStatus.Submitting"
-                      [showAlertOnError]="true"
-                      (buttonClick)="mint()"
-                      [state]="orderStatus"
-                      [buttonText]="orderStatus.submitStatus === SubmitStatus.Successful ? 'Cube submitted' : ' Mint my cube! '"
-                      defaultIconClass="bi bi-box"
-                      class="d-flex"
-                    />
+                        [showAlertOnError]="true"
+                        (buttonClick)="mint()"
+                        [state]="orderStatus"
+                        [buttonText]="orderStatus.submitStatus === SubmitStatus.Successful ? 'Cube submitted' : ' Mint my cube! '"
+                        defaultIconClass="bi bi-box"
+                        class="d-flex"
+                        />
+                    }
 
-                    <app-loading-indicator-button
-                      *ngIf="useConnectInscription"
+                    @if (useConnectInscription) {
+                      <app-loading-indicator-button
                       [disabled]="knownInscriptionIdStatus.submitStatus === SubmitStatus.Submitting ||
                         cubeSuggestionStatus.submitStatus === SubmitStatus.Submitting"
-                      [showAlertOnError]="true"
-                      (buttonClick)="mint()"
-                      [state]="createInscriptionStatus"
-                      [buttonText]="createInscriptionStatus.submitStatus === SubmitStatus.Successful ? 'Cube submitted' : ' Mint my cube! '"
-                      defaultIconClass="bi bi-box"
-                      class="d-flex"
-                    />
+                        [showAlertOnError]="true"
+                        (buttonClick)="mint()"
+                        [state]="createInscriptionStatus"
+                        [buttonText]="createInscriptionStatus.submitStatus === SubmitStatus.Successful ? 'Cube submitted' : ' Mint my cube! '"
+                        defaultIconClass="bi bi-box"
+                        class="d-flex"
+                        />
+                    }
 
 
                     <app-loading-indicator
                       [state]="knownInscriptionIdStatus"
                       sendDataText="Converting Number to ID…"
-                    />
+                      />
 
                     <!-- <app-loading-indicator
-                      [state]="cubeSuggestionStatus" class="mb-5"
-                      sendDataText="Searching for a new recommendation…"
+                    [state]="cubeSuggestionStatus" class="mb-5"
+                    sendDataText="Searching for a new recommendation…"
                     /> -->
 
                   </div>
                 </div>
 
 
-                <p *ngIf="mintFacade.file$ | push as file" class="mt-4">
-
-                  <ng-container *ngIf="!file.sent">
-                    You have a pending order!<br>
-                  </ng-container>
-
-                  <ng-container *ngIf="file.sent">
-                    We received a payment for your last order!<br>
-                  </ng-container>
-
-                  <ng-container *rxLet="mintFacade.orderResponse$; let orderResponse">
-                    <a [routerLink]="['/order', orderResponse?.id]">Track the status here!</a>
-                  </ng-container>
-
-                </p>
+                @if (mintFacade.file$ | push; as file) {
+                  <p class="mt-4">
+                    @if (!file.sent) {
+                      You have a pending order!<br>
+                    }
+                    @if (file.sent) {
+                      We received a payment for your last order!<br>
+                    }
+                    <ng-container *rxLet="mintFacade.orderResponse$; let orderResponse">
+                      <a [routerLink]="['/order', orderResponse?.id]">Track the status here!</a>
+                    </ng-container>
+                  </p>
+                }
 
 
               </form>
@@ -209,15 +239,15 @@
               <!-- {{ mintFacade.getCubeHtml(getCubeDetails()) | json }} -->
               <!-- <br>
               <br>
-              <br>
-              {{ mintFacade.getCubeHtml(getCubeDetails()).length }} -->
+                <br>
+                  {{ mintFacade.getCubeHtml(getCubeDetails()).length }} -->
 
 
-            </div>
-          </div>
+                </div>
+              </div>
+            </ng-container>
+          </ng-container>
         </ng-container>
       </ng-container>
     </ng-container>
-  </ng-container>
-</ng-container>
 

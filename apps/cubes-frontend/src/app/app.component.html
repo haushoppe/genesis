@@ -1,6 +1,8 @@
 <header></header>
 
-<app-banner *ngIf="!(hideBanner$ | push)" />
+@if (!(hideBanner$ | push)) {
+  <app-banner />
+}
 
 <div class="cover-container">
 

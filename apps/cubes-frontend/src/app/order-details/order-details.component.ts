@@ -1,5 +1,10 @@
-import { DecimalPipe, NgClass, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
+import { DecimalPipe, NgClass } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  inject,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
 import { PushModule } from '@rx-angular/template/push';
@@ -15,28 +20,24 @@ import { getSubmittingState } from '../store/submittable/submittable-state';
 import { decodeBase64DataURI } from './decode-base64-data-uri';
 import { SafeUrlPipe } from '../safe-url.pipe';
 
-
 @Component({
-    selector: 'app-order-details',
-    templateUrl: './order-details.component.html',
-    styleUrls: ['./order-details.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [
-        NgIf,
-        PushModule,
-        NgClass,
-        LoadingIndicatorComponent,
-        NgIf,
-        QRCodeModule,
-        LetModule,
-        RouterLink,
-        SafeHtmlPipe,
-        DecimalPipe,
-        SafeUrlPipe
-    ]
+  selector: 'app-order-details',
+  templateUrl: './order-details.component.html',
+  styleUrls: ['./order-details.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    PushModule,
+    NgClass,
+    LoadingIndicatorComponent,
+    QRCodeModule,
+    LetModule,
+    RouterLink,
+    SafeHtmlPipe,
+    DecimalPipe,
+    SafeUrlPipe,
+  ],
 })
 export class OrderDetailsComponent {
-
   mintFacade = inject(MintFacade);
   environment = environment;
 
@@ -48,11 +49,14 @@ export class OrderDetailsComponent {
   copyAmountSuccessfull: boolean | undefined;
   copyPayreqSuccessfull: boolean | undefined;
 
-
   getLinkToChain(order: InscriptionOrder) {
-    return 'bitcoin:' + order.charge.chain_invoice.address
-      + '?amount=' + (order.charge.amount / 100000000)
-      + '&label=cubes+order';
+    return (
+      'bitcoin:' +
+      order.charge.chain_invoice.address +
+      '?amount=' +
+      order.charge.amount / 100000000 +
+      '&label=cubes+order'
+    );
   }
 
   getLinkToLightning(order: InscriptionOrder) {
@@ -78,29 +82,31 @@ export class OrderDetailsComponent {
       this.copyChainSuccessfull = true;
     } catch {
       this.copyChainSuccessfull = false;
-      console.error('Cant copy to clipboard!')
+      console.error('Cant copy to clipboard!');
     }
     this.cd.detectChanges();
   }
 
   async copyAmountToClipboard(order: InscriptionOrder) {
     try {
-      await navigator.clipboard.writeText((order.charge.amount / 100000000) + '');
+      await navigator.clipboard.writeText(order.charge.amount / 100000000 + '');
       this.copyAmountSuccessfull = true;
     } catch {
       this.copyAmountSuccessfull = false;
-      console.error('Cant copy to clipboard!')
+      console.error('Cant copy to clipboard!');
     }
     this.cd.detectChanges();
   }
 
   async copyPayreqToClipboard(order: InscriptionOrder) {
     try {
-      await navigator.clipboard.writeText(order.charge.lightning_invoice.payreq);
+      await navigator.clipboard.writeText(
+        order.charge.lightning_invoice.payreq
+      );
       this.copyPayreqSuccessfull = true;
     } catch {
       this.copyPayreqSuccessfull = false;
-      console.error('Cant copy to clipboard!')
+      console.error('Cant copy to clipboard!');
     }
     this.cd.detectChanges();
   }

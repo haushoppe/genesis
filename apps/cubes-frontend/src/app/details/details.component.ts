@@ -1,4 +1,3 @@
-import { NgFor, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LetModule } from '@rx-angular/template/let';
@@ -11,20 +10,18 @@ import { SafeUrlPipe } from '../safe-url.pipe';
 import { MintFacade } from '../store/mint.facade';
 
 @Component({
-    selector: 'app-details',
-    templateUrl: './details.component.html',
-    styleUrls: ['./details.component.scss'],
-    imports: [
-        LoadingIndicatorComponent,
-        NgIf,
-        RouterLink,
-        SafeUrlPipe,
-        LetModule,
-        PushModule,
-        NgFor,
-        ShortenAddressPipe
-    ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-details',
+  templateUrl: './details.component.html',
+  styleUrls: ['./details.component.scss'],
+  imports: [
+    LoadingIndicatorComponent,
+    RouterLink,
+    SafeUrlPipe,
+    LetModule,
+    PushModule,
+    ShortenAddressPipe,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailsComponent {
   mintFacade = inject(MintFacade);

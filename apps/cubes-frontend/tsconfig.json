@@ -16,10 +16,6 @@
     "target": "es2022",
     "module": "es2022",
     "useDefineForClassFields": false,
-    "lib": [
-      "es2022",
-      "dom"
-    ],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,

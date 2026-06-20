@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   api: 'https://backend.haushoppe.art',
-  ordinalsExplorerIframe: 'https://explorer.ordinalsbot.com/content/',
+  ordinalsExplorerIframe: 'https://ordinals.com/preview/',
   ordinalsExplorerDetails: 'https://ordinals.com/inscription/',
   // Both marketplaces render every inscription (whether listed or not).
   // Satflow uses the inscription ID at /ordinal/; ord.net uses the

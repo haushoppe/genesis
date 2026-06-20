@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   api: 'http://localhost:3333',
-  ordinalsExplorerIframe: 'https://explorer.ordinalsbot.com/content/',
+  ordinalsExplorerIframe: 'https://ordinals.com/preview/',
   ordinalsExplorerDetails: 'https://ordinals.com/inscription/',
   // Both marketplaces render every inscription (whether listed or not).
   // Satflow uses the inscription ID at /ordinal/; ord.net uses the

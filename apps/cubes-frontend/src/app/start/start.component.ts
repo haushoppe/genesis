@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
+import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { MintFacade } from '../store/mint.facade';
 import { WalletFacade } from '../store/wallet.facade';
 import { MintFormComponent } from './mint-form/mint-form.component';
@@ -28,6 +30,7 @@ import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 export class StartComponent {
   mintFacade = inject(MintFacade);
   walletFacade = inject(WalletFacade);
+  cursor = toSignal(inject(CubesDataService).getCursor());
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;

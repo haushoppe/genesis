@@ -10,6 +10,7 @@ import {
 } from './types';
 
 const CUBES_URL = 'https://ordpool-space.github.io/ordinal-cubes-index/data/cubes.json';
+const CURSOR_URL = 'https://ordpool-space.github.io/ordinal-cubes-index/data/cursor.json';
 
 /** Shape of records in cubes.json — flat fields, becomes `meta`-nested for the frontend. */
 interface ExternalCube {
@@ -20,6 +21,16 @@ interface ExternalCube {
   contentLength?: number;
   attributes: { trait_type: string; value: string }[];
   name: string;
+}
+
+/** Shape of cursor.json — how far the indexer has walked. */
+export interface IndexCursor {
+  lastScannedId: string;
+  lastScannedNumber: number;
+  lastScannedBlockHeight?: number;
+  blessedTipAtLastRun: number;
+  lastScanAt: string;
+  source: string;
 }
 
 /**
@@ -38,11 +49,20 @@ export class CubesDataService {
     shareReplay({ bufferSize: 1, refCount: false }),
   );
 
+  private readonly cursor$ = this.http.get<IndexCursor>(CURSOR_URL).pipe(
+    shareReplay({ bufferSize: 1, refCount: false }),
+  );
+
   constructor(private http: HttpClient) {}
 
   /** Every known cube, sorted by (blockHeight, inscriptionNumber). */
   getAllCubes(): Observable<InscriptionExtended[]> {
     return this.all$;
+  }
+
+  /** Where the indexer has walked to. Lets the UI show "indexed up to block N". */
+  getCursor(): Observable<IndexCursor> {
+    return this.cursor$;
   }
 
   /**

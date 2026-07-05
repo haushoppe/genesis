@@ -87,6 +87,10 @@
 
   <p class="mb-3">
     Here you see all {{ i.totalInscriptions }} cubes that have been inscribed so far.
+    @if (cursor()?.lastScannedBlockHeight; as h) {
+      Indexed up to block
+      <a [href]="'https://ordpool.space/block/' + h" target="_blank" rel="noopener">#{{ h }}</a>.
+    }
   </p>
 
   <div class="row">

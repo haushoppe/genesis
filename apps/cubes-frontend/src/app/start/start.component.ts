@@ -1,11 +1,25 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
-import { InscribeContent, InscribeMintOrchestrator, InscribeUtxoSimulation, TxnOutput, WalletService } from 'ordpool-sdk';
-import { debounceTime, firstValueFrom } from 'rxjs';
+import {
+  AUTO_SCAN_MAX_VALUE_SAT,
+  bucketOf,
+  findAutoPickCandidate,
+  InscribeContent,
+  InscribeMintOrchestrator,
+  InscribeUtxoSimulation,
+  RecommendedFees,
+  SimulateInscribeFeesResult,
+  TxnOutput,
+  UtxoContentScanner,
+  UtxoScanBucket,
+  UtxoScanState,
+  WalletService,
+} from 'ordpool-sdk';
+import { combineLatest, debounceTime, firstValueFrom, map, tap } from 'rxjs';
 
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
@@ -14,8 +28,6 @@ import { getCubeHtml } from '../services/cube-html';
 import { MintFacade } from '../store/mint.facade';
 import { CubeDetails } from '../store/mint.actions';
 import { PastFacade } from '../store/past.facade';
-import { TrimNumberValueAccessorDirective } from '../trim-number-value-accessor.directive';
-import { TrimValueAccessorDirective } from '../trim-value-accessor.directive';
 import { InscriptionIdValidator } from './mint-form/inscription-id.validator';
 
 /**
@@ -42,6 +54,17 @@ function containsOnlyNumbers(str: string): boolean {
   return /^\d+$/.test(str);
 }
 
+/**
+ * One expert-panel row: the raw simulation, plus the scanner's view
+ * of what (if anything) lives on the UTXO.
+ */
+export interface ViableInscribeSimulation {
+  utxo: TxnOutput;
+  simulation: SimulateInscribeFeesResult;
+  scan: UtxoScanState;
+  bucket: UtxoScanBucket;
+}
+
 @Component({
   selector: 'app-start',
   templateUrl: './start.component.html',
@@ -53,8 +76,7 @@ function containsOnlyNumbers(str: string): boolean {
     RouterLink,
     ReactiveFormsModule,
     DecimalPipe,
-    TrimValueAccessorDirective,
-    TrimNumberValueAccessorDirective,
+    SlicePipe,
   ],
   host: {
     '(window:keydown)': 'onKeydown($event)',
@@ -66,8 +88,11 @@ export class StartComponent implements OnInit {
   pastFacade = inject(PastFacade);
   walletService = inject(WalletService);
   orchestrator = inject(InscribeMintOrchestrator);
+  scanner = inject(UtxoContentScanner);
   cd = inject(ChangeDetectorRef);
   cubesData = inject(CubesDataService);
+
+  readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
 
   cursor = toSignal(this.cubesData.getCursor());
   connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
@@ -75,6 +100,61 @@ export class StartComponent implements OnInit {
     initialValue: { installedWallets: [], notInstalledWallets: [] },
   });
   simulations = toSignal(this.orchestrator.simulations$, { initialValue: [] as InscribeUtxoSimulation[] });
+  recommendedFees = toSignal(this.orchestrator.recommendedFees$, { initialValue: null as RecommendedFees | null });
+
+  /**
+   * Combines the orchestrator's raw simulation rows with the scanner's
+   * asset-scan state, mirroring ordpool cat21-mint's `paymentOutputs$`.
+   * Filters to viable rows, sorts biggest-first, caps at 10, and
+   * enriches each with a bucket (clean / assets / unscanned / …).
+   * Side effect on tap: eager-scan small UTXOs and auto-pick the
+   * safest row when the user hasn't overridden.
+   */
+  paymentOutputs$ = combineLatest([
+    this.orchestrator.simulations$,
+    this.scanner.states$,
+  ]).pipe(
+    map(([rows, scanMap]): ViableInscribeSimulation[] => {
+      return rows
+        .filter((r): r is { utxo: TxnOutput; simulation: SimulateInscribeFeesResult; insufficient: false } =>
+          !r.insufficient && r.simulation !== null,
+        )
+        .sort((a, b) => b.utxo.value - a.utxo.value)
+        .slice(0, 10)
+        .map((r): ViableInscribeSimulation => {
+          const outpoint = `${r.utxo.txid}:${r.utxo.vout}`;
+          const scan = scanMap.get(outpoint) ?? { kind: 'not-scanned' as const };
+          return { utxo: r.utxo, simulation: r.simulation, scan, bucket: bucketOf(scan) };
+        });
+    }),
+    tap((rows) => {
+      // Eager-scan small UTXOs; the scanner dedupes by outpoint so
+      // repeat emissions cost nothing.
+      this.scanner.autoScan(rows.map((r) => ({
+        txid: r.utxo.txid,
+        vout: r.utxo.vout,
+        value: r.utxo.value,
+      })));
+
+      // Auto-pick the safest row unless the user's current pick is
+      // still viable. Bucket priority: clean → unscanned → failed.
+      // Never auto-pick 'assets' — that requires an explicit
+      // "Use anyway" click.
+      if (!rows.length) {
+        this.orchestrator.setSelectedUtxo(null);
+        return;
+      }
+      const current = this.orchestrator.selectedUtxo();
+      const stillThere = current && rows.find((r) =>
+        r.utxo.txid === current.txid && r.utxo.vout === current.vout,
+      );
+      if (stillThere) return;
+      const next = findAutoPickCandidate(rows);
+      this.orchestrator.setSelectedUtxo(next?.utxo ?? null);
+    }),
+  );
+
+  paymentOutputs = toSignal(this.paymentOutputs$, { initialValue: [] as ViableInscribeSimulation[] });
 
   // Present every installed ordinals wallet as a connect option.
   // The SDK's connectWallet() rejects wallets whose signer can't
@@ -104,6 +184,17 @@ export class StartComponent implements OnInit {
   c = this.form.controls;
 
   ngOnInit() {
+    // Reset the scanner's cache when the wallet changes — new
+    // wallet, new UTXOs, no reason to hold on to old scan state.
+    let lastWalletAddress: string | null = null;
+    this.walletService.connectedWallet$.subscribe((w) => {
+      const addr = w?.ordinalsAddress ?? null;
+      if (lastWalletAddress !== null && addr !== lastWalletAddress) {
+        this.scanner.reset();
+      }
+      lastWalletAddress = addr;
+    });
+
     // Each inscription ID field: if the user types `#12345`-style
     // digits, resolve via ord-proxy in the background and swap the
     // field to the resolved id. Same shape as the retired mint-form.
@@ -161,20 +252,6 @@ export class StartComponent implements OnInit {
     };
   }
 
-  /**
-   * Pick a UTXO to fund the mint. Expert mode leaves the choice to
-   * the user; default just picks the biggest confirmed viable UTXO.
-   * Asset-scanning (like ordpool cat21-mint's bucket priority) is
-   * a follow-up — for MVP we accept the simplification and warn
-   * users to keep asset-bearing UTXOs elsewhere.
-   */
-  autoPickUtxo(): TxnOutput | null {
-    const viable = this.simulations().filter((r) => !r.insufficient && r.simulation);
-    if (!viable.length) return null;
-    const sorted = [...viable].sort((a, b) => b.utxo.value - a.utxo.value);
-    return sorted[0]?.utxo ?? null;
-  }
-
   async mint() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -194,15 +271,12 @@ export class StartComponent implements OnInit {
     };
     this.orchestrator.setContent(content);
 
-    // Give simulations$ a tick to recompute against the new body
-    // (feeRate + content are both set now). Then auto-pick unless
-    // expert mode already set one.
+    // The paymentOutputs$ tap auto-picks a UTXO as soon as
+    // simulations$ produces a viable row. Give one microtask for
+    // that pipeline to settle if the user clicked Mint before it
+    // fired at least once (rare, but cheap to guard).
     await Promise.resolve();
-    if (!this.orchestrator.selectedUtxo()) {
-      const picked = this.autoPickUtxo();
-      if (!picked) return;
-      this.orchestrator.setSelectedUtxo(picked);
-    }
+    if (!this.orchestrator.selectedUtxo()) return;
 
     try {
       const result = await firstValueFrom(this.orchestrator.mint());
@@ -212,6 +286,29 @@ export class StartComponent implements OnInit {
       // Orchestrator has already set errorMessage; template renders it.
       this.cd.detectChanges();
     }
+  }
+
+  /**
+   * Triggered by the "Scan" link on unscanned rows in the expert
+   * panel. Adds the outpoint to the scanner's active queue.
+   */
+  scanUtxo(utxo: TxnOutput) {
+    this.scanner.scan(`${utxo.txid}:${utxo.vout}`).subscribe();
+  }
+
+  bucketLabel(bucket: UtxoScanBucket): string {
+    switch (bucket) {
+      case 'clean': return 'safe';
+      case 'assets': return 'assets on this UTXO';
+      case 'unscanned': return 'not scanned';
+      case 'scanning': return 'scanning…';
+      case 'failed': return 'scan failed';
+    }
+  }
+
+  setFeePreset(rate: number) {
+    this.form.controls.feeRate.setValue(rate);
+    this.orchestrator.setFeeRate(rate);
   }
 
   mintAnother() {

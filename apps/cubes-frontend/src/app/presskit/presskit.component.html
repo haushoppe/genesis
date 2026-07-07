@@ -80,43 +80,27 @@
 
 
 
-    <h3 class="mb-4 mt-4">Xverse Integration Partnership</h3>
+    <h3 class="mb-4 mt-4">Pure ordpool-sdk minting</h3>
 
     <p>
       <strong>Testimonial (by Johannes)</strong><br>
 
       I didn't want to create an art collection where all works are already known at the beginning.
-      Therefore, it was my goal that all parameters for the mint can be entered by the collector - inspired by fx(params).
-      But the effort involved in running a dedicated instance of ord is high, and I wanted to invest my energy in an engaging website instead.
-      For the project's initial launch, I utilized a hosted inscription service, which is the de-facto standard for most "lazy mints".<br>
+      Therefore, it was my goal that all parameters for the mint can be entered by the collector — inspired by fx(params).
+      For the project's initial launch, cubes were minted through a hosted inscription service, which is the de-facto standard for most "lazy mints".<br>
       <br>
-      However, this approach requires trust in a third party. The inscription services create an order for you, and after you pay for the order, they hopefully start the inscription.
+      That model requires trust in a third party — the inscription service creates an order for you, and after you pay for the order, they hopefully start the inscription.
       In line with the Bitcoin ethos of self-custody and trustlessness, the optimal approach is for my collectors to create the transaction on their own, using their own device and private key.
-      This is where Xverse comes in.
-      With Xverse, you can pay directly to a commit address, avoiding extra fees, unnecessary wait times, and any intermediary!
+      Cubes-frontend now uses <a href="https://github.com/ordpool-space/ordpool-sdk">ordpool-sdk</a> to build and broadcast commit + reveal transactions directly from any ordinals-aware wallet — no OrdinalsBot, no OrdinalsBot referral kickback, no intermediary.
     </p>
 
     <p>
-      <strong>How the Inscription API is used</strong><br>
+      <strong>How the mint works</strong><br>
 
-      The website detects if Xverse is installed. If Xverse is not installed, a message appears encouraging you to install Xverse.
-      If Xverse is installed, there's a login button in the top right corner of the page, as well as inline text suggesting you log in with Xverse.
-      <img src="/assets/presskit-button1.png" width="90" height="29"><br>
-      The login popup asks you to share your address to receive ordinal inscriptions. This address is then pre-filled in the minting form.
-      It's now your turn to shuffle through the cube suggestions via <strong>"Craft another cube"</strong> until a pleasing suggestion appears.
-      <img src="/assets/presskit-button2.png" width="205" height="28"><br>
-      Then, click the <strong>"Mint my cube"</strong> button. A popup from the Xverse wallet will appear, showing you the inscription that will be created for you.
-      If you confirm this dialog, a transaction is created that will inscribe your cube as soon as a Bitcoin miner picks up the transaction.
-    </p>
-
-    <h3 class="mb-4 mt-4">Video: Xverse Integration Partnership</h3>
-
-    <p class="mt-2">
-      The following video provides a full walkthrough of the minting process.
-      The new Xverse Inscription API is utilized for that. You can freely use this video in any way you like.
-
-      <iframe width="400" height="400" src="https://www.youtube.com/embed/K4Awd0nx_4w?si=PC25ntQ_78tf9ITm" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
+      The website detects installed ordinals wallets (Xverse, Leather, Unisat, OKX, Phantom, Oyl) automatically and offers each as a connect option.
+      Once connected, the mint form loads UTXOs from the wallet's payment address and estimates commit + reveal fees per candidate UTXO.
+      Click <strong>"Mint my cube!"</strong> — your wallet prompts you to sign the commit; the reveal is signed with an ephemeral key generated in-browser and broadcast right after.
+      As a fun side effect, both transactions carry <code>nLockTime=21</code>, so every cube mint also mints two free CAT-21 cats.
     </p>
 
   </div>

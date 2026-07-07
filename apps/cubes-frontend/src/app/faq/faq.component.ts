@@ -48,7 +48,7 @@ export class FaqComponent {
     {
       question: 'How do I create a cube?',
       answer:
-        'You can create an ordinal cube by entering six Inscription IDs and your receiving address to the form. Each cube, with its six sides, displays the image of the respective inscription. After submitting the form, you are required to cover the costs of creating the inscription through a Bitcoin payment.',
+        'Connect an ordinals-aware Bitcoin wallet (Xverse, Leather, Unisat, OKX, Phantom, or Oyl), enter six Inscription IDs into the form, and click "Mint my cube!". Each cube displays the image of one inscription on each of its six sides. Your wallet will prompt you to sign a commit transaction; a reveal transaction follows automatically. When the reveal confirms, your cube is live on-chain and lands on your ordinals address.',
     },
     {
       question: 'What is the TXIDiN format?',
@@ -58,23 +58,17 @@ export class FaqComponent {
     {
       question: 'What is a taproot address?',
       answer:
-        'A taproot address is a type of Bitcoin address that starts with "bc1p"... . This type of address is best suited to receive Ordinals. Please only use a wallet specifically designed for Ordinals, for example, the Xverse wallet (see below).',
+        'A taproot address is a type of Bitcoin address that starts with "bc1p"... . This type of address is best suited to receive Ordinals. Use any ordinals-aware wallet (Xverse, Leather, Unisat, OKX, Phantom, or Oyl).',
     },
     {
       question: 'How do I pay for my cube?',
       answer:
-        "You can pay for your cube directly with either Lightning (instant) or by paying onchain with Bitcoin (BTC). It' super simple!",
+        'Your wallet pays the two on-chain transactions (commit + reveal) directly from its funded payment address. There is no invoice, no third-party middleman, and no Lightning fallback — just a normal wallet-signed Bitcoin transaction. Make sure your payment address holds enough BTC before you click Mint.',
     },
     {
-      question:
-        'Can I make an onchain payment via a centralized exchange like Coinbase or Binance?',
+      question: 'What happens after I click Mint?',
       answer:
-        'That is not a problem. However, please make sure that the exact amount of satoshis reaches us. This means the satoshis to be paid PLUS all additional fees.',
-    },
-    {
-      question: 'What happens after I pay?',
-      answer:
-        'Once your payment is confirmed, your cube is automatically inscribed onto the Bitcoin blockchain and sent to your wallet.',
+        'Your wallet signs a commit transaction that we broadcast to the Bitcoin mempool. As soon as the commit is in the mempool, we broadcast the reveal transaction that carries your cube HTML. Once the reveal confirms in a block, the cube is on-chain forever.',
     },
     {
       question: 'How is the data of my cube stored?',
@@ -89,13 +83,12 @@ export class FaqComponent {
     {
       question: 'Which wallet should I use to manage my Ordinals?',
       answer:
-        'We really like the Xverse wallet from [www.xverse.app](https://www.xverse.app/). Anyone who has used MetaMask before will feel right at home. It is a __non-custodial__ wallet, you are in full control of your funds.',
+        'Any ordinals-aware Bitcoin wallet works — the mint page auto-detects installed extensions. Good non-custodial choices: [Xverse](https://www.xverse.app/), [Leather](https://leather.io/), [Unisat](https://unisat.io/), [OKX Wallet](https://www.okx.com/web3), Phantom (BTC), or [Oyl](https://oyl.io/). All keep you in full control of your funds.',
     },
     {
-      question:
-        'Which wallet can I use for quick and easy ⚡️ Lightning payments?',
+      question: 'Do I get anything extra when I mint a cube?',
       answer:
-        'There are a number of excellent Lightning wallets, and our recommendation is the Phoenix Wallet from [phoenix.acinq.co](https://phoenix.acinq.co/). Phoenix has been designed for less technical users. Phoenix takes care of everything under the hood and you will barely notice anything, except that your payments are faster and cheaper. It is a __non-custodial__ wallet, you are in full control of your funds.',
+        'Yes. Every cube mint also inscribes two [CAT-21](https://cat21.space/) cats as a side effect — the commit and the reveal transactions both carry `nLockTime=21`, which is the CAT-21 protocol marker. Two free cats per cube, on the house. Claim them at [cat21.space](https://cat21.space/).',
     },
     {
       question: 'What is the "utility" of this project?',

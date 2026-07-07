@@ -9,7 +9,9 @@
 <h2 class="mt-5" id="mint">Mint a cube</h2>
 
 @let wallet = connectedWallet();
-@let installed = wallets().installedWallets;
+@let installed = installedOrdinalsAware();
+@let state = orchestrator.state();
+@let selected = orchestrator.selectedUtxo();
 
 @if (!wallet) {
   <p class="mt-3">
@@ -25,14 +27,109 @@
   </p>
 }
 
+
 @if (wallet) {
   <p class="mt-3">
     Connected as <strong>{{ wallet.ordinalsAddress }}</strong>.
     <a href="javascript:void(0)" (click)="walletService.disconnectWallet()">Disconnect</a>.
   </p>
-  <!-- Mint form + fee picker + UTXO expert panel land here in the next
-       iteration (mirrors ordpool/frontend cat21-mint's shape). -->
-  <p class="text-muted"><small>Mint form coming — the wallet layer is now live; the six-inscription cube form and inscribeAndBroadcast wiring drops in next.</small></p>
+
+  <form [formGroup]="form" (ngSubmit)="mint()" class="mt-4">
+    <div class="row">
+      @for (n of [1, 2, 3, 4, 5, 6]; track n) {
+        <div class="col-12 col-md-6 mb-3">
+          <label class="form-label" [for]="'inscriptionId' + n">Inscription {{ n }}</label>
+          <input
+            [id]="'inscriptionId' + n"
+            type="text"
+            class="form-control"
+            [formControlName]="'inscriptionId' + n"
+            appTrim
+            placeholder="txid + i + index, or #12345"
+            autocomplete="off"
+          />
+        </div>
+      }
+
+      <div class="col-12 col-md-8 mb-3">
+        <label class="form-label" for="title">Title (optional)</label>
+        <input id="title" type="text" class="form-control" formControlName="title" appTrim autocomplete="off" />
+      </div>
+
+      <div class="col-6 col-md-4 mb-3">
+        <label class="form-label" for="feeRate">Fee rate (sat/vB)</label>
+        <input id="feeRate" type="number" min="1" class="form-control" formControlName="feeRate" appTrimNumber />
+      </div>
+    </div>
+
+    @if (state === 'error' && orchestrator.errorMessage()) {
+      <div class="alert alert-danger">❌ {{ orchestrator.errorMessage() }}</div>
+    }
+
+    @if (state === 'success' && orchestrator.successResult(); as res) {
+      <div class="alert alert-success">
+        ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
+        <ul class="mb-2 mt-2">
+          <li>Commit: <a [href]="'https://ordpool.space/tx/' + res.commitTxId" target="_blank" rel="noopener"><code>{{ res.commitTxId }}</code></a></li>
+          <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code>{{ res.revealTxId }}</code></a></li>
+        </ul>
+        You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
+        <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
+        <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
+      </div>
+    }
+
+    @if (state !== 'success') {
+      @if (simulations().length === 0 && form.controls.feeRate.value) {
+        <p class="text-muted"><small>Loading your UTXOs…</small></p>
+      }
+      @let viable = simulations();
+      @let anyViable = viable.length && viable.some(r => !r.insufficient);
+      @if (viable.length && !anyViable) {
+        <div class="alert alert-warning">
+          We could not find enough funds in your payment address at
+          <strong>{{ form.controls.feeRate.value }}</strong>&nbsp;sat/vB.
+          Fund <code>{{ wallet.paymentAddress }}</code> or pick a lower fee rate.
+        </div>
+      }
+
+      <details class="mt-3 mb-3">
+        <summary>Choose a different funding UTXO (expert mode)</summary>
+        <div class="mt-2">
+          @for (row of viable; track row.utxo.txid + ':' + row.utxo.vout) {
+            <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+              <div>
+                <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
+                — {{ row.utxo.value | number }} sat
+                @if (row.simulation) {
+                  · commit&nbsp;{{ row.simulation.commitFeeSats }}&nbsp;+ reveal&nbsp;{{ row.simulation.revealFeeSats }}&nbsp;= <strong>{{ row.simulation.totalFeeSats }}</strong>&nbsp;sat
+                }
+                @if (row.insufficient) {
+                  <span class="text-danger">· insufficient</span>
+                }
+                @if (selected?.txid === row.utxo.txid && selected?.vout === row.utxo.vout) {
+                  <span class="badge bg-primary ms-2">Selected</span>
+                }
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary"
+                      [disabled]="row.insufficient"
+                      (click)="orchestrator.setSelectedUtxo(row.utxo)">
+                Use this UTXO
+              </button>
+            </div>
+          }
+        </div>
+      </details>
+
+      <button type="submit" class="btn btn-primary" [disabled]="form.invalid || state === 'minting' || !anyViable">
+        @if (state === 'minting') {
+          Minting… please confirm in your wallet
+        } @else {
+          Mint my cube!
+        }
+      </button>
+    }
+  </form>
 }
 
 
@@ -49,7 +146,6 @@
 </p>
 
 <div class="row">
-
   @for (inscription of i.inscriptions; track inscription) {
     <div class="col-6 col-md-4 col-lg-3">
       <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
@@ -71,7 +167,6 @@
     [state]="mintFacade.inscriptionsStatus()" class="mb-5"
     sendDataText="Loading latest cubes…"
     />
-
 </div>
 
 

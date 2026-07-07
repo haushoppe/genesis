@@ -51,4 +51,16 @@ import 'zone.js'; // Included with Angular CLI.
  * APPLICATION IMPORTS
  */
 
-import '@angular/localize/init'
+import '@angular/localize/init';
+
+// ordpool-sdk's Xverse connector pulls in `sats-connect`, which
+// references `Buffer` + `global` as if it were running in Node.
+// Vanilla @angular-devkit/build-angular does not polyfill Node
+// built-ins — without these two lines the whole app crashes at
+// module-init time with "ReferenceError: global is not defined"
+// (buffer alias + Buffer ProvidePlugin are supplied via webpack.config.js).
+(window as any)['global'] = window;
+import { Buffer } from 'buffer';
+(window as any)['Buffer'] = Buffer;
+import process from 'process';
+(window as any)['process'] = process;

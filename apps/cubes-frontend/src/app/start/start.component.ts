@@ -21,6 +21,7 @@ import {
 } from 'ordpool-sdk';
 import { combineLatest, debounceTime, firstValueFrom, map, tap } from 'rxjs';
 
+import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
@@ -72,6 +73,7 @@ export interface ViableInscribeSimulation {
   imports: [
     LoadingIndicatorComponent,
     InscriptionListItemComponent,
+    CubePreviewComponent,
     NgbPagination,
     RouterLink,
     ReactiveFormsModule,
@@ -156,12 +158,15 @@ export class StartComponent implements OnInit {
 
   paymentOutputs = toSignal(this.paymentOutputs$, { initialValue: [] as ViableInscribeSimulation[] });
 
-  // Present every installed ordinals wallet as a connect option.
-  // The SDK's connectWallet() rejects wallets whose signer can't
-  // inscribe; the picker itself doesn't currently expose
-  // `signingSupported` on the wallet metadata (only on connectors
-  // internally). Follow-up: expose it upstream and filter here.
-  installedOrdinalsAware = computed(() => this.wallets().installedWallets);
+  // Present every installed on-chain ordinals wallet as a connect
+  // option. `onChainOrdinals: false` is set upstream on wallets
+  // that detect but can't hold ordinal artifacts (Lightning-only
+  // Alby with no BTC backend, etc.); those get filtered out here
+  // so the picker only shows options that can actually complete
+  // a cube mint.
+  installedOrdinalsAware = computed(() =>
+    this.wallets().installedWallets.filter((w) => w.onChainOrdinals !== false),
+  );
 
   expertMode = signal(false);
 
@@ -218,6 +223,12 @@ export class StartComponent implements OnInit {
       if (rate && rate > 0) this.orchestrator.setFeeRate(rate);
     });
     if (this.c.feeRate.value) this.orchestrator.setFeeRate(this.c.feeRate.value);
+
+    // Live cube preview — re-sync the signal whenever any form field
+    // changes so the iframe rerenders immediately.
+    this.form.valueChanges.pipe(debounceTime(150)).subscribe(() => {
+      this.cubeDetails.set(this.getCubeDetails());
+    });
   }
 
   onKeydown(event: KeyboardEvent) {
@@ -232,7 +243,12 @@ export class StartComponent implements OnInit {
     }
   }
 
-  private getCubeDetails(): CubeDetails {
+  cubeDetails = signal<CubeDetails>({
+    inscriptionIds: { inscriptionId1: '', inscriptionId2: '', inscriptionId3: '', inscriptionId4: '', inscriptionId5: '', inscriptionId6: '' },
+    title: '', rotationSpeedX: '', rotationSpeedY: '', colorPane: '', bgColor1: '', bgColor2: '',
+  });
+
+  getCubeDetails(): CubeDetails {
     const v = this.form.value;
     return {
       inscriptionIds: {

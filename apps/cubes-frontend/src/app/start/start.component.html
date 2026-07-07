@@ -70,6 +70,8 @@
       </div>
     </div>
 
+    <app-cube-preview [cubeDetails]="cubeDetails()" />
+
     @if (state === 'error' && orchestrator.errorMessage()) {
       <div class="alert alert-danger">❌ {{ orchestrator.errorMessage() }}</div>
     }

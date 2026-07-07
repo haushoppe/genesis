@@ -29,23 +29,17 @@ import { getCubeHtml } from '../services/cube-html';
 import { MintFacade } from '../store/mint.facade';
 import { CubeDetails } from '../store/mint.actions';
 import { PastFacade } from '../store/past.facade';
+import { environment } from '../../environments/environment';
 import { InscriptionIdValidator } from './mint-form/inscription-id.validator';
 
 /**
- * HAUS HOPPE donation address — the reveal tx's optional vout[1]
- * silently tips this address on every mint. No user-facing UI;
- * users pay one fee, we take a small slice as revenue. Same posture
- * as the retired OrdinalsBot referral kickback.
+ * HAUS HOPPE donation address + amount — the reveal tx's optional
+ * vout[1] silently tips this on every mint. No user-facing UI. Comes
+ * from environment.ts so regtest e2e specs can override to a
+ * bcrt1p… address that doesn't dust-reject on the local chain.
  */
-const HAUSHOPPE_TIP_ADDRESS = '???';
-
-/**
- * Silent tip amount in sats. Small enough that a user reading the
- * mempool tx wouldn't blink; large enough to matter in aggregate.
- * A future signal-driven "your tip rate" setting could scale this
- * with fee rate; for the MVP a flat value keeps the math obvious.
- */
-const HAUSHOPPE_TIP_SATS = 1000;
+const HAUSHOPPE_TIP_ADDRESS = environment.haushoppeTipAddress;
+const HAUSHOPPE_TIP_SATS = environment.haushoppeTipSats;
 
 /**
  * String test — pure digits mean the user typed a blessed

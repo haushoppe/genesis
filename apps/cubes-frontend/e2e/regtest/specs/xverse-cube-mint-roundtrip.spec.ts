@@ -1,0 +1,295 @@
+import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+
+import { parseCube } from '../../../src/shared/ordinals/parse-cube';
+import {
+  waitForElectrsSync,
+  waitForUtxoAt,
+  waitForTxConfirmed,
+  rpc,
+  mineBlocks,
+  postTx,
+  waitForOrdStockSync,
+  getStockOrdContent,
+} from '../regtest-helpers';
+import { waitForApprovalPopup } from '../approval-popup';
+
+/**
+ * Full user-flow proof for the Xverse wallet: the actual cubes-frontend
+ * UI, wired against the regtest stack (bitcoind + electrs + ord-stock).
+ * Nothing about the mint path is mocked — the wallet .crx is real, the
+ * chain is real, the ord instance is real, the cube HTML that gets
+ * inscribed is the exact HTML the on-page iframe preview renders.
+ *
+ * Flow:
+ *   1. beforeAll: clone the Xverse seed user-data-dir (populated once
+ *      per suite by global-setup.ts), launch headed Chromium with the
+ *      unpacked Xverse .crx, extract the extension id from the SW URL.
+ *   2. Test: unlock Xverse; navigate to cubes-frontend at :4203; click
+ *      the Connect Xverse link; approve the connect popup; assert the
+ *      "Connected as bcrt1p…" appears in the DOM.
+ *   3. Fund the payment address via bitcoin-cli; mine + electrs-sync.
+ *   4. Fill six inscription IDs (any valid txid+i+idx shape works;
+ *      ord doesn't check they exist) + a fee rate.
+ *   5. Snapshot the exact cube HTML the iframe preview will inscribe.
+ *   6. Click Mint. Approve the sign popup. Await the on-page success
+ *      alert; parse the commit + reveal txids from it.
+ *   7. Mine 1 block per tx so both confirm. Wait for ord-stock to
+ *      catch up.
+ *   8. Fetch `ord/inscription/<revealId>i0`; assert it's indexed.
+ *      Fetch `ord/content/<id>`; byte-compare against the snapshot;
+ *      round-trip through parseCube — the parsed inscriptionIds
+ *      must match what the form was filled with.
+ *
+ * If step 8 succeeds, we've proved: user clicked → wallet signed →
+ * chain accepted → ord indexed → the bytes on-chain are a real cube.
+ */
+
+const EXT_PATH = path.resolve(__dirname, '../extensions/xverse');
+const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
+const CUBES_URL = 'http://localhost:4203/';
+const TEST_PASSWORD = 'TestPassword123!';
+const SEED_USER_DATA_DIR = process.env.XVERSE_SEED_USER_DATA_DIR
+  ?? path.resolve(__dirname, '../../../test-results-regtest/xverse-seed-user-data-dir');
+
+/**
+ * ~200k sats — comfortably covers postage (546) + reveal fee + tip
+ * (1000) + commit fee at 5 sat/vB with plenty of headroom for the
+ * change output to clear the P2TR dust floor (330 sat).
+ */
+const FUND_AMOUNT_BTC = 0.002;
+
+/**
+ * Six valid-format inscription IDs. ord's cube-parser walks the HTML
+ * without dereferencing the /content/<id> URLs, so these don't need
+ * to point at real ord inscriptions on regtest — they only need to
+ * be valid txid+i+idx strings that pass isValidInscriptionId().
+ */
+const CUBE_SIDE_IDS = [
+  'a'.repeat(64) + 'i0',
+  'b'.repeat(64) + 'i0',
+  'c'.repeat(64) + 'i0',
+  'd'.repeat(64) + 'i0',
+  'e'.repeat(64) + 'i0',
+  'f'.repeat(64) + 'i0',
+];
+
+let context: BrowserContext;
+let extensionId: string;
+
+async function shot(p: Page, name: string): Promise<void> {
+  await p.screenshot({
+    path: path.resolve(RESULTS_DIR, `xverse-cube-${name}.png`),
+    fullPage: true,
+  }).catch(() => undefined);
+}
+
+test.beforeAll(async () => {
+  if (!fs.existsSync(path.join(EXT_PATH, 'manifest.json'))) {
+    throw new Error(
+      `Xverse extension not unpacked at ${EXT_PATH}. ` +
+      `Run: bash e2e/regtest/playwright-bootstrap.sh xverse`,
+    );
+  }
+  if (!fs.existsSync(path.join(SEED_USER_DATA_DIR, 'Default'))) {
+    throw new Error(
+      `Xverse seed user-data-dir missing at ${SEED_USER_DATA_DIR}. ` +
+      `globalSetup should have created it.`,
+    );
+  }
+
+  // Sanity-check bitcoind is reachable + at least 101 blocks mined.
+  const tip = Number(rpc('getblockcount').trim());
+  if (tip < 101) {
+    throw new Error(
+      `regtest tip is ${tip} (<101). ` +
+      `Run: bash e2e/regtest/regtest-bootstrap.sh`,
+    );
+  }
+
+  // Clone the seed user-data-dir per test so we get a fresh Chromium
+  // context but skip the 25s onboarding click flow. Strip Chromium's
+  // singleton locks from the clone.
+  const workingDir = `${SEED_USER_DATA_DIR}.cubes-xverse-${process.pid}-${Date.now()}`;
+  fs.cpSync(SEED_USER_DATA_DIR, workingDir, { recursive: true });
+  for (const stale of ['SingletonLock', 'SingletonCookie', 'SingletonSocket']) {
+    fs.rmSync(path.join(workingDir, stale), { force: true });
+  }
+
+  context = await chromium.launchPersistentContext(workingDir, {
+    headless: false,
+    args: [
+      `--disable-extensions-except=${EXT_PATH}`,
+      `--load-extension=${EXT_PATH}`,
+      '--no-sandbox',
+      '--disable-dev-shm-usage',
+    ],
+  });
+  let [worker] = context.serviceWorkers();
+  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  extensionId = worker.url().split('/')[2];
+});
+
+test.afterAll(async () => {
+  await context?.close();
+});
+
+test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
+  test.setTimeout(360_000);
+
+  // ─── Step 1: unlock Xverse from the primer popup ───────────────
+  const primer = await context.newPage();
+  await primer.setViewportSize({ width: 400, height: 800 });
+  await primer.goto(`chrome-extension://${extensionId}/popup.html`, { waitUntil: 'domcontentloaded' });
+  await primer.waitForFunction(() => {
+    const t = (document.body.innerText || '').toLowerCase();
+    return t.includes('unlock') || t.includes('account 1');
+  }, undefined, { timeout: 30_000, polling: 250 });
+  if (/unlock/i.test(await primer.locator('body').innerText())) {
+    await primer.locator('input[type="password"]').first().fill(TEST_PASSWORD);
+    await primer.getByRole('button', { name: /^unlock$/i }).first().click();
+    await primer.waitForFunction(() => {
+      const t = (document.body.innerText || '').toLowerCase();
+      return t.includes('account 1') || t.includes('not now') || t.includes('zest');
+    }, undefined, { timeout: 30_000, polling: 250 });
+  }
+  const notNow = primer.getByText('Not now', { exact: true }).first();
+  if (await notNow.isVisible({ timeout: 1_500 }).catch(() => false)) {
+    await notNow.click({ force: true }).catch(() => undefined);
+  }
+  await shot(primer, '01-xverse-unlocked');
+
+  // ─── Step 2: open cubes-frontend + connect wallet via UI ───────
+  const cubes = await context.newPage();
+  await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
+  await expect(cubes.getByRole('heading', { name: 'Ordinal Cubes', exact: true })).toBeVisible({ timeout: 15_000 });
+
+  // The Detected: list only renders after wallets$ has polled at
+  // least once (500ms).
+  await expect(cubes.getByText(/detected:/i)).toBeVisible({ timeout: 10_000 });
+  const connectLink = cubes.getByRole('link', { name: 'Xverse', exact: true });
+  await expect(connectLink).toBeVisible({ timeout: 10_000 });
+  await shot(cubes, '02-cubes-loaded');
+
+  // Click "Xverse" — SDK's WalletService.connectWallet fires
+  // xverseConnector.connect, which spawns Xverse's approval popup.
+  const knownPagesBeforeConnect = new Set(context.pages());
+  const connectPromise = connectLink.click();
+  const connectPopup = await waitForApprovalPopup({
+    context,
+    knownPages: knownPagesBeforeConnect,
+    timeoutMs: 60_000,
+    isApproval: async (p) => {
+      if (!p.url().startsWith('chrome-extension://')) return false;
+      const t = (await p.locator('body').innerText().catch(() => '')).toLowerCase();
+      return ['connect', 'approve', 'confirm', 'allow'].some(s => t.includes(s));
+    },
+  });
+  await shot(connectPopup, '03-xverse-connect-approval');
+  await connectPopup.getByRole('button', { name: /^(connect|approve|confirm|allow)$/i }).first().click();
+  await connectPromise;
+
+  await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });
+  const paymentAddress = await cubes.evaluate(async () => {
+    // The rendered address is the ORDINALS one; grab the wallet's
+    // payment address via the SDK's WalletService which the app has
+    // already injected on window as a debug hook.
+    const svc = (window as unknown as { ordpoolWalletServiceDebug?: { connectedWallet$: { getValue: () => { paymentAddress: string } | null } } })
+      .ordpoolWalletServiceDebug;
+    if (!svc) return undefined;
+    return svc.connectedWallet$.getValue()?.paymentAddress;
+  });
+  // Fallback: parse the rendered "Connected as bcrt1p…" strong text
+  // — but that's the ordinals address, and we need to fund the
+  // payment address. Grab from localStorage where the SDK caches
+  // it under LAST_CONNECTED_WALLET.
+  const paymentAddr = paymentAddress ?? await cubes.evaluate(() => {
+    const raw = localStorage.getItem('LAST_CONNECTED_WALLET');
+    if (!raw) return undefined;
+    try { return (JSON.parse(raw) as { paymentAddress: string }).paymentAddress; } catch { return undefined; }
+  });
+  if (!paymentAddr) throw new Error('Could not extract wallet payment address after connect');
+  expect(paymentAddr).toMatch(/^bcrt1q|^bcrt1p|^m[a-zA-Z0-9]/);
+  console.log(`[cube-mint] payment address: ${paymentAddr}`);
+
+  // ─── Step 3: fund the payment address on regtest ───────────────
+  rpc('-rpcwallet=cubes-e2e', 'sendtoaddress', paymentAddr, String(FUND_AMOUNT_BTC));
+  await waitForElectrsSync(mineBlocks(1));
+  await waitForUtxoAt(paymentAddr, Math.round(FUND_AMOUNT_BTC * 1e8));
+
+  // ─── Step 4: fill the form ─────────────────────────────────────
+  for (let i = 0; i < 6; i++) {
+    await cubes.locator(`#inscriptionId${i + 1}`).fill(CUBE_SIDE_IDS[i]);
+  }
+  await cubes.locator('#feeRate').fill('5');
+  await shot(cubes, '04-form-filled');
+
+  // ─── Step 5: snapshot the cube HTML the iframe preview will
+  //   inscribe. The preview element renders getCubeHtml(cubeDetails())
+  //   in an iframe with srcdoc; the SAME HTML gets encoded as the
+  //   inscription body when the user clicks Mint.
+  await cubes.waitForTimeout(300);  // debounce for the form.valueChanges → cubeDetails() signal
+  const previewIframe = cubes.locator('app-cube-preview iframe');
+  const expectedCubeHtml = await previewIframe.getAttribute('srcdoc');
+  if (!expectedCubeHtml) throw new Error('Cube preview iframe has no srcdoc');
+  expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
+
+  // ─── Step 6: click Mint, approve the sign popup, await the
+  //   on-page success alert with commit + reveal txids.
+  const knownPagesBeforeMint = new Set(context.pages());
+  await cubes.getByRole('button', { name: /^Mint my cube!$/i }).click();
+
+  const signPopup = await waitForApprovalPopup({
+    context,
+    knownPages: knownPagesBeforeMint,
+    timeoutMs: 120_000,
+    isApproval: async (p) => {
+      if (!p.url().startsWith('chrome-extension://')) return false;
+      const t = (await p.locator('body').innerText().catch(() => '')).toLowerCase();
+      return t.includes('review transaction') || t.includes('confirm');
+    },
+  });
+  await shot(signPopup, '05-xverse-sign-approval');
+  await signPopup.getByRole('button', { name: /^confirm$/i }).first().click();
+
+  const successAlert = cubes.locator('.alert-success').first();
+  await expect(successAlert).toBeVisible({ timeout: 120_000 });
+  await shot(cubes, '06-cubes-success');
+
+  const txidCodes = await successAlert.locator('code').allTextContents();
+  expect(txidCodes.length).toBeGreaterThanOrEqual(2);
+  const [commitTxId, revealTxId] = txidCodes;
+  expect(commitTxId).toMatch(/^[0-9a-f]{64}$/);
+  expect(revealTxId).toMatch(/^[0-9a-f]{64}$/);
+  console.log(`[cube-mint] commit=${commitTxId.slice(0, 12)}… reveal=${revealTxId.slice(0, 12)}…`);
+
+  // ─── Step 7: mine both txs into blocks ─────────────────────────
+  await waitForElectrsSync(mineBlocks(1));
+  await waitForTxConfirmed(commitTxId);
+  await waitForElectrsSync(mineBlocks(1));
+  const revealTx = await waitForTxConfirmed(revealTxId);
+  expect(revealTx.status.block_hash).toBeTruthy();
+
+  // ─── Step 8: ord indexes the cube ─────────────────────────────
+  await waitForOrdStockSync(Number(rpc('getblockcount').trim()));
+  const inscriptionId = `${revealTxId}i0`;
+  const { bytes: onChainBytes, contentType } = await getStockOrdContent(inscriptionId);
+  expect(contentType).toBe('text/html;charset=utf-8');
+
+  const onChainHtml = new TextDecoder().decode(onChainBytes);
+  expect(onChainHtml).toBe(expectedCubeHtml);
+
+  // Parser round-trip: parseCube must accept the on-chain bytes and
+  // return the same six inscription IDs the form was filled with.
+  // Parser round-trip: parseCube must accept the on-chain bytes and
+  // extract the same six side IDs as the "Side N" traits. This is
+  // the same parser cubes.haushoppe.art uses to render the gallery.
+  const parsed = parseCube(onChainHtml);
+  expect(parsed).toBeTruthy();
+  const parsedSides = parsed!
+    .filter((t) => /^Side \d$/.test(t.trait_type))
+    .sort((a, b) => a.trait_type.localeCompare(b.trait_type))
+    .map((t) => t.value);
+  expect(parsedSides).toEqual(CUBE_SIDE_IDS);
+});

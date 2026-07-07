@@ -48,7 +48,10 @@ export default defineConfig({
   // spawns `npm start` (Angular dev server on :4203). CI reuses the
   // server if it's already running.
   webServer: {
-    command: 'npm start',
+    // Regtest-configured dev server. Swaps environment.ts →
+    // environment.regtest.ts so mempoolApiUrl hits localhost:3000 +
+    // the tip address is a regtest bcrt1p…
+    command: 'npm run start:regtest',
     cwd: path.resolve(__dirname, '../..'),
     port: 4203,
     reuseExistingServer: !process.env.CI,

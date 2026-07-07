@@ -9,6 +9,7 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { localStorageSync } from 'ngrx-store-localstorage';
 import { bitcoinNetwork, cat21Config, Network, StorageLike, storage } from 'ordpool-sdk';
 
+import { environment } from '../environments/environment';
 import { ORDINAL_ROUTES } from './ordinal.routes';
 import { MintEffects } from './store/mint.effects';
 import { mintFeature } from './store/mint.reducer';
@@ -46,13 +47,14 @@ export const appConfig: ApplicationConfig = {
     // + InscribeMintOrchestrator resolve providedIn:'root' — only the
     // tokens need explicit wiring here.
     { provide: storage, useValue: browserLocalStorage },
-    { provide: bitcoinNetwork, useValue: Network.Mainnet },
+    { provide: bitcoinNetwork, useValue: environment.mempoolApiUrl.includes('localhost') ? Network.Regtest : Network.Mainnet },
     // cat21ApiUrl is unused by the inscribe flow but the config token
-    // is required by Cat21Service's constructor. Point mempoolApiUrl
-    // at api.ordpool.space (electrs proxy + POST /tx) — the workspace
-    // HARD RULE bans direct mempool.space calls.
+    // is required by Cat21Service's constructor. mempoolApiUrl comes
+    // from environment.ts so regtest e2e can point at local electrs
+    // (localhost:3000) instead of api.ordpool.space. The workspace
+    // HARD RULE bans direct mempool.space calls; nothing here hits it.
     { provide: cat21Config, useValue: {
-      mempoolApiUrl: 'https://api.ordpool.space',
+      mempoolApiUrl: environment.mempoolApiUrl,
       cat21ApiUrl: 'https://backend2.cat21.space',
       ordApiUrl: 'https://ord.ordpool.space',
       cat21OrdApiUrl: 'https://ord.cat21.space',

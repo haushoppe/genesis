@@ -6,11 +6,15 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:regtest": "ng serve -c regtest",
     "build": "ng build",
     "lint": "eslint 'src/**/*.ts'",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
+    "e2e:regtest": "playwright test --config e2e/regtest/playwright.config.ts",
+    "e2e:regtest:up": "docker compose -f e2e/regtest/docker-compose.regtest.yml up -d bitcoind electrs && bash e2e/regtest/regtest-bootstrap.sh",
+    "e2e:regtest:down": "docker compose -f e2e/regtest/docker-compose.regtest.yml down -v",
     "test": "ng test"
   },
   "dependencies": {

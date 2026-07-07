@@ -57,6 +57,15 @@
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
+            },
+            "regtest": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
+              "fileReplacements": [
+                { "replace": "src/environments/environment.ts", "with": "src/environments/environment.regtest.ts" }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -73,6 +82,9 @@
             },
             "development": {
               "buildTarget": "cubes-frontend:build:development"
+            },
+            "regtest": {
+              "buildTarget": "cubes-frontend:build:regtest"
             }
           },
           "defaultConfiguration": "development"

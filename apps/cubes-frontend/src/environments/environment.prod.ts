@@ -1,6 +1,9 @@
 export const environment = {
   production: true,
   api: 'https://backend.haushoppe.art',
+  mempoolApiUrl: 'https://api.ordpool.space',
+  haushoppeTipAddress: '???',
+  haushoppeTipSats: 1000,
   ordinalsExplorerIframe: 'https://ordinals.com/preview/',
   ordinalsExplorerDetails: 'https://ordinals.com/inscription/',
   // Both marketplaces render every inscription (whether listed or not).

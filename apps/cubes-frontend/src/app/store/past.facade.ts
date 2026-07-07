@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 
-import { selectPastCreatedInscriptions, selectPastOrders } from './past.reducer';
+import { MintActions } from './mint.actions';
+import { selectPastMints } from './past.reducer';
 
 
 @Injectable({
@@ -11,6 +12,13 @@ export class PastFacade {
 
   store = inject(Store);
 
-  pastOrders = this.store.selectSignal(selectPastOrders);
-  pastCreatedInscriptions = this.store.selectSignal(selectPastCreatedInscriptions);
+  pastMints = this.store.selectSignal(selectPastMints);
+
+  recordPastMint(commitTxId: string, revealTxId: string): void {
+    this.store.dispatch(MintActions.recordPastMint({
+      commitTxId,
+      revealTxId,
+      createdAt: new Date().toISOString(),
+    }));
+  }
 }

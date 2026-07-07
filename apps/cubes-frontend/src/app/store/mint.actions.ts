@@ -1,15 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { createActionGroup, emptyProps, props } from '@ngrx/store';
+import { createActionGroup, props } from '@ngrx/store';
 
-import { Price } from '../openapi-client';
 import {
   CubeSuggestion,
   InscriptionExtendedPaginatedResult,
   InscriptionExtendedSingleResult,
 } from '../services/cubes-data/types';
-import { InscriptionOrder } from '../ordinalsbot';
-import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 
+/** The six inscriptions displayed on the six cube faces. */
 export interface SixInscriptionIds {
   inscriptionId1: string;
   inscriptionId2: string;
@@ -19,6 +17,7 @@ export interface SixInscriptionIds {
   inscriptionId6: string;
 }
 
+/** Everything the mint form collects before it hands the HTML to the SDK. */
 export interface CubeDetails {
   inscriptionIds: SixInscriptionIds,
   title: string,
@@ -29,6 +28,13 @@ export interface CubeDetails {
   bgColor2: string
 }
 
+/**
+ * Read-side actions for the cube gallery + single-cube pages. All
+ * write-side actions (OrdinalsBot orders, Xverse Sats-Connect
+ * flow) were retired when cubes-frontend switched to ordpool-sdk's
+ * `InscribeMintOrchestrator`; that orchestrator owns write state
+ * directly via signals, so NgRx keeps only the read surface.
+ */
 export const MintActions = createActionGroup({
   source: 'Mint',
   events: {
@@ -41,38 +47,17 @@ export const MintActions = createActionGroup({
     'Load Single Inscription Success': props<{ singleInscription: InscriptionExtendedSingleResult }>(),
     'Load Single Inscription Failure': props<{ error: HttpErrorResponse }>(),
 
-    'Place Order': props<{ cubeDetails: CubeDetails, receiveAddress: string, code: string | ''}>(),
-    'Place Order Success': props<{ orderResponse: InscriptionOrder, createdAt: string }>(),
-    'Place Order Failure': props<{ error: HttpErrorResponse }>(),
-    'Update Order Status': props<{ orderResponse: InscriptionOrder }>(),
-    'Order Not Found': props<{ error: HttpErrorResponse }>(),
-    'Order Completed': emptyProps(),
-
-    'Create Connect Inscription': props<{ cubeDetails: CubeDetails }>(),
-    'Create Connect Inscription Success': props<{ inscriptionResponse: { txId: string }, createdAt: string }>(),
-    'Create Connect Inscription Failure': props<{ error: Error }>(),
-    'Update Connect Inscription Status': props<{ inscriptionResponse: {
-      txId: string,
-      firstVin?: VinEntry,
-      status?: TransactionStatus
-    }}>(),
-    'Connect Inscription Not Found': props<{ error: Error }>(),
-    'Connect Inscription Confirmed': emptyProps(),
-
-
     'Lookup Inscription Id': props<{ inscriptionNumber: string }>(),
     'Lookup Inscription Id Success': props<{ inscriptionNumber: string, inscriptionId: string }>(),
     'Lookup Inscription Id Failure':  props<{ error: HttpErrorResponse }>(),
-
-    'Load Price': props<{ code: string | '', size: number }>(),
-    'Load Price Success': props<{ price: Price }>(),
-    'Load Price Failure':  props<{ error: HttpErrorResponse }>(),
 
     'Load Cube Suggestion': props<{ collectionSymbol: string | '' }>(),
     'Load Cube Suggestion Success': props<{ cubeSuggestion: CubeSuggestion }>(),
     'Load Cube Suggestion Failure':  props<{ error: HttpErrorResponse }>(),
 
-
-     // 'Save Mempool Info': props<{ transactions: MempoolTransaction[] }>(),
+    // Fired by the mint page when InscribeMintOrchestrator's
+    // successResult() flips — the past-slice reducer picks these up
+    // for the "your recent mints" list on the start page.
+    'Record Past Mint': props<{ commitTxId: string, revealTxId: string, createdAt: string }>(),
   }
 });

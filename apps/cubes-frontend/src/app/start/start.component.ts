@@ -1,14 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
+import { InscribeMintOrchestrator, WalletService } from 'ordpool-sdk';
+
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { MintFacade } from '../store/mint.facade';
-import { WalletFacade } from '../store/wallet.facade';
-import { MintFormComponent } from './mint-form/mint-form.component';
-import { PastOrdersAndInscriptionsComponent } from './past-orders-and-inscriptions/past-orders-and-inscriptions.component';
-import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-start',
@@ -17,8 +16,6 @@ import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
   imports: [
     LoadingIndicatorComponent,
     InscriptionListItemComponent,
-    MintFormComponent,
-    PastOrdersAndInscriptionsComponent,
     NgbPagination,
     RouterLink,
   ],
@@ -29,8 +26,13 @@ import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 })
 export class StartComponent {
   mintFacade = inject(MintFacade);
-  walletFacade = inject(WalletFacade);
+  walletService = inject(WalletService);
+  orchestrator = inject(InscribeMintOrchestrator);
   cursor = toSignal(inject(CubesDataService).getCursor());
+  connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
+  wallets = toSignal(this.walletService.wallets$, {
+    initialValue: { installedWallets: [], notInstalledWallets: [] },
+  });
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;

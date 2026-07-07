@@ -5,22 +5,3 @@
 
   <small class="presents">presents</small>
 </div>
-
-@let xverseInstalled = walletFacade.xverseInstalled();
-@let walletStatus = walletFacade.walletStatus();
-@let walletAddress = walletFacade.walletAddress();
-
-@if (xverseInstalled) {
-  <div class="connect-button">
-    <app-loading-indicator-button
-      (buttonClick)="walletFacade.connectWallet()"
-      [state]="walletStatus"
-      [buttonText]="walletStatus.submitStatus === SubmitStatus.Successful ? 'Connected' : 'Connect Xverse'"
-      defaultIconClass="bi bi-wallet2"
-      />
-    @if (walletAddress) {
-      <br>
-        <small class="text-muted bg-dark" [title]="walletAddress">with {{ walletAddress | shortenAddress }}</small>
-      }
-    </div>
-  }

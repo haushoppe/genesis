@@ -1,92 +1,64 @@
 import { inject, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 
-import { MintService } from '../services/mint-service';
+import { getCubeHtml } from '../services/cube-html';
 import { CubeDetails, MintActions } from './mint.actions';
 import {
   selectInscriptions,
   selectInscriptionsStatus,
-  selectCreateInscriptionResponse,
-  selectCreateInscriptionStatus,
   selectCubeSuggestion,
   selectCubeSuggestionStatus,
   selectSingleInscription,
   selectSingleInscriptionStatus,
   selectKnownInscriptionIdStatus,
-  selectOrderResponse,
-  selectOrderStatus,
-  selectPrice,
-  selectPriceStatus,
 } from './mint.reducer';
 import {
-  selectBestTransactionId,
-  selectBestOrderId,
   selectCubeSuggestionFixed,
-  selectFile,
   selectInscriptionId,
-  selectIsOrderPending,
 } from './mint.selectors';
 
 
+/**
+ * Read-side facade for the cube gallery + single-cube pages. All
+ * write-side facade methods (placeOrder, createConnectInscription,
+ * loadPrice) were retired when cubes-frontend switched to
+ * ordpool-sdk's `InscribeMintOrchestrator`; the orchestrator owns
+ * mint state directly via signals, so consumers call it, not the
+ * facade.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class MintFacade {
 
   store = inject(Store);
-  mintService = inject(MintService);
 
   inscriptions = this.store.selectSignal(selectInscriptions);
   inscriptionsStatus = this.store.selectSignal(selectInscriptionsStatus);
   singleInscription = this.store.selectSignal(selectSingleInscription);
   singleInscriptionStatus = this.store.selectSignal(selectSingleInscriptionStatus);
-  orderResponse = this.store.selectSignal(selectOrderResponse);
-  orderStatus = this.store.selectSignal(selectOrderStatus);
-  createInscriptionResponse = this.store.selectSignal(selectCreateInscriptionResponse);
-  createInscriptionStatus = this.store.selectSignal(selectCreateInscriptionStatus);
-  file = this.store.selectSignal(selectFile);
-  isOrderPending = this.store.selectSignal(selectIsOrderPending);
-  bestOrderId = this.store.selectSignal(selectBestOrderId);
-  bestTransactionId = this.store.selectSignal(selectBestTransactionId);
   knownInscriptionIdStatus = this.store.selectSignal(selectKnownInscriptionIdStatus);
-  price = this.store.selectSignal(selectPrice);
-  priceStatus = this.store.selectSignal(selectPriceStatus);
   cubeSuggestion = this.store.selectSignal(selectCubeSuggestion);
   cubeSuggestionStatus = this.store.selectSignal(selectCubeSuggestionStatus);
   cubeSuggestionFixed = this.store.selectSignal(selectCubeSuggestionFixed);
 
 
-  placeOrder(cubeDetails: CubeDetails, receiveAddress: string, code: string) {
-    this.store.dispatch(MintActions.placeOrder({
-      cubeDetails,
-      receiveAddress,
-      code
-    }));
-  }
-
-  createConnectInscription(cubeDetails: CubeDetails) {
-    this.store.dispatch(MintActions.createConnectInscription({
-      cubeDetails
-    }));
-  }
-
   lookupInscriptionId(inscriptionNumber: string) {
     this.store.dispatch(MintActions.lookupInscriptionId({ inscriptionNumber }));
-    // returns Observable — caller subscribes once to read the resolved
-    // id (one-shot action-result pattern, not state to render reactively).
     return this.store.select(selectInscriptionId(inscriptionNumber));
-  }
-
-  loadPrice(size: number, code = '') {
-    this.store.dispatch(MintActions.loadPrice({ code, size }));
   }
 
   loadCubeSuggestion(collectionSymbol = '') {
     this.store.dispatch(MintActions.loadCubeSuggestion({ collectionSymbol }));
   }
 
-  getCubeHtml(cubeDetails: CubeDetails) {
-    return this.mintService.getCubeHtml(cubeDetails);
+  /**
+   * Build the cube HTML from the form fields. Pure — no HTTP calls,
+   * no state mutation. Consumers pass the return value to
+   * `InscribeMintOrchestrator.setContent({body: encoded(html), ...})`.
+   */
+  getCubeHtml(cubeDetails: CubeDetails): string {
+    return getCubeHtml(cubeDetails);
   }
 
   loadInscriptions(itemsPerPage: number, currentPage: number) {

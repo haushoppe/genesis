@@ -1,14 +1,10 @@
-import { routerNavigatedAction } from '@ngrx/router-store';
 import { createFeature, createReducer, on } from '@ngrx/store';
 
-import { Price } from '../openapi-client';
 import {
   CubeSuggestion,
   InscriptionExtendedPaginatedResult,
   InscriptionExtendedSingleResult,
 } from '../services/cubes-data/types';
-import { InscriptionOrder } from '../ordinalsbot';
-import { TransactionStatus, VinEntry } from '../services/mempool.service.transaction-details.types';
 import { MintActions } from './mint.actions';
 import {
   getFailureState,
@@ -23,25 +19,11 @@ export interface State {
   inscriptions: InscriptionExtendedPaginatedResult;
   inscriptionsStatus: SubmittableState;
 
-  // info about one single inscription, used for the details page
   singleInscription: InscriptionExtendedSingleResult | undefined;
   singleInscriptionStatus: SubmittableState;
 
-  orderResponse: InscriptionOrder | undefined;
-  orderStatus: SubmittableState;
-
-  createInscriptionResponse: {
-    txId: string,
-    firstVin?: VinEntry,
-    status?: TransactionStatus
-  } | undefined;
-  createInscriptionStatus: SubmittableState;
-
   knownInscriptionIds: { [inscriptionNumber: string]: string };
   knownInscriptionIdStatus: SubmittableState;
-
-  price: Price | undefined;
-  priceStatus: SubmittableState;
 
   cubeSuggestion: CubeSuggestion | undefined;
   cubeSuggestionStatus: SubmittableState;
@@ -59,19 +41,8 @@ export const initialState: State = {
   singleInscription: undefined,
   singleInscriptionStatus: getInitialState(),
 
-  orderResponse: undefined,
-  // orderResponse: examplePaidResponse as OrderResponse,
-  // orderResponse: exampleUnpaidResponse as OrderResponse,
-  orderStatus: getInitialState(),
-
-  createInscriptionResponse: undefined,
-  createInscriptionStatus: getInitialState(),
-
   knownInscriptionIds: {},
   knownInscriptionIdStatus: getInitialState(),
-
-  price: undefined,
-  priceStatus: getInitialState(),
 
   cubeSuggestion: undefined,
   cubeSuggestionStatus: getInitialState()
@@ -87,7 +58,6 @@ export const mintFeature = createFeature({
 
     on(MintActions.loadInscriptions, state => ({
       ...state,
-      // no reset
       inscriptionsStatus: getSubmittingState()
     })),
 
@@ -102,11 +72,10 @@ export const mintFeature = createFeature({
       inscriptionsStatus: getFailureState(error)
     })),
 
-    // Load Inscription
+    // Load Single Inscription
 
     on(MintActions.loadSingleInscription, state => ({
       ...state,
-      // reset previous singleInscription to not show outdated data while loading!
       singleInscription: undefined,
       singleInscriptionStatus: getSubmittingState()
     })),
@@ -121,74 +90,6 @@ export const mintFeature = createFeature({
       ...state,
       singleInscriptionStatus: getFailureState(error)
     })),
-
-    // Place Order
-
-    on(MintActions.placeOrder, state => ({
-      ...state,
-      orderResponse: undefined,
-      orderStatus: getSubmittingState()
-    })),
-
-    on(MintActions.placeOrderSuccess,
-      MintActions.updateOrderStatus, (state, { orderResponse }) => ({
-        ...state,
-        orderResponse,
-        orderStatus: getSuccessfulState()
-      })),
-
-    on(MintActions.orderNotFound,
-      MintActions.placeOrderFailure, (state, { error }) => ({
-      ...state,
-      orderResponse: undefined,
-      orderStatus: getFailureState(error)
-    })),
-
-
-    // Sats Connect Inscription (Xverse)
-
-    on(MintActions.createConnectInscription, state => ({
-      ...state,
-      createInscriptionResponse: undefined,
-      createInscriptionStatus: getSubmittingState()
-    })),
-
-     // save Response but keep submitting state until first load of Mempool Data
-    on(MintActions.createConnectInscriptionSuccess, (state, { inscriptionResponse }) => ({
-        ...state,
-        createInscriptionResponse: inscriptionResponse,
-        createInscriptionStatus: getSubmittingState() // !!!
-    })),
-
-    on(MintActions.updateConnectInscriptionStatus, (state, { inscriptionResponse }) => ({
-        ...state,
-        createInscriptionResponse: inscriptionResponse,
-        createInscriptionStatus: getSuccessfulState()
-    })),
-
-    on(MintActions.createConnectInscriptionFailure,
-       MintActions.connectInscriptionNotFound, (state, { error }) => ({
-      ...state,
-      createInscriptionResponse: undefined,
-      createInscriptionStatus: getFailureState(error)
-    })),
-
-    // delete state if it contains an outdated orderResponse
-    on(routerNavigatedAction, (state, { payload: { routerState } }) => {
-
-      if (routerState.url.includes('/order/')) {
-        const urlOrderId = routerState.url.replace('/order/', '');
-        if (state.orderResponse?.id !== urlOrderId) {
-          return {
-            ...state,
-            orderResponse: undefined,
-            orderStatus: getSubmittingState()
-          };
-        }
-      }
-
-      return state;
-    }),
 
     // Lookup Inscription Id
 
@@ -211,24 +112,6 @@ export const mintFeature = createFeature({
       knownInscriptionIdStatus: getFailureState(error)
     })),
 
-    // Load Price
-
-    on(MintActions.loadPrice, state => ({
-      ...state,
-      priceStatus: getSubmittingState()
-    })),
-
-    on(MintActions.loadPriceSuccess, (state, { price }) => ({
-      ...state,
-      price,
-      priceStatus: getSuccessfulState()
-    })),
-
-    on(MintActions.loadPriceFailure, (state, { error }) => ({
-      ...state,
-      priceStatus: getFailureState(error)
-    })),
-
     // Load Cube Suggestion
 
     on(MintActions.loadCubeSuggestion, state => ({
@@ -239,8 +122,9 @@ export const mintFeature = createFeature({
     on(MintActions.loadCubeSuggestionSuccess, (state, { cubeSuggestion }) => ({
       ...state,
       cubeSuggestion,
-      // cubeSuggestionStatus: getSuccessfulState()
-      // !!! always resets to initial state, so that the app-loading-indicator-button encourages people to click it again
+      // Always reset to initial state so the "Suggest another cube" button
+      // stays clickable — the loading-indicator-button treats
+      // getSuccessfulState() as "done, stop letting the user click me".
       cubeSuggestionStatus: getInitialState()
     })),
 
@@ -261,17 +145,8 @@ export const {
   selectSingleInscription,
   selectSingleInscriptionStatus,
 
-  selectOrderResponse,
-  selectOrderStatus,
-
-  selectCreateInscriptionResponse,
-  selectCreateInscriptionStatus,
-
   selectKnownInscriptionIds,
   selectKnownInscriptionIdStatus,
-
-  selectPrice,
-  selectPriceStatus,
 
   selectCubeSuggestion,
   selectCubeSuggestionStatus

@@ -1,27 +1,34 @@
 import { provideHttpClient } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core';
+import { ApplicationConfig, isDevMode } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore, routerReducer } from '@ngrx/router-store';
 import { ActionReducer, provideState, provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { localStorageSync } from 'ngrx-store-localstorage';
+import { bitcoinNetwork, cat21Config, Network, StorageLike, storage } from 'ordpool-sdk';
 
-import { environment } from '../environments/environment';
-import { ApiModule, Configuration } from './openapi-client';
 import { MintEffects } from './store/mint.effects';
 import { mintFeature } from './store/mint.reducer';
-import { CustomRouteSerializer } from './store/utils-ngrx-router/custom-route-serializer';
-import { WalletEffects } from './store/wallet.effects';
-import { walletFeature } from './store/wallet.reducer';
-import { localStorageSync } from 'ngrx-store-localstorage';
 import { pastFeature } from './store/past.reducer';
+import { CustomRouteSerializer } from './store/utils-ngrx-router/custom-route-serializer';
 
+/**
+ * Thin adapter over the browser's localStorage that satisfies the
+ * SDK's `StorageLike` contract. WalletService persists
+ * LAST_CONNECTED_WALLET through this so a session survives reloads.
+ */
+const browserLocalStorage: StorageLike = {
+  getValue: (key) => localStorage.getItem(key),
+  setValue: (key, value) => localStorage.setItem(key, value),
+  removeItem: (key) => localStorage.removeItem(key),
+};
 
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
-    keys: ['wallet', 'past'], // syncing only parts of of the tree is a complete mess!
+    keys: ['past'],
     rehydrate: true,
     storageKeySerializer: (key) => `cube_${key}`
   })(reducer);
@@ -32,14 +39,23 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(),
     provideAnimations(),
-    importProvidersFrom(
-      ApiModule.forRoot(
-        () =>
-          new Configuration({
-            basePath: environment.api,
-          })
-      )
-    ),
+
+    // ordpool-sdk DI tokens. Bridges the SDK's framework-agnostic
+    // interfaces to cubes-frontend's concrete environment. WalletService
+    // + InscribeMintOrchestrator resolve providedIn:'root' — only the
+    // tokens need explicit wiring here.
+    { provide: storage, useValue: browserLocalStorage },
+    { provide: bitcoinNetwork, useValue: Network.Mainnet },
+    // cat21ApiUrl is unused by the inscribe flow but the config token
+    // is required by Cat21Service's constructor. Point mempoolApiUrl
+    // at api.ordpool.space (electrs proxy + POST /tx) — the workspace
+    // HARD RULE bans direct mempool.space calls.
+    { provide: cat21Config, useValue: {
+      mempoolApiUrl: 'https://api.ordpool.space',
+      cat21ApiUrl: 'https://backend2.cat21.space',
+      ordApiUrl: 'https://ord.ordpool.space',
+      cat21OrdApiUrl: 'https://ord.cat21.space',
+    } },
     provideRouter(
       [
         {
@@ -48,8 +64,6 @@ export const appConfig: ApplicationConfig = {
           providers: [
             provideState(mintFeature),
             provideEffects(MintEffects),
-            provideState(walletFeature),
-            provideEffects(WalletEffects),
             provideState(pastFeature),
           ],
         },
@@ -70,11 +84,11 @@ export const appConfig: ApplicationConfig = {
       serializer: CustomRouteSerializer,
     }),
     provideStoreDevtools({
-      maxAge: 25, // Retains last 25 states
-      logOnly: !isDevMode(), // Restrict extension to log-only mode
-      autoPause: true, // Pauses recording actions and state changes when the extension window is not open
-      trace: false, //  If set to true, will include stack trace for every dispatched action, so you can see it in trace tab jumping directly to that part of code
-      traceLimit: 75, // maximum stack trace frames to be stored (in case trace option was provided as true)
+      maxAge: 25,
+      logOnly: !isDevMode(),
+      autoPause: true,
+      trace: false,
+      traceLimit: 75,
     }),
   ],
 };

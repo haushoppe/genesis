@@ -9,6 +9,7 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { localStorageSync } from 'ngrx-store-localstorage';
 import { bitcoinNetwork, cat21Config, Network, StorageLike, storage } from 'ordpool-sdk';
 
+import { ORDINAL_ROUTES } from './ordinal.routes';
 import { MintEffects } from './store/mint.effects';
 import { mintFeature } from './store/mint.reducer';
 import { pastFeature } from './store/past.reducer';
@@ -57,29 +58,22 @@ export const appConfig: ApplicationConfig = {
       cat21OrdApiUrl: 'https://ord.cat21.space',
     } },
     provideRouter(
-      [
-        {
-          path: '',
-          loadChildren: () => import('./ordinal.routes').then((m) => m.ORDINAL_ROUTES),
-          providers: [
-            provideState(mintFeature),
-            provideEffects(MintEffects),
-            provideState(pastFeature),
-          ],
-        },
-      ],
+      ORDINAL_ROUTES,
       withInMemoryScrolling({
         scrollPositionRestoration: 'enabled',
         anchorScrolling: 'enabled'
       })
     ),
 
-    // NgRx providers
+    // NgRx: single top-level slice, no per-route lazy providers.
     provideStore({
       router: routerReducer,
     }, {
       metaReducers: [localStorageSyncReducer]
     }),
+    provideState(mintFeature),
+    provideState(pastFeature),
+    provideEffects(MintEffects),
     provideRouterStore({
       serializer: CustomRouteSerializer,
     }),

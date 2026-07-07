@@ -189,18 +189,6 @@ export class StartComponent implements OnInit {
   c = this.form.controls;
 
   ngOnInit() {
-    // Kick the cube gallery + suggestion loads directly from the
-    // component rather than relying on the `startPage$` NgRx effect.
-    // The effect filters on `ofRoute('')` against the serializer's
-    // joined path; with the nested loadChildren-then-empty-path route
-    // the path resolves to '/' rather than '' and the filter misses.
-    // Dispatching here is idempotent (CubesDataService.all$ is a
-    // shareReplay single-flight).
-    if (!this.mintFacade.inscriptions().totalInscriptions) {
-      this.mintFacade.loadInscriptions(8, 1);
-    }
-    this.mintFacade.loadCubeSuggestion('');
-
     // Reset the scanner's cache when the wallet changes — new
     // wallet, new UTXOs, no reason to hold on to old scan state.
     let lastWalletAddress: string | null = null;

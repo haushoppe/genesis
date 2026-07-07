@@ -1,0 +1,172 @@
+# Regtest backend for ordpool-sdk E2E tests.
+#
+# bitcoind serves the actual Bitcoin protocol in regtest mode — a
+# private chain we control. The test bootstrapper mines blocks at
+# will via `bitcoin-cli generatetoaddress`, no faucet, no waiting.
+#
+# mempool/electrs serves the Esplora-compatible API the SDK actually
+# hits (`/api/address/{addr}/utxo`, `/api/tx/{txid}/hex`, `POST /api/tx`).
+# Connects to bitcoind over RPC, indexes the chain on the fly.
+
+services:
+  bitcoind:
+    # Official Bitcoin Core image, pinned to the major version happysrv
+    # prod runs (v30). cat21-ord (ord 0.27) needs Core 28+ for its wallet
+    # commands; ruimarinho/bitcoin-core:24-alpine (the old mint-only
+    # image) doesn't satisfy those. The bootstrap creates a descriptor
+    # wallet and supplies the SDK signer's WIF itself, so no legacy/BDB
+    # wallet (removed in Core 29) and no -deprecatedrpc escape hatch.
+    image: bitcoin/bitcoin:30
+    container_name: cubes-e2e-bitcoind
+    command:
+      - -regtest
+      - -server=1
+      - -txindex=1
+      - -fallbackfee=0.0002
+      - -rpcuser=ordpool
+      - -rpcpassword=ordpool
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -listen=1
+      - -zmqpubrawblock=tcp://0.0.0.0:28332
+      - -zmqpubrawtx=tcp://0.0.0.0:28333
+    ports:
+      - "18443:18443"   # RPC (regtest)
+      - "18444:18444"   # P2P (regtest)
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-regtest", "-rpcuser=ordpool", "-rpcpassword=ordpool", "getblockchaininfo"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  electrs:
+    image: mempool/electrs:latest
+    platform: linux/amd64
+    container_name: cubes-e2e-electrs
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+    command:
+      - --network=regtest
+      - --daemon-rpc-addr=bitcoind:18443
+      - --cookie=ordpool:ordpool
+      - --http-addr=0.0.0.0:3000
+      - --electrum-rpc-addr=0.0.0.0:50001
+      - --jsonrpc-import
+      - -vvvv
+    ports:
+      - "3000:3000"     # Esplora HTTP API
+      - "50001:50001"   # Electrum protocol
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/blocks/tip/height"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  # cat21-ord. The cat21 fork of ord (https://github.com/ordpool-space/cat21-ord)
+  # with --index-cat21 active. Two roles in the regtest spec:
+  #
+  #   1. Authoritative view of cat state. The multi-step roundtrip spec
+  #      asks ord which address currently owns cat #0, cat #1 etc., to
+  #      verify the SDK-built txs moved the cat where we expected.
+  #   2. Reference PSBT producer. `ord wallet offer create` is the
+  #      highest-quality reference implementation of the ord-style
+  #      buyer-initiated offer. The spec compares bytes from the SDK's
+  #      `buildCat21BuyOfferPsbt` against ord's output (modulo the
+  #      lockTime=21 we set for the cherry-on-top bonus mint).
+  #
+  # Built from the cat21-ord checkout at the workspace-standard path
+  # `../../cat21-ord/`. First build takes a few minutes (cargo --release);
+  # subsequent ones hit the Docker layer cache.
+  ord:
+    # Profile-gated so the regtest stack can be brought up WITHOUT
+    # cat21-ord — useful for consumer e2e workflows (ordpool /
+    # cat21-indexer) that don't need ord state for their tests and
+    # don't necessarily have the cat21-ord source checked out at
+    # `../../cat21-ord/`. To include cat21-ord:
+    #     docker compose --profile cat21-ord up -d
+    # Default (no profile) brings up bitcoind + electrs only.
+    profiles:
+      - cat21-ord
+    build:
+      context: ../../cat21-ord
+      # Use a Dockerfile we maintain in this repo so cat21-ord's own
+      # Dockerfile (rust:1.85.0, correct for happysrv prod) stays
+      # untouched. ord@0.27 + redb@3.1 need rust 1.89+; we use 1.90 here.
+      dockerfile: ../ordpool-sdk/e2e/cat21-ord.Dockerfile
+    image: cubes-e2e-cat21-ord:local
+    container_name: cubes-e2e-cat21-ord
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+    environment:
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+    command:
+      - ord
+      - --regtest
+      - --index-cat21
+      - --index-sats
+      - --index-addresses
+      - --bitcoin-rpc-url=bitcoind:18443
+      - --bitcoin-rpc-username=ordpool
+      - --bitcoin-rpc-password=ordpool
+      - --data-dir=/data
+      - server
+      - --http
+      - --http-port=8080
+      - --address=0.0.0.0
+    ports:
+      - "8080:8080"     # ord HTTP API + UI
+    volumes:
+      - ord-data:/data
+    # No healthcheck. The runtime image is debian:bookworm-slim with only
+    # openssl; wget and curl aren't installed. The test bootstrap polls
+    # the host-exposed :8080/status via `waitForOrdReady` instead.
+
+  # Stock ord — same cat21-ord binary, WITHOUT the --index-cat21 flag,
+  # so it behaves 100% like upstream ord. Used to prove the inscriptions
+  # the SDK builds (commit + reveal via `createInscribeTransactions`)
+  # are recognised + indexed by a real ord. The cat21-ord container above
+  # cannot serve this purpose — with --index-cat21 it filters out every
+  # tx that isn't a CAT-21 mint, so regular inscriptions never reach its
+  # index.
+  #
+  # Profile-gated `ord-stock` so the default stack stays lean. Bring it
+  # up with:
+  #     docker compose --profile ord-stock up -d
+  ord-stock:
+    profiles:
+      - ord-stock
+    image: cubes-e2e-cat21-ord:local
+    build:
+      context: ../../cat21-ord
+      dockerfile: ../ordpool-sdk/e2e/cat21-ord.Dockerfile
+    container_name: cubes-e2e-ord-stock
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+    environment:
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+    command:
+      - ord
+      - --regtest
+      - --index-sats
+      - --index-addresses
+      - --bitcoin-rpc-url=bitcoind:18443
+      - --bitcoin-rpc-username=ordpool
+      - --bitcoin-rpc-password=ordpool
+      - --data-dir=/data
+      - server
+      - --http
+      - --http-port=8080
+      - --address=0.0.0.0
+    ports:
+      - "8081:8080"     # host :8081 → container :8080 to coexist with cat21-ord
+    volumes:
+      - ord-stock-data:/data
+
+volumes:
+  ord-data:
+  ord-stock-data:

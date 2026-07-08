@@ -12,28 +12,15 @@ name: cubes-frontend regtest e2e (wallet matrix)
 #   - a byte-for-byte comparison of the ord-indexed inscription
 #     content against the HTML the on-page preview iframe rendered.
 #
-# Runs ONLY in CI. The .crx binaries live behind a private
-# ordpool-space/ordpool-sdk release and per workspace policy
-# (playwright-bootstrap.sh header) are never executed on dev
-# machines.
+# Runs ONLY in CI. The wallet .crx binaries are hosted as release
+# assets on ordpool-space/ordpool-sdk (public repo); per workspace
+# policy we still don't execute unverified extension binaries on
+# dev machines.
 #
-# ---------- REQUIRED SECRET ----------
-# This workflow needs `WALLET_CRX_PAT` — a fine-grained PAT scoped
-# to `ordpool-space/ordpool-sdk` with `Contents: read` (release
-# assets are surfaced via the Contents scope). Fetching happens
-# via `gh release download`; workflow-default GITHUB_TOKEN is
-# scoped to the CURRENT repo only, so it can't reach ordpool-sdk
-# releases.
-#
-# To create the secret:
-#   1. GitHub → profile → Settings → Developer settings →
-#      Personal access tokens → Fine-grained tokens → Generate new.
-#   2. Resource owner: ordpool-space. Repository access: only
-#      `ordpool-sdk`. Permissions: Contents: Read-only.
-#   3. In `haushoppe/genesis` → Settings → Secrets and variables
-#      → Actions → New repository secret named `WALLET_CRX_PAT`,
-#      paste the token.
-# -------------------------------------
+# No extra secrets needed — both source repos (ordpool-sdk for the
+# .crx, cat21-ord for the ord source) are public, so the workflow's
+# default GITHUB_TOKEN is enough to authenticate `gh release
+# download` + `actions/checkout` against them.
 
 on:
   push:
@@ -82,15 +69,14 @@ jobs:
 
       # cat21-ord source is needed as the build context for ord-stock
       # (the docker-compose file inlines the Dockerfile; the checkout
-      # supplies the Rust source tree). Same private-repo access
-      # constraint as the wallet .crx — needs WALLET_CRX_PAT scoped to
-      # ordpool-space (Contents: Read).
+      # supplies the Rust source tree). Public repo — GITHUB_TOKEN
+      # suffices.
       - name: Checkout cat21-ord for the ord-stock image build
         uses: actions/checkout@v4
         with:
           repository: ordpool-space/cat21-ord
           ref: main
-          token: ${{ secrets.WALLET_CRX_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: _cat21-ord
 
       - uses: actions/setup-node@v4
@@ -125,13 +111,10 @@ jobs:
           # sync manually — a bump there needs a bump here.
           key: xverse-extension-v2.3.2
 
-      - name: Fetch Xverse .crx from ordpool-sdk private release
+      - name: Fetch Xverse .crx from ordpool-sdk release mirror
         if: matrix.wallet == 'xverse' && steps.xverse-cache.outputs.cache-hit != 'true'
         env:
-          # Cross-repo release download requires a PAT (see file
-          # header). If this secret is missing the step exits 1
-          # with a message from playwright-bootstrap.sh.
-          GH_TOKEN: ${{ secrets.WALLET_CRX_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh xverse
 
       - name: Bring up bitcoind + electrs + ord-stock

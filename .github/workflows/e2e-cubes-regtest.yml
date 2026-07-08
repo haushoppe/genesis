@@ -69,15 +69,12 @@ jobs:
 
       # cat21-ord source is needed as the build context for ord-stock
       # (the docker-compose file inlines the Dockerfile; the checkout
-      # supplies the Rust source tree). Public repo — GITHUB_TOKEN
-      # suffices.
-      - name: Checkout cat21-ord for the ord-stock image build
-        uses: actions/checkout@v4
-        with:
-          repository: ordpool-space/cat21-ord
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: _cat21-ord
+      # supplies the Rust source tree). Public repo, so anonymous
+      # `git clone` works — actions/checkout with the workflow's
+      # GITHUB_TOKEN fails on cross-repo access even for public
+      # repos, because the token is scoped to haushoppe/genesis only.
+      - name: Clone cat21-ord for the ord-stock image build
+        run: git clone --depth 1 --branch main https://github.com/ordpool-space/cat21-ord _cat21-ord
 
       - uses: actions/setup-node@v4
         with:

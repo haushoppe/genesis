@@ -80,6 +80,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # cat21-ord source is needed as the build context for ord-stock
+      # (the docker-compose file inlines the Dockerfile; the checkout
+      # supplies the Rust source tree). Same private-repo access
+      # constraint as the wallet .crx — needs WALLET_CRX_PAT scoped to
+      # ordpool-space (Contents: Read).
+      - name: Checkout cat21-ord for the ord-stock image build
+        uses: actions/checkout@v4
+        with:
+          repository: ordpool-space/cat21-ord
+          ref: main
+          token: ${{ secrets.WALLET_CRX_PAT }}
+          path: _cat21-ord
+
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -126,6 +139,11 @@ jobs:
         # regular HTML inscriptions, not CAT-21 cats — bounced off
         # ord-stock which uses the same mainline ord binary
         # without --index-cat21). Only bring up what we hit.
+        env:
+          # Point docker-compose at the cat21-ord checkout above.
+          # Absolute path so relative-path drama between compose file
+          # location + build context doesn't creep in.
+          CAT21_ORD_SRC: ${{ github.workspace }}/_cat21-ord
         run: docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock up -d --build bitcoind electrs ord-stock
 
       - name: Mine 101 blocks + create funding wallet

@@ -19,7 +19,7 @@
     @if (installed.length) {
       Detected:
       @for (w of installed; track w.type; let last = $last) {
-        <a href="javascript:void(0)" (click)="walletService.connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
+        <a href="javascript:void(0)" (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
       }.
     } @else {
       No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.

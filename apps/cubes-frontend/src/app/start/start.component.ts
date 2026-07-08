@@ -11,6 +11,7 @@ import {
   InscribeContent,
   InscribeMintOrchestrator,
   InscribeUtxoSimulation,
+  KnownOrdinalWalletType,
   RecommendedFees,
   SimulateInscribeFeesResult,
   TxnOutput,
@@ -319,6 +320,22 @@ export class StartComponent implements OnInit {
   setFeePreset(rate: number) {
     this.form.controls.feeRate.setValue(rate);
     this.orchestrator.setFeeRate(rate);
+  }
+
+  /**
+   * Wallet-connect click handler. WalletService.connectWallet returns
+   * a cold Observable — the template-level `(click)` expression
+   * doesn't subscribe on its own, so the connect flow never runs
+   * unless we call `.subscribe()` here. This was a real bug that
+   * broke wallet connect end-to-end for every wallet in the picker.
+   */
+  connectWallet(type: KnownOrdinalWalletType) {
+    this.walletService.connectWallet(type).subscribe({
+      error: (err) => {
+        // eslint-disable-next-line no-console
+        console.warn('[cubes] connect failed', type, err);
+      },
+    });
   }
 
   mintAnother() {

@@ -218,21 +218,36 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     throw err;
   });
   await connectPopup.waitForLoadState('domcontentloaded', { timeout: 30_000 }).catch(() => undefined);
-  // Xverse's connect popup lands on `#/btc-select-address-request`.
-  // Wait for the "Connect" / "Confirm" button (label varies) to be
-  // visible + enabled, then click.
+  // Give the Xverse SPA one polling cycle to hydrate + render buttons.
+  await connectPopup.waitForFunction(() => document.querySelectorAll('button').length > 0, undefined, { timeout: 30_000, polling: 250 });
+  await shot(connectPopup, '03-xverse-connect-approval');
+
+  // Log every button label so future wallet-UX changes surface
+  // instantly instead of after another 30s waitForFunction hang.
+  const buttonLabels = await connectPopup.evaluate(() => {
+    return Array.from(document.querySelectorAll('button')).map((b) => ({
+      text: (b.textContent ?? '').trim(),
+      disabled: b.hasAttribute('disabled'),
+      hidden: getComputedStyle(b).visibility === 'hidden',
+    }));
+  });
+  // eslint-disable-next-line no-console
+  console.log(`[cube-mint] popup buttons: ${JSON.stringify(buttonLabels)}`);
+
+  // Xverse's #/btc-select-address-request page CTA is "Connect" in
+  // recent versions, but past variants have shipped "Continue",
+  // "Confirm", "Share", "Approve", "Allow". Match any of them.
   await connectPopup.waitForFunction(() => {
     const buttons = Array.from(document.querySelectorAll('button'));
     return buttons.some((b) => {
       const label = (b.textContent ?? '').trim().toLowerCase();
-      if (!/^(connect|approve|confirm|allow|share)$/i.test(label)) return false;
+      if (!/^(connect|approve|confirm|allow|share|continue|next|proceed)$/i.test(label)) return false;
       if (b.hasAttribute('disabled')) return false;
       const style = getComputedStyle(b);
       return style.pointerEvents !== 'none' && style.visibility !== 'hidden';
     });
   }, undefined, { timeout: 30_000, polling: 250 });
-  await shot(connectPopup, '03-xverse-connect-approval');
-  await connectPopup.getByRole('button', { name: /^(connect|approve|confirm|allow|share)$/i }).first().click({ timeout: 15_000 });
+  await connectPopup.getByRole('button', { name: /^(connect|approve|confirm|allow|share|continue|next|proceed)$/i }).first().click({ timeout: 15_000 });
   await connectPromise;
 
   await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });

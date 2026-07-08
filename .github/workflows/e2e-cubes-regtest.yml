@@ -76,6 +76,11 @@ jobs:
       - name: Clone cat21-ord for the ord-stock image build
         # cat21-ord's default branch is `index-cat21` (force-pushed
         # squashed history per its HARD RULE), not `main`.
+        # Override the job-level working-directory so the clone lands
+        # at $GITHUB_WORKSPACE/_cat21-ord (where the docker step's
+        # CAT21_ORD_SRC env var points), not
+        # $GITHUB_WORKSPACE/apps/cubes-frontend/_cat21-ord.
+        working-directory: ${{ github.workspace }}
         run: git clone --depth 1 --branch index-cat21 https://github.com/ordpool-space/cat21-ord _cat21-ord
 
       - uses: actions/setup-node@v4
@@ -126,11 +131,7 @@ jobs:
           # Absolute path so relative-path drama between compose file
           # location + build context doesn't creep in.
           CAT21_ORD_SRC: ${{ github.workspace }}/_cat21-ord
-        run: |
-          echo "CAT21_ORD_SRC=$CAT21_ORD_SRC"
-          ls -la "$CAT21_ORD_SRC" | head -5
-          docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock config | grep -A 3 "ord-stock:" | head -20
-          docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock up -d --build bitcoind electrs ord-stock
+        run: docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock up -d --build bitcoind electrs ord-stock
 
       - name: Mine 101 blocks + create funding wallet
         env:

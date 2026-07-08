@@ -154,8 +154,17 @@ services:
       - ord-stock
     image: cubes-e2e-cat21-ord:local
     build:
-      context: ../../cat21-ord
-      dockerfile: ../ordpool-sdk/e2e/cat21-ord.Dockerfile
+      context: ${CAT21_ORD_SRC:-../../../../../cat21-ord}
+      dockerfile_inline: |
+        FROM rust:1.90-bookworm AS builder
+        WORKDIR /usr/src/ord
+        COPY . .
+        RUN cargo build --bin ord --release
+        FROM debian:bookworm-slim
+        COPY --from=builder /usr/src/ord/target/release/ord /usr/local/bin
+        RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+        ENV RUST_BACKTRACE=1
+        ENV RUST_LOG=info
     container_name: cubes-e2e-ord-stock
     depends_on:
       bitcoind:

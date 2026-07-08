@@ -1,0 +1,187 @@
+name: cubes-frontend regtest e2e (wallet matrix)
+
+# Real-user-flow proof that inscribing a cube via each supported
+# wallet produces an ord-indexed HTML inscription.
+#
+# Not a smoke test — every job spins up:
+#   - bitcoind + electrs + ord (docker compose regtest stack)
+#   - the actual cubes-frontend UI (via `ng serve -c regtest`)
+#   - the actual wallet .crx unpacked into a headed Chromium under
+#     xvfb, driven by Playwright to click Connect → sign popup →
+#     Mint → sign popup → success alert
+#   - a byte-for-byte comparison of the ord-indexed inscription
+#     content against the HTML the on-page preview iframe rendered.
+#
+# Runs ONLY in CI. The .crx binaries live behind a private
+# ordpool-space/ordpool-sdk release and per workspace policy
+# (playwright-bootstrap.sh header) are never executed on dev
+# machines.
+#
+# ---------- REQUIRED SECRET ----------
+# This workflow needs `WALLET_CRX_PAT` — a fine-grained PAT scoped
+# to `ordpool-space/ordpool-sdk` with `Contents: read` (release
+# assets are surfaced via the Contents scope). Fetching happens
+# via `gh release download`; workflow-default GITHUB_TOKEN is
+# scoped to the CURRENT repo only, so it can't reach ordpool-sdk
+# releases.
+#
+# To create the secret:
+#   1. GitHub → profile → Settings → Developer settings →
+#      Personal access tokens → Fine-grained tokens → Generate new.
+#   2. Resource owner: ordpool-space. Repository access: only
+#      `ordpool-sdk`. Permissions: Contents: Read-only.
+#   3. In `haushoppe/genesis` → Settings → Secrets and variables
+#      → Actions → New repository secret named `WALLET_CRX_PAT`,
+#      paste the token.
+# -------------------------------------
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/cubes-frontend/**'
+      - '.github/workflows/e2e-cubes-regtest.yml'
+  pull_request:
+    paths:
+      - 'apps/cubes-frontend/**'
+      - '.github/workflows/e2e-cubes-regtest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Cancel outdated runs on the same branch — no benefit to running
+# stale wallet matrices to completion.
+concurrency:
+  group: cubes-regtest-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cube-mint:
+    # One job per wallet. Failure in one doesn't block others —
+    # each wallet has independent selectors + independent SDK
+    # connector code. `fail-fast: false` surfaces every wallet's
+    # state on every push.
+    strategy:
+      fail-fast: false
+      matrix:
+        wallet:
+          # Only Xverse is spec'd today. Adding a wallet: create
+          # `apps/cubes-frontend/e2e/regtest/specs/<name>-cube-mint-roundtrip.spec.ts`
+          # + add it here + add a matching Cache/Download step in
+          # the .crx block below.
+          - xverse
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/cubes-frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: apps/cubes-frontend/package-lock.json
+
+      # The workspace CLAUDE.md pins `ignore-scripts=true` locally
+      # to mitigate Shai-Hulud-style supply-chain worms. On CI
+      # ephemeral runners the argument is weaker, but we keep the
+      # posture consistent: install with --ignore-scripts and then
+      # manually build the one dep that needs it (ordpool-sdk's
+      # ng-packagr dist is pre-built + checked in, so its npm
+      # install actually needs no build step).
+      - run: npm ci --ignore-scripts
+
+      - name: Install Playwright chromium + system deps
+        run: ./node_modules/.bin/playwright install --with-deps chromium
+
+      # Cache the unpacked wallet extension keyed by the version
+      # pinned in playwright-bootstrap.sh. First run per version:
+      # download + unzip (~5 s + GitHub API call). Subsequent
+      # runs: cache hit, no PAT scope needed.
+      - name: Cache Xverse extension
+        if: matrix.wallet == 'xverse'
+        id: xverse-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/cubes-frontend/e2e/regtest/extensions/xverse
+          # Version tag lives in playwright-bootstrap.sh; keep in
+          # sync manually — a bump there needs a bump here.
+          key: xverse-extension-v2.3.2
+
+      - name: Fetch Xverse .crx from ordpool-sdk private release
+        if: matrix.wallet == 'xverse' && steps.xverse-cache.outputs.cache-hit != 'true'
+        env:
+          # Cross-repo release download requires a PAT (see file
+          # header). If this secret is missing the step exits 1
+          # with a message from playwright-bootstrap.sh.
+          GH_TOKEN: ${{ secrets.WALLET_CRX_PAT }}
+        run: bash e2e/regtest/playwright-bootstrap.sh xverse
+
+      - name: Bring up bitcoind + electrs + ord-stock
+        # cat21-ord isn't needed for cube inscribes (cubes are
+        # regular HTML inscriptions, not CAT-21 cats — bounced off
+        # ord-stock which uses the same mainline ord binary
+        # without --index-cat21). Only bring up what we hit.
+        run: docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock up -d --build bitcoind electrs ord-stock
+
+      - name: Mine 101 blocks + create funding wallet
+        env:
+          REGTEST_ELECTRS_URL: http://localhost:3000
+        run: bash e2e/regtest/regtest-bootstrap.sh > /tmp/regtest-bootstrap.json
+
+      - name: Wait for electrs to sync tip
+        run: |
+          for i in {1..60}; do
+            tip=$(curl -fsS http://localhost:3000/blocks/tip/height 2>/dev/null || echo 0)
+            if [ "$tip" -ge "101" ]; then
+              echo "electrs at height $tip"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "electrs did not reach height 101 within 60s" >&2
+          exit 1
+
+      - name: Wait for ord-stock /status
+        run: |
+          for i in {1..180}; do
+            if curl -fsS http://localhost:8081/status >/dev/null 2>&1; then
+              echo "ord-stock ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "ord-stock /status did not respond within 180s" >&2
+          exit 1
+
+      - name: Run ${{ matrix.wallet }} cube-mint roundtrip under xvfb
+        # Playwright wants a real X server for headed Chromium.
+        # xvfb-run supplies a virtual one.
+        run: |
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" \
+            npm run e2e:regtest -- --grep "${{ matrix.wallet }}"
+
+      - name: Dump docker logs on failure
+        if: failure()
+        run: |
+          echo "=== bitcoind ==="; docker logs cubes-e2e-bitcoind 2>&1 | tail -100
+          echo "=== electrs ==="; docker logs cubes-e2e-electrs 2>&1 | tail -100
+          echo "=== ord-stock ==="; docker logs cubes-e2e-ord-stock 2>&1 | tail -100
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.wallet }}-playwright-results
+          path: |
+            apps/cubes-frontend/test-results-regtest/
+            apps/cubes-frontend/playwright-report-regtest/
+          retention-days: 14
+
+      - name: Tear down regtest stack
+        if: always()
+        run: docker compose -f e2e/regtest/docker-compose.regtest.yml down -v

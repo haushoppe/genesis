@@ -191,25 +191,17 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await connectPromise;
 
   await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });
-  const paymentAddress = await cubes.evaluate(async () => {
-    // The rendered address is the ORDINALS one; grab the wallet's
-    // payment address via the SDK's WalletService which the app has
-    // already injected on window as a debug hook.
-    const svc = (window as unknown as { ordpoolWalletServiceDebug?: { connectedWallet$: { getValue: () => { paymentAddress: string } | null } } })
-      .ordpoolWalletServiceDebug;
-    if (!svc) return undefined;
-    return svc.connectedWallet$.getValue()?.paymentAddress;
-  });
-  // Fallback: parse the rendered "Connected as bcrt1p…" strong text
-  // — but that's the ordinals address, and we need to fund the
-  // payment address. Grab from localStorage where the SDK caches
-  // it under LAST_CONNECTED_WALLET.
-  const paymentAddr = paymentAddress ?? await cubes.evaluate(() => {
+
+  // The DOM only renders the ordinals address; we need the payment
+  // address to fund. The SDK's WalletService persists the full
+  // WalletInfo (via the app's browserLocalStorage adapter) under
+  // LAST_CONNECTED_WALLET as soon as connect resolves.
+  const paymentAddr = await cubes.evaluate(() => {
     const raw = localStorage.getItem('LAST_CONNECTED_WALLET');
     if (!raw) return undefined;
     try { return (JSON.parse(raw) as { paymentAddress: string }).paymentAddress; } catch { return undefined; }
   });
-  if (!paymentAddr) throw new Error('Could not extract wallet payment address after connect');
+  if (!paymentAddr) throw new Error('Could not extract wallet payment address after connect (LAST_CONNECTED_WALLET missing from localStorage)');
   expect(paymentAddr).toMatch(/^bcrt1q|^bcrt1p|^m[a-zA-Z0-9]/);
   console.log(`[cube-mint] payment address: ${paymentAddr}`);
 

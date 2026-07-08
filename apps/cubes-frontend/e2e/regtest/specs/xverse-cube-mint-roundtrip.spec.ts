@@ -162,6 +162,19 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
 
   // ─── Step 2: open cubes-frontend + connect wallet via UI ───────
   const cubes = await context.newPage();
+  // Surface browser console errors + page errors so a silent connect
+  // failure inside sats-connect doesn't just look like "popup never
+  // opened".
+  cubes.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      // eslint-disable-next-line no-console
+      console.log(`[cubes console.error] ${msg.text()}`);
+    }
+  });
+  cubes.on('pageerror', (err) => {
+    // eslint-disable-next-line no-console
+    console.log(`[cubes pageerror] ${err.message}`);
+  });
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.getByRole('heading', { name: 'Ordinal Cubes', exact: true })).toBeVisible({ timeout: 15_000 });
 
@@ -175,19 +188,43 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // Click "Xverse" — SDK's WalletService.connectWallet fires
   // xverseConnector.connect, which spawns Xverse's approval popup.
   const knownPagesBeforeConnect = new Set(context.pages());
-  const connectPromise = connectLink.click();
+  const connectPromise = connectLink.click().catch((err) => {
+    // eslint-disable-next-line no-console
+    console.log(`[cube-mint] connect click threw: ${err.message}`);
+  });
+
+  // Accept ANY new chrome-extension page as the approval popup.
+  // Xverse's connect UI wording changes across versions; a
+  // more-permissive predicate keeps this robust.
   const connectPopup = await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeConnect,
     timeoutMs: 60_000,
     isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      const t = (await p.locator('body').innerText().catch(() => '')).toLowerCase();
-      return ['connect', 'approve', 'confirm', 'allow'].some(s => t.includes(s));
+      const url = p.url();
+      if (!url.startsWith('chrome-extension://')) return false;
+      // Wait for DOM so it's not the transient blank about:blank
+      await p.waitForLoadState('domcontentloaded', { timeout: 30_000 }).catch(() => undefined);
+      const t = (await p.locator('body').innerText().catch(() => '')).trim();
+      // eslint-disable-next-line no-console
+      console.log(`[cube-mint] candidate popup at ${url}: first 200 chars = ${JSON.stringify(t.slice(0, 200))}`);
+      // Any non-empty extension page with visible text is the popup.
+      return t.length > 0;
     },
+  }).catch(async (err) => {
+    // Diagnostic dump on timeout: what pages exist right now?
+    // eslint-disable-next-line no-console
+    console.log(`[cube-mint] waitForApprovalPopup timeout. Pages in context:`);
+    for (const p of context.pages()) {
+      // eslint-disable-next-line no-console
+      console.log(`  - ${p.url()}`);
+    }
+    throw err;
   });
   await shot(connectPopup, '03-xverse-connect-approval');
-  await connectPopup.getByRole('button', { name: /^(connect|approve|confirm|allow)$/i }).first().click();
+  // Try common Xverse connect-approval button labels in order.
+  const approveButton = connectPopup.getByRole('button', { name: /^(connect|approve|confirm|allow|share)$/i }).first();
+  await approveButton.click({ timeout: 15_000 });
   await connectPromise;
 
   await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });

@@ -193,9 +193,10 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     console.log(`[cube-mint] connect click threw: ${err.message}`);
   });
 
-  // Accept ANY new chrome-extension page as the approval popup.
-  // Xverse's connect UI wording changes across versions; a
-  // more-permissive predicate keeps this robust.
+  // Accept the FIRST new chrome-extension page as Xverse's connect
+  // popup. Xverse's #/btc-select-address-request path renders body
+  // text asynchronously — earlier iterations of this predicate
+  // rejected the popup when body was empty at first check.
   const connectPopup = await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeConnect,
@@ -203,16 +204,11 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     isApproval: async (p) => {
       const url = p.url();
       if (!url.startsWith('chrome-extension://')) return false;
-      // Wait for DOM so it's not the transient blank about:blank
-      await p.waitForLoadState('domcontentloaded', { timeout: 30_000 }).catch(() => undefined);
-      const t = (await p.locator('body').innerText().catch(() => '')).trim();
       // eslint-disable-next-line no-console
-      console.log(`[cube-mint] candidate popup at ${url}: first 200 chars = ${JSON.stringify(t.slice(0, 200))}`);
-      // Any non-empty extension page with visible text is the popup.
-      return t.length > 0;
+      console.log(`[cube-mint] chose popup at ${url}`);
+      return true;
     },
   }).catch(async (err) => {
-    // Diagnostic dump on timeout: what pages exist right now?
     // eslint-disable-next-line no-console
     console.log(`[cube-mint] waitForApprovalPopup timeout. Pages in context:`);
     for (const p of context.pages()) {
@@ -221,10 +217,22 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     }
     throw err;
   });
+  await connectPopup.waitForLoadState('domcontentloaded', { timeout: 30_000 }).catch(() => undefined);
+  // Xverse's connect popup lands on `#/btc-select-address-request`.
+  // Wait for the "Connect" / "Confirm" button (label varies) to be
+  // visible + enabled, then click.
+  await connectPopup.waitForFunction(() => {
+    const buttons = Array.from(document.querySelectorAll('button'));
+    return buttons.some((b) => {
+      const label = (b.textContent ?? '').trim().toLowerCase();
+      if (!/^(connect|approve|confirm|allow|share)$/i.test(label)) return false;
+      if (b.hasAttribute('disabled')) return false;
+      const style = getComputedStyle(b);
+      return style.pointerEvents !== 'none' && style.visibility !== 'hidden';
+    });
+  }, undefined, { timeout: 30_000, polling: 250 });
   await shot(connectPopup, '03-xverse-connect-approval');
-  // Try common Xverse connect-approval button labels in order.
-  const approveButton = connectPopup.getByRole('button', { name: /^(connect|approve|confirm|allow|share)$/i }).first();
-  await approveButton.click({ timeout: 15_000 });
+  await connectPopup.getByRole('button', { name: /^(connect|approve|confirm|allow|share)$/i }).first().click({ timeout: 15_000 });
   await connectPromise;
 
   await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });

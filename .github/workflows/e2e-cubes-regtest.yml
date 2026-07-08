@@ -74,7 +74,9 @@ jobs:
       # GITHUB_TOKEN fails on cross-repo access even for public
       # repos, because the token is scoped to haushoppe/genesis only.
       - name: Clone cat21-ord for the ord-stock image build
-        run: git clone --depth 1 --branch main https://github.com/ordpool-space/cat21-ord _cat21-ord
+        # cat21-ord's default branch is `index-cat21` (force-pushed
+        # squashed history per its HARD RULE), not `main`.
+        run: git clone --depth 1 --branch index-cat21 https://github.com/ordpool-space/cat21-ord _cat21-ord
 
       - uses: actions/setup-node@v4
         with:

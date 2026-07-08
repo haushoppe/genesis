@@ -80,7 +80,7 @@ RELEASE_TAG="${WALLET}-extension-v${VERSION}"
 REPO="ordpool-space/ordpool-sdk"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-EXT_DIR="${SCRIPT_DIR}/../extensions/${WALLET}"
+EXT_DIR="${SCRIPT_DIR}/extensions/${WALLET}"
 CRX_FILE="$(mktemp "/tmp/${WALLET}.XXXXXX.crx")"
 
 trap 'rm -f "$CRX_FILE"' EXIT

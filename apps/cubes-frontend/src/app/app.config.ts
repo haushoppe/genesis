@@ -47,7 +47,10 @@ export const appConfig: ApplicationConfig = {
     // + InscribeMintOrchestrator resolve providedIn:'root' — only the
     // tokens need explicit wiring here.
     { provide: storage, useValue: browserLocalStorage },
-    { provide: bitcoinNetwork, useValue: environment.mempoolApiUrl.includes('localhost') ? Network.Regtest : Network.Mainnet },
+    // Regtest env sets mempoolApiUrl to '' (same-origin proxied);
+    // mainnet/prod use https://api.ordpool.space. Empty string is
+    // the regtest fingerprint.
+    { provide: bitcoinNetwork, useValue: environment.mempoolApiUrl === '' ? Network.Regtest : Network.Mainnet },
     // cat21ApiUrl is unused by the inscribe flow but the config token
     // is required by Cat21Service's constructor. mempoolApiUrl comes
     // from environment.ts so regtest e2e can point at local electrs

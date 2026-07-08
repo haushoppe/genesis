@@ -12,7 +12,11 @@
 export const environment = {
   production: false,
   api: 'http://localhost:3333',
-  mempoolApiUrl: 'http://localhost:3000',
+  // Same-origin so the dev-server proxy handles CORS + path rewrites:
+  // `proxy.conf.regtest.json` maps `/api/*` → `http://localhost:3000/*`
+  // (stripping the `/api` prefix, since electrs's Esplora endpoints
+  // live at the root — /address/{}/utxo, /tx, /tx/{}/hex, etc.).
+  mempoolApiUrl: '',
   haushoppeTipAddress: 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv',
   haushoppeTipSats: 1000,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',

@@ -84,7 +84,8 @@
               "buildTarget": "cubes-frontend:build:development"
             },
             "regtest": {
-              "buildTarget": "cubes-frontend:build:regtest"
+              "buildTarget": "cubes-frontend:build:regtest",
+              "proxyConfig": "src/proxy.conf.regtest.json"
             }
           },
           "defaultConfiguration": "development"

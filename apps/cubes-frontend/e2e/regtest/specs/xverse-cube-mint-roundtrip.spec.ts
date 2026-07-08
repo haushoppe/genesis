@@ -218,36 +218,48 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     throw err;
   });
   await connectPopup.waitForLoadState('domcontentloaded', { timeout: 30_000 }).catch(() => undefined);
-  // Give the Xverse SPA one polling cycle to hydrate + render buttons.
-  await connectPopup.waitForFunction(() => document.querySelectorAll('button').length > 0, undefined, { timeout: 30_000, polling: 250 });
-  await shot(connectPopup, '03-xverse-connect-approval');
+  // Snapshot the popup RIGHT NOW — before any waits — so we always
+  // have a picture of what's rendering, even if the button-hydration
+  // wait below times out. Previous iteration timed out on
+  // `document.querySelectorAll('button').length > 0` and never took
+  // this screenshot; that's why the artifact bundle was empty.
+  await shot(connectPopup, '03a-xverse-popup-initial');
 
-  // Log every button label so future wallet-UX changes surface
-  // instantly instead of after another 30s waitForFunction hang.
-  const buttonLabels = await connectPopup.evaluate(() => {
-    return Array.from(document.querySelectorAll('button')).map((b) => ({
-      text: (b.textContent ?? '').trim(),
-      disabled: b.hasAttribute('disabled'),
-      hidden: getComputedStyle(b).visibility === 'hidden',
+  // Poll for ANY hydrated interactive element (button, role=button,
+  // a-tag). Xverse's Vite SPA can take 5-15s to hydrate under xvfb;
+  // 60s ceiling is generous.
+  await connectPopup.waitForFunction(() => {
+    return document.querySelectorAll('button, [role="button"], a').length > 0;
+  }, undefined, { timeout: 60_000, polling: 250 });
+  await shot(connectPopup, '03b-xverse-popup-hydrated');
+
+  // Log every interactive element so we can see what Xverse actually
+  // renders on the #/btc-select-address-request page.
+  const interactive = await connectPopup.evaluate(() => {
+    const sel = 'button, [role="button"], a';
+    return Array.from(document.querySelectorAll(sel)).map((el) => ({
+      tag: el.tagName,
+      role: el.getAttribute('role') ?? '',
+      text: (el.textContent ?? '').trim().slice(0, 80),
+      disabled: el.hasAttribute('disabled'),
     }));
   });
   // eslint-disable-next-line no-console
-  console.log(`[cube-mint] popup buttons: ${JSON.stringify(buttonLabels)}`);
+  console.log(`[cube-mint] popup interactive elements: ${JSON.stringify(interactive)}`);
 
-  // Xverse's #/btc-select-address-request page CTA is "Connect" in
-  // recent versions, but past variants have shipped "Continue",
-  // "Confirm", "Share", "Approve", "Allow". Match any of them.
+  // Xverse's CTA label varies across versions. Match any of the
+  // common approve wordings across button + [role=button] + a-tag.
   await connectPopup.waitForFunction(() => {
-    const buttons = Array.from(document.querySelectorAll('button'));
-    return buttons.some((b) => {
-      const label = (b.textContent ?? '').trim().toLowerCase();
-      if (!/^(connect|approve|confirm|allow|share|continue|next|proceed)$/i.test(label)) return false;
-      if (b.hasAttribute('disabled')) return false;
-      const style = getComputedStyle(b);
+    const sel = 'button, [role="button"], a';
+    return Array.from(document.querySelectorAll(sel)).some((el) => {
+      const label = (el.textContent ?? '').trim().toLowerCase();
+      if (!/(connect|approve|confirm|allow|share|continue|next|proceed)/i.test(label)) return false;
+      if (el.hasAttribute('disabled')) return false;
+      const style = getComputedStyle(el);
       return style.pointerEvents !== 'none' && style.visibility !== 'hidden';
     });
   }, undefined, { timeout: 30_000, polling: 250 });
-  await connectPopup.getByRole('button', { name: /^(connect|approve|confirm|allow|share|continue|next|proceed)$/i }).first().click({ timeout: 15_000 });
+  await connectPopup.locator('button, [role="button"], a').filter({ hasText: /connect|approve|confirm|allow|share|continue|next|proceed/i }).first().click({ timeout: 15_000 });
   await connectPromise;
 
   await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });

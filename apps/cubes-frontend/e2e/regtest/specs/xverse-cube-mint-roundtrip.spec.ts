@@ -259,7 +259,13 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       return style.pointerEvents !== 'none' && style.visibility !== 'hidden';
     });
   }, undefined, { timeout: 30_000, polling: 250 });
-  await connectPopup.locator('button, [role="button"], a').filter({ hasText: /connect|approve|confirm|allow|share|continue|next|proceed/i }).first().click({ timeout: 15_000 });
+  // Click via the exact "Connect" text (matches the diagnostic log
+  // from the previous CI run: buttons rendered were
+  // ["Account 1Select", "Cancel", "Connect"]). force: true skips
+  // Playwright's actionability check — Xverse's popup buttons are
+  // clickable but sometimes fail the check under xvfb.
+  const connectBtn = connectPopup.getByRole('button', { name: /^Connect$/i });
+  await connectBtn.first().click({ timeout: 15_000, force: true });
   await connectPromise;
 
   await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });

@@ -118,33 +118,32 @@
     }
 
     @if (state !== 'success') {
-      @let viable = paymentOutputs();
-      <span data-testid="mint-viable-inside" hidden>{{ viable.length }}</span>
+      <span data-testid="mint-viable-inside" hidden>{{ paymentOutputs().length }}</span>
       <span data-testid="mint-selected" hidden>{{ selected ? 'yes' : 'no' }}</span>
-      @if (viable.length === 0 && state !== 'loading-utxos') {
+      @if (paymentOutputs().length === 0 && state !== 'loading-utxos') {
         <p class="text-muted" data-testid="mint-no-utxos"><small>Set inscription IDs above to see fee estimates. Fund <code>{{ wallet.paymentAddress }}</code> once you have your six IDs picked.</small></p>
       }
       @if (state === 'loading-utxos') {
         <p class="text-muted" data-testid="mint-loading-utxos"><small>Loading your UTXOs…</small></p>
       }
-      @if (state === 'ready' && viable.length === 0 && simulations().length > 0 && form.controls.feeRate.value) {
+      @if (state === 'ready' && paymentOutputs().length === 0 && simulations().length > 0 && form.controls.feeRate.value) {
         <div class="alert alert-warning" data-testid="mint-insufficient-funds">
           We could not find enough funds in your payment address at
           <strong>{{ form.controls.feeRate.value }}</strong>&nbsp;sat/vB.
           Fund <code>{{ wallet.paymentAddress }}</code> or pick a lower fee rate.
         </div>
       }
-      @if (viable.length && selected) {
+      @if (paymentOutputs().length && selected) {
         <div class="text-muted mt-2 mb-2" data-testid="mint-found-funds">
-          <small>Funds found. Ready to mint {{ viable.length }} candidate UTXO{{ viable.length === 1 ? '' : 's' }}, using {{ selected!.value | number }} sats.</small>
+          <small>Funds found. Ready to mint {{ paymentOutputs().length }} candidate UTXO{{ paymentOutputs().length === 1 ? '' : 's' }}, using {{ selected!.value | number }} sats.</small>
         </div>
       }
 
-      @if (viable.length) {
+      @if (paymentOutputs().length) {
         <details class="mt-3 mb-3">
           <summary>Choose a different funding UTXO (expert mode)</summary>
           <div class="mt-2">
-            @for (row of viable; track row.utxo.txid + ':' + row.utxo.vout) {
+            @for (row of paymentOutputs(); track row.utxo.txid + ':' + row.utxo.vout) {
               <div class="p-2 border-bottom">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>

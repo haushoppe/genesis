@@ -440,8 +440,12 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     const feeFc = (await cubes.locator('[data-testid="mint-fee-fc-value"]').textContent().catch(() => '?'))?.trim();
     const ordAddr = (await cubes.locator('[data-testid="mint-ordinals-address"]').textContent().catch(() => '?'))?.trim();
     const lsWallet = await cubes.evaluate(() => localStorage.getItem('LAST_CONNECTED_WALLET')).catch(() => null);
+    const sim0Insuff = (await cubes.locator('[data-testid="mint-sim-0-insufficient"]').textContent().catch(() => '?'))?.trim();
+    const sim0Simulation = (await cubes.locator('[data-testid="mint-sim-0-simulation"]').textContent().catch(() => '?'))?.trim();
+    const paymentOutputs = (await cubes.locator('[data-testid="mint-payment-outputs"]').textContent().catch(() => '?'))?.trim();
     console.error(`[cube-mint] ordinalsAddress DOM=${ordAddr}`);
     console.error(`[cube-mint] localStorage LAST_CONNECTED_WALLET=${lsWallet}`);
+    console.error(`[cube-mint] sim[0].insufficient=${sim0Insuff} sim[0].simulation=${sim0Simulation} paymentOutputs.length=${paymentOutputs}`);
     const form1 = await cubes.locator('[data-testid="cube-side-1"]').inputValue().catch(() => '');
     const formFee = await cubes.locator('[data-testid="cube-fee-rate"]').inputValue().catch(() => '');
     console.error(

@@ -294,12 +294,29 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // bring cubes back so fill lands on the visible page.
   await cubes.bringToFront();
   await shot(cubes, '04a-cubes-refocused');
-  await expect(cubes.locator('#inscriptionId1')).toBeVisible({ timeout: 15_000 });
+
+  // Diagnostic: wallet state + form presence at this point.
+  const preFillState = await cubes.evaluate(() => ({
+    walletCached: localStorage.getItem('LAST_CONNECTED_WALLET') !== null,
+    inputCount: document.querySelectorAll('input').length,
+    hasInscriptionInput1: document.querySelector('#inscriptionId1') !== null,
+    hasConnectedText: /connected as/i.test(document.body.innerText || ''),
+    hasStillNeedConnect: /please connect your wallet/i.test(document.body.innerText || ''),
+  }));
+  // eslint-disable-next-line no-console
+  console.log(`[cube-mint] pre-fill state: ${JSON.stringify(preFillState)}`);
+
+  // Poll for the form input to actually land in the DOM. `toBeVisible`
+  // times out immediately if the element isn't in the DOM; use
+  // waitForFunction which polls the DOM as it evolves.
+  await cubes.waitForFunction(() => document.querySelector('#inscriptionId1') !== null, undefined, { timeout: 30_000, polling: 500 });
+  await shot(cubes, '04b-form-visible');
+
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`#inscriptionId${i + 1}`).fill(CUBE_SIDE_IDS[i]);
   }
   await cubes.locator('#feeRate').fill('5');
-  await shot(cubes, '04b-form-filled');
+  await shot(cubes, '04c-form-filled');
 
   // ─── Step 5: snapshot the cube HTML the iframe preview will
   //   inscribe. The preview element renders getCubeHtml(cubeDetails())

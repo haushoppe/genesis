@@ -226,11 +226,12 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await shot(connectPopup, '03a-xverse-popup-initial');
 
   // Poll for ANY hydrated interactive element (button, role=button,
-  // a-tag). Xverse's Vite SPA can take 5-15s to hydrate under xvfb;
-  // 60s ceiling is generous.
+  // a-tag). Xverse's Vite SPA hydration under xvfb has been observed
+  // taking up to ~2 minutes in CI on cold cache; 3 min ceiling stays
+  // comfortably above the observed p99.
   await connectPopup.waitForFunction(() => {
     return document.querySelectorAll('button, [role="button"], a').length > 0;
-  }, undefined, { timeout: 60_000, polling: 250 });
+  }, undefined, { timeout: 180_000, polling: 500 });
   await shot(connectPopup, '03b-xverse-popup-hydrated');
 
   // Log every interactive element so we can see what Xverse actually
@@ -258,7 +259,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       const style = getComputedStyle(el);
       return style.pointerEvents !== 'none' && style.visibility !== 'hidden';
     });
-  }, undefined, { timeout: 30_000, polling: 250 });
+  }, undefined, { timeout: 60_000, polling: 500 });
   // Click via the exact "Connect" text (matches the diagnostic log
   // from the previous CI run: buttons rendered were
   // ["Account 1Select", "Cancel", "Connect"]). force: true skips

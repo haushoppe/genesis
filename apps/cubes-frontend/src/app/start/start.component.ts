@@ -219,10 +219,26 @@ export class StartComponent implements OnInit {
     });
     if (this.c.feeRate.value) this.orchestrator.setFeeRate(this.c.feeRate.value);
 
-    // Live cube preview — re-sync the signal whenever any form field
-    // changes so the iframe rerenders immediately.
+    // Live cube preview + orchestrator content — re-sync whenever
+    // any form field changes so:
+    //  1. iframe preview rerenders,
+    //  2. orchestrator.simulations$ recomputes fees against the
+    //     current body size,
+    //  3. auto-pick fires + Mint button enables.
+    // Without wiring setContent here the button stayed permanently
+    // disabled — simulations$ short-circuited on null content, no
+    // UTXO auto-selected, [disabled]="!selected" pinned true forever.
     this.form.valueChanges.pipe(debounceTime(150)).subscribe(() => {
-      this.cubeDetails.set(this.getCubeDetails());
+      const details = this.getCubeDetails();
+      this.cubeDetails.set(details);
+      if (this.form.valid) {
+        const html = getCubeHtml(details);
+        this.orchestrator.setContent({
+          body: new TextEncoder().encode(html),
+          contentType: 'text/html;charset=utf-8',
+          tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
+        });
+      }
     });
   }
 
@@ -270,24 +286,18 @@ export class StartComponent implements OnInit {
     }
     const wallet = this.connectedWallet();
     if (!wallet) return;
+    if (!this.orchestrator.selectedUtxo()) return;
 
+    // Content is already set by the form.valueChanges subscription
+    // above — re-set here as a belt-and-suspenders guard against the
+    // Mint click landing before the last debounced valueChanges fires.
     const cubeDetails = this.getCubeDetails();
     const html = getCubeHtml(cubeDetails);
-    const body = new TextEncoder().encode(html);
-
-    const content: InscribeContent = {
-      body,
+    this.orchestrator.setContent({
+      body: new TextEncoder().encode(html),
       contentType: 'text/html;charset=utf-8',
       tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
-    };
-    this.orchestrator.setContent(content);
-
-    // The paymentOutputs$ tap auto-picks a UTXO as soon as
-    // simulations$ produces a viable row. Give one microtask for
-    // that pipeline to settle if the user clicked Mint before it
-    // fired at least once (rare, but cheap to guard).
-    await Promise.resolve();
-    if (!this.orchestrator.selectedUtxo()) return;
+    });
 
     try {
       const result = await firstValueFrom(this.orchestrator.mint());

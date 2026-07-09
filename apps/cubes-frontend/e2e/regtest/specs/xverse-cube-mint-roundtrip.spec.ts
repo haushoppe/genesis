@@ -367,20 +367,16 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   }, undefined, { timeout: 60_000, polling: 500 }).catch(() => null);
   if (!mintReady) {
     const preMintState = await cubes.evaluate(() => {
-      const btn = document.querySelector('button[type="submit"]');
+      const form = document.querySelector('form');
       return {
-        submitBtnFound: btn !== null,
-        submitBtnDisabled: btn?.hasAttribute('disabled') ?? null,
-        allButtons: Array.from(document.querySelectorAll('button')).map((b) => ({
-          type: b.getAttribute('type'),
-          text: (b.textContent ?? '').trim().slice(0, 40),
-          disabled: b.hasAttribute('disabled'),
-        })),
-        connectedText: /connected as/i.test(document.body.innerText || ''),
-        pleaseConnectText: /please connect your wallet/i.test(document.body.innerText || ''),
-        walletCached: localStorage.getItem('LAST_CONNECTED_WALLET') !== null,
+        formFound: form !== null,
+        formChildTagCount: form ? form.children.length : 0,
+        formLastChildTag: form && form.lastElementChild ? form.lastElementChild.tagName : null,
+        formHTMLSnip: form ? form.innerHTML.slice(-2000) : null,
+        submitBtnFound: document.querySelector('button[type="submit"]') !== null,
+        allButtonTexts: Array.from(document.querySelectorAll('button')).map((b) => (b.textContent ?? '').trim().slice(0, 40)),
         alerts: Array.from(document.querySelectorAll('.alert')).map((a) => (a.textContent ?? '').trim().slice(0, 200)),
-        bodyTextExcerpt: (document.body.innerText || '').trim().slice(0, 400),
+        bodyTextEndExcerpt: (document.body.innerText || '').trim().slice(-500),
       };
     });
     // eslint-disable-next-line no-console

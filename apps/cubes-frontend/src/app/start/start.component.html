@@ -1,4 +1,4 @@
-<h1 class="mt-4">Ordinal Cubes</h1>
+<h1 class="mt-4" data-testid="page-title">Ordinal Cubes</h1>
 
 <p class="mt-2">
   The world's smallest onchain gallery, visualized as a 3D cube. Permissionless. Immutable. Forever existing.<br class="d-none d-md-block">
@@ -14,25 +14,25 @@
 @let selected = orchestrator.selectedUtxo();
 
 @if (!wallet) {
-  <p class="mt-3">
+  <p class="mt-3" data-testid="wallet-picker">
     Please connect your wallet to mint a cube.
     @if (installed.length) {
-      Detected:
+      <span data-testid="wallet-picker-detected">Detected:</span>
       @for (w of installed; track w.type; let last = $last) {
-        <a href="javascript:void(0)" (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
+        <a href="javascript:void(0)" [attr.data-testid]="'wallet-connect-' + w.type" (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
       }.
     } @else {
-      No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.
+      <span data-testid="wallet-picker-empty">No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.</span>
     }
   </p>
 }
 
 
 @if (wallet) {
-  <p class="mt-3">
+  <p class="mt-3" data-testid="wallet-connected">
     Connected as <strong data-testid="mint-ordinals-address">{{ wallet.ordinalsAddress }}</strong>.
     Pay from <code data-testid="mint-payment-address">{{ wallet.paymentAddress }}</code>.
-    <a href="javascript:void(0)" (click)="walletService.disconnectWallet()">Disconnect</a>.
+    <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
   </p>
 
   <!-- Hidden state marker so tests can read orchestrator.state()
@@ -49,38 +49,38 @@
            selectors — see cubes regtest e2e for the discovery. -->
       <div class="col-12 col-md-6 mb-3">
         <label class="form-label" for="inscriptionId1">Inscription 1</label>
-        <input id="inscriptionId1" type="text" class="form-control" formControlName="inscriptionId1" placeholder="txid + i + index, or #12345" autocomplete="off" />
+        <input id="inscriptionId1" data-testid="cube-side-1" type="text" class="form-control" formControlName="inscriptionId1" placeholder="txid + i + index, or #12345" autocomplete="off" />
       </div>
       <div class="col-12 col-md-6 mb-3">
         <label class="form-label" for="inscriptionId2">Inscription 2</label>
-        <input id="inscriptionId2" type="text" class="form-control" formControlName="inscriptionId2" placeholder="txid + i + index, or #12345" autocomplete="off" />
+        <input id="inscriptionId2" data-testid="cube-side-2" type="text" class="form-control" formControlName="inscriptionId2" placeholder="txid + i + index, or #12345" autocomplete="off" />
       </div>
       <div class="col-12 col-md-6 mb-3">
         <label class="form-label" for="inscriptionId3">Inscription 3</label>
-        <input id="inscriptionId3" type="text" class="form-control" formControlName="inscriptionId3" placeholder="txid + i + index, or #12345" autocomplete="off" />
+        <input id="inscriptionId3" data-testid="cube-side-3" type="text" class="form-control" formControlName="inscriptionId3" placeholder="txid + i + index, or #12345" autocomplete="off" />
       </div>
       <div class="col-12 col-md-6 mb-3">
         <label class="form-label" for="inscriptionId4">Inscription 4</label>
-        <input id="inscriptionId4" type="text" class="form-control" formControlName="inscriptionId4" placeholder="txid + i + index, or #12345" autocomplete="off" />
+        <input id="inscriptionId4" data-testid="cube-side-4" type="text" class="form-control" formControlName="inscriptionId4" placeholder="txid + i + index, or #12345" autocomplete="off" />
       </div>
       <div class="col-12 col-md-6 mb-3">
         <label class="form-label" for="inscriptionId5">Inscription 5</label>
-        <input id="inscriptionId5" type="text" class="form-control" formControlName="inscriptionId5" placeholder="txid + i + index, or #12345" autocomplete="off" />
+        <input id="inscriptionId5" data-testid="cube-side-5" type="text" class="form-control" formControlName="inscriptionId5" placeholder="txid + i + index, or #12345" autocomplete="off" />
       </div>
       <div class="col-12 col-md-6 mb-3">
         <label class="form-label" for="inscriptionId6">Inscription 6</label>
-        <input id="inscriptionId6" type="text" class="form-control" formControlName="inscriptionId6" placeholder="txid + i + index, or #12345" autocomplete="off" />
+        <input id="inscriptionId6" data-testid="cube-side-6" type="text" class="form-control" formControlName="inscriptionId6" placeholder="txid + i + index, or #12345" autocomplete="off" />
       </div>
 
       <div class="col-12 col-md-8 mb-3">
         <label class="form-label" for="title">Title (optional)</label>
-        <input id="title" type="text" class="form-control" formControlName="title" appTrim autocomplete="off" />
+        <input id="title" data-testid="cube-title" type="text" class="form-control" formControlName="title" appTrim autocomplete="off" />
       </div>
 
       <div class="col-12 col-md-8 mb-3">
         <label class="form-label" for="feeRate">Fee rate (sat/vB)</label>
         <div class="input-group">
-          <input id="feeRate" type="number" min="1" class="form-control" formControlName="feeRate" />
+          <input id="feeRate" data-testid="cube-fee-rate" type="number" min="1" class="form-control" formControlName="feeRate" />
           @let fees = recommendedFees();
           @if (fees) {
             <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.economyFee)" title="Economy">Eco {{ fees.economyFee }}</button>

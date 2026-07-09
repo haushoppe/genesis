@@ -177,12 +177,12 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     console.log(`[cubes pageerror] ${err.message}`);
   });
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
-  await expect(cubes.getByRole('heading', { name: 'Ordinal Cubes', exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
   // The Detected: list only renders after wallets$ has polled at
   // least once (500ms).
-  await expect(cubes.getByText(/detected:/i)).toBeVisible({ timeout: 10_000 });
-  const connectLink = cubes.getByRole('link', { name: 'Xverse', exact: true });
+  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
+  const connectLink = cubes.locator('[data-testid="wallet-connect-xverse"]');
   await expect(connectLink).toBeVisible({ timeout: 10_000 });
   await shot(cubes, '02-cubes-loaded');
 
@@ -282,7 +282,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   }
   await connectPromise;
 
-  await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 30_000 });
   await cubes.bringToFront();
 
   // Read paymentAddress from the DOM (start.component now renders it
@@ -301,9 +301,9 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
 
   // ─── Step 4: fill the form ─────────────────────────────────────
   for (let i = 0; i < 6; i++) {
-    await cubes.locator(`#inscriptionId${i + 1}`).fill(CUBE_SIDE_IDS[i]);
+    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
-  await cubes.locator('#feeRate').fill('5');
+  await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-form-filled');
 
   // ─── Step 4b: reload page to re-fire the UTXO fetch ───────────
@@ -326,11 +326,11 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   }
 
   // Refill the form after reload — reactive form values don't persist.
-  await expect(cubes.locator('#inscriptionId1')).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
   for (let i = 0; i < 6; i++) {
-    await cubes.locator(`#inscriptionId${i + 1}`).fill(CUBE_SIDE_IDS[i]);
+    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
-  await cubes.locator('#feeRate').fill('5');
+  await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04b-form-refilled-after-reload');
 
   // ─── Step 5: compute the cube HTML the orchestrator will inscribe.
@@ -381,13 +381,11 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await shot(signPopup, '05-xverse-sign-approval');
   await signPopup.getByRole('button', { name: /^confirm$/i }).first().click();
 
-  const successAlert = cubes.locator('.alert-success').first();
-  await expect(successAlert).toBeVisible({ timeout: 120_000 });
+  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
   await shot(cubes, '06-cubes-success');
 
-  const txidCodes = await successAlert.locator('code').allTextContents();
-  expect(txidCodes.length).toBeGreaterThanOrEqual(2);
-  const [commitTxId, revealTxId] = txidCodes;
+  const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
+  const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').textContent())?.trim() ?? '';
   expect(commitTxId).toMatch(/^[0-9a-f]{64}$/);
   expect(revealTxId).toMatch(/^[0-9a-f]{64}$/);
   console.log(`[cube-mint] commit=${commitTxId.slice(0, 12)}… reveal=${revealTxId.slice(0, 12)}…`);

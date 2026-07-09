@@ -41,6 +41,7 @@
   <span data-testid="mint-state" hidden>{{ state }}</span>
   <span data-testid="mint-content-set" hidden>{{ orchestrator.content() ? 'yes' : 'no' }}</span>
   <span data-testid="mint-sim-count" hidden>{{ simulations().length }}</span>
+  <span data-testid="mint-fee-fc-value" hidden>{{ form.controls.feeRate.value }}</span>
 
   <form [formGroup]="form" (ngSubmit)="mint()" class="mt-4">
     <div class="row">

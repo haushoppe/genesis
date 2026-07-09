@@ -437,10 +437,11 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     const connected = await cubes.locator('[data-testid="wallet-connected"]').isVisible().catch(() => false);
     const contentSet = (await cubes.locator('[data-testid="mint-content-set"]').textContent().catch(() => '?'))?.trim();
     const simCount = (await cubes.locator('[data-testid="mint-sim-count"]').textContent().catch(() => '?'))?.trim();
+    const feeFc = (await cubes.locator('[data-testid="mint-fee-fc-value"]').textContent().catch(() => '?'))?.trim();
     const form1 = await cubes.locator('[data-testid="cube-side-1"]').inputValue().catch(() => '');
     const formFee = await cubes.locator('[data-testid="cube-fee-rate"]').inputValue().catch(() => '');
     console.error(
-      `[cube-mint] mint-found-funds timeout — state="${state}" connected=${connected} noUtxos=${noUtxos} loading=${loading} insufficient=${insufficient} contentSet=${contentSet} sims=${simCount} form1="${form1}" fee="${formFee}"`,
+      `[cube-mint] mint-found-funds timeout — state="${state}" connected=${connected} noUtxos=${noUtxos} loading=${loading} insufficient=${insufficient} contentSet=${contentSet} sims=${simCount} feeFC="${feeFc}" form1="${form1}" fee="${formFee}"`,
     );
     throw e;
   }

@@ -290,11 +290,16 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await waitForUtxoAt(paymentAddr, Math.round(FUND_AMOUNT_BTC * 1e8));
 
   // ─── Step 4: fill the form ─────────────────────────────────────
+  // Xverse's popup close brings its own dashboard tab to the front —
+  // bring cubes back so fill lands on the visible page.
+  await cubes.bringToFront();
+  await shot(cubes, '04a-cubes-refocused');
+  await expect(cubes.locator('#inscriptionId1')).toBeVisible({ timeout: 15_000 });
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`#inscriptionId${i + 1}`).fill(CUBE_SIDE_IDS[i]);
   }
   await cubes.locator('#feeRate').fill('5');
-  await shot(cubes, '04-form-filled');
+  await shot(cubes, '04b-form-filled');
 
   // ─── Step 5: snapshot the cube HTML the iframe preview will
   //   inscribe. The preview element renders getCubeHtml(cubeDetails())

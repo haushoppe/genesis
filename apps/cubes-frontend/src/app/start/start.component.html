@@ -119,6 +119,8 @@
 
     @if (state !== 'success') {
       @let viable = paymentOutputs();
+      <span data-testid="mint-viable-inside" hidden>{{ viable.length }}</span>
+      <span data-testid="mint-selected" hidden>{{ selected ? 'yes' : 'no' }}</span>
       @if (viable.length === 0 && state !== 'loading-utxos') {
         <p class="text-muted" data-testid="mint-no-utxos"><small>Set inscription IDs above to see fee estimates. Fund <code>{{ wallet.paymentAddress }}</code> once you have your six IDs picked.</small></p>
       }

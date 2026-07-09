@@ -365,6 +365,41 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   //   the mint-found-funds timeout.
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
 
+  // ─── Step 5c: verify Xverse returned the SAME payment address
+  //   post-reload. Prior diagnostic (state=ready, connected=true,
+  //   noUtxos=true) proved the wallet reconnected but orchestrator
+  //   queried a wallet with no UTXOs — which happens iff Xverse handed
+  //   back a different bech32 address than the one we funded. If they
+  //   differ, fund the new one too and reload once more so the
+  //   orchestrator's utxos$ re-fires against the funded address.
+  const paymentAddrAfterReload = (await paymentAddrLocator.textContent())?.trim() ?? '';
+  console.log(`[cube-mint] payment address after reload: ${paymentAddrAfterReload}`);
+  if (paymentAddrAfterReload !== paymentAddr) {
+    console.log(`[cube-mint] address changed across reload: ${paymentAddr} -> ${paymentAddrAfterReload}, refunding`);
+    rpc('-rpcwallet=cubes-e2e', 'sendtoaddress', paymentAddrAfterReload, String(FUND_AMOUNT_BTC));
+    await waitForElectrsSync(mineBlocks(1));
+    await waitForUtxoAt(paymentAddrAfterReload, Math.round(FUND_AMOUNT_BTC * 1e8));
+    const knownPagesBefore2nd = new Set(context.pages());
+    await cubes.reload({ waitUntil: 'domcontentloaded' });
+    const reapprove2 = await waitForApprovalPopup({
+      context,
+      knownPages: knownPagesBefore2nd,
+      timeoutMs: 15_000,
+      isApproval: async (p) => p.url().startsWith('chrome-extension://'),
+    }).catch(() => null);
+    if (reapprove2) {
+      await reapprove2.waitForLoadState('domcontentloaded');
+      await reapprove2.waitForFunction(() => document.querySelectorAll('button').length > 0, undefined, { timeout: 30_000, polling: 500 });
+      await reapprove2.getByRole('button', { name: /^Connect$/i }).first().click({ force: true, timeout: 15_000 }).catch(() => undefined);
+    }
+    await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+    await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
+    for (let i = 0; i < 6; i++) {
+      await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
+    }
+    await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
+  }
+
   // ─── Step 6: wait for orchestrator to move to 'ready' + surface
   //   the mint-found-funds banner, then click Mint.
   const foundFunds = cubes.locator('[data-testid="mint-found-funds"]');

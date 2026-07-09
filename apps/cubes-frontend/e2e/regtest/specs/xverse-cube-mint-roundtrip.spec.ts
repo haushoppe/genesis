@@ -400,6 +400,25 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   }
 
+  // ─── Step 5d: probe the ELECTRS query surface both ways so the
+  //   next failure tells us which side lies. `waitForUtxoAt` above
+  //   proved electrs (direct) sees the funded UTXO before the reload.
+  //   Post-reload the orchestrator reports noUtxos=true. That can
+  //   only happen if the SAME URL through the browser's fetch (via
+  //   the dev-server proxy → electrs) returns []. Prove or disprove
+  //   before waiting on the banner.
+  const currentAddr = (await paymentAddrLocator.textContent())?.trim() ?? '';
+  const proxyProbe = await cubes.evaluate(async (addr) => {
+    try {
+      const res = await fetch(`/api/address/${addr}/utxo`, { cache: 'no-store' });
+      const bodyText = await res.text();
+      return { ok: res.ok, status: res.status, contentType: res.headers.get('content-type'), body: bodyText.slice(0, 500) };
+    } catch (err) {
+      return { ok: false, status: -1, contentType: null, body: String(err) };
+    }
+  }, currentAddr);
+  console.log(`[cube-mint] proxy-probe /api/address/${currentAddr}/utxo -> status=${proxyProbe.status} ctype=${proxyProbe.contentType} body=${proxyProbe.body}`);
+
   // ─── Step 6: wait for orchestrator to move to 'ready' + surface
   //   the mint-found-funds banner, then click Mint.
   const foundFunds = cubes.locator('[data-testid="mint-found-funds"]');

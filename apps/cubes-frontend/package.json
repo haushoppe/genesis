@@ -49,7 +49,7 @@
     "canvas-confetti": "^1.6.0",
     "marked": "^4.2.12",
     "ngrx-store-localstorage": "^20.1.0",
-    "ordpool-sdk": "github:ordpool-space/ordpool-sdk#5ac3a68",
+    "ordpool-sdk": "github:ordpool-space/ordpool-sdk#79a2bd8",
     "process": "^0.11.10",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0",

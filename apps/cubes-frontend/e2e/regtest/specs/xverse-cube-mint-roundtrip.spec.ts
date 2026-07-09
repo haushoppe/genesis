@@ -2,6 +2,7 @@ import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
+import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   waitForElectrsSync,
@@ -331,14 +332,27 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await cubes.locator('#feeRate').fill('5');
   await shot(cubes, '04c-form-filled');
 
-  // ─── Step 5: snapshot the cube HTML the iframe preview will
-  //   inscribe. The preview element renders getCubeHtml(cubeDetails())
-  //   in an iframe with srcdoc; the SAME HTML gets encoded as the
-  //   inscription body when the user clicks Mint.
-  await cubes.waitForTimeout(300);  // debounce for the form.valueChanges → cubeDetails() signal
-  const previewIframe = cubes.locator('app-cube-preview iframe');
-  const expectedCubeHtml = await previewIframe.getAttribute('srcdoc');
-  if (!expectedCubeHtml) throw new Error('Cube preview iframe has no srcdoc');
+  // ─── Step 5: compute the cube HTML the orchestrator will inscribe.
+  // getCubeHtml is a pure function (services/cube-html.ts) — the
+  // preview iframe renders exactly what this returns, and
+  // start.component.ts encodes the same string as the inscription
+  // body. No dependency on iframe/DOM binding timing.
+  const expectedCubeHtml = getCubeHtml({
+    inscriptionIds: {
+      inscriptionId1: CUBE_SIDE_IDS[0],
+      inscriptionId2: CUBE_SIDE_IDS[1],
+      inscriptionId3: CUBE_SIDE_IDS[2],
+      inscriptionId4: CUBE_SIDE_IDS[3],
+      inscriptionId5: CUBE_SIDE_IDS[4],
+      inscriptionId6: CUBE_SIDE_IDS[5],
+    },
+    title: '',
+    rotationSpeedX: '',
+    rotationSpeedY: '',
+    colorPane: '',
+    bgColor1: '',
+    bgColor2: '',
+  });
   expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
 
   // ─── Step 6: click Mint, approve the sign popup, await the

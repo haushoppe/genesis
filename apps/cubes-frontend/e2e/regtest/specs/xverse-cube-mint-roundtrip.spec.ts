@@ -263,10 +263,22 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // Click via the exact "Connect" text (matches the diagnostic log
   // from the previous CI run: buttons rendered were
   // ["Account 1Select", "Cancel", "Connect"]). force: true skips
-  // Playwright's actionability check — Xverse's popup buttons are
-  // clickable but sometimes fail the check under xvfb.
+  // Playwright's actionability check, but even that has intermittent
+  // failures under xvfb — fall back to a programmatic click via
+  // page.evaluate if the regular click times out.
   const connectBtn = connectPopup.getByRole('button', { name: /^Connect$/i });
-  await connectBtn.first().click({ timeout: 15_000, force: true });
+  try {
+    await connectBtn.first().click({ timeout: 15_000, force: true });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.log(`[cube-mint] connectBtn.click failed: ${(err as Error).message}; falling back to evaluate`);
+    await connectPopup.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button'))
+        .find((b) => (b.textContent ?? '').trim().toLowerCase() === 'connect');
+      if (!btn) throw new Error('no Connect button in popup DOM');
+      (btn as HTMLElement).click();
+    });
+  }
   await connectPromise;
 
   await expect(cubes.getByText(/connected as/i)).toBeVisible({ timeout: 30_000 });

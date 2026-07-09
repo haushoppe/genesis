@@ -36,19 +36,35 @@
 
   <form [formGroup]="form" (ngSubmit)="mint()" class="mt-4">
     <div class="row">
-      @for (n of [1, 2, 3, 4, 5, 6]; track n) {
-        <div class="col-12 col-md-6 mb-3">
-          <label class="form-label" [for]="'inscriptionId' + n">Inscription {{ n }}</label>
-          <input
-            [id]="'inscriptionId' + n"
-            type="text"
-            class="form-control"
-            [formControlName]="'inscriptionId' + n"
-                       placeholder="txid + i + index, or #12345"
-            autocomplete="off"
-          />
-        </div>
-      }
+      <!-- Six hardcoded inscription-ID inputs. Earlier attempt used
+           @for with [id]="'inscriptionId' + n" but the bound
+           expression resolved to empty in some build modes, making
+           the DOM elements unreachable by #inscriptionId1..6 CSS
+           selectors — see cubes regtest e2e for the discovery. -->
+      <div class="col-12 col-md-6 mb-3">
+        <label class="form-label" for="inscriptionId1">Inscription 1</label>
+        <input id="inscriptionId1" type="text" class="form-control" formControlName="inscriptionId1" placeholder="txid + i + index, or #12345" autocomplete="off" />
+      </div>
+      <div class="col-12 col-md-6 mb-3">
+        <label class="form-label" for="inscriptionId2">Inscription 2</label>
+        <input id="inscriptionId2" type="text" class="form-control" formControlName="inscriptionId2" placeholder="txid + i + index, or #12345" autocomplete="off" />
+      </div>
+      <div class="col-12 col-md-6 mb-3">
+        <label class="form-label" for="inscriptionId3">Inscription 3</label>
+        <input id="inscriptionId3" type="text" class="form-control" formControlName="inscriptionId3" placeholder="txid + i + index, or #12345" autocomplete="off" />
+      </div>
+      <div class="col-12 col-md-6 mb-3">
+        <label class="form-label" for="inscriptionId4">Inscription 4</label>
+        <input id="inscriptionId4" type="text" class="form-control" formControlName="inscriptionId4" placeholder="txid + i + index, or #12345" autocomplete="off" />
+      </div>
+      <div class="col-12 col-md-6 mb-3">
+        <label class="form-label" for="inscriptionId5">Inscription 5</label>
+        <input id="inscriptionId5" type="text" class="form-control" formControlName="inscriptionId5" placeholder="txid + i + index, or #12345" autocomplete="off" />
+      </div>
+      <div class="col-12 col-md-6 mb-3">
+        <label class="form-label" for="inscriptionId6">Inscription 6</label>
+        <input id="inscriptionId6" type="text" class="form-control" formControlName="inscriptionId6" placeholder="txid + i + index, or #12345" autocomplete="off" />
+      </div>
 
       <div class="col-12 col-md-8 mb-3">
         <label class="form-label" for="title">Title (optional)</label>

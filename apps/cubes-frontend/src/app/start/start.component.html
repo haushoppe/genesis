@@ -186,7 +186,7 @@
 }
 
 
-@let past = pastFacade.pastMints();
+@let past = pastFacade.pastMints() ?? [];
 @if (past.length) {
   <h2 class="mt-5">Your past mints</h2>
   <ul class="list-unstyled">

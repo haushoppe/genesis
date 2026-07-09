@@ -355,10 +355,34 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   });
   expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
 
+  // Wait for the Mint button to actually enable — it goes from
+  // disabled to enabled when the orchestrator finishes fetching
+  // UTXOs, computing simulations, and auto-picking. Under xvfb
+  // that pipeline can take 15-30s. Diagnostic dump if it doesn't.
+  await shot(cubes, '05-pre-mint-wait');
+  const mintReady = await cubes.waitForFunction(() => {
+    const btn = document.querySelector('button[type="submit"]');
+    if (!btn) return null;
+    return !btn.hasAttribute('disabled') ? { enabled: true } : null;
+  }, undefined, { timeout: 60_000, polling: 500 }).catch(() => null);
+  if (!mintReady) {
+    const preMintState = await cubes.evaluate(() => {
+      const btn = document.querySelector('button[type="submit"]');
+      return {
+        submitBtnFound: btn !== null,
+        submitBtnDisabled: btn?.hasAttribute('disabled') ?? null,
+        submitBtnText: (btn?.textContent ?? '').trim().slice(0, 60),
+        alerts: Array.from(document.querySelectorAll('.alert')).map((a) => (a.textContent ?? '').trim().slice(0, 200)),
+      };
+    });
+    // eslint-disable-next-line no-console
+    console.log(`[cube-mint] mint never enabled. Page state: ${JSON.stringify(preMintState)}`);
+  }
+
   // ─── Step 6: click Mint, approve the sign popup, await the
   //   on-page success alert with commit + reveal txids.
   const knownPagesBeforeMint = new Set(context.pages());
-  await cubes.getByRole('button', { name: /^Mint my cube!$/i }).click();
+  await cubes.getByRole('button', { name: /^Mint my cube!$/i }).click({ force: true });
 
   const signPopup = await waitForApprovalPopup({
     context,

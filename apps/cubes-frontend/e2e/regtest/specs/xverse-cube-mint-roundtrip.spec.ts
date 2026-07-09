@@ -356,10 +356,36 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   });
   expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
 
+  // ─── Step 5b: wallet must reconnect after reload before any
+  //   simulation runs. WalletService reads LAST_CONNECTED_WALLET and
+  //   auto-reconnects on boot; if the auto-reconnect stalls (extension
+  //   race, permission popup not clicked, etc.), simulations$ never
+  //   fires and mint-found-funds stays hidden until we time out.
+  //   Failing here surfaces the root cause instead of hiding behind
+  //   the mint-found-funds timeout.
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+
   // ─── Step 6: wait for orchestrator to move to 'ready' + surface
   //   the mint-found-funds banner, then click Mint.
   const foundFunds = cubes.locator('[data-testid="mint-found-funds"]');
-  await expect(foundFunds).toBeVisible({ timeout: 90_000 });
+  try {
+    await expect(foundFunds).toBeVisible({ timeout: 90_000 });
+  } catch (e) {
+    // Dump orchestrator state so we know WHICH step of the chain
+    // stalled: no-wallet → wallet$ still empty; loading-utxos → utxos$
+    // hasn't resolved; ready + viable.length===0 → funds not yet
+    // credited on electrs; ready + selected null → auto-pick didn't
+    // fire (content missing).
+    const state = (await cubes.locator('[data-testid="mint-state"]').textContent().catch(() => '?'))?.trim();
+    const noUtxos = await cubes.locator('[data-testid="mint-no-utxos"]').isVisible().catch(() => false);
+    const loading = await cubes.locator('[data-testid="mint-loading-utxos"]').isVisible().catch(() => false);
+    const insufficient = await cubes.locator('[data-testid="mint-insufficient-funds"]').isVisible().catch(() => false);
+    const connected = await cubes.locator('[data-testid="wallet-connected"]').isVisible().catch(() => false);
+    console.error(
+      `[cube-mint] mint-found-funds timeout — state="${state}" connected=${connected} noUtxos=${noUtxos} loading=${loading} insufficient=${insufficient}`,
+    );
+    throw e;
+  }
   await shot(cubes, '05-found-funds');
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');

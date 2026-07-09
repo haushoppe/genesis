@@ -371,8 +371,16 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       return {
         submitBtnFound: btn !== null,
         submitBtnDisabled: btn?.hasAttribute('disabled') ?? null,
-        submitBtnText: (btn?.textContent ?? '').trim().slice(0, 60),
+        allButtons: Array.from(document.querySelectorAll('button')).map((b) => ({
+          type: b.getAttribute('type'),
+          text: (b.textContent ?? '').trim().slice(0, 40),
+          disabled: b.hasAttribute('disabled'),
+        })),
+        connectedText: /connected as/i.test(document.body.innerText || ''),
+        pleaseConnectText: /please connect your wallet/i.test(document.body.innerText || ''),
+        walletCached: localStorage.getItem('LAST_CONNECTED_WALLET') !== null,
         alerts: Array.from(document.querySelectorAll('.alert')).map((a) => (a.textContent ?? '').trim().slice(0, 200)),
+        bodyTextExcerpt: (document.body.innerText || '').trim().slice(0, 400),
       };
     });
     // eslint-disable-next-line no-console

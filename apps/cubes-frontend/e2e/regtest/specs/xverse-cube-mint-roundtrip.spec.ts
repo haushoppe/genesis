@@ -299,6 +299,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   const preFillState = await cubes.evaluate(() => ({
     walletCached: localStorage.getItem('LAST_CONNECTED_WALLET') !== null,
     inputCount: document.querySelectorAll('input').length,
+    inputIds: Array.from(document.querySelectorAll('input')).map((i) => ({ id: i.id, name: (i as HTMLInputElement).name, formControlName: i.getAttribute('formcontrolname') })),
     hasInscriptionInput1: document.querySelector('#inscriptionId1') !== null,
     hasConnectedText: /connected as/i.test(document.body.innerText || ''),
     hasStillNeedConnect: /please connect your wallet/i.test(document.body.innerText || ''),

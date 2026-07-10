@@ -139,8 +139,14 @@ export class StartComponent implements OnInit {
       // still viable. Bucket priority: clean → unscanned → failed.
       // Never auto-pick 'assets' — that requires an explicit
       // "Use anyway" click.
+      //
+      // When rows is empty (mid-flight during wallet reconnects / reloads),
+      // KEEP the previous selection instead of nulling it. Otherwise the
+      // signal cycles null <-> utxo and the mint-found-funds template
+      // races: guard evaluates true when selected=utxo, interpolation
+      // then reads selected=null and `!.value` throws, Angular renders
+      // empty content in a persistent `<div>`. See CI 29069716152.
       if (!rows.length) {
-        this.orchestrator.setSelectedUtxo(null);
         return;
       }
       const current = this.orchestrator.selectedUtxo();

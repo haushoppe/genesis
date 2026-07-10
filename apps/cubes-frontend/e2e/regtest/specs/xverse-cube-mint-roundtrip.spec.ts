@@ -267,19 +267,31 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // Playwright's actionability check, but even that has intermittent
   // failures under xvfb — fall back to a programmatic click via
   // page.evaluate if the regular click times out.
-  const connectBtn = connectPopup.getByRole('button', { name: /^Connect$/i });
-  try {
-    await connectBtn.first().click({ timeout: 15_000, force: true });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.log(`[cube-mint] connectBtn.click failed: ${(err as Error).message}; falling back to evaluate`);
-    await connectPopup.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll('button'))
-        .find((b) => (b.textContent ?? '').trim().toLowerCase() === 'connect');
-      if (!btn) throw new Error('no Connect button in popup DOM');
-      (btn as HTMLElement).click();
-    });
+  // Skip Playwright's .click() actionability check entirely — under
+  // xvfb the extension popup's DOM state confuses Playwright's
+  // waitForElementState even with force:true. Poll+fire a plain JS
+  // click via page.evaluate in a small loop; retry up to 30s if the
+  // popup hasn't hydrated the Connect button yet.
+  const clickStart = Date.now();
+  let clicked = false;
+  while (!clicked && Date.now() - clickStart < 30_000) {
+    try {
+      clicked = await connectPopup.evaluate(() => {
+        const btn = Array.from(document.querySelectorAll('button'))
+          .find((b) => (b.textContent ?? '').trim().toLowerCase() === 'connect');
+        if (!btn) return false;
+        (btn as HTMLElement).click();
+        return true;
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.log(`[cube-mint] Connect click evaluate transient error: ${(err as Error).message}`);
+    }
+    if (!clicked) await new Promise((r) => setTimeout(r, 500));
   }
+  if (!clicked) throw new Error('Xverse Connect popup: never rendered a clickable Connect button within 30s');
+  // eslint-disable-next-line no-console
+  console.log('[cube-mint] Connect popup: fired JS click');
   await connectPromise;
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 30_000 });

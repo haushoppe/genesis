@@ -67,9 +67,11 @@
       Fund <code>{{ wallet.paymentAddress }}</code> or pick a lower fee rate.
     </div>
   }
-  @if (orchestrator.state() !== 'success' && paymentOutputs().length && orchestrator.selectedUtxo()) {
-    <div class="text-muted mt-2 mb-2" data-testid="mint-found-funds">Funds found.</div>
-  }
+  <div class="text-muted mt-2 mb-2"
+       data-testid="mint-found-funds"
+       [hidden]="!(orchestrator.state() !== 'success' && paymentOutputs().length && orchestrator.selectedUtxo())">
+    Funds found.
+  </div>
 
   <form [formGroup]="form" (ngSubmit)="mint()" class="mt-4">
     <div class="row">

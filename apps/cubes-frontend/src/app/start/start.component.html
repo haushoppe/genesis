@@ -43,6 +43,11 @@
   <span data-testid="mint-sim-0-insufficient" hidden>{{ simulations()[0]?.insufficient }}</span>
   <span data-testid="mint-sim-0-simulation" hidden>{{ simulations()[0]?.simulation ? 'ok' : 'null' }}</span>
   <span data-testid="mint-payment-outputs" hidden>{{ paymentOutputs().length }}</span>
+  <!-- Duplicated OUTSIDE the state !== 'success' nested @if for diagnosis.
+       If viableInside disagrees with paymentOutputs, the nested @if is not
+       propagating signal updates. -->
+  <span data-testid="mint-viable-inside" hidden>{{ paymentOutputs().length }}</span>
+  <span data-testid="mint-selected" hidden>{{ orchestrator.selectedUtxo() ? 'yes' : 'no' }}</span>
 
   <form [formGroup]="form" (ngSubmit)="mint()" class="mt-4">
     <div class="row">
@@ -116,8 +121,6 @@
     }
 
     @if (orchestrator.state() !== 'success') {
-      <span data-testid="mint-viable-inside" hidden>{{ paymentOutputs().length }}</span>
-      <span data-testid="mint-selected" hidden>{{ orchestrator.selectedUtxo() ? 'yes' : 'no' }}</span>
       @if (paymentOutputs().length === 0 && orchestrator.state() !== 'loading-utxos') {
         <p class="text-muted" data-testid="mint-no-utxos"><small>Set inscription IDs above to see fee estimates. Fund <code>{{ wallet.paymentAddress }}</code> once you have your six IDs picked.</small></p>
       }

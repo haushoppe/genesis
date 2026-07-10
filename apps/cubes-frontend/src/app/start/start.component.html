@@ -187,15 +187,26 @@
         </details>
       }
 
-      <button type="submit" data-testid="mint-btn" class="btn btn-primary" [disabled]="form.invalid || orchestrator.state() === 'minting' || !orchestrator.selectedUtxo()">
-        @if (orchestrator.state() === 'minting') {
-          Minting… please confirm in your wallet
-        } @else {
-          Mint my cube!
-        }
-      </button>
     }
   </form>
+
+  <!-- Mint button lives OUTSIDE <form> for the same reason mint-* banners
+       do — signal reads inside [formGroup] scope don't propagate updates,
+       and the button's [disabled] binding on selectedUtxo() would
+       otherwise render stale (button never enables). Angular allows a
+       submit button outside its form when we drive submission via (click)
+       instead of type=submit / ngSubmit. -->
+  <button type="button"
+          data-testid="mint-btn"
+          class="btn btn-primary"
+          (click)="mint()"
+          [disabled]="form.invalid || orchestrator.state() === 'minting' || !orchestrator.selectedUtxo()">
+    @if (orchestrator.state() === 'minting') {
+      Minting… please confirm in your wallet
+    } @else {
+      Mint my cube!
+    }
+  </button>
 }
 
 

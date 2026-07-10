@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, SlicePipe } from '@angular/common';
@@ -156,6 +156,17 @@ export class StartComponent implements OnInit {
   );
 
   paymentOutputs = toSignal(this.paymentOutputs$, { initialValue: [] as ViableInscribeSimulation[] });
+
+  // Diagnostic: log every transition of the paymentOutputs signal. If the
+  // signal ever transitions to non-empty but the tap in paymentOutputs$
+  // never emitted rows>0, that proves the signal is being written by
+  // something other than the toSignal subscription.
+  private _paymentOutputsWatcher = effect(() => {
+    const len = this.paymentOutputs().length;
+    const simLen = this.simulations().length;
+    // eslint-disable-next-line no-console
+    console.error('[cubes:signal] paymentOutputs.length=' + len + ' simulations.length=' + simLen);
+  });
 
   // Present every installed on-chain ordinals wallet as a connect
   // option. `onChainOrdinals: false` is set upstream on wallets

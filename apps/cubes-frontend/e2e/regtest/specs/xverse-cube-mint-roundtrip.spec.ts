@@ -448,6 +448,13 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     const viableInside = (await cubes.locator('[data-testid="mint-viable-inside"]').textContent().catch(() => '?'))?.trim();
     const selectedFlag = (await cubes.locator('[data-testid="mint-selected"]').textContent().catch(() => '?'))?.trim();
     console.error(`[cube-mint] sim[0].insufficient=${sim0Insuff} sim[0].simulation=${sim0Simulation} paymentOutputs.length=${paymentOutputs} viableInside=${viableInside} selected=${selectedFlag}`);
+    const foundFundsCount = await cubes.locator('[data-testid="mint-found-funds"]').count().catch(() => -1);
+    const foundFundsIsVisible = await cubes.locator('[data-testid="mint-found-funds"]').isVisible().catch(() => false);
+    const foundFundsHtml = await cubes.evaluate(() => {
+      const el = document.querySelector('[data-testid="mint-found-funds"]');
+      return el ? { outerHTML: el.outerHTML.slice(0, 300), display: getComputedStyle(el).display, visibility: getComputedStyle(el).visibility, rect: (el.getBoundingClientRect() as DOMRect).toJSON() } : null;
+    }).catch(() => null);
+    console.error(`[cube-mint] mint-found-funds count=${foundFundsCount} isVisible=${foundFundsIsVisible} DOM=${JSON.stringify(foundFundsHtml)}`);
     const form1 = await cubes.locator('[data-testid="cube-side-1"]').inputValue().catch(() => '');
     const formFee = await cubes.locator('[data-testid="cube-fee-rate"]').inputValue().catch(() => '');
     console.error(

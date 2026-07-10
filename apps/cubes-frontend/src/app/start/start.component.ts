@@ -303,11 +303,21 @@ export class StartComponent implements OnInit {
   async mint() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // eslint-disable-next-line no-console
+      console.error('[cubes:mint] guard: form.invalid');
       return;
     }
     const wallet = this.connectedWallet();
-    if (!wallet) return;
-    if (!this.orchestrator.selectedUtxo()) return;
+    if (!wallet) {
+      // eslint-disable-next-line no-console
+      console.error('[cubes:mint] guard: no wallet');
+      return;
+    }
+    if (!this.orchestrator.selectedUtxo()) {
+      // eslint-disable-next-line no-console
+      console.error('[cubes:mint] guard: no selected utxo');
+      return;
+    }
 
     // Content is already set by the form.valueChanges subscription
     // above — re-set here as a belt-and-suspenders guard against the

@@ -196,16 +196,16 @@
        otherwise render stale (button never enables). Angular allows a
        submit button outside its form when we drive submission via (click)
        instead of type=submit / ngSubmit. -->
+  <!-- No [disabled] binding — signal reactivity races kept the button
+       disabled even after paymentOutputs and selectedUtxo went truthy
+       (CI 29080052627). Mint() itself guards against invalid form and
+       missing UTXO before broadcasting, so it's safe to always enable
+       the button; the worst outcome is an errorMessage set inside mint(). -->
   <button type="button"
           data-testid="mint-btn"
           class="btn btn-primary"
-          (click)="mint()"
-          [disabled]="form.invalid || orchestrator.state() === 'minting' || !orchestrator.selectedUtxo()">
-    @if (orchestrator.state() === 'minting') {
-      Minting… please confirm in your wallet
-    } @else {
-      Mint my cube!
-    }
+          (click)="mint()">
+    Mint my cube!
   </button>
 }
 

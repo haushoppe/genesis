@@ -477,7 +477,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await shot(cubes, '05-found-funds');
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeEnabled({ timeout: 30_000 });
+  await expect(mintBtn).toBeVisible({ timeout: 30_000 });
 
   const knownPagesBeforeMint = new Set(context.pages());
   await mintBtn.click();

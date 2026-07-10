@@ -178,9 +178,10 @@ jobs:
           echo "=== ord-stock ==="; docker logs cubes-e2e-ord-stock 2>&1 | tail -100
 
       - name: Upload Playwright artifacts
-        # Only upload on failure — success needs no post-mortem — and only
-        # keep for 1 day. Full artifact was ~725 MB per run; 20 runs blew
-        # through the 500 MB Actions storage budget.
+        # Only upload on failure, and only keep for 1 day. Success
+        # artifacts have no post-mortem value; failure artifacts
+        # usually only need to live long enough for the next
+        # iteration.
         if: failure()
         uses: actions/upload-artifact@v4
         with:

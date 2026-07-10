@@ -120,26 +120,26 @@
       </div>
     }
 
-    @if (orchestrator.state() !== 'success') {
-      @if (paymentOutputs().length === 0 && orchestrator.state() !== 'loading-utxos') {
-        <p class="text-muted" data-testid="mint-no-utxos"><small>Set inscription IDs above to see fee estimates. Fund <code>{{ wallet.paymentAddress }}</code> once you have your six IDs picked.</small></p>
-      }
-      @if (orchestrator.state() === 'loading-utxos') {
-        <p class="text-muted" data-testid="mint-loading-utxos"><small>Loading your UTXOs…</small></p>
-      }
-      @if (orchestrator.state() === 'ready' && paymentOutputs().length === 0 && simulations().length > 0 && form.controls.feeRate.value) {
-        <div class="alert alert-warning" data-testid="mint-insufficient-funds">
-          We could not find enough funds in your payment address at
-          <strong>{{ form.controls.feeRate.value }}</strong>&nbsp;sat/vB.
-          Fund <code>{{ wallet.paymentAddress }}</code> or pick a lower fee rate.
-        </div>
-      }
-      @if (paymentOutputs().length && orchestrator.selectedUtxo()) {
-        <div class="text-muted mt-2 mb-2" data-testid="mint-found-funds">
-          <small>Funds found. Ready to mint {{ paymentOutputs().length }} candidate UTXO{{ paymentOutputs().length === 1 ? '' : 's' }}, using {{ orchestrator.selectedUtxo()!.value | number }} sats.</small>
-        </div>
-      }
+    @if (orchestrator.state() !== 'success' && paymentOutputs().length === 0 && orchestrator.state() !== 'loading-utxos') {
+      <p class="text-muted" data-testid="mint-no-utxos"><small>Set inscription IDs above to see fee estimates. Fund <code>{{ wallet.paymentAddress }}</code> once you have your six IDs picked.</small></p>
+    }
+    @if (orchestrator.state() !== 'success' && orchestrator.state() === 'loading-utxos') {
+      <p class="text-muted" data-testid="mint-loading-utxos"><small>Loading your UTXOs…</small></p>
+    }
+    @if (orchestrator.state() === 'ready' && paymentOutputs().length === 0 && simulations().length > 0 && form.controls.feeRate.value) {
+      <div class="alert alert-warning" data-testid="mint-insufficient-funds">
+        We could not find enough funds in your payment address at
+        <strong>{{ form.controls.feeRate.value }}</strong>&nbsp;sat/vB.
+        Fund <code>{{ wallet.paymentAddress }}</code> or pick a lower fee rate.
+      </div>
+    }
+    @if (orchestrator.state() !== 'success' && paymentOutputs().length && orchestrator.selectedUtxo()) {
+      <div class="text-muted mt-2 mb-2" data-testid="mint-found-funds">
+        <small>Funds found. Ready to mint {{ paymentOutputs().length }} candidate UTXO{{ paymentOutputs().length === 1 ? '' : 's' }}, using {{ orchestrator.selectedUtxo()!.value | number }} sats.</small>
+      </div>
+    }
 
+    @if (orchestrator.state() !== 'success') {
       @if (paymentOutputs().length) {
         <details class="mt-3 mb-3">
           <summary>Choose a different funding UTXO (expert mode)</summary>

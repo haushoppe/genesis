@@ -125,6 +125,8 @@ export class StartComponent implements OnInit {
         });
     }),
     tap((rows) => {
+      // eslint-disable-next-line no-console
+      console.log('[cubes:paymentOutputs$] emit rows=' + rows.length + ' buckets=' + rows.map((r) => r.bucket).join(','));
       // Eager-scan small UTXOs; the scanner dedupes by outpoint so
       // repeat emissions cost nothing.
       this.scanner.autoScan(rows.map((r) => ({
@@ -147,6 +149,8 @@ export class StartComponent implements OnInit {
       );
       if (stillThere) return;
       const next = findAutoPickCandidate(rows);
+      // eslint-disable-next-line no-console
+      console.log('[cubes:paymentOutputs$] auto-pick=' + (next ? next.utxo.txid.slice(0, 8) : 'null'));
       this.orchestrator.setSelectedUtxo(next?.utxo ?? null);
     }),
   );

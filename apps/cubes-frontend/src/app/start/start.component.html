@@ -68,9 +68,7 @@
     </div>
   }
   @if (orchestrator.state() !== 'success' && paymentOutputs().length && orchestrator.selectedUtxo()) {
-    <div class="text-muted mt-2 mb-2" data-testid="mint-found-funds">
-      <small>Funds found. Ready to mint {{ paymentOutputs().length }} candidate UTXO{{ paymentOutputs().length === 1 ? '' : 's' }}, using {{ (orchestrator.selectedUtxo()?.value ?? 0) | number }} sats.</small>
-    </div>
+    <div class="text-muted mt-2 mb-2" data-testid="mint-found-funds">Funds found.</div>
   }
 
   <form [formGroup]="form" (ngSubmit)="mint()" class="mt-4">

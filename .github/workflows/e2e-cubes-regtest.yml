@@ -178,14 +178,17 @@ jobs:
           echo "=== ord-stock ==="; docker logs cubes-e2e-ord-stock 2>&1 | tail -100
 
       - name: Upload Playwright artifacts
-        if: always()
+        # Only upload on failure — success needs no post-mortem — and only
+        # keep for 1 day. Full artifact was ~725 MB per run; 20 runs blew
+        # through the 500 MB Actions storage budget.
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.wallet }}-playwright-results
           path: |
             apps/cubes-frontend/test-results-regtest/
             apps/cubes-frontend/playwright-report-regtest/
-          retention-days: 14
+          retention-days: 1
 
       - name: Tear down regtest stack
         if: always()

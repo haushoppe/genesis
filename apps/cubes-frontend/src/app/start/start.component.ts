@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { DecimalPipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
@@ -8,11 +8,8 @@ import {
   AUTO_SCAN_MAX_VALUE_SAT,
   bucketOf,
   findAutoPickCandidate,
-  InscribeContent,
   InscribeMintOrchestrator,
-  InscribeUtxoSimulation,
   KnownOrdinalWalletType,
-  RecommendedFees,
   SimulateInscribeFeesResult,
   TxnOutput,
   UtxoContentScanner,
@@ -20,18 +17,17 @@ import {
   UtxoScanState,
   WalletService,
 } from 'ordpool-sdk';
-import { combineLatest, debounceTime, firstValueFrom, map, tap } from 'rxjs';
+import { debounceTime, firstValueFrom, map } from 'rxjs';
 
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { getCubeHtml } from '../services/cube-html';
-import { MintFacade } from '../store/mint.facade';
 import { CubeDetails } from '../store/mint.actions';
+import { MintFacade } from '../store/mint.facade';
 import { PastFacade } from '../store/past.facade';
 import { environment } from '../../environments/environment';
-import { InscriptionIdValidator } from './mint-form/inscription-id.validator';
 
 /**
  * HAUS HOPPE donation address + amount — the reveal tx's optional
@@ -42,18 +38,68 @@ import { InscriptionIdValidator } from './mint-form/inscription-id.validator';
 const HAUSHOPPE_TIP_ADDRESS = environment.haushoppeTipAddress;
 const HAUSHOPPE_TIP_SATS = environment.haushoppeTipSats;
 
-/**
- * String test — pure digits mean the user typed a blessed
- * inscription number like `#12345` and expects a lookup.
- */
-function containsOnlyNumbers(str: string): boolean {
-  return /^\d+$/.test(str);
-}
+/** txid + `i` + index — the ord canonical inscription-id shape. */
+const INSCRIPTION_ID_PATTERN = /^[a-f0-9]{64}i\d+$/;
 
 /**
- * One expert-panel row: the raw simulation, plus the scanner's view
- * of what (if anything) lives on the UTXO.
+ * The mint form's data model. Six required inscription IDs, five
+ * optional style fields, one fee rate. Signal Forms derives the
+ * whole form structure from this shape.
  */
+interface MintFormData {
+  inscriptionId1: string;
+  inscriptionId2: string;
+  inscriptionId3: string;
+  inscriptionId4: string;
+  inscriptionId5: string;
+  inscriptionId6: string;
+  title: string;
+  rotationSpeedX: string;
+  rotationSpeedY: string;
+  colorPane: string;
+  bgColor1: string;
+  bgColor2: string;
+  feeRate: number;
+}
+
+const INITIAL_MINT_FORM: MintFormData = {
+  inscriptionId1: '',
+  inscriptionId2: '',
+  inscriptionId3: '',
+  inscriptionId4: '',
+  inscriptionId5: '',
+  inscriptionId6: '',
+  title: '',
+  rotationSpeedX: '',
+  rotationSpeedY: '',
+  colorPane: '',
+  bgColor1: '',
+  bgColor2: '',
+  feeRate: 10,
+};
+
+/**
+ * Schema: 6 required inscription IDs with the txid+i+index pattern,
+ * fee rate required with min 1. Optional fields are left free.
+ */
+const mintFormSchema = schema<MintFormData>((path) => {
+  required(path.inscriptionId1);
+  pattern(path.inscriptionId1, INSCRIPTION_ID_PATTERN);
+  required(path.inscriptionId2);
+  pattern(path.inscriptionId2, INSCRIPTION_ID_PATTERN);
+  required(path.inscriptionId3);
+  pattern(path.inscriptionId3, INSCRIPTION_ID_PATTERN);
+  required(path.inscriptionId4);
+  pattern(path.inscriptionId4, INSCRIPTION_ID_PATTERN);
+  required(path.inscriptionId5);
+  pattern(path.inscriptionId5, INSCRIPTION_ID_PATTERN);
+  required(path.inscriptionId6);
+  pattern(path.inscriptionId6, INSCRIPTION_ID_PATTERN);
+  required(path.feeRate);
+  min(path.feeRate, 1);
+});
+
+/** One row of the expert-panel UTXO picker. */
 export interface ViableInscribeSimulation {
   utxo: TxnOutput;
   simulation: SimulateInscribeFeesResult;
@@ -71,202 +117,210 @@ export interface ViableInscribeSimulation {
     CubePreviewComponent,
     NgbPagination,
     RouterLink,
-    ReactiveFormsModule,
+    FormField,
     DecimalPipe,
     SlicePipe,
   ],
   host: {
     '(window:keydown)': 'onKeydown($event)',
   },
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StartComponent implements OnInit {
-  mintFacade = inject(MintFacade);
-  pastFacade = inject(PastFacade);
-  walletService = inject(WalletService);
-  orchestrator = inject(InscribeMintOrchestrator);
-  scanner = inject(UtxoContentScanner);
-  cd = inject(ChangeDetectorRef);
-  cubesData = inject(CubesDataService);
+export class StartComponent {
+  protected readonly mintFacade = inject(MintFacade);
+  protected readonly pastFacade = inject(PastFacade);
+  protected readonly walletService = inject(WalletService);
+  protected readonly orchestrator = inject(InscribeMintOrchestrator);
+  private readonly scanner = inject(UtxoContentScanner);
+  private readonly cubesData = inject(CubesDataService);
 
-  readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
+  protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
 
-  cursor = toSignal(this.cubesData.getCursor());
-  connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
-  wallets = toSignal(this.walletService.wallets$, {
+  // ---------- Source signals ----------
+
+  protected readonly cursor = toSignal(this.cubesData.getCursor());
+  protected readonly connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
+  protected readonly wallets = toSignal(this.walletService.wallets$, {
     initialValue: { installedWallets: [], notInstalledWallets: [] },
   });
-  simulations = toSignal(this.orchestrator.simulations$, { initialValue: [] as InscribeUtxoSimulation[] });
-  recommendedFees = toSignal<RecommendedFees | null>(this.orchestrator.recommendedFees$, { initialValue: null });
+  protected readonly simulations = toSignal(this.orchestrator.simulations$, { initialValue: [] });
+  protected readonly scanStates = toSignal(this.scanner.states$, {
+    initialValue: new Map<string, UtxoScanState>() as ReadonlyMap<string, UtxoScanState>,
+  });
+  protected readonly recommendedFees = toSignal(this.orchestrator.recommendedFees$, { initialValue: null });
 
-  /**
-   * Combines the orchestrator's raw simulation rows with the scanner's
-   * asset-scan state, mirroring ordpool cat21-mint's `paymentOutputs$`.
-   * Filters to viable rows, sorts biggest-first, caps at 10, and
-   * enriches each with a bucket (clean / assets / unscanned / …).
-   * Side effect on tap: eager-scan small UTXOs and auto-pick the
-   * safest row when the user hasn't overridden.
-   */
-  paymentOutputs$ = combineLatest([
-    this.orchestrator.simulations$,
-    this.scanner.states$,
-  ]).pipe(
-    map(([rows, scanMap]): ViableInscribeSimulation[] => {
-      return rows
-        .filter((r): r is { utxo: TxnOutput; simulation: SimulateInscribeFeesResult; insufficient: false } =>
-          !r.insufficient && r.simulation !== null,
-        )
-        .sort((a, b) => b.utxo.value - a.utxo.value)
-        .slice(0, 10)
-        .map((r): ViableInscribeSimulation => {
-          const outpoint = `${r.utxo.txid}:${r.utxo.vout}`;
-          const scan = scanMap.get(outpoint) ?? { kind: 'not-scanned' as const };
-          return { utxo: r.utxo, simulation: r.simulation, scan, bucket: bucketOf(scan) };
-        });
-    }),
-    tap((rows) => {
-      // eslint-disable-next-line no-console
-      console.error('[cubes:paymentOutputs$] emit rows=' + rows.length + ' buckets=' + rows.map((r) => r.bucket).join(','));
-      // Eager-scan small UTXOs; the scanner dedupes by outpoint so
-      // repeat emissions cost nothing.
-      this.scanner.autoScan(rows.map((r) => ({
-        txid: r.utxo.txid,
-        vout: r.utxo.vout,
-        value: r.utxo.value,
-      })));
+  // ---------- Form ----------
 
-      // Auto-pick the safest row unless the user's current pick is
-      // still viable. Bucket priority: clean → unscanned → failed.
-      // Never auto-pick 'assets' — that requires an explicit
-      // "Use anyway" click.
-      //
-      // When rows is empty (mid-flight during wallet reconnects / reloads),
-      // KEEP the previous selection instead of nulling it. Otherwise the
-      // signal cycles null <-> utxo and the mint-found-funds template
-      // races: guard evaluates true when selected=utxo, interpolation
-      // then reads selected=null and `!.value` throws, Angular renders
-      // empty content in a persistent `<div>`. See CI 29069716152.
-      if (!rows.length) {
-        return;
-      }
-      const current = this.orchestrator.selectedUtxo();
-      const stillThere = current && rows.find((r) =>
-        r.utxo.txid === current.txid && r.utxo.vout === current.vout,
-      );
-      if (stillThere) return;
-      const next = findAutoPickCandidate(rows);
-      // eslint-disable-next-line no-console
-      console.error('[cubes:paymentOutputs$] auto-pick=' + (next ? next.utxo.txid.slice(0, 8) : 'null'));
-      this.orchestrator.setSelectedUtxo(next?.utxo ?? null);
-    }),
-  );
+  protected readonly mintFormData = signal<MintFormData>(INITIAL_MINT_FORM);
+  protected readonly mintForm = form(this.mintFormData, mintFormSchema);
 
-  paymentOutputs = toSignal(this.paymentOutputs$, { initialValue: [] as ViableInscribeSimulation[] });
-
-  // Diagnostic: log every transition of the paymentOutputs signal. If the
-  // signal ever transitions to non-empty but the tap in paymentOutputs$
-  // never emitted rows>0, that proves the signal is being written by
-  // something other than the toSignal subscription.
-  private _paymentOutputsWatcher = effect(() => {
-    const len = this.paymentOutputs().length;
-    const simLen = this.simulations().length;
-    // eslint-disable-next-line no-console
-    console.error('[cubes:signal] paymentOutputs.length=' + len + ' simulations.length=' + simLen);
+  /** Live cube preview data — derived from the form data signal. */
+  protected readonly cubeDetails = computed<CubeDetails>(() => {
+    const v = this.mintFormData();
+    return {
+      inscriptionIds: {
+        inscriptionId1: v.inscriptionId1,
+        inscriptionId2: v.inscriptionId2,
+        inscriptionId3: v.inscriptionId3,
+        inscriptionId4: v.inscriptionId4,
+        inscriptionId5: v.inscriptionId5,
+        inscriptionId6: v.inscriptionId6,
+      },
+      title: v.title,
+      rotationSpeedX: v.rotationSpeedX,
+      rotationSpeedY: v.rotationSpeedY,
+      colorPane: v.colorPane,
+      bgColor1: v.bgColor1,
+      bgColor2: v.bgColor2,
+    };
   });
 
-  // Present every installed on-chain ordinals wallet as a connect
-  // option. `onChainOrdinals: false` is set upstream on wallets
-  // that detect but can't hold ordinal artifacts (Lightning-only
-  // Alby with no BTC backend, etc.); those get filtered out here
-  // so the picker only shows options that can actually complete
-  // a cube mint.
-  installedOrdinalsAware = computed(() =>
+  // ---------- Derived state ----------
+
+  /**
+   * Every installed on-chain-ordinals-aware wallet — powers the connect
+   * picker. `onChainOrdinals: false` is set upstream on wallets that
+   * detect but can't hold ordinal artifacts (Lightning-only Alby with no
+   * BTC backend, etc); those get filtered out here so the picker only
+   * shows options that can actually complete a cube mint.
+   */
+  protected readonly installedOrdinalsAware = computed(() =>
     this.wallets().installedWallets.filter((w) => w.onChainOrdinals !== false),
   );
 
-  expertMode = signal(false);
-
-  form = new FormGroup({
-    inscriptionId1: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
-    inscriptionId2: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
-    inscriptionId3: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
-    inscriptionId4: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
-    inscriptionId5: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
-    inscriptionId6: new FormControl('', { nonNullable: true, validators: [Validators.required, InscriptionIdValidator()] }),
-    title: new FormControl('', { nonNullable: true }),
-    rotationSpeedX: new FormControl('', { nonNullable: true }),
-    rotationSpeedY: new FormControl('', { nonNullable: true }),
-    colorPane: new FormControl('', { nonNullable: true }),
-    bgColor1: new FormControl('', { nonNullable: true }),
-    bgColor2: new FormControl('', { nonNullable: true }),
-    feeRate: new FormControl<number | null>(10, { validators: [Validators.required, Validators.min(1)] }),
+  /**
+   * Combines the orchestrator's raw simulation rows with the scanner's
+   * asset-scan state. Filters to viable rows, sorts biggest-first, caps
+   * at 10, and annotates each with a bucket (clean / assets / unscanned
+   * / …). Same shape cat21.space's mint page uses — pure computed, no
+   * RxJS side effects.
+   */
+  protected readonly viableRows = computed<ViableInscribeSimulation[]>(() => {
+    const rows = this.simulations();
+    const scanMap = this.scanStates();
+    return rows
+      .filter((r): r is { utxo: TxnOutput; simulation: SimulateInscribeFeesResult; insufficient: false } =>
+        !r.insufficient && r.simulation !== null,
+      )
+      .sort((a, b) => b.utxo.value - a.utxo.value)
+      .slice(0, 10)
+      .map((r): ViableInscribeSimulation => {
+        const outpoint = `${r.utxo.txid}:${r.utxo.vout}`;
+        const scan = scanMap.get(outpoint) ?? { kind: 'not-scanned' as const };
+        return { utxo: r.utxo, simulation: r.simulation, scan, bucket: bucketOf(scan) };
+      });
   });
 
-  c = this.form.controls;
+  /**
+   * The full ViableInscribeSimulation row corresponding to the currently
+   * selected UTXO. Lets the template read simulation.commitFeeSats etc.
+   * without another lookup in each cell.
+   */
+  protected readonly selectedRow = computed<ViableInscribeSimulation | null>(() => {
+    const sel = this.orchestrator.selectedUtxo();
+    if (!sel) return null;
+    return this.viableRows().find(
+      (r) => r.utxo.txid === sel.txid && r.utxo.vout === sel.vout,
+    ) ?? null;
+  });
 
-  ngOnInit() {
-    // Reset the scanner's cache when the wallet changes — new
-    // wallet, new UTXOs, no reason to hold on to old scan state.
-    let lastWalletAddress: string | null = null;
-    this.walletService.connectedWallet$.subscribe((w) => {
-      const addr = w?.ordinalsAddress ?? null;
-      if (lastWalletAddress !== null && addr !== lastWalletAddress) {
+  /**
+   * Everything the mint button gates on, collapsed into one computed so
+   * the template does exactly one signal read for `[disabled]`. All
+   * checks are pure signal reads — no form.valid subscription races.
+   */
+  protected readonly canMint = computed(() =>
+    this.viableRows().length > 0 &&
+    this.orchestrator.selectedUtxo() !== null &&
+    this.orchestrator.state() === 'ready' &&
+    this.mintForm().valid(),
+  );
+
+  // ---------- Lifecycle ----------
+
+  private lastWalletAddress: string | null = null;
+
+  constructor() {
+    // Reset the scanner's cache when the wallet changes. Initial
+    // null → wallet is a no-op (scanner is already empty).
+    effect(() => {
+      const addr = this.connectedWallet()?.ordinalsAddress ?? null;
+      if (this.lastWalletAddress !== null && addr !== this.lastWalletAddress) {
         this.scanner.reset();
       }
-      lastWalletAddress = addr;
+      this.lastWalletAddress = addr;
     });
 
-    // Each inscription ID field: if the user types `#12345`-style
-    // digits, resolve via ord-proxy in the background and swap the
-    // field to the resolved id. Same shape as the retired mint-form.
-    (['inscriptionId1', 'inscriptionId2', 'inscriptionId3', 'inscriptionId4', 'inscriptionId5', 'inscriptionId6'] as const).forEach((key) => {
-      this.c[key].valueChanges.pipe(debounceTime(1000)).subscribe((value) => {
-        if (!value) return;
-        const trimmed = value.trim();
-        if (!containsOnlyNumbers(trimmed)) return;
-        this.mintFacade.lookupInscriptionId(trimmed).subscribe((inscriptionId) => {
-          if (inscriptionId) {
-            this.c[key].setValue(inscriptionId);
-            this.cd.detectChanges();
-          }
-        });
+    // Eager-scan small viable UTXOs. Scanner dedupes internally so
+    // repeat triggers are free.
+    effect(() => {
+      const rows = this.viableRows();
+      this.scanner.autoScan(rows.map((r) => ({ txid: r.utxo.txid, vout: r.utxo.vout, value: r.utxo.value })));
+    });
+
+    // Auto-pick the safest viable UTXO. Priority lives in the SDK
+    // (findAutoPickCandidate) so ordpool and cat21.space can't drift.
+    // Never nulls a live selection on transient empty emissions —
+    // that guards against reload-induced signal flap.
+    effect(() => {
+      const rows = this.viableRows();
+      if (rows.length === 0) return;
+      const current = untracked(() => this.orchestrator.selectedUtxo());
+      const stillThere = current && rows.find(
+        (r) => r.utxo.txid === current.txid && r.utxo.vout === current.vout,
+      );
+      if (stillThere) return;
+      const pick = findAutoPickCandidate(rows);
+      this.orchestrator.setSelectedUtxo(pick ? pick.utxo : null);
+    });
+
+    // Fee rate → orchestrator. Debounced so a scrub through 1..99
+    // doesn't fan out 99 simulations.
+    toObservable(this.mintFormData)
+      .pipe(map((v) => v.feeRate), debounceTime(150))
+      .subscribe((rate) => {
+        if (rate && rate > 0) this.orchestrator.setFeeRate(rate);
       });
-    });
 
-    // Fee-rate changes flow into the orchestrator; simulations$
-    // depends on it.
-    this.c.feeRate.valueChanges.subscribe((rate) => {
-      if (rate && rate > 0) this.orchestrator.setFeeRate(rate);
-    });
-    if (this.c.feeRate.value) this.orchestrator.setFeeRate(this.c.feeRate.value);
-
-    // Live cube preview + orchestrator content — re-sync whenever
-    // any form field changes so:
-    //  1. iframe preview rerenders,
-    //  2. orchestrator.simulations$ recomputes fees against the
-    //     current body size,
-    //  3. auto-pick fires + Mint button enables.
-    // Without wiring setContent here the button stayed permanently
-    // disabled — simulations$ short-circuited on null content, no
-    // UTXO auto-selected, [disabled]="!selected" pinned true forever.
-    this.form.valueChanges.pipe(debounceTime(150)).subscribe(() => {
-      const details = this.getCubeDetails();
-      this.cubeDetails.set(details);
-      if (this.form.valid) {
-        const html = getCubeHtml(details);
+    // Form value → orchestrator content. Only fires when the form is
+    // valid. Debounced so keystrokes don't fan out.
+    toObservable(this.mintFormData)
+      .pipe(debounceTime(150))
+      .subscribe(() => {
+        if (!this.mintForm().valid()) return;
+        const html = getCubeHtml(this.cubeDetails());
         this.orchestrator.setContent({
           body: new TextEncoder().encode(html),
           contentType: 'text/html;charset=utf-8',
           tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
         });
-      }
-    });
+      });
+
+    // #12345-style inscription-number lookup — resolve to a full
+    // inscription id via ord-proxy on debounce, then patch the field
+    // in place. Same shape as the pre-signal-forms mint form.
+    for (const key of INSCRIPTION_ID_FIELDS) {
+      toObservable(this.mintFormData)
+        .pipe(map((v) => v[key]), debounceTime(1000))
+        .subscribe((value) => {
+          const trimmed = value.trim();
+          if (!trimmed || !/^\d+$/.test(trimmed)) return;
+          this.mintFacade.lookupInscriptionId(trimmed).subscribe((inscriptionId) => {
+            if (!inscriptionId) return;
+            this.mintFormData.update((v) => ({ ...v, [key]: inscriptionId }));
+          });
+        });
+    }
+
+    // Initial fee rate on the orchestrator (matches the form default).
+    this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
   }
+
+  // ---------- Commands ----------
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;
     const i = this.mintFacade.inscriptions();
-    if (!i?.itemsPerPage) return;
+    if (!i.itemsPerPage) return;
     const lastPage = Math.ceil(i.totalInscriptions / i.itemsPerPage);
     if (event.key === 'ArrowLeft' && i.currentPage > 1) {
       this.mintFacade.loadInscriptions(i.itemsPerPage, i.currentPage - 1);
@@ -275,55 +329,24 @@ export class StartComponent implements OnInit {
     }
   }
 
-  cubeDetails = signal<CubeDetails>({
-    inscriptionIds: { inscriptionId1: '', inscriptionId2: '', inscriptionId3: '', inscriptionId4: '', inscriptionId5: '', inscriptionId6: '' },
-    title: '', rotationSpeedX: '', rotationSpeedY: '', colorPane: '', bgColor1: '', bgColor2: '',
-  });
-
-  getCubeDetails(): CubeDetails {
-    const v = this.form.value;
-    return {
-      inscriptionIds: {
-        inscriptionId1: v.inscriptionId1 || '',
-        inscriptionId2: v.inscriptionId2 || '',
-        inscriptionId3: v.inscriptionId3 || '',
-        inscriptionId4: v.inscriptionId4 || '',
-        inscriptionId5: v.inscriptionId5 || '',
-        inscriptionId6: v.inscriptionId6 || '',
+  connectWallet(type: KnownOrdinalWalletType) {
+    // WalletService.connectWallet is a cold observable; the (click)
+    // expression doesn't subscribe on its own, so the connect flow
+    // never runs unless we call .subscribe() here.
+    this.walletService.connectWallet(type).subscribe({
+      error: (err) => {
+        // eslint-disable-next-line no-console
+        console.warn('[cubes] connect failed', type, err);
       },
-      title: v.title || '',
-      rotationSpeedX: v.rotationSpeedX || '',
-      rotationSpeedY: v.rotationSpeedY || '',
-      colorPane: v.colorPane || '',
-      bgColor1: v.bgColor1 || '',
-      bgColor2: v.bgColor2 || '',
-    };
+    });
   }
 
   async mint() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      // eslint-disable-next-line no-console
-      console.error('[cubes:mint] guard: form.invalid');
-      return;
-    }
-    const wallet = this.connectedWallet();
-    if (!wallet) {
-      // eslint-disable-next-line no-console
-      console.error('[cubes:mint] guard: no wallet');
-      return;
-    }
-    if (!this.orchestrator.selectedUtxo()) {
-      // eslint-disable-next-line no-console
-      console.error('[cubes:mint] guard: no selected utxo');
-      return;
-    }
+    if (!this.canMint()) return;
 
-    // Content is already set by the form.valueChanges subscription
-    // above — re-set here as a belt-and-suspenders guard against the
-    // Mint click landing before the last debounced valueChanges fires.
-    const cubeDetails = this.getCubeDetails();
-    const html = getCubeHtml(cubeDetails);
+    // Belt-and-braces: sync content one more time in case the Mint
+    // click landed before the debounced form-value subscription fired.
+    const html = getCubeHtml(this.cubeDetails());
     this.orchestrator.setContent({
       body: new TextEncoder().encode(html),
       contentType: 'text/html;charset=utf-8',
@@ -333,19 +356,18 @@ export class StartComponent implements OnInit {
     try {
       const result = await firstValueFrom(this.orchestrator.mint());
       this.pastFacade.recordPastMint(result.commitTxId, result.revealTxId);
-      this.cd.detectChanges();
     } catch {
-      // Orchestrator has already set errorMessage; template renders it.
-      this.cd.detectChanges();
+      // Orchestrator already set errorMessage; template renders it.
     }
   }
 
-  /**
-   * Triggered by the "Scan" link on unscanned rows in the expert
-   * panel. Adds the outpoint to the scanner's active queue.
-   */
   scanUtxo(utxo: TxnOutput) {
     this.scanner.scan(`${utxo.txid}:${utxo.vout}`).subscribe();
+  }
+
+  setFeePreset(rate: number) {
+    this.mintFormData.update((v) => ({ ...v, feeRate: rate }));
+    this.orchestrator.setFeeRate(rate);
   }
 
   bucketLabel(bucket: UtxoScanBucket): string {
@@ -358,39 +380,21 @@ export class StartComponent implements OnInit {
     }
   }
 
-  setFeePreset(rate: number) {
-    this.form.controls.feeRate.setValue(rate);
-    this.orchestrator.setFeeRate(rate);
-  }
-
-  /**
-   * Wallet-connect click handler. WalletService.connectWallet returns
-   * a cold Observable — the template-level `(click)` expression
-   * doesn't subscribe on its own, so the connect flow never runs
-   * unless we call `.subscribe()` here. This was a real bug that
-   * broke wallet connect end-to-end for every wallet in the picker.
-   */
-  connectWallet(type: KnownOrdinalWalletType) {
-    this.walletService.connectWallet(type).subscribe({
-      error: (err) => {
-        // eslint-disable-next-line no-console
-        console.warn('[cubes] connect failed', type, err);
-      },
-    });
-  }
-
   mintAnother() {
     this.orchestrator.reset();
-    this.form.reset({
-      inscriptionId1: '', inscriptionId2: '', inscriptionId3: '',
-      inscriptionId4: '', inscriptionId5: '', inscriptionId6: '',
-      title: '', rotationSpeedX: '', rotationSpeedY: '',
-      colorPane: '', bgColor1: '', bgColor2: '',
-      feeRate: 10,
-    });
-    if (this.c.feeRate.value) this.orchestrator.setFeeRate(this.c.feeRate.value);
+    this.mintFormData.set(INITIAL_MINT_FORM);
+    this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
   }
 }
+
+const INSCRIPTION_ID_FIELDS = [
+  'inscriptionId1',
+  'inscriptionId2',
+  'inscriptionId3',
+  'inscriptionId4',
+  'inscriptionId5',
+  'inscriptionId6',
+] as const;
 
 function isTextInputTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;

@@ -281,6 +281,17 @@ export class StartComponent {
   private lastWalletAddress: string | null = null;
 
   constructor() {
+    // Diagnostic: track every successResult() + state() change with
+    // a timestamp so we can see when + how it changes vs when the
+    // template supposedly renders. Prior CI logs showed successResult
+    // set correctly at mint() completion but template rendered empty.
+    effect(() => {
+      const state = this.orchestrator.state();
+      const sr = this.orchestrator.successResult();
+      // eslint-disable-next-line no-console
+      console.warn(`[cubes] EFFECT state="${state}" successResult.commitTxId="${sr?.commitTxId ?? 'null'}" @ ${Date.now()}`);
+    });
+
     // Reset the scanner's cache when the wallet changes. Initial
     // null → wallet is a no-op (scanner is already empty).
     effect(() => {

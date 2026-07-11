@@ -6,27 +6,237 @@
 </p>
 
 
-<h2 class="mt-5" id="mint">Mint a cube</h2>
+<h2 class="mt-5" id="mint">Configure your cube</h2>
 
-@if (!connectedWallet()) {
+<!--
+  Configurator is ALWAYS visible so a first-time visitor can play with
+  it before hitting any friction (wallet connect, fees, UTXO picking).
+  Classic checkout pattern: engage first, checkout second.
+-->
+<form (submit)="$event.preventDefault(); startCheckout()">
 
-  <p class="mt-3" data-testid="wallet-picker">
-    Please connect your wallet to mint a cube.
-    @if (installedOrdinalsAware().length) {
-      <span data-testid="wallet-picker-detected">Detected:</span>
-      @for (w of installedOrdinalsAware(); track w.type; let last = $last) {
-        <a href="javascript:void(0)"
-           [attr.data-testid]="'wallet-connect-' + w.type"
-           (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
-      }.
-    } @else {
-      <span data-testid="wallet-picker-empty">No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.</span>
-    }
+  <p class="text-muted small mt-3 mb-3">
+    Paste an inscription id (<code>txid + i + index</code>) or a number like <code>#12345</code> — we'll resolve it.
   </p>
 
-} @else if (orchestrator.state() === 'success' && orchestrator.successResult(); as res) {
+  <div class="row">
+    <div class="col-12 col-md-6 mb-3">
+      <label class="form-label" for="inscriptionId1">Inscription 1</label>
+      <input id="inscriptionId1" data-testid="cube-side-1" type="text" class="form-control" [formField]="mintForm.inscriptionId1" placeholder="txid + i + index, or #12345" autocomplete="off" />
+    </div>
+    <div class="col-12 col-md-6 mb-3">
+      <label class="form-label" for="inscriptionId2">Inscription 2</label>
+      <input id="inscriptionId2" data-testid="cube-side-2" type="text" class="form-control" [formField]="mintForm.inscriptionId2" placeholder="txid + i + index, or #12345" autocomplete="off" />
+    </div>
+    <div class="col-12 col-md-6 mb-3">
+      <label class="form-label" for="inscriptionId3">Inscription 3</label>
+      <input id="inscriptionId3" data-testid="cube-side-3" type="text" class="form-control" [formField]="mintForm.inscriptionId3" placeholder="txid + i + index, or #12345" autocomplete="off" />
+    </div>
+    <div class="col-12 col-md-6 mb-3">
+      <label class="form-label" for="inscriptionId4">Inscription 4</label>
+      <input id="inscriptionId4" data-testid="cube-side-4" type="text" class="form-control" [formField]="mintForm.inscriptionId4" placeholder="txid + i + index, or #12345" autocomplete="off" />
+    </div>
+    <div class="col-12 col-md-6 mb-3">
+      <label class="form-label" for="inscriptionId5">Inscription 5</label>
+      <input id="inscriptionId5" data-testid="cube-side-5" type="text" class="form-control" [formField]="mintForm.inscriptionId5" placeholder="txid + i + index, or #12345" autocomplete="off" />
+    </div>
+    <div class="col-12 col-md-6 mb-3">
+      <label class="form-label" for="inscriptionId6">Inscription 6</label>
+      <input id="inscriptionId6" data-testid="cube-side-6" type="text" class="form-control" [formField]="mintForm.inscriptionId6" placeholder="txid + i + index, or #12345" autocomplete="off" />
+    </div>
 
-  <div class="alert alert-success mt-3" data-testid="mint-success">
+    <div class="col-12 col-md-8 mb-3">
+      <label class="form-label" for="title">Title (optional)</label>
+      <input id="title" data-testid="cube-title" type="text" class="form-control" [formField]="mintForm.title" autocomplete="off" />
+    </div>
+  </div>
+
+  <!-- Live preview keeps the customer engaged. -->
+  <app-cube-preview [cubeDetails]="cubeDetails()" />
+
+  <!--
+    Big call to action. The point of the whole page. If the six ids don't
+    validate yet, we tell the user what's missing but keep the button
+    visible so they know the goal — hiding the target reduces conversion.
+  -->
+  <div class="mt-4 d-flex flex-wrap align-items-center gap-3">
+    <button type="submit"
+            class="btn btn-primary btn-lg"
+            data-testid="mint-cta"
+            [disabled]="!canOpenCheckout() || checkoutOpen()">
+      Mint my cube!
+    </button>
+    @if (!canOpenCheckout()) {
+      <span class="text-muted small">Fill in all six inscription IDs to continue.</span>
+    }
+  </div>
+</form>
+
+
+@if (checkoutOpen()) {
+  <!--
+    Checkout drawer. Progressive disclosure of the annoying steps:
+    connect wallet, wait for UTXOs, pick a fee, review, sign.
+    Everything the user only cares about AFTER committing.
+  -->
+  <section class="mt-4 p-4 border rounded bg-body-tertiary" data-testid="mint-checkout">
+    <div class="d-flex justify-content-between align-items-start">
+      <h3 class="h5 mb-3">Checkout</h3>
+      <button type="button" class="btn-close" aria-label="Cancel" (click)="cancelCheckout()"></button>
+    </div>
+
+    <!-- Step 1 — Connect wallet. -->
+    @if (!connectedWallet()) {
+      <div data-testid="wallet-picker">
+        <p class="fw-bold mb-2">1. Connect your wallet</p>
+        @if (installedOrdinalsAware().length) {
+          <p class="mb-3">
+            <span data-testid="wallet-picker-detected">Detected:</span>
+            @for (w of installedOrdinalsAware(); track w.type; let last = $last) {
+              <a href="javascript:void(0)"
+                 [attr.data-testid]="'wallet-connect-' + w.type"
+                 (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
+            }.
+          </p>
+        } @else {
+          <p class="mb-3" data-testid="wallet-picker-empty">
+            No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.
+          </p>
+        }
+      </div>
+    } @else {
+      <p class="mb-3" data-testid="wallet-connected">
+        <strong>1. Connected</strong> as
+        <span data-testid="mint-ordinals-address">{{ connectedWallet()!.ordinalsAddress }}</span>.
+        Paying from <code data-testid="mint-payment-address">{{ connectedWallet()!.paymentAddress }}</code>.
+        <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
+      </p>
+
+      <!-- Hidden marker so tests can read orchestrator.state() without
+           guessing from side-effects. -->
+      <span data-testid="mint-state" hidden>{{ orchestrator.state() }}</span>
+
+      <!-- Step 2 — Fee rate. -->
+      <p class="fw-bold mb-2 mt-4">2. Pick a fee rate</p>
+      <div class="input-group mb-3">
+        <input id="feeRate" data-testid="cube-fee-rate" type="number" class="form-control" [formField]="mintForm.feeRate" />
+        <span class="input-group-text">sat/vB</span>
+        @if (recommendedFees(); as fees) {
+          <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.economyFee)" title="Economy">Eco {{ fees.economyFee }}</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.hourFee)" title="~1h">Hour {{ fees.hourFee }}</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.halfHourFee)" title="~30min">Half {{ fees.halfHourFee }}</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.fastestFee)" title="Next block">Fast {{ fees.fastestFee }}</button>
+        }
+      </div>
+
+      <!-- Step 3 — Review + confirm. -->
+      <p class="fw-bold mb-2 mt-4">3. Review</p>
+
+      @if (orchestrator.state() === 'loading-utxos') {
+        <p class="text-muted" data-testid="mint-loading-utxos">Loading your UTXOs…</p>
+      }
+
+      @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length === 0) {
+        <p class="text-muted" data-testid="mint-no-utxos">
+          Fund <code>{{ connectedWallet()!.paymentAddress }}</code> to continue.
+        </p>
+      }
+
+      @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length > 0) {
+        <div class="alert alert-warning" data-testid="mint-insufficient-funds">
+          Not enough funds at
+          <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
+          Add funds to <code>{{ connectedWallet()!.paymentAddress }}</code> or lower the fee rate.
+        </div>
+      }
+
+      @if (viableRows().length > 0 && orchestrator.selectedUtxo(); as sel) {
+        <div class="mint-summary p-3 border rounded mb-3 bg-body" data-testid="mint-found-funds">
+          <div class="d-flex justify-content-between">
+            <span class="text-muted small">Source</span>
+            <code class="small">{{ sel.txid.slice(0, 12) }}…:{{ sel.vout }}</code>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted small">Available</span>
+            <span>{{ sel.value | number }} sat</span>
+          </div>
+          @if (selectedRow(); as selRow) {
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Miner fee</span>
+              <span>commit {{ selRow.simulation.commitFeeSats }} + reveal {{ selRow.simulation.revealFeeSats }} = <strong>{{ selRow.simulation.totalFeeSats }}</strong> sat</span>
+            </div>
+          }
+          <p class="mb-0 mt-2 text-muted small">
+            ✓ Best available UTXO auto-picked.
+          </p>
+        </div>
+      }
+
+      @if (viableRows().length > 0) {
+        <details class="mb-3">
+          <summary class="text-muted small">Expert mode — choose a different funding UTXO</summary>
+          <div class="mt-2">
+            @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout) {
+              <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+                <div class="me-3">
+                  <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
+                  — {{ row.utxo.value | number }} sat
+                  · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
+                  <span class="badge ms-2"
+                        [class.bg-success]="row.bucket === 'clean'"
+                        [class.bg-danger]="row.bucket === 'assets'"
+                        [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
+                        [class.bg-warning]="row.bucket === 'failed'">
+                    {{ bucketLabel(row.bucket) }}
+                  </span>
+                  @if (orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout) {
+                    <span class="badge bg-primary ms-2">Selected</span>
+                  }
+                </div>
+                <div class="text-nowrap">
+                  @if (row.bucket === 'unscanned' || row.bucket === 'failed') {
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" (click)="scanUtxo(row.utxo)">
+                      {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
+                    </button>
+                  }
+                  <button type="button" class="btn btn-sm"
+                          [class.btn-outline-primary]="row.bucket !== 'assets'"
+                          [class.btn-outline-danger]="row.bucket === 'assets'"
+                          (click)="orchestrator.setSelectedUtxo(row.utxo)">
+                    {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </details>
+      }
+
+      @if (orchestrator.state() === 'error' && orchestrator.errorMessage()) {
+        <div class="alert alert-danger">❌ {{ orchestrator.errorMessage() }}</div>
+      }
+
+      <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
+        <button type="button"
+                data-testid="mint-btn"
+                class="btn btn-primary"
+                (click)="mint()"
+                [disabled]="!canMint() || orchestrator.state() === 'minting'">
+          @if (orchestrator.state() === 'minting') {
+            Signing… please confirm in your wallet
+          } @else {
+            Confirm & broadcast
+          }
+        </button>
+        <button type="button" class="btn btn-link" (click)="cancelCheckout()">Cancel</button>
+      </div>
+    }
+  </section>
+}
+
+
+@if (orchestrator.state() === 'success' && orchestrator.successResult(); as res) {
+  <div class="alert alert-success mt-4" data-testid="mint-success">
     ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
     <ul class="mb-2 mt-2">
       <li>Commit: <a [href]="'https://ordpool.space/tx/' + res.commitTxId" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ res.commitTxId }}</code></a></li>
@@ -36,177 +246,6 @@
     <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
     <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
   </div>
-
-} @else {
-
-  <p class="mt-3" data-testid="wallet-connected">
-    Connected as <strong data-testid="mint-ordinals-address">{{ connectedWallet()!.ordinalsAddress }}</strong>.
-    Pay from <code data-testid="mint-payment-address">{{ connectedWallet()!.paymentAddress }}</code>.
-    <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
-  </p>
-
-  <!-- Hidden marker so tests can read orchestrator.state() without
-       guessing from side-effects. -->
-  <span data-testid="mint-state" hidden>{{ orchestrator.state() }}</span>
-
-  <form class="mt-4" (submit)="$event.preventDefault(); mint()">
-
-    <h3 class="h6 mt-4 mb-2 text-muted">1. Choose six inscriptions</h3>
-    <p class="text-muted small mb-3">
-      Paste an inscription id (<code>txid + i + index</code>) or a number like <code>#12345</code> — we'll resolve it.
-    </p>
-    <div class="row">
-      <div class="col-12 col-md-6 mb-3">
-        <label class="form-label" for="inscriptionId1">Inscription 1</label>
-        <input id="inscriptionId1" data-testid="cube-side-1" type="text" class="form-control" [formField]="mintForm.inscriptionId1" placeholder="txid + i + index, or #12345" autocomplete="off" />
-      </div>
-      <div class="col-12 col-md-6 mb-3">
-        <label class="form-label" for="inscriptionId2">Inscription 2</label>
-        <input id="inscriptionId2" data-testid="cube-side-2" type="text" class="form-control" [formField]="mintForm.inscriptionId2" placeholder="txid + i + index, or #12345" autocomplete="off" />
-      </div>
-      <div class="col-12 col-md-6 mb-3">
-        <label class="form-label" for="inscriptionId3">Inscription 3</label>
-        <input id="inscriptionId3" data-testid="cube-side-3" type="text" class="form-control" [formField]="mintForm.inscriptionId3" placeholder="txid + i + index, or #12345" autocomplete="off" />
-      </div>
-      <div class="col-12 col-md-6 mb-3">
-        <label class="form-label" for="inscriptionId4">Inscription 4</label>
-        <input id="inscriptionId4" data-testid="cube-side-4" type="text" class="form-control" [formField]="mintForm.inscriptionId4" placeholder="txid + i + index, or #12345" autocomplete="off" />
-      </div>
-      <div class="col-12 col-md-6 mb-3">
-        <label class="form-label" for="inscriptionId5">Inscription 5</label>
-        <input id="inscriptionId5" data-testid="cube-side-5" type="text" class="form-control" [formField]="mintForm.inscriptionId5" placeholder="txid + i + index, or #12345" autocomplete="off" />
-      </div>
-      <div class="col-12 col-md-6 mb-3">
-        <label class="form-label" for="inscriptionId6">Inscription 6</label>
-        <input id="inscriptionId6" data-testid="cube-side-6" type="text" class="form-control" [formField]="mintForm.inscriptionId6" placeholder="txid + i + index, or #12345" autocomplete="off" />
-      </div>
-
-      <div class="col-12 col-md-8 mb-3">
-        <label class="form-label" for="title">Title (optional)</label>
-        <input id="title" data-testid="cube-title" type="text" class="form-control" [formField]="mintForm.title" autocomplete="off" />
-      </div>
-    </div>
-
-    <app-cube-preview [cubeDetails]="cubeDetails()" />
-
-    <h3 class="h6 mt-4 mb-2 text-muted">2. Pick a fee rate</h3>
-    <p class="text-muted small mb-3">
-      Higher fees confirm faster. The presets follow the current mempool.
-    </p>
-    <div class="row">
-      <div class="col-12 col-md-8 mb-3">
-        <div class="input-group">
-          <input id="feeRate" data-testid="cube-fee-rate" type="number" class="form-control" [formField]="mintForm.feeRate" />
-          <span class="input-group-text">sat/vB</span>
-          @if (recommendedFees(); as fees) {
-            <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.economyFee)" title="Economy">Eco {{ fees.economyFee }}</button>
-            <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.hourFee)" title="~1h">Hour {{ fees.hourFee }}</button>
-            <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.halfHourFee)" title="~30min">Half {{ fees.halfHourFee }}</button>
-            <button type="button" class="btn btn-outline-secondary" (click)="setFeePreset(fees.fastestFee)" title="Next block">Fast {{ fees.fastestFee }}</button>
-          }
-        </div>
-      </div>
-    </div>
-
-    <h3 class="h6 mt-4 mb-2 text-muted">3. Confirm & mint</h3>
-
-    @if (orchestrator.state() === 'loading-utxos') {
-      <p class="text-muted" data-testid="mint-loading-utxos"><small>Loading your UTXOs…</small></p>
-    }
-
-    @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length === 0) {
-      <p class="text-muted" data-testid="mint-no-utxos">
-        <small>Fund <code>{{ connectedWallet()!.paymentAddress }}</code> once you have your six IDs picked.</small>
-      </p>
-    }
-
-    @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length > 0) {
-      <div class="alert alert-warning" data-testid="mint-insufficient-funds">
-        We couldn't find enough funds at
-        <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
-        Fund <code>{{ connectedWallet()!.paymentAddress }}</code> or pick a lower fee rate.
-      </div>
-    }
-
-    @if (viableRows().length > 0 && orchestrator.selectedUtxo(); as sel) {
-      <div class="mint-summary p-3 border rounded mb-3" data-testid="mint-found-funds">
-        <div class="d-flex justify-content-between">
-          <span class="text-muted small">Source</span>
-          <code class="small">{{ sel.txid.slice(0, 12) }}…:{{ sel.vout }}</code>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span class="text-muted small">Available</span>
-          <span>{{ sel.value | number }} sat</span>
-        </div>
-        @if (selectedRow(); as selRow) {
-          <div class="d-flex justify-content-between">
-            <span class="text-muted small">Miner fee</span>
-            <span>commit {{ selRow.simulation.commitFeeSats }} + reveal {{ selRow.simulation.revealFeeSats }} = <strong>{{ selRow.simulation.totalFeeSats }}</strong> sat</span>
-          </div>
-        }
-        <p class="mb-0 mt-2 text-muted small">
-          ✓ Best available UTXO auto-picked.
-          Open <em>expert mode</em> below to pick a specific one.
-        </p>
-      </div>
-    }
-
-    @if (viableRows().length > 0) {
-      <details class="mt-2 mb-3">
-        <summary class="text-muted small">Expert mode — choose a different funding UTXO</summary>
-        <div class="mt-2">
-          @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout) {
-            <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
-              <div class="me-3">
-                <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
-                — {{ row.utxo.value | number }} sat
-                · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
-                <span class="badge ms-2"
-                      [class.bg-success]="row.bucket === 'clean'"
-                      [class.bg-danger]="row.bucket === 'assets'"
-                      [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
-                      [class.bg-warning]="row.bucket === 'failed'">
-                  {{ bucketLabel(row.bucket) }}
-                </span>
-                @if (orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout) {
-                  <span class="badge bg-primary ms-2">Selected</span>
-                }
-              </div>
-              <div class="text-nowrap">
-                @if (row.bucket === 'unscanned' || row.bucket === 'failed') {
-                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" (click)="scanUtxo(row.utxo)">
-                    {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
-                  </button>
-                }
-                <button type="button" class="btn btn-sm"
-                        [class.btn-outline-primary]="row.bucket !== 'assets'"
-                        [class.btn-outline-danger]="row.bucket === 'assets'"
-                        (click)="orchestrator.setSelectedUtxo(row.utxo)">
-                  {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-      </details>
-    }
-
-    @if (orchestrator.state() === 'error' && orchestrator.errorMessage()) {
-      <div class="alert alert-danger">❌ {{ orchestrator.errorMessage() }}</div>
-    }
-
-    <button type="submit"
-            data-testid="mint-btn"
-            class="btn btn-primary mt-3"
-            [disabled]="!canMint() || orchestrator.state() === 'minting'">
-      @if (orchestrator.state() === 'minting') {
-        Minting… please confirm in your wallet
-      } @else {
-        Mint my cube!
-      }
-    </button>
-  </form>
-
 }
 
 

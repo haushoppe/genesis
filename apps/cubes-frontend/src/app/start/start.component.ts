@@ -210,6 +210,20 @@ export class StartComponent {
       });
   });
 
+  // ---------- Checkout state ----------
+
+  /**
+   * Classic e-commerce funnel: get the customer engaged with the fun
+   * part (configure a cube, see it spin) before we hit them with any
+   * annoying steps. `checkoutOpen` flips true when the user commits by
+   * clicking the CTA — that's the point where we reveal wallet-connect,
+   * fee picking, and UTXO review.
+   */
+  protected readonly checkoutOpen = signal(false);
+
+  /** Enables the top-level "Mint my cube!" CTA. */
+  protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
+
   /**
    * The full ViableInscribeSimulation row corresponding to the currently
    * selected UTXO. Lets the template read simulation.commitFeeSats etc.
@@ -341,6 +355,15 @@ export class StartComponent {
     });
   }
 
+  startCheckout() {
+    if (!this.canOpenCheckout()) return;
+    this.checkoutOpen.set(true);
+  }
+
+  cancelCheckout() {
+    this.checkoutOpen.set(false);
+  }
+
   async mint() {
     if (!this.canMint()) return;
 
@@ -384,6 +407,7 @@ export class StartComponent {
     this.orchestrator.reset();
     this.mintFormData.set(INITIAL_MINT_FORM);
     this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
+    this.checkoutOpen.set(false);
   }
 }
 

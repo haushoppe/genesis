@@ -414,9 +414,12 @@ export class StartComponent {
 
     try {
       const result = await firstValueFrom(this.orchestrator.mint());
+      // eslint-disable-next-line no-console
+      console.warn('[cubes] mint result:', JSON.stringify(result), 'successResult():', JSON.stringify(this.orchestrator.successResult()));
       this.pastFacade.recordPastMint(result.commitTxId, result.revealTxId);
-    } catch {
-      // Orchestrator already set errorMessage; template renders it.
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[cubes] mint threw:', err);
     }
   }
 

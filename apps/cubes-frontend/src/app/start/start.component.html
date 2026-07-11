@@ -290,12 +290,12 @@
 }
 
 
-@if (orchestrator.state() === 'success') {
+@if (orchestrator.successResult(); as res) {
   <div class="alert alert-success mt-4" data-testid="mint-success">
     ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
     <ul class="mb-2 mt-2">
-      <li>Commit: <a [href]="'https://ordpool.space/tx/' + successCommitTxId()" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ successCommitTxId() }}</code></a></li>
-      <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + successRevealTxId()" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ successRevealTxId() }}</code></a></li>
+      <li>Commit: <a [href]="'https://ordpool.space/tx/' + res.commitTxId" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ res.commitTxId }}</code></a></li>
+      <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ res.revealTxId }}</code></a></li>
     </ul>
     You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
     <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.

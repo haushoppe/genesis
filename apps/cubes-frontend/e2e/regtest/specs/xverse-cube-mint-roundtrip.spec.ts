@@ -555,23 +555,56 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
   }
 
-  const signPopup = await waitForApprovalPopup({
+  // Xverse's regtest flow re-prompts for address confirmation on every
+  // sign request — the FIRST popup after mint click lands on
+  // /btc-select-address-request (a Connect popup), NOT the sign popup.
+  // We have to approve address selection, then wait for the actual
+  // /transaction-signing popup, then click Confirm. Prior CI runs
+  // saw only the address-request popup and timed out waiting for
+  // 'Review transaction' text that never rendered on it.
+  const addressPopup = await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeMint,
-    timeoutMs: 120_000,
-    // Same isApproval shape the SDK's own xverse-inscribe-roundtrip
-    // uses — waitFor POLLS for up to 120s until the popup's body has
-    // hydrated with "Review transaction". Our previous read did a
-    // one-shot innerText() and rejected pages whose Vite SPA hadn't
-    // finished hydrating yet, so the sign popup was missed forever
-    // even though it opened.
+    timeoutMs: 60_000,
     isApproval: async (p) => {
       if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByText(/review transaction/i).first()
-        .waitFor({ state: 'visible', timeout: 120_000 });
+      // Address-select vs. sign popup: only the sign popup ever
+      // renders "Review transaction"; the address one has a Connect
+      // button (same UI shape as first-time connect).
+      await Promise.race([
+        p.getByRole('button', { name: /^connect$/i }).first().waitFor({ state: 'visible', timeout: 60_000 }),
+        p.getByText(/review transaction/i).first().waitFor({ state: 'visible', timeout: 60_000 }),
+      ]);
       return true;
     },
   });
+  await shot(addressPopup, '05a-xverse-first-popup');
+
+  // Decide which popup we got. If it's the sign popup, skip the
+  // address-approve step. Otherwise: click Connect to approve address
+  // selection, then wait for the real sign popup.
+  const isAlreadySignPopup = await addressPopup.getByText(/review transaction/i).first()
+    .waitFor({ state: 'visible', timeout: 500 })
+    .then(() => true)
+    .catch(() => false);
+
+  let signPopup = addressPopup;
+  if (!isAlreadySignPopup) {
+    console.log('[cube-mint] first post-mint popup is address-select; approving to unlock sign popup');
+    const knownPagesBeforeSign = new Set(context.pages());
+    await addressPopup.getByRole('button', { name: /^connect$/i }).first().click({ force: true });
+    signPopup = await waitForApprovalPopup({
+      context,
+      knownPages: knownPagesBeforeSign,
+      timeoutMs: 120_000,
+      isApproval: async (p) => {
+        if (!p.url().startsWith('chrome-extension://')) return false;
+        await p.getByText(/review transaction/i).first()
+          .waitFor({ state: 'visible', timeout: 120_000 });
+        return true;
+      },
+    });
+  }
   await shot(signPopup, '05-xverse-sign-approval');
 
   // Poll for a rendered + enabled Confirm button (Xverse's Vite SPA

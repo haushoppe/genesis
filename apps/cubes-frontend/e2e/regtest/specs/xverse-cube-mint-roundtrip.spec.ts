@@ -476,20 +476,36 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   //   the rest of the mint chain (simulation → PSBT → sign → broadcast
   //   → ord-index) works.
   const foundFunds = cubes.locator('[data-testid="mint-found-funds"]');
-  const autoPickHit = await foundFunds.isVisible({ timeout: 20_000 }).catch(() => false);
+  // toBeVisible actually polls; isVisible returns immediately. Give the
+  // auto-pick effect a real 20s window to fire before falling back.
+  const autoPickHit = await foundFunds
+    .waitFor({ state: 'visible', timeout: 20_000 })
+    .then(() => true)
+    .catch(() => false);
   if (!autoPickHit) {
     const viable = (await cubes.locator('[data-testid="mint-viable-count"]').textContent().catch(() => '?'))?.trim();
+    const selected = (await cubes.locator('[data-testid="mint-selected-txid"]').textContent().catch(() => '?'))?.trim();
     const buckets = (await cubes.locator('[data-testid="mint-buckets"]').textContent().catch(() => '?'))?.trim();
-    console.log(`[cube-mint] auto-pick miss — viableCount=${viable} buckets=${buckets}`);
+    const simCount = (await cubes.locator('[data-testid="mint-sim-count"]').textContent().catch(() => '?'))?.trim();
+    console.log(`[cube-mint] auto-pick miss — sims=${simCount} viableCount=${viable} selected="${selected}" buckets=${buckets}`);
     if (Number(viable) > 0) {
-      // Force expert mode open (a click on the summary flips <details>
-      // open). Then click the first row's Pick button.
-      const expert = cubes.locator('[data-testid="mint-expert-details"] summary');
-      await expert.click({ timeout: 5_000 }).catch(() => undefined);
-      const pick0 = cubes.locator('[data-testid="mint-expert-pick-0"]');
-      await expect(pick0).toBeVisible({ timeout: 10_000 });
-      await pick0.click();
-      console.log('[cube-mint] expert-mode pick-0 clicked');
+      // Force <details> open via DOM property + click Pick via JS —
+      // click({force:true}) has been unreliable under xvfb, and a
+      // closed <details> makes its children display:none which blocks
+      // the click entirely.
+      await cubes.evaluate(() => {
+        const d = document.querySelector('[data-testid="mint-expert-details"]') as HTMLDetailsElement | null;
+        if (d) d.open = true;
+      });
+      const clicked = await cubes.evaluate(() => {
+        const btn = document.querySelector('[data-testid="mint-expert-pick-0"]') as HTMLElement | null;
+        if (!btn) return false;
+        btn.click();
+        return true;
+      });
+      console.log(`[cube-mint] expert-mode pick-0 clicked via evaluate: ${clicked}`);
+      const selectedAfter = (await cubes.locator('[data-testid="mint-selected-txid"]').textContent().catch(() => ''))?.trim();
+      console.log(`[cube-mint] selected-txid after click: "${selectedAfter}"`);
     }
   }
   try {

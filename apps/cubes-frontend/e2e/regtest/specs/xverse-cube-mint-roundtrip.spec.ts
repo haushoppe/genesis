@@ -180,9 +180,13 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // failure inside sats-connect doesn't just look like "popup never
   // opened".
   cubes.on('console', (msg) => {
-    if (msg.type() === 'error') {
+    const t = msg.type();
+    // Also surface console.warn: the BROADCAST-DEBUG interceptor uses
+    // console.warn to log every POST /api/tx round-trip. Filtering on
+    // 'error' only masked that trace entirely on prior CI runs.
+    if (t === 'error' || t === 'warning') {
       // eslint-disable-next-line no-console
-      console.log(`[cubes console.error] ${msg.text()}`);
+      console.log(`[cubes console.${t}] ${msg.text()}`);
     }
   });
   cubes.on('pageerror', (err) => {

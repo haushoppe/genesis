@@ -29,6 +29,43 @@ test.describe('Start page', () => {
   });
 });
 
+test.describe('Minted cubes gallery — never break silently', () => {
+  // Hard regression guard: users MUST always see the previously-minted
+  // cubes and their total count. The site has broken multiple times to
+  // the point where users couldn't see any of the existing cubes at all.
+  // This spec fails loud the moment either the count text goes missing
+  // or the grid stops painting inscription tiles.
+  //
+  // 530 is a floor chosen well below the actual live count so the guard
+  // won't false-flag on transient count regressions — it's the "we lost
+  // the whole gallery" tripwire, not a "we lost one cube" tripwire.
+  const MIN_CUBES = 530;
+
+  test(`start page shows > ${MIN_CUBES} minted cubes AND renders at least one tile`, async ({ page }) => {
+    await page.goto('/');
+
+    const totalLocator = page.getByTestId('minted-cubes-total');
+    await expect(totalLocator).toBeVisible({ timeout: 15_000 });
+
+    // Poll the DOM until the store hydrates a real count (initial state
+    // renders "0"). Keeps the assertion tight without a fixed sleep.
+    await expect.poll(async () => {
+      const text = (await totalLocator.textContent())?.trim() ?? '';
+      return Number.parseInt(text, 10) || 0;
+    }, {
+      message: `expected minted-cubes-total to hydrate above ${MIN_CUBES}`,
+      timeout: 20_000,
+    }).toBeGreaterThan(MIN_CUBES);
+
+    // Not just a number — the grid must actually paint cube tiles.
+    // Anything less means the list rendered blank and the page is
+    // effectively broken for the "browse the gallery" use case.
+    const tiles = page.locator('[data-testid="minted-cubes-grid"] app-inscription-list-item');
+    await expect(tiles.first()).toBeVisible({ timeout: 15_000 });
+    expect(await tiles.count()).toBeGreaterThan(0);
+  });
+});
+
 test.describe('Inscription detail page', () => {
   test('loads a known cube detail page', async ({ page }) => {
     await page.goto(`/inscription/${KNOWN_CUBE_ID}`);

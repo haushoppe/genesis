@@ -23,5 +23,5 @@ export const selectCubeSuggestionFixed = createSelector(
     state: {
       params: { [parm: string]: string | undefined }
     }
-  }) => !!params.collectionSymbol,
+  }) => !!params['collectionSymbol'],
 );

@@ -12,7 +12,7 @@
     <iframe
       width="100%"
       height="300"
-      [src]="getIframeSrc(i?.inscription?.inscriptionId) | safeUrl"
+      [src]="getIframeSrc($safeNavigationMigration(i?.inscription?.inscriptionId)) | safeUrl"
       sandbox="allow-scripts"
     ></iframe>
   </ng-container>
@@ -20,13 +20,13 @@
   <div class="clearfix">
     @if (i?.previousInscriptionId) {
     <a
-      [routerLink]="['/inscription', i?.previousInscriptionId]"
+      [routerLink]="['/inscription', $safeNavigationMigration(i?.previousInscriptionId)]"
       class="fw-bold mt-4 mb-4 float-start"
       >« Previous Cube</a
     >
     } @if (i?.nextInscriptionId) {
     <a
-      [routerLink]="['/inscription', i?.nextInscriptionId]"
+      [routerLink]="['/inscription', $safeNavigationMigration(i?.nextInscriptionId)]"
       class="fw-bold mt-4 mb-4 float-end"
       >» Next Cube</a
     >
@@ -44,7 +44,7 @@
     <span class="d-inline-block" style="width: 160px">Inscription ID:</span>
     <a
       [href]="
-        environment.ordinalsExplorerDetails + i?.inscription?.inscriptionId
+        environment.ordinalsExplorerDetails + $safeNavigationMigration(i?.inscription?.inscriptionId)
       "
       target="_blank"
       >◉ {{ i?.inscription?.inscriptionId }}</a
@@ -68,13 +68,13 @@
   <div class="text-truncate" style="width: 70vw">
     <span class="d-inline-block" style="width: 160px">Buy or Sell:</span>
     <a
-      [href]="environment.satflowMarketplace + i?.inscription?.inscriptionId"
+      [href]="environment.satflowMarketplace + $safeNavigationMigration(i?.inscription?.inscriptionId)"
       target="_blank"
       >on Satflow</a
     >
     &nbsp;|&nbsp;
     <a
-      [href]="environment.ordNetMarketplace + i?.inscription?.inscriptionNumber"
+      [href]="environment.ordNetMarketplace + $safeNavigationMigration(i?.inscription?.inscriptionNumber)"
       target="_blank"
       >on ord.net</a
     >

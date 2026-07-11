@@ -97,7 +97,7 @@ export class StartComponent implements OnInit {
     initialValue: { installedWallets: [], notInstalledWallets: [] },
   });
   simulations = toSignal(this.orchestrator.simulations$, { initialValue: [] as InscribeUtxoSimulation[] });
-  recommendedFees = toSignal(this.orchestrator.recommendedFees$, { initialValue: null as RecommendedFees | null });
+  recommendedFees = toSignal<RecommendedFees | null>(this.orchestrator.recommendedFees$, { initialValue: null });
 
   /**
    * Combines the orchestrator's raw simulation rows with the scanner's

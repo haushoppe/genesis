@@ -17,6 +17,7 @@ import { CustomScrollService } from './custom-scroll.service';
   selector: 'body',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     BannerComponent,
     FooterComponent,
@@ -39,7 +40,7 @@ export class AppComponent {
         }
         return route.data;
       }),
-      map((data) => !!data.hideBanner),
+      map((data) => !!data['hideBanner']),
     ),
     { initialValue: false },
   );

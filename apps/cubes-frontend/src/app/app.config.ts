@@ -1,6 +1,6 @@
-import { provideHttpClient } from '@angular/common/http';
-import { ApplicationConfig, isDevMode } from '@angular/core';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideHttpClient, withXhr } from '@angular/common/http';
+import { ApplicationConfig, isDevMode, provideZonelessChangeDetection } from '@angular/core';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore, routerReducer } from '@ngrx/router-store';
@@ -39,8 +39,9 @@ export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionRedu
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideHttpClient(),
-    provideAnimations(),
+    provideZonelessChangeDetection(),
+    provideHttpClient(withXhr()),
+    provideAnimationsAsync(),
 
     // ordpool-sdk DI tokens. Bridges the SDK's framework-agnostic
     // interfaces to cubes-frontend's concrete environment. WalletService

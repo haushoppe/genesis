@@ -23,22 +23,30 @@ import { waitForApprovalPopup } from '../approval-popup';
  * chain is real, the ord instance is real, the cube HTML that gets
  * inscribed is the exact HTML the on-page iframe preview renders.
  *
- * Flow:
+ * Flow (checkout-drawer UX — cube configurator is always visible; the
+ * wallet-picker, fee-rate, and confirm button live inside a drawer that
+ * only opens after `mint-cta` is clicked):
  *   1. beforeAll: clone the Xverse seed user-data-dir (populated once
  *      per suite by global-setup.ts), launch headed Chromium with the
  *      unpacked Xverse .crx, extract the extension id from the SW URL.
- *   2. Test: unlock Xverse; navigate to cubes-frontend at :4203; click
- *      the Connect Xverse link; approve the connect popup; assert the
- *      "Connected as bcrt1p…" appears in the DOM.
- *   3. Fund the payment address via bitcoin-cli; mine + electrs-sync.
- *   4. Fill six inscription IDs (any valid txid+i+idx shape works;
- *      ord doesn't check they exist) + a fee rate.
- *   5. Snapshot the exact cube HTML the iframe preview will inscribe.
- *   6. Click Mint. Approve the sign popup. Await the on-page success
- *      alert; parse the commit + reveal txids from it.
- *   7. Mine 1 block per tx so both confirm. Wait for ord-stock to
+ *   2. Test: unlock Xverse; navigate to cubes-frontend at :4203; fill
+ *      the six side inputs (needed to enable the mint CTA); click
+ *      the top-level `mint-cta` to open the checkout drawer.
+ *   3. Inside the drawer: click Connect Xverse; approve the connect
+ *      popup; assert "Connected as bcrt1p…" appears; read the payment
+ *      address from the DOM.
+ *   4. Fund the payment address via bitcoin-cli; mine + electrs-sync.
+ *   5. Reload the page (the orchestrator's utxos$ chain runs once per
+ *      wallet-connect, and funding AFTER connect doesn't re-trigger it).
+ *      Re-fill the six inputs, re-open the drawer via `mint-cta`, set
+ *      the fee rate.
+ *   6. Snapshot the exact cube HTML the preview will inscribe.
+ *   7. Click the drawer's confirm `mint-btn`. Approve the sign popup.
+ *      Await the on-page success alert; parse the commit + reveal
+ *      txids from it.
+ *   8. Mine 1 block per tx so both confirm. Wait for ord-stock to
  *      catch up.
- *   8. Fetch `ord/inscription/<revealId>i0`; assert it's indexed.
+ *   9. Fetch `ord/inscription/<revealId>i0`; assert it's indexed.
  *      Fetch `ord/content/<id>`; byte-compare against the snapshot;
  *      round-trip through parseCube — the parsed inscriptionIds
  *      must match what the form was filled with.
@@ -179,12 +187,26 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
+  // The configurator + six side inputs are always visible. Fill them
+  // first — the top-level `mint-cta` is disabled until the form is
+  // valid, and it's what opens the checkout drawer (which is where
+  // the wallet picker lives).
+  for (let i = 0; i < 6; i++) {
+    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
+  }
+  await shot(cubes, '02a-form-filled-preflight');
+
+  const mintCta = cubes.locator('[data-testid="mint-cta"]');
+  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
+  await mintCta.click();
+  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+
   // The Detected: list only renders after wallets$ has polled at
-  // least once (500ms).
+  // least once (500ms) — now inside the drawer.
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-xverse"]');
   await expect(connectLink).toBeVisible({ timeout: 10_000 });
-  await shot(cubes, '02-cubes-loaded');
+  await shot(cubes, '02b-drawer-opened');
 
   // Click "Xverse" — SDK's WalletService.connectWallet fires
   // xverseConnector.connect, which spawns Xverse's approval popup.
@@ -311,17 +333,19 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await waitForElectrsSync(mineBlocks(1));
   await waitForUtxoAt(paymentAddr, Math.round(FUND_AMOUNT_BTC * 1e8));
 
-  // ─── Step 4: fill the form ─────────────────────────────────────
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  // ─── Step 4: set fee rate inside the already-open drawer ──────
+  // Six side ids were filled pre-drawer; only the fee-rate lives
+  // inside the drawer's step-2 panel and needs setting here.
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 10_000 });
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
-  await shot(cubes, '04-form-filled');
+  await shot(cubes, '04-fee-set');
 
   // ─── Step 4b: reload page to re-fire the UTXO fetch ───────────
   // Orchestrator's utxos$ chain runs once per wallet-connect. Funding
   // the wallet AFTER connect doesn't retrigger it; a reload does.
-  // Same pattern cat21.space's mint spec follows.
+  // Same pattern cat21.space's mint spec follows. The reload closes
+  // the drawer (checkoutOpen resets to false) and clears the form —
+  // we re-fill, re-open, and re-set the fee below.
   const knownPagesBeforeReload = new Set(context.pages());
   await cubes.reload({ waitUntil: 'domcontentloaded' });
   const reapprove = await waitForApprovalPopup({
@@ -337,13 +361,19 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     await rBtn.first().click({ force: true, timeout: 15_000 }).catch(() => undefined);
   }
 
-  // Refill the form after reload — reactive form values don't persist.
+  // Refill the six sides — form state doesn't persist across reload.
   await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
+  // Re-open the drawer post-reload, then set the fee-rate inside it.
+  const mintCtaAfterReload = cubes.locator('[data-testid="mint-cta"]');
+  await expect(mintCtaAfterReload).toBeEnabled({ timeout: 10_000 });
+  await mintCtaAfterReload.click();
+  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
-  await shot(cubes, '04b-form-refilled-after-reload');
+  await shot(cubes, '04b-drawer-reopened-after-reload');
 
   // ─── Step 5: compute the cube HTML the orchestrator will inscribe.
   // getCubeHtml is a pure function (services/cube-html.ts) — the
@@ -404,11 +434,16 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       await reapprove2.waitForFunction(() => document.querySelectorAll('button').length > 0, undefined, { timeout: 30_000, polling: 500 });
       await reapprove2.getByRole('button', { name: /^Connect$/i }).first().click({ force: true, timeout: 15_000 }).catch(() => undefined);
     }
-    await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
     await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
     for (let i = 0; i < 6; i++) {
       await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
     }
+    const mintCtaAfter2nd = cubes.locator('[data-testid="mint-cta"]');
+    await expect(mintCtaAfter2nd).toBeEnabled({ timeout: 10_000 });
+    await mintCtaAfter2nd.click();
+    await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+    await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+    await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
     await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   }
 

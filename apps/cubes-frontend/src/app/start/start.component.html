@@ -12,63 +12,102 @@
   Configurator is ALWAYS visible so a first-time visitor can play with
   it before hitting any friction (wallet connect, fees, UTXO picking).
   Classic checkout pattern: engage first, checkout second.
+  Two-column shape from the 2025 design: form on the left, live preview
+  on the right so the cube spins next to the inputs that drive it.
 -->
 <form (submit)="$event.preventDefault(); startCheckout()">
 
-  <p class="text-muted small mt-3 mb-3">
-    Paste an inscription id (<code>txid + i + index</code>) or a number like <code>#12345</code> — we'll resolve it.
-  </p>
-
   <div class="row">
-    <div class="col-12 col-md-6 mb-3">
-      <label class="form-label" for="inscriptionId1">Inscription 1</label>
-      <input id="inscriptionId1" data-testid="cube-side-1" type="text" class="form-control" [formField]="mintForm.inscriptionId1" placeholder="txid + i + index, or #12345" autocomplete="off" />
-    </div>
-    <div class="col-12 col-md-6 mb-3">
-      <label class="form-label" for="inscriptionId2">Inscription 2</label>
-      <input id="inscriptionId2" data-testid="cube-side-2" type="text" class="form-control" [formField]="mintForm.inscriptionId2" placeholder="txid + i + index, or #12345" autocomplete="off" />
-    </div>
-    <div class="col-12 col-md-6 mb-3">
-      <label class="form-label" for="inscriptionId3">Inscription 3</label>
-      <input id="inscriptionId3" data-testid="cube-side-3" type="text" class="form-control" [formField]="mintForm.inscriptionId3" placeholder="txid + i + index, or #12345" autocomplete="off" />
-    </div>
-    <div class="col-12 col-md-6 mb-3">
-      <label class="form-label" for="inscriptionId4">Inscription 4</label>
-      <input id="inscriptionId4" data-testid="cube-side-4" type="text" class="form-control" [formField]="mintForm.inscriptionId4" placeholder="txid + i + index, or #12345" autocomplete="off" />
-    </div>
-    <div class="col-12 col-md-6 mb-3">
-      <label class="form-label" for="inscriptionId5">Inscription 5</label>
-      <input id="inscriptionId5" data-testid="cube-side-5" type="text" class="form-control" [formField]="mintForm.inscriptionId5" placeholder="txid + i + index, or #12345" autocomplete="off" />
-    </div>
-    <div class="col-12 col-md-6 mb-3">
-      <label class="form-label" for="inscriptionId6">Inscription 6</label>
-      <input id="inscriptionId6" data-testid="cube-side-6" type="text" class="form-control" [formField]="mintForm.inscriptionId6" placeholder="txid + i + index, or #12345" autocomplete="off" />
+
+    <div class="col-md-6 col-12">
+      <div class="bg-dark p-3 mt-4 pe-4 rounded">
+
+        <p class="text-muted small mb-3">
+          Paste an inscription id (<code>txid + i + index</code>) or a number like <code>#12345</code>.
+        </p>
+
+        <div class="form-group row mt-2">
+          <label class="col-4 col-form-label" for="inscriptionId1">Side 1:</label>
+          <div class="col-8">
+            <input id="inscriptionId1" data-testid="cube-side-1" type="text" class="form-control" [formField]="mintForm.inscriptionId1" placeholder="1. Inscription Number or ID" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group row mt-2">
+          <label class="col-4 col-form-label" for="inscriptionId2">Side 2:</label>
+          <div class="col-8">
+            <input id="inscriptionId2" data-testid="cube-side-2" type="text" class="form-control" [formField]="mintForm.inscriptionId2" placeholder="2. Inscription Number or ID" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group row mt-2">
+          <label class="col-4 col-form-label" for="inscriptionId3">Side 3:</label>
+          <div class="col-8">
+            <input id="inscriptionId3" data-testid="cube-side-3" type="text" class="form-control" [formField]="mintForm.inscriptionId3" placeholder="3. Inscription Number or ID" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group row mt-2">
+          <label class="col-4 col-form-label" for="inscriptionId4">Side 4:</label>
+          <div class="col-8">
+            <input id="inscriptionId4" data-testid="cube-side-4" type="text" class="form-control" [formField]="mintForm.inscriptionId4" placeholder="4. Inscription Number or ID" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group row mt-2">
+          <label class="col-4 col-form-label" for="inscriptionId5">Side 5:</label>
+          <div class="col-8">
+            <input id="inscriptionId5" data-testid="cube-side-5" type="text" class="form-control" [formField]="mintForm.inscriptionId5" placeholder="5. Inscription Number or ID" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group row mt-2">
+          <label class="col-4 col-form-label" for="inscriptionId6">Side 6:</label>
+          <div class="col-8">
+            <input id="inscriptionId6" data-testid="cube-side-6" type="text" class="form-control" [formField]="mintForm.inscriptionId6" placeholder="6. Inscription Number or ID" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group row mt-2">
+          <label class="col-4 col-form-label" for="title">Title:</label>
+          <div class="col-8">
+            <input id="title" data-testid="cube-title" type="text" class="form-control" [formField]="mintForm.title" placeholder="Optional" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group row mt-4">
+          <div class="col-12 d-flex flex-column flex-md-row justify-content-center align-items-center pt-3 pb-1 gap-3">
+            <button type="button"
+                    class="btn btn-outline-light"
+                    data-testid="craft-another-cube"
+                    (click)="craftAnotherCube()">
+              <i class="bi bi-arrow-clockwise"></i>
+              Craft another cube
+            </button>
+
+            <button type="submit"
+                    class="btn btn-primary"
+                    data-testid="mint-cta"
+                    [disabled]="!canOpenCheckout() || checkoutOpen()">
+              <i class="bi bi-box"></i>
+              Mint my cube!
+            </button>
+          </div>
+          @if (!canOpenCheckout()) {
+            <div class="col-12 text-center text-muted small mt-2">
+              Fill in all six inscription IDs to continue.
+            </div>
+          }
+        </div>
+
+      </div>
     </div>
 
-    <div class="col-12 col-md-8 mb-3">
-      <label class="form-label" for="title">Title (optional)</label>
-      <input id="title" data-testid="cube-title" type="text" class="form-control" [formField]="mintForm.title" autocomplete="off" />
+    <div class="col-md-6 col-12 text-center">
+      <app-cube-preview [cubeDetails]="cubeDetails()" />
+      <app-cube-preview-title [title]="cubeDetails().title" />
     </div>
-  </div>
 
-  <!-- Live preview keeps the customer engaged. -->
-  <app-cube-preview [cubeDetails]="cubeDetails()" />
-
-  <!--
-    Big call to action. The point of the whole page. If the six ids don't
-    validate yet, we tell the user what's missing but keep the button
-    visible so they know the goal — hiding the target reduces conversion.
-  -->
-  <div class="mt-4 d-flex flex-wrap align-items-center gap-3">
-    <button type="submit"
-            class="btn btn-primary btn-lg"
-            data-testid="mint-cta"
-            [disabled]="!canOpenCheckout() || checkoutOpen()">
-      Mint my cube!
-    </button>
-    @if (!canOpenCheckout()) {
-      <span class="text-muted small">Fill in all six inscription IDs to continue.</span>
-    }
   </div>
 </form>
 

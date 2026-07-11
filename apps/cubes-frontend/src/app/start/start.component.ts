@@ -20,6 +20,7 @@ import {
 import { debounceTime, firstValueFrom, map } from 'rxjs';
 
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
+import { CubePreviewTitleComponent } from '../layout/cube-preview/cube-preview-title.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
@@ -115,6 +116,7 @@ export interface ViableInscribeSimulation {
     LoadingIndicatorComponent,
     InscriptionListItemComponent,
     CubePreviewComponent,
+    CubePreviewTitleComponent,
     NgbPagination,
     RouterLink,
     FormField,
@@ -327,6 +329,25 @@ export class StartComponent {
 
     // Initial fee rate on the orchestrator (matches the form default).
     this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
+
+    // When a new suggestion arrives from the store, patch its six ids
+    // into the form. Uses object identity to detect fresh emissions —
+    // NgRx re-emits a new reference on every dispatch of Success.
+    let lastSuggestion: unknown = undefined;
+    effect(() => {
+      const suggestion = this.mintFacade.cubeSuggestion();
+      if (!suggestion || suggestion === lastSuggestion) return;
+      lastSuggestion = suggestion;
+      this.mintFormData.update((v) => ({
+        ...v,
+        inscriptionId1: suggestion.inscriptionId1,
+        inscriptionId2: suggestion.inscriptionId2,
+        inscriptionId3: suggestion.inscriptionId3,
+        inscriptionId4: suggestion.inscriptionId4,
+        inscriptionId5: suggestion.inscriptionId5,
+        inscriptionId6: suggestion.inscriptionId6,
+      }));
+    });
   }
 
   // ---------- Commands ----------
@@ -358,6 +379,10 @@ export class StartComponent {
   startCheckout() {
     if (!this.canOpenCheckout()) return;
     this.checkoutOpen.set(true);
+  }
+
+  craftAnotherCube() {
+    this.mintFacade.loadCubeSuggestion('');
   }
 
   cancelCheckout() {

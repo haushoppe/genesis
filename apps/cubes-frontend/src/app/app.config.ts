@@ -1,4 +1,5 @@
-import { provideHttpClient, withXhr } from '@angular/common/http';
+import { HttpRequest, HttpResponse, HttpEventType, provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
+import { tap } from 'rxjs/operators';
 import { ApplicationConfig, isDevMode, provideZonelessChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
@@ -40,7 +41,42 @@ export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionRedu
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
-    provideHttpClient(withXhr()),
+    provideHttpClient(
+      withXhr(),
+      withInterceptors([
+        // Broadcast diagnostic: log every POST /api/tx round-trip so
+        // we can see exactly what the SDK sends and what electrs
+        // responds. Prior CI runs showed state='success' with empty
+        // commit/reveal txids — this interceptor pinpoints whether
+        // the request body is malformed, the response body is empty,
+        // or something else swallows the txid.
+        (req, next) => {
+          if (req.method === 'POST' && req.url.includes('/api/tx')) {
+            const bodyLen = typeof req.body === 'string' ? req.body.length : JSON.stringify(req.body ?? '').length;
+            const bodyPreview = typeof req.body === 'string' ? req.body.slice(0, 40) : String(req.body).slice(0, 40);
+            // eslint-disable-next-line no-console
+            console.warn(`[BROADCAST-DEBUG] POST ${req.url} bodyLen=${bodyLen} preview="${bodyPreview}..."`);
+            return next(req).pipe(
+              tap({
+                next: (event) => {
+                  if (event.type === HttpEventType.Response) {
+                    const resp = event as HttpResponse<unknown>;
+                    const bodyStr = typeof resp.body === 'string' ? resp.body : JSON.stringify(resp.body);
+                    // eslint-disable-next-line no-console
+                    console.warn(`[BROADCAST-DEBUG] RESP status=${resp.status} bodyLen=${bodyStr?.length ?? 0} body="${bodyStr?.slice(0, 100)}"`);
+                  }
+                },
+                error: (err) => {
+                  // eslint-disable-next-line no-console
+                  console.warn(`[BROADCAST-DEBUG] ERROR status=${err.status} message="${err.message}" body="${err.error?.slice?.(0, 100) ?? err.error}"`);
+                },
+              }),
+            );
+          }
+          return next(req);
+        },
+      ]),
+    ),
     provideAnimationsAsync(),
 
     // ordpool-sdk DI tokens. Bridges the SDK's framework-agnostic

@@ -550,14 +550,35 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     context,
     knownPages: knownPagesBeforeMint,
     timeoutMs: 120_000,
+    // Same isApproval shape the SDK's own xverse-inscribe-roundtrip
+    // uses — waitFor POLLS for up to 120s until the popup's body has
+    // hydrated with "Review transaction". Our previous read did a
+    // one-shot innerText() and rejected pages whose Vite SPA hadn't
+    // finished hydrating yet, so the sign popup was missed forever
+    // even though it opened.
     isApproval: async (p) => {
       if (!p.url().startsWith('chrome-extension://')) return false;
-      const t = (await p.locator('body').innerText().catch(() => '')).toLowerCase();
-      return t.includes('review transaction') || t.includes('confirm');
+      await p.getByText(/review transaction/i).first()
+        .waitFor({ state: 'visible', timeout: 120_000 });
+      return true;
     },
   });
   await shot(signPopup, '05-xverse-sign-approval');
-  await signPopup.getByRole('button', { name: /^confirm$/i }).first().click();
+
+  // Poll for a rendered + enabled Confirm button (Xverse's Vite SPA
+  // renders the button before its click handler wires up, so an early
+  // click gets swallowed under xvfb).
+  await signPopup.waitForFunction(() => {
+    const buttons = Array.from(document.querySelectorAll('button'));
+    return buttons.some((b) => {
+      if (!/^confirm$/i.test(b.textContent?.trim() ?? '')) return false;
+      if (b.hasAttribute('disabled')) return false;
+      const style = getComputedStyle(b);
+      return style.pointerEvents !== 'none' && style.visibility !== 'hidden';
+    });
+  }, undefined, { timeout: 30_000, polling: 250 });
+  await expect(signPopup.getByRole('button', { name: /^confirm$/i }).first()).toBeEnabled({ timeout: 30_000 });
+  await signPopup.getByRole('button', { name: /^confirm$/i }).first().click({ force: true });
 
   await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
   await shot(cubes, '06-cubes-success');

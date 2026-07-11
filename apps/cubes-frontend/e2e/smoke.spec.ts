@@ -12,9 +12,20 @@ test.describe('Start page', () => {
     await expect(page.getByRole('heading', { name: 'Ordinal Cubes', exact: true })).toBeVisible();
   });
 
-  test('has the Mint a cube form section', async ({ page }) => {
+  test('has the Configure your cube section', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Mint a cube' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Configure your cube' })).toBeVisible();
+  });
+
+  test('configurator renders as a two-column layout with form + preview side by side', async ({ page }) => {
+    await page.goto('/');
+    // Six side inputs live in the left column, the preview in the right —
+    // the 2025 shape restored on top of the signal-forms refactor.
+    await expect(page.getByTestId('cube-side-1')).toBeVisible();
+    await expect(page.getByTestId('cube-side-6')).toBeVisible();
+    await expect(page.locator('app-cube-preview')).toBeVisible();
+    await expect(page.getByTestId('craft-another-cube')).toBeVisible();
+    await expect(page.getByTestId('mint-cta')).toBeVisible();
   });
 });
 

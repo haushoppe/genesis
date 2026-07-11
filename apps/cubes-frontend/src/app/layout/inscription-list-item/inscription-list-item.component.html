@@ -1,23 +1,23 @@
-@if (inscription) {
-<a
-  [routerLink]="['/inscription', inscription.inscriptionId]"
-  role="navigation"
-  attr.aria-label="Details for Inscription {{ inscription.inscriptionId }}"
->
-  <div class="iframe-container">
-    <iframe
-      class="responsive-iframe"
-      appToggleIframe
-      [toggleSrc]="
-        environment.ordinalsExplorerIframe +
-        inscription.inscriptionId +
-        '?cache-buster'
-      "
-      sandbox="allow-scripts"
-    ></iframe>
-  </div>
-  <div class="one-line fs-6 lh-sm mt-2 ps-1 pb-4 one-line">
-    {{ inscription.meta.name }}
-  </div>
-</a>
+@if (inscription(); as ins) {
+  <a
+    [routerLink]="['/inscription', ins.inscriptionId]"
+    role="navigation"
+    attr.aria-label="Details for Inscription {{ ins.inscriptionId }}"
+  >
+    <div class="iframe-container">
+      <iframe
+        class="responsive-iframe"
+        appToggleIframe
+        [toggleSrc]="
+          environment.ordinalsExplorerIframe +
+          ins.inscriptionId +
+          '?cache-buster'
+        "
+        sandbox="allow-scripts"
+      ></iframe>
+    </div>
+    <div class="one-line fs-6 lh-sm mt-2 ps-1 pb-4 one-line">
+      {{ ins.meta.name }}
+    </div>
+  </a>
 }

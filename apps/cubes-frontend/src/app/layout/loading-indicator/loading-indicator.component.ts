@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 import { SubmitStatus } from '../../store/submittable/submit-status';
 import {
@@ -11,11 +11,10 @@ import { AlertComponent } from '../alert/alert.component';
   selector: 'app-loading-indicator',
   templateUrl: './loading-indicator.component.html',
   imports: [AlertComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoadingIndicatorComponent {
-  SubmitStatus = SubmitStatus;
+  protected readonly SubmitStatus = SubmitStatus;
 
-  @Input() sendDataText = 'Loading…';
-  @Input() state: SubmittableState | null = getInitialState();
+  readonly sendDataText = input('Loading…');
+  readonly state = input<SubmittableState | null>(getInitialState());
 }

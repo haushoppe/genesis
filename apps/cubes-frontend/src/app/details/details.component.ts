@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { environment } from '../../../src/environments/environment';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
@@ -19,7 +19,7 @@ import { MintFacade } from '../store/mint.facade';
   host: {
     '(window:keydown)': 'onKeydown($event)',
   },
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  
 })
 export class DetailsComponent {
   mintFacade = inject(MintFacade);

@@ -1,4 +1,4 @@
-import { Directive, ElementRef, OnInit, OnDestroy, Input } from '@angular/core';
+import { Directive, ElementRef, OnInit, OnDestroy, inject, input } from '@angular/core';
 
 export const placeholderAsString =
 `<html>
@@ -29,28 +29,29 @@ export const placeholderAsString =
 })
 export class ToggleIframeDirective implements OnInit, OnDestroy {
 
-  @Input() toggleSrc = '';
-  @Input() toggleSrcDoc = '';
+  readonly toggleSrc = input('');
+  readonly toggleSrcDoc = input('');
 
+  private readonly element = inject(ElementRef);
   private intersectionObserver: IntersectionObserver | undefined;
-
-  constructor(private element: ElementRef) { }
 
   ngOnInit() {
     this.intersectionObserver = new IntersectionObserver(entries => {
       entries.forEach(entry => {
 
-        if (this.toggleSrc) {
+        const src = this.toggleSrc();
+        if (src) {
           if (entry.isIntersecting) {
-            this.element.nativeElement.src = this.toggleSrc;
+            this.element.nativeElement.src = src;
           } else {
             this.element.nativeElement.src = '/assets/placeholder.html';
           }
         }
 
-        if (this.toggleSrcDoc) {
+        const srcDoc = this.toggleSrcDoc();
+        if (srcDoc) {
           if (entry.isIntersecting) {
-            this.element.nativeElement.srcdoc = this.toggleSrcDoc;
+            this.element.nativeElement.srcdoc = srcDoc;
           } else {
             this.element.nativeElement.srcdoc = placeholderAsString;
           }

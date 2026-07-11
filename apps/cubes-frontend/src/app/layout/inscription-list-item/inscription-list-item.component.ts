@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { InscriptionExtended } from '../../services/cubes-data/types';
@@ -10,9 +10,8 @@ import { ToggleIframeDirective } from '../toggle-iframe.directive';
   templateUrl: './inscription-list-item.component.html',
   styleUrls: ['./inscription-list-item.component.scss'],
   imports: [RouterLink, ToggleIframeDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InscriptionListItemComponent {
-  @Input() inscription?: InscriptionExtended;
-  environment = environment;
+  readonly inscription = input<InscriptionExtended>();
+  protected readonly environment = environment;
 }

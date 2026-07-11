@@ -1,12 +1,11 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-cube-preview-title',
   templateUrl: './cube-preview-title.component.html',
   styleUrls: ['./cube-preview-title.component.scss'],
   imports: [],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CubePreviewTitleComponent {
-  @Input() title: string = '';
+  readonly title = input<string>('');
 }

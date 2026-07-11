@@ -1,5 +1,5 @@
 import { AsyncPipe, KeyValuePipe, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
 import { ParseMarkdownPipe } from '../parse-markdown.pipe';
@@ -15,7 +15,7 @@ interface Faq {
   templateUrl: './faq.component.html',
   styleUrls: ['./faq.component.scss'],
   imports: [ParseMarkdownPipe, RouterLink, NgClass],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  
 })
 export class FaqComponent {
   activeIndex = 0;

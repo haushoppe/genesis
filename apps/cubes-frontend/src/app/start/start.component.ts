@@ -227,6 +227,17 @@ export class StartComponent {
   protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
 
   /**
+   * Compact diagnostic for the regtest e2e spec — semicolon-joined
+   * `<bucket>:<value>` per viable row so the spec can grep the raw
+   * scanner state when auto-pick misbehaves.
+   */
+  protected readonly bucketsDebug = computed(() =>
+    this.viableRows()
+      .map((r) => `${r.bucket}:${r.utxo.value}`)
+      .join(';'),
+  );
+
+  /**
    * The full ViableInscribeSimulation row corresponding to the currently
    * selected UTXO. Lets the template read simulation.commitFeeSats etc.
    * without another lookup in each cell.

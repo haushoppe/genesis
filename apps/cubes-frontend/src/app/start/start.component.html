@@ -151,9 +151,13 @@
         <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
       </p>
 
-      <!-- Hidden marker so tests can read orchestrator.state() without
+      <!-- Hidden markers so tests can read orchestrator state without
            guessing from side-effects. -->
       <span data-testid="mint-state" hidden>{{ orchestrator.state() }}</span>
+      <span data-testid="mint-sim-count" hidden>{{ simulations().length }}</span>
+      <span data-testid="mint-viable-count" hidden>{{ viableRows().length }}</span>
+      <span data-testid="mint-selected-txid" hidden>{{ orchestrator.selectedUtxo()?.txid ?? '' }}</span>
+      <span data-testid="mint-buckets" hidden>{{ bucketsDebug() }}</span>
 
       <!-- Step 2 — Fee rate. -->
       <p class="fw-bold mb-2 mt-4">2. Pick a fee rate</p>
@@ -212,11 +216,12 @@
       }
 
       @if (viableRows().length > 0) {
-        <details class="mb-3">
+        <details class="mb-3" data-testid="mint-expert-details">
           <summary class="text-muted small">Expert mode — choose a different funding UTXO</summary>
           <div class="mt-2">
-            @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout) {
-              <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+            @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
+              <div class="p-2 border-bottom d-flex justify-content-between align-items-center"
+                   [attr.data-testid]="'mint-expert-row-' + idx">
                 <div class="me-3">
                   <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
                   — {{ row.utxo.value | number }} sat
@@ -239,6 +244,7 @@
                     </button>
                   }
                   <button type="button" class="btn btn-sm"
+                          [attr.data-testid]="'mint-expert-pick-' + idx"
                           [class.btn-outline-primary]="row.bucket !== 'assets'"
                           [class.btn-outline-danger]="row.bucket === 'assets'"
                           (click)="orchestrator.setSelectedUtxo(row.utxo)">

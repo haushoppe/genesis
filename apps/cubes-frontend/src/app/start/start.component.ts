@@ -414,23 +414,9 @@ export class StartComponent {
 
     try {
       const result = await firstValueFrom(this.orchestrator.mint());
-      // Diagnostic: v12 showed both broadcasts return the real txids from
-      // electrs (POST bodyLen=470/1740 → RESP 200 body=<64-char txid>),
-      // yet the template renders empty commit/reveal txids. Log the raw
-      // result object so we can see exactly what shape lands on
-      // successResult.set(result) — if commitTxId/revealTxId are here,
-      // the loss happens between here and the template; if they're
-      // missing, the loss is in the SDK's map function.
-      // eslint-disable-next-line no-console
-      console.warn('[cubes] mint result:', JSON.stringify(result));
       this.pastFacade.recordPastMint(result.commitTxId, result.revealTxId);
-    } catch (err) {
+    } catch {
       // Orchestrator already set errorMessage; template renders it.
-      // Also log so regtest e2e can see the actual failure reason —
-      // silent swallow made every failure look like "sign popup never
-      // appeared" when the real cause was upstream in the SDK.
-      // eslint-disable-next-line no-console
-      console.error('[cubes] mint failed:', err);
     }
   }
 

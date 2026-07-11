@@ -227,6 +227,20 @@ export class StartComponent {
   protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
 
   /**
+   * Computed views into orchestrator.successResult() — computed signals
+   * are tracked in the template and match cat21-indexer's proven
+   * pattern (successTxId() there). Prior `@let` + optional-chain in the
+   * template rendered as empty strings even though the SDK's signal
+   * clearly held the txids at the moment the template evaluated.
+   */
+  protected readonly successCommitTxId = computed(
+    () => this.orchestrator.successResult()?.commitTxId ?? '',
+  );
+  protected readonly successRevealTxId = computed(
+    () => this.orchestrator.successResult()?.revealTxId ?? '',
+  );
+
+  /**
    * Compact diagnostic for the regtest e2e spec — semicolon-joined
    * `<bucket>:<value>` per viable row so the spec can grep the raw
    * scanner state when auto-pick misbehaves.

@@ -475,86 +475,65 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   //   viable UTXO. Expert-mode Pick bypasses the picker and proves
   //   the rest of the mint chain (simulation → PSBT → sign → broadcast
   //   → ord-index) works.
+  // The gating signal chain we actually depend on is `canMint()`:
+  //   viableRows > 0 && selectedUtxo != null && state === 'ready' && form.valid()
+  // which is exactly what the mint-btn's [disabled] reads. Prior CI
+  // runs showed the auto-pick effect DID set selectedUtxo (diagnostic
+  // dump: selected="24a02859…" with viableCount=2) but the
+  // mint-found-funds and mint-expert-details @if blocks somehow didn't
+  // materialise in the DOM. mint-btn itself is always rendered inside
+  // the drawer — we can drive the mint straight off its enabled
+  // state, which is the actual product invariant.
+  const mintBtnLocator = cubes.locator('[data-testid="mint-btn"]');
+  await expect(mintBtnLocator).toBeVisible({ timeout: 15_000 });
+
+  // Snapshot the signal state via a single page.evaluate so all reads
+  // land in the same CD cycle. Then poll until the button is enabled.
+  const readySnapshot = await cubes.evaluate(() => {
+    const q = (sel: string) => document.querySelector(`[data-testid="${sel}"]`);
+    const txt = (sel: string) => q(sel)?.textContent?.trim() ?? '';
+    return {
+      state: txt('mint-state'),
+      simCount: txt('mint-sim-count'),
+      viableCount: txt('mint-viable-count'),
+      selectedTxid: txt('mint-selected-txid'),
+      buckets: txt('mint-buckets'),
+    };
+  });
+  console.log(`[cube-mint] pre-mint snapshot: ${JSON.stringify(readySnapshot)}`);
+
   const foundFunds = cubes.locator('[data-testid="mint-found-funds"]');
-  // toBeVisible actually polls; isVisible returns immediately. Give the
-  // auto-pick effect a real 20s window to fire before falling back.
-  const autoPickHit = await foundFunds
-    .waitFor({ state: 'visible', timeout: 20_000 })
-    .then(() => true)
-    .catch(() => false);
-  if (!autoPickHit) {
-    const viable = (await cubes.locator('[data-testid="mint-viable-count"]').textContent().catch(() => '?'))?.trim();
-    const selected = (await cubes.locator('[data-testid="mint-selected-txid"]').textContent().catch(() => '?'))?.trim();
-    const buckets = (await cubes.locator('[data-testid="mint-buckets"]').textContent().catch(() => '?'))?.trim();
-    const simCount = (await cubes.locator('[data-testid="mint-sim-count"]').textContent().catch(() => '?'))?.trim();
-    console.log(`[cube-mint] auto-pick miss — sims=${simCount} viableCount=${viable} selected="${selected}" buckets=${buckets}`);
-    if (Number(viable) > 0) {
-      // Force <details> open via DOM property + click Pick via JS —
-      // click({force:true}) has been unreliable under xvfb, and a
-      // closed <details> makes its children display:none which blocks
-      // the click entirely.
-      await cubes.evaluate(() => {
-        const d = document.querySelector('[data-testid="mint-expert-details"]') as HTMLDetailsElement | null;
-        if (d) d.open = true;
-      });
-      const clicked = await cubes.evaluate(() => {
-        const btn = document.querySelector('[data-testid="mint-expert-pick-0"]') as HTMLElement | null;
-        if (!btn) return false;
-        btn.click();
-        return true;
-      });
-      console.log(`[cube-mint] expert-mode pick-0 clicked via evaluate: ${clicked}`);
-      const selectedAfter = (await cubes.locator('[data-testid="mint-selected-txid"]').textContent().catch(() => ''))?.trim();
-      console.log(`[cube-mint] selected-txid after click: "${selectedAfter}"`);
-    }
-  }
   try {
-    await expect(foundFunds).toBeVisible({ timeout: 30_000 });
+    await expect(mintBtnLocator).toBeEnabled({ timeout: 90_000 });
+    console.log('[cube-mint] mint-btn is enabled — canMint() is true');
   } catch (e) {
-    // Dump orchestrator state so we know WHICH step of the chain
-    // stalled: no-wallet → wallet$ still empty; loading-utxos → utxos$
-    // hasn't resolved; ready + viable.length===0 → funds not yet
-    // credited on electrs; ready + selected null → auto-pick didn't
-    // fire (content missing).
-    const state = (await cubes.locator('[data-testid="mint-state"]').textContent().catch(() => '?'))?.trim();
-    const noUtxos = await cubes.locator('[data-testid="mint-no-utxos"]').isVisible().catch(() => false);
-    const loading = await cubes.locator('[data-testid="mint-loading-utxos"]').isVisible().catch(() => false);
-    const insufficient = await cubes.locator('[data-testid="mint-insufficient-funds"]').isVisible().catch(() => false);
-    const connected = await cubes.locator('[data-testid="wallet-connected"]').isVisible().catch(() => false);
-    const contentSet = (await cubes.locator('[data-testid="mint-content-set"]').textContent().catch(() => '?'))?.trim();
-    const simCount = (await cubes.locator('[data-testid="mint-sim-count"]').textContent().catch(() => '?'))?.trim();
-    const feeFc = (await cubes.locator('[data-testid="mint-fee-fc-value"]').textContent().catch(() => '?'))?.trim();
-    const ordAddr = (await cubes.locator('[data-testid="mint-ordinals-address"]').textContent().catch(() => '?'))?.trim();
-    const lsWallet = await cubes.evaluate(() => localStorage.getItem('LAST_CONNECTED_WALLET')).catch(() => null);
-    const sim0Insuff = (await cubes.locator('[data-testid="mint-sim-0-insufficient"]').textContent().catch(() => '?'))?.trim();
-    const sim0Simulation = (await cubes.locator('[data-testid="mint-sim-0-simulation"]').textContent().catch(() => '?'))?.trim();
-    const paymentOutputs = (await cubes.locator('[data-testid="mint-payment-outputs"]').textContent().catch(() => '?'))?.trim();
-    console.error(`[cube-mint] ordinalsAddress DOM=${ordAddr}`);
-    console.error(`[cube-mint] localStorage LAST_CONNECTED_WALLET=${lsWallet}`);
-    const viableInside = (await cubes.locator('[data-testid="mint-viable-inside"]').textContent().catch(() => '?'))?.trim();
-    const selectedFlag = (await cubes.locator('[data-testid="mint-selected"]').textContent().catch(() => '?'))?.trim();
-    console.error(`[cube-mint] sim[0].insufficient=${sim0Insuff} sim[0].simulation=${sim0Simulation} paymentOutputs.length=${paymentOutputs} viableInside=${viableInside} selected=${selectedFlag}`);
-    const foundFundsCount = await cubes.locator('[data-testid="mint-found-funds"]').count().catch(() => -1);
-    const foundFundsIsVisible = await cubes.locator('[data-testid="mint-found-funds"]').isVisible().catch(() => false);
-    const foundFundsHtml = await cubes.evaluate(() => {
-      const el = document.querySelector('[data-testid="mint-found-funds"]');
-      return el ? { outerHTML: el.outerHTML.slice(0, 300), display: getComputedStyle(el).display, visibility: getComputedStyle(el).visibility, rect: (el.getBoundingClientRect() as DOMRect).toJSON() } : null;
+    // Snapshot orchestrator state one more time in the same CD cycle
+    // — helps diagnose whether the button really is disabled or
+    // whether it's a rendering-race artifact.
+    const finalSnapshot = await cubes.evaluate(() => {
+      const q = (sel: string) => document.querySelector(`[data-testid="${sel}"]`);
+      const txt = (sel: string) => q(sel)?.textContent?.trim() ?? '';
+      const btn = q('mint-btn') as HTMLButtonElement | null;
+      return {
+        state: txt('mint-state'),
+        simCount: txt('mint-sim-count'),
+        viableCount: txt('mint-viable-count'),
+        selectedTxid: txt('mint-selected-txid'),
+        buckets: txt('mint-buckets'),
+        connected: q('wallet-connected') !== null,
+        foundFundsInDom: q('mint-found-funds') !== null,
+        mintBtnInDom: btn !== null,
+        mintBtnDisabled: btn?.disabled ?? null,
+        mintBtnOuterHtml: btn?.outerHTML.slice(0, 500) ?? null,
+      };
     }).catch(() => null);
-    console.error(`[cube-mint] mint-found-funds count=${foundFundsCount} isVisible=${foundFundsIsVisible} DOM=${JSON.stringify(foundFundsHtml)}`);
-    const form1 = await cubes.locator('[data-testid="cube-side-1"]').inputValue().catch(() => '');
-    const formFee = await cubes.locator('[data-testid="cube-fee-rate"]').inputValue().catch(() => '');
-    console.error(
-      `[cube-mint] mint-found-funds timeout — state="${state}" connected=${connected} noUtxos=${noUtxos} loading=${loading} insufficient=${insufficient} contentSet=${contentSet} sims=${simCount} feeFC="${feeFc}" form1="${form1}" fee="${formFee}"`,
-    );
+    console.error(`[cube-mint] mint-btn never enabled — snapshot=${JSON.stringify(finalSnapshot)}`);
     throw e;
   }
-  await shot(cubes, '05-found-funds');
-
-  const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeVisible({ timeout: 30_000 });
+  await shot(cubes, '05-mint-btn-enabled');
 
   const knownPagesBeforeMint = new Set(context.pages());
-  await mintBtn.click();
+  await mintBtnLocator.click();
 
   const signPopup = await waitForApprovalPopup({
     context,

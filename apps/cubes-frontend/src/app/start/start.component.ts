@@ -415,8 +415,13 @@ export class StartComponent {
     try {
       const result = await firstValueFrom(this.orchestrator.mint());
       this.pastFacade.recordPastMint(result.commitTxId, result.revealTxId);
-    } catch {
+    } catch (err) {
       // Orchestrator already set errorMessage; template renders it.
+      // Also log so regtest e2e can see the actual failure reason —
+      // silent swallow made every failure look like "sign popup never
+      // appeared" when the real cause was upstream in the SDK.
+      // eslint-disable-next-line no-console
+      console.error('[cubes] mint failed:', err);
     }
   }
 

@@ -535,6 +535,17 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   const knownPagesBeforeMint = new Set(context.pages());
   await mintBtnLocator.click();
 
+  // Give the SDK's mint chain 3s to either open the sign popup or set
+  // an errorMessage. Prior CI stalled here — the popup never came and
+  // waitForApprovalPopup silently waited out the entire 120s window.
+  await cubes.waitForTimeout(3000);
+  const postMintErr = (await cubes.locator('[data-testid="mint-error-message"]').textContent().catch(() => ''))?.trim();
+  const postMintState = (await cubes.locator('[data-testid="mint-state"]').textContent().catch(() => ''))?.trim();
+  console.log(`[cube-mint] post-click 3s state="${postMintState}" errorMessage="${postMintErr}"`);
+  if (postMintErr && !postMintErr.includes('cancel')) {
+    throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
+  }
+
   const signPopup = await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeMint,

@@ -158,6 +158,7 @@
       <span data-testid="mint-viable-count" hidden>{{ viableRows().length }}</span>
       <span data-testid="mint-selected-txid" hidden>{{ orchestrator.selectedUtxo()?.txid ?? '' }}</span>
       <span data-testid="mint-buckets" hidden>{{ bucketsDebug() }}</span>
+      <span data-testid="mint-error-message" hidden>{{ orchestrator.errorMessage() ?? '' }}</span>
 
       <!-- Step 2 — Fee rate. -->
       <p class="fw-bold mb-2 mt-4">2. Pick a fee rate</p>

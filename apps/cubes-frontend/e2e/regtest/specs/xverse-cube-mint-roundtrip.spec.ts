@@ -14,7 +14,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
 } from '../regtest-helpers';
-import { waitForApprovalPopup } from '../approval-popup';
+import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-popup';
 
 /**
  * Full user-flow proof for the Xverse wallet: the actual cubes-frontend
@@ -532,6 +532,15 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   }
   await shot(cubes, '05-mint-btn-enabled');
 
+  // Xverse routinely leaves a leftover chrome-extension "dashboard"
+  // page open after the connect approval. When we click mint, Xverse
+  // may reuse that leftover for the sign popup — but knownPages
+  // filters it out, so waitForApprovalPopup would think no sign popup
+  // ever appeared. Close everything but the two app-owned pages before
+  // capturing the baseline. See the same helper's comment in
+  // approval-popup.ts and the SDK's own xverse-inscribe-roundtrip
+  // spec that uses this exact pattern.
+  await closeLeftoverExtensionPages(context, [cubes, primer]);
   const knownPagesBeforeMint = new Set(context.pages());
   await mintBtnLocator.click();
 

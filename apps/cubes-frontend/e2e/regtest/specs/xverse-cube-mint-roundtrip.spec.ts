@@ -168,6 +168,11 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     await notNow.click({ force: true }).catch(() => undefined);
   }
   await shot(primer, '01-xverse-unlocked');
+  // Close the dashboard immediately after unlock — cat21-indexer's
+  // proven regtest spec (cat21-mint-regtest.spec.ts:151) does this and
+  // keeping it open confuses Xverse's SW when it later needs to spawn
+  // a sign popup.
+  await primer.close().catch(() => undefined);
 
   // ─── Step 2: open cubes-frontend + connect wallet via UI ───────
   const cubes = await context.newPage();
@@ -315,6 +320,12 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // eslint-disable-next-line no-console
   console.log('[cube-mint] Connect popup: fired JS click');
   await connectPromise;
+  // Close the connect popup immediately after approval — proven
+  // pattern from cat21-mint-regtest.spec.ts:200. Leaving it open
+  // pollutes the extension-context page list and Xverse's SW may
+  // reuse the dashboard tab for the sign popup, hiding it behind
+  // knownPages filters later in the flow.
+  await connectPopup.close().catch(() => undefined);
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 30_000 });
   await cubes.bringToFront();
@@ -359,6 +370,8 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     await reapprove.waitForFunction(() => document.querySelectorAll('button').length > 0, undefined, { timeout: 30_000, polling: 500 });
     const rBtn = reapprove.getByRole('button', { name: /^Connect$/i });
     await rBtn.first().click({ force: true, timeout: 15_000 }).catch(() => undefined);
+    // Close after approving — same rationale as the initial connect.
+    await reapprove.close().catch(() => undefined);
   }
 
   // Refill the six sides — form state doesn't persist across reload.
@@ -433,6 +446,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       await reapprove2.waitForLoadState('domcontentloaded');
       await reapprove2.waitForFunction(() => document.querySelectorAll('button').length > 0, undefined, { timeout: 30_000, polling: 500 });
       await reapprove2.getByRole('button', { name: /^Connect$/i }).first().click({ force: true, timeout: 15_000 }).catch(() => undefined);
+      await reapprove2.close().catch(() => undefined);
     }
     await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
     for (let i = 0; i < 6; i++) {
@@ -540,7 +554,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // capturing the baseline. See the same helper's comment in
   // approval-popup.ts and the SDK's own xverse-inscribe-roundtrip
   // spec that uses this exact pattern.
-  await closeLeftoverExtensionPages(context, [cubes, primer]);
+  await closeLeftoverExtensionPages(context, [cubes]);
   const knownPagesBeforeMint = new Set(context.pages());
   await mintBtnLocator.click();
 

@@ -18,7 +18,7 @@ describe('BtcAddressValidator', () => {
   });
 
   it('should validate a very long Bech32 address correctly', () => {
-    const control = new FormControl('???');
+    const control = new FormControl('bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0');
     expect(BtcAddressValidator()(control)).toBeNull();
   });
 

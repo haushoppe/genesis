@@ -661,6 +661,21 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     return { text: el?.textContent, inner: (el as HTMLElement)?.innerText, html: el?.outerHTML };
   });
   console.log(`[cube-mint] after 500ms wait: ${JSON.stringify(afterWaitCommit)}`);
+
+  // Diagnostic: read the diag-computed-* hidden spans that live at the
+  // top level (outside @if). If these have the txids but the @if block
+  // renders empty, the bug is @if-specific. If empty here too, the
+  // computed signals themselves failed.
+  const diagValues = await cubes.evaluate(() => {
+    const read = (id: string) => document.querySelector(`[data-testid="${id}"]`)?.textContent ?? 'MISSING';
+    return {
+      diagComputedCommit: read('diag-computed-commit'),
+      diagComputedReveal: read('diag-computed-reveal'),
+      diagState: read('diag-state'),
+      diagSuccessResult: read('diag-successresult'),
+    };
+  });
+  console.log(`[cube-mint] top-level diag: ${JSON.stringify(diagValues)}`);
   if (!commitTxId || !revealTxId) {
     const successHtml = await cubes.evaluate(() => {
       const el = document.querySelector('[data-testid="mint-success"]');

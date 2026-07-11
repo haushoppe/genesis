@@ -1,5 +1,14 @@
 <h1 class="mt-4" data-testid="page-title">Ordinal Cubes</h1>
 
+<!-- DIAG: hidden top-level spans that read the same computed signals as
+     the mint-success block. If these have the txids but the @if block
+     inside mint-success renders empty, the bug is @if-specific. If
+     these are also empty, the computed signals themselves fail. -->
+<span data-testid="diag-computed-commit" hidden>{{ successCommitTxId() }}</span>
+<span data-testid="diag-computed-reveal" hidden>{{ successRevealTxId() }}</span>
+<span data-testid="diag-state" hidden>{{ orchestrator.state() }}</span>
+<span data-testid="diag-successresult" hidden>{{ orchestrator.successResult()?.commitTxId ?? 'null' }}</span>
+
 <p class="mt-2">
   The world's smallest onchain gallery, visualized as a 3D cube. Permissionless. Immutable. Forever existing.<br class="d-none d-md-block">
   Choose six images that are already on the <strong>🟧 Bitcoin</strong> blockchain and claim them with your own cube!

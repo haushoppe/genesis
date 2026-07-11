@@ -576,6 +576,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // /transaction-signing popup, then click Confirm. Prior CI runs
   // saw only the address-request popup and timed out waiting for
   // 'Review transaction' text that never rendered on it.
+  console.log('[cube-mint] entering waitForApprovalPopup for first post-mint popup');
   const addressPopup = await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeMint,
@@ -592,6 +593,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       return true;
     },
   });
+  console.log(`[cube-mint] got first popup at ${addressPopup.url()}`);
   await shot(addressPopup, '05a-xverse-first-popup');
 
   // Decide which popup we got. If it's the sign popup, skip the
@@ -634,13 +636,27 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     });
   }, undefined, { timeout: 30_000, polling: 250 });
   await expect(signPopup.getByRole('button', { name: /^confirm$/i }).first()).toBeEnabled({ timeout: 30_000 });
+  console.log('[cube-mint] clicking Confirm on sign popup');
   await signPopup.getByRole('button', { name: /^confirm$/i }).first().click({ force: true });
+  console.log('[cube-mint] Confirm clicked, waiting for mint-success');
 
   await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
+  console.log('[cube-mint] mint-success visible; extracting txids');
   await shot(cubes, '06-cubes-success');
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
   const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').textContent())?.trim() ?? '';
+  console.log(`[cube-mint] raw commit="${commitTxId}" reveal="${revealTxId}"`);
+  if (!commitTxId || !revealTxId) {
+    const successHtml = await cubes.evaluate(() => {
+      const el = document.querySelector('[data-testid="mint-success"]');
+      return el ? el.outerHTML.slice(0, 800) : null;
+    });
+    const stateNow = (await cubes.locator('[data-testid="mint-state"]').textContent().catch(() => ''))?.trim();
+    const errorNow = (await cubes.locator('[data-testid="mint-error-message"]').textContent().catch(() => ''))?.trim();
+    console.log(`[cube-mint] mint-success DOM: ${successHtml}`);
+    console.log(`[cube-mint] state="${stateNow}" errorMessage="${errorNow}"`);
+  }
   expect(commitTxId).toMatch(/^[0-9a-f]{64}$/);
   expect(revealTxId).toMatch(/^[0-9a-f]{64}$/);
   console.log(`[cube-mint] commit=${commitTxId.slice(0, 12)}… reveal=${revealTxId.slice(0, 12)}…`);

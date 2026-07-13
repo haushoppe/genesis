@@ -281,23 +281,37 @@
 }
 
 
-@let successCommitTxIdLet = orchestrator.successResult()?.commitTxId ?? '';
-@let successRevealTxIdLet = orchestrator.successResult()?.revealTxId ?? '';
-<span data-testid="diag-let-commit" hidden>{{ successCommitTxIdLet }}</span>
-<span data-testid="diag-let-reveal" hidden>{{ successRevealTxIdLet }}</span>
+<!-- Success alert stays permanently mounted; visibility flips via [hidden].
+     Wrapping this in `@if (successResult())` leaves every interior binding
+     ({{ x() }}, [attr]="…", any signal-read shape) empty in Angular 22
+     zoneless — the mount tick ships static HTML but the embedded view's
+     bindings never evaluate. This matches Angular issue #61662: an
+     embedded view created after the initial CD cycle registers its
+     signal reads against the parent's active consumer instead of its
+     own, so the interior view is never marked dirty and its bindings
+     never re-run.
 
-@if (orchestrator.successResult()) {
-  <div class="alert alert-success mt-4" data-testid="mint-success">
-    ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
-    <ul class="mb-2 mt-2">
-      <li>Commit: <a [href]="'https://ordpool.space/tx/' + successCommitTxIdLet" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ successCommitTxIdLet }}</code></a></li>
-      <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + successRevealTxIdLet" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ successRevealTxIdLet }}</code></a></li>
-    </ul>
-    You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
-    <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
-    <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
-  </div>
-}
+     Ruled out via CI iteration (runs 29222624713, 29224186915,
+     29224731662):
+       @if (X; as res) + {{ res.field }}                  → interior empty
+       @if (X()) + {{ computed() }}                        → interior empty
+       Default CD + top-level @let + reference inside @if  → interior empty
+       OnPush   + top-level @let + reference inside @if    → interior empty
+       OnPush   + @if + computed direct read               → interior empty
+     Only [hidden]-toggled permanent mount works. Fix in @angular/core
+     for #61662 is currently unverified for 22.x; revisit on next bump. -->
+<div class="alert alert-success mt-4"
+     data-testid="mint-success"
+     [hidden]="!orchestrator.successResult()">
+  ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
+  <ul class="mb-2 mt-2">
+    <li>Commit: <a [href]="'https://ordpool.space/tx/' + successCommitTxId()" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ successCommitTxId() }}</code></a></li>
+    <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + successRevealTxId()" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ successRevealTxId() }}</code></a></li>
+  </ul>
+  You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
+  <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
+  <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
+</div>
 
 
 @let past = pastFacade.pastMints() ?? [];

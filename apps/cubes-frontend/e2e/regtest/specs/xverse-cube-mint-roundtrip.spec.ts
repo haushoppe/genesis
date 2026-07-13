@@ -650,6 +650,13 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
   const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').textContent())?.trim() ?? '';
+  // Always dump the top-level @let readouts — they're the control
+  // that tells us whether the txid signals are reactive at root scope.
+  const letDiag = await cubes.evaluate(() => ({
+    letCommit: document.querySelector('[data-testid="diag-let-commit"]')?.textContent ?? 'MISSING',
+    letReveal: document.querySelector('[data-testid="diag-let-reveal"]')?.textContent ?? 'MISSING',
+  }));
+  console.log(`[cube-mint] top-level @let diag: ${JSON.stringify(letDiag)}`);
   if (!commitTxId || !revealTxId) {
     const successHtml = await cubes.evaluate(() => {
       const el = document.querySelector('[data-testid="mint-success"]');

@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { DecimalPipe, SlicePipe } from '@angular/common';
@@ -112,6 +112,7 @@ export interface ViableInscribeSimulation {
   selector: 'app-start',
   templateUrl: './start.component.html',
   styleUrls: ['./start.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     LoadingIndicatorComponent,
     InscriptionListItemComponent,

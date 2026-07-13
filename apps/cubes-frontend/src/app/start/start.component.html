@@ -281,29 +281,18 @@
 }
 
 
-<!-- Success alert stays permanently mounted and toggles via [hidden].
-     Wrapping this in `@if (successResult())` leaves the interior
-     interpolations empty in Angular 22 zoneless — the mount tick
-     ships static HTML but never resolves the {{ x() }} / [attr] bindings
-     for the freshly-created view. Hoisting the txids to `@let` at
-     component-view root and actively consuming them via top-level
-     hidden spans DOES NOT fix it either (verified in CI run
-     29222624713 — the top-level @let read rendered the txids, the
-     same @let reference inside the @if stayed empty on the same tick).
-     Keeping the container view rooted at component-scope via [hidden]
-     is currently the only shape that works. -->
-<div class="alert alert-success mt-4"
-     data-testid="mint-success"
-     [hidden]="!orchestrator.successResult()">
-  ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
-  <ul class="mb-2 mt-2">
-    <li>Commit: <a [href]="'https://ordpool.space/tx/' + successCommitTxId()" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ successCommitTxId() }}</code></a></li>
-    <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + successRevealTxId()" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ successRevealTxId() }}</code></a></li>
-  </ul>
-  You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
-  <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
-  <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
-</div>
+@if (orchestrator.successResult()) {
+  <div class="alert alert-success mt-4" data-testid="mint-success">
+    ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
+    <ul class="mb-2 mt-2">
+      <li>Commit: <a [href]="'https://ordpool.space/tx/' + successCommitTxId()" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ successCommitTxId() }}</code></a></li>
+      <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + successRevealTxId()" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ successRevealTxId() }}</code></a></li>
+    </ul>
+    You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
+    <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
+    <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
+  </div>
+}
 
 
 @let past = pastFacade.pastMints() ?? [];

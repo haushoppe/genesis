@@ -17,7 +17,7 @@ import { CustomScrollService } from './custom-scroll.service';
   selector: 'body',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BannerComponent,
     FooterComponent,

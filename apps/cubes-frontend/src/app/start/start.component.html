@@ -281,18 +281,38 @@
 }
 
 
-@if (orchestrator.successResult()) {
-  <div class="alert alert-success mt-4" data-testid="mint-success">
-    ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
-    <ul class="mb-2 mt-2">
-      <li>Commit: <a [href]="'https://ordpool.space/tx/' + successCommitTxId()" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ successCommitTxId() }}</code></a></li>
-      <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + successRevealTxId()" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ successRevealTxId() }}</code></a></li>
-    </ul>
-    You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
-    <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
-    <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
-  </div>
-}
+<!-- Success alert stays permanently mounted; visibility flips via [hidden].
+     Wrapping this in `@if (successResult())` leaves every interior binding
+     ({{ x() }}, [attr]="…", any signal-read shape) empty in Angular 22
+     zoneless — the mount tick ships static HTML but the embedded view's
+     bindings never evaluate. Matches Angular issue #61662 (embedded view
+     created after initial CD registers its signal reads against the
+     parent's active consumer instead of its own).
+
+     Ruled out (all in CI):
+       @if (X; as res) + {{ res.field }}           → interior empty
+       @if (X()) + {{ computed() }}                 → interior empty
+       top-level @let + reference inside @if        → interior empty
+       + explicit OnPush on StartComponent          → interior empty
+       + AppComponent (parent) also OnPush          → interior empty (29244997967)
+
+     #61662 reporter says parent-OnPush fixes it, but that combo also
+     failed here — either the fix hasn't landed in @angular/core@22.0.6
+     (current latest stable; only 22.1.0-next.5 available above that)
+     or our tree has another default-CD parent we haven't found. Retry
+     `@if` on the next stable @angular/core bump. -->
+<div class="alert alert-success mt-4"
+     data-testid="mint-success"
+     [hidden]="!orchestrator.successResult()">
+  ✅ Your cube has been broadcast. Two transactions will be on-chain shortly:
+  <ul class="mb-2 mt-2">
+    <li>Commit: <a [href]="'https://ordpool.space/tx/' + successCommitTxId()" target="_blank" rel="noopener"><code data-testid="mint-commit-txid">{{ successCommitTxId() }}</code></a></li>
+    <li>Reveal (your cube): <a [href]="'https://ordpool.space/tx/' + successRevealTxId()" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ successRevealTxId() }}</code></a></li>
+  </ul>
+  You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
+  <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
+  <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
+</div>
 
 
 @let past = pastFacade.pastMints() ?? [];

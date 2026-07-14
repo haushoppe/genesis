@@ -111,10 +111,24 @@ export interface ViableInscribeSimulation {
   bucket: UtxoScanBucket;
 }
 
+/** One preset button next to the fee-rate input. */
+interface FeeTier {
+  testId: string;
+  label: string;
+  title: string;
+  key: keyof RecommendedFees;
+}
+
+const FEE_TIERS: readonly FeeTier[] = [
+  { testId: 'fee-tier-eco',  label: 'Eco',  title: 'Economy',    key: 'economyFee'  },
+  { testId: 'fee-tier-hour', label: 'Hour', title: '~1h',        key: 'hourFee'     },
+  { testId: 'fee-tier-half', label: 'Half', title: '~30min',     key: 'halfHourFee' },
+  { testId: 'fee-tier-fast', label: 'Fast', title: 'Next block', key: 'fastestFee'  },
+];
+
 @Component({
   selector: 'app-start',
   templateUrl: './start.component.html',
-  styleUrls: ['./start.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     InscriptionListItemComponent,
@@ -146,21 +160,9 @@ export class StartComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
+  protected readonly feeTiers = FEE_TIERS;
 
-  /** Fee-tier preset buttons — configured once, rendered via @for. */
-  protected readonly feeTiers: ReadonlyArray<{
-    testId: string;
-    label: string;
-    title: string;
-    key: keyof RecommendedFees;
-  }> = [
-    { testId: 'fee-tier-eco',  label: 'Eco',  title: 'Economy',    key: 'economyFee'  },
-    { testId: 'fee-tier-hour', label: 'Hour', title: '~1h',        key: 'hourFee'     },
-    { testId: 'fee-tier-half', label: 'Half', title: '~30min',     key: 'halfHourFee' },
-    { testId: 'fee-tier-fast', label: 'Fast', title: 'Next block', key: 'fastestFee'  },
-  ];
-
-  // ---------- Async resources (replaces NgRx effects/reducers) ----------
+  // ---------- Async resources ----------
 
   /** Cursor over the ordinal-cubes-index — one static JSON blob. */
   protected readonly cursorResource = rxResourceFixed({
@@ -371,12 +373,14 @@ export class StartComponent {
   }
 
   connectWallet(type: KnownOrdinalWalletType) {
-    this.walletService.connectWallet(type).subscribe({
-      error: (err) => {
-        // eslint-disable-next-line no-console
-        console.warn('[cubes] connect failed', type, err);
-      },
-    });
+    this.walletService.connectWallet(type)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        error: (err) => {
+          // eslint-disable-next-line no-console
+          console.warn('[cubes] connect failed', type, err);
+        },
+      });
   }
 
   startCheckout() {
@@ -415,10 +419,16 @@ export class StartComponent {
   }
 
   scanUtxo(utxo: TxnOutput) {
-    this.scanner.scan(`${utxo.txid}:${utxo.vout}`).subscribe();
+    this.scanner.scan(`${utxo.txid}:${utxo.vout}`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
   }
 
   setFeePreset(rate: number) {
+    // Two writes on purpose: mintFormData for form-value consistency
+    // (drives the preview + validity + rendered fee-rate input) and
+    // an immediate orchestrator.setFeeRate call so the summary
+    // recomputes right away rather than after the 150 ms form debounce.
     this.mintFormData.update((v) => ({ ...v, feeRate: rate }));
     this.orchestrator.setFeeRate(rate);
   }

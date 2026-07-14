@@ -23,7 +23,6 @@ const DEFAULT_CUBE_DETAILS: CubeDetails = {
 @Component({
   selector: 'app-cube-preview',
   templateUrl: './cube-preview.component.html',
-  styleUrls: ['./cube-preview.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SafeHtmlPipe],
 })

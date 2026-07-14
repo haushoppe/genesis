@@ -1,5 +1,5 @@
 import { DecimalPipe, SlicePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
@@ -129,7 +129,6 @@ const FEE_TIERS: readonly FeeTier[] = [
 @Component({
   selector: 'app-start',
   templateUrl: './start.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     InscriptionListItemComponent,
     CubePreviewComponent,

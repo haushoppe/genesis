@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
 import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { CubeDetails, getCubeHtml } from '../../services/cube-html';
@@ -23,7 +23,6 @@ const DEFAULT_CUBE_DETAILS: CubeDetails = {
 @Component({
   selector: 'app-cube-preview',
   templateUrl: './cube-preview.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SafeHtmlPipe],
 })
 export class CubePreviewComponent {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
@@ -9,7 +9,6 @@ import { ToggleIframeDirective } from '../toggle-iframe.directive';
   selector: 'app-inscription-list-item',
   templateUrl: './inscription-list-item.component.html',
   styleUrls: ['./inscription-list-item.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, ToggleIframeDirective],
 })
 export class InscriptionListItemComponent {

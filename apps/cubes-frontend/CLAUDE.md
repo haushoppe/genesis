@@ -31,13 +31,22 @@ If a piece of state needs to persist across reloads, wrap a
 `signal()` in an `effect()` that reads/writes localStorage. Don't
 introduce a store just for that.
 
-## HARD RULE: OnPush on every component
+## HARD RULE: Don't set `changeDetection` explicitly
 
-Every `@Component` needs `changeDetection: ChangeDetectionStrategy.OnPush`.
-In this project, mixing OnPush and Default (or unspecified) CD on the
-same component tree has caused real bugs — see
-`~/Work/ordpool/genesis/apps/cubes-frontend/CLAUDE_HISTORICAL_BUGS.md`
-for the #61662 incident.
+**OnPush is the default in Angular 22.** The enum still exists but its
+values changed: `OnPush = 0` (the default), `Eager = 1` (the old
+`Default` value, now `@deprecated`). Explicitly setting
+`changeDetection: ChangeDetectionStrategy.OnPush` is redundant noise
+just like `standalone: true` and empty `imports: []`.
+
+Verify: `node_modules/@angular/core/types/_debug_node-chunk.d.ts`
+around the `ChangeDetectionStrategy` enum — the JSDoc says "OnPush
+is enabled by default".
+
+If you ever need the old greedy behaviour (you probably don't in a
+zoneless signal-first app), set `changeDetection:
+ChangeDetectionStrategy.Eager` explicitly with a comment explaining
+why. Otherwise omit the `changeDetection` key entirely.
 
 ## HARD RULE: Async data via `rxResourceFixed`
 

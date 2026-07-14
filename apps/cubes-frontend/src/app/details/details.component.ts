@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { environment } from '../../environments/environment';
@@ -11,7 +11,6 @@ import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
   selector: 'app-details',
   templateUrl: './details.component.html',
   styleUrls: ['./details.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
     SafeUrlPipe,

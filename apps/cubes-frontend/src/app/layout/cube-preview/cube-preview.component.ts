@@ -1,23 +1,9 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SafeHtmlPipe } from '../../safe-html.pipe';
-import { MintFacade } from '../../store/mint.facade';
+import { CubeDetails, getCubeHtml } from '../../services/cube-html';
 
-interface CubeDetailsInput {
-  inscriptionIds: {
-    inscriptionId1: string;
-    inscriptionId2: string;
-    inscriptionId3: string;
-    inscriptionId4: string;
-    inscriptionId5: string;
-    inscriptionId6: string;
-  };
-  rotationSpeedX: string;
-  rotationSpeedY: string;
-  colorPane: string;
-  bgColor1: string;
-  bgColor2: string;
-}
+type CubeDetailsInput = Omit<CubeDetails, 'title'>;
 
 const DEFAULT_CUBE_DETAILS: CubeDetailsInput = {
   inscriptionIds: {
@@ -39,15 +25,13 @@ const DEFAULT_CUBE_DETAILS: CubeDetailsInput = {
   selector: 'app-cube-preview',
   templateUrl: './cube-preview.component.html',
   styleUrls: ['./cube-preview.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SafeHtmlPipe],
 })
 export class CubePreviewComponent {
   readonly cubeDetails = input<CubeDetailsInput>(DEFAULT_CUBE_DETAILS);
 
-  protected readonly cubeDetailsWithMockedTitle = computed(() => ({
-    ...this.cubeDetails(),
-    title: '',
-  }));
-
-  protected readonly mintFacade = inject(MintFacade);
+  protected readonly cubeHtml = computed(() =>
+    getCubeHtml({ ...this.cubeDetails(), title: '' }),
+  );
 }

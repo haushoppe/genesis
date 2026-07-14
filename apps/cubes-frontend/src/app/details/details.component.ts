@@ -1,17 +1,18 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { environment } from '../../../src/environments/environment';
-import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
+
+import { environment } from '../../environments/environment';
 import { ShortenAddressPipe } from '../layout/shorten-address.pipe';
 import { SafeUrlPipe } from '../safe-url.pipe';
-import { MintFacade } from '../store/mint.facade';
+import { CubesDataService } from '../services/cubes-data/cubes-data.service';
+import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
 
 @Component({
   selector: 'app-details',
   templateUrl: './details.component.html',
   styleUrls: ['./details.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    LoadingIndicatorComponent,
     RouterLink,
     SafeUrlPipe,
     ShortenAddressPipe,
@@ -19,12 +20,20 @@ import { MintFacade } from '../store/mint.facade';
   host: {
     '(window:keydown)': 'onKeydown($event)',
   },
-  
 })
 export class DetailsComponent {
-  mintFacade = inject(MintFacade);
-  router = inject(Router);
-  environment = environment;
+  readonly inscriptionId = input<string>('');
+
+  private readonly cubesData = inject(CubesDataService);
+  private readonly router = inject(Router);
+  protected readonly environment = environment;
+
+  protected readonly detailsResource = rxResourceFixed({
+    params: () => ({ id: this.inscriptionId() }),
+    stream: ({ params }) => this.cubesData.getSingleInscription(params.id),
+  });
+
+  protected readonly details = computed(() => this.detailsResource.value() ?? null);
 
   getIframeSrc(inscriptionId?: string | undefined): string {
     if (!inscriptionId) {
@@ -35,7 +44,7 @@ export class DetailsComponent {
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;
-    const i = this.mintFacade.singleInscription();
+    const i = this.details();
     if (event.key === 'ArrowLeft' && i?.previousInscriptionId) {
       this.router.navigate(['/inscription', i.previousInscriptionId]);
     } else if (event.key === 'ArrowRight' && i?.nextInscriptionId) {

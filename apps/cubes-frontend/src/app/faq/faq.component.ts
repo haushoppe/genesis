@@ -1,9 +1,8 @@
-import { AsyncPipe, KeyValuePipe, NgClass } from '@angular/common';
-import { Component } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
+
 import { ParseMarkdownPipe } from '../parse-markdown.pipe';
-import { SafeUrlPipe } from '../safe-url.pipe';
 
 interface Faq {
   question: string;
@@ -14,8 +13,8 @@ interface Faq {
   selector: 'app-faq',
   templateUrl: './faq.component.html',
   styleUrls: ['./faq.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ParseMarkdownPipe, RouterLink, NgClass],
-  
 })
 export class FaqComponent {
   activeIndex = 0;

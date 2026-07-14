@@ -15,7 +15,8 @@
     "e2e:regtest": "playwright test --config e2e/regtest/playwright.config.ts",
     "e2e:regtest:up": "docker compose -f e2e/regtest/docker-compose.regtest.yml up -d bitcoind electrs && bash e2e/regtest/regtest-bootstrap.sh",
     "e2e:regtest:down": "docker compose -f e2e/regtest/docker-compose.regtest.yml down -v",
-    "test": "ng test"
+    "test": "ng test",
+    "test:vitest": "vitest run"
   },
   "dependencies": {
     "@angular/animations": "22.0.6",
@@ -31,11 +32,6 @@
     "@fontsource/merriweather": "^4.5.14",
     "@fontsource/yantramanav": "^4.5.9",
     "@ng-bootstrap/ng-bootstrap": "^20.0.0",
-    "@ngrx/effects": "21.1.1",
-    "@ngrx/operators": "^18.0.0",
-    "@ngrx/router-store": "21.1.1",
-    "@ngrx/store": "21.1.1",
-    "@ngrx/store-devtools": "21.1.1",
     "@noble/curves": "^1.4.0",
     "@popperjs/core": "^2.11.8",
     "@scure/base": "^1.1.0",
@@ -48,7 +44,6 @@
     "buffer": "^6.0.3",
     "canvas-confetti": "^1.6.0",
     "marked": "^4.2.12",
-    "ngrx-store-localstorage": "^20.1.0",
     "ordpool-sdk": "github:ordpool-space/ordpool-sdk#4475d74",
     "process": "^0.11.10",
     "reflect-metadata": "^0.1.13",

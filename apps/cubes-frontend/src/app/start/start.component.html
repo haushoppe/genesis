@@ -78,7 +78,7 @@
         <div class="form-group row mt-4">
           <div class="col-12 d-flex flex-column flex-md-row justify-content-center align-items-center pt-3 pb-1 gap-3">
             <button type="button"
-                    class="btn btn-outline-light"
+                    class="btn btn-outline-light text-nowrap"
                     data-testid="craft-another-cube"
                     (click)="craftAnotherCube()">
               <i class="bi bi-arrow-clockwise"></i>
@@ -86,7 +86,7 @@
             </button>
 
             <button type="submit"
-                    class="btn btn-primary"
+                    class="btn btn-primary text-nowrap"
                     data-testid="mint-cta"
                     [disabled]="!canOpenCheckout() || checkoutOpen()">
               <i class="bi bi-box"></i>
@@ -112,216 +112,175 @@
 </form>
 
 
-<!-- Whole checkout drawer + all conditional branches use [hidden] instead of
-     @if. The #61662 workaround only works when the container view is
-     component-scope-mounted from initial CD — putting [hidden] on a
-     button inside a just-mounted @if is not enough (verified in run
-     29307142561: fee-tier-eco button existed in DOM but interior text
-     was still empty). So every control-flow decision in the checkout
-     flow flips visibility via [hidden], never mounts/unmounts. -->
-<section class="mt-4 p-4 border rounded bg-body-tertiary"
-         data-testid="mint-checkout"
-         [hidden]="!checkoutOpen()">
-  <div class="d-flex justify-content-between align-items-start">
-    <h3 class="h5 mb-3">Checkout</h3>
-    <button type="button" class="btn-close" aria-label="Cancel" (click)="cancelCheckout()"></button>
-  </div>
+@if (checkoutOpen()) {
+  <section class="mt-4 p-4 border rounded bg-body-tertiary" data-testid="mint-checkout">
+    <div class="d-flex justify-content-between align-items-start">
+      <h3 class="h5 mb-3">Checkout</h3>
+      <button type="button" class="btn-close" aria-label="Cancel" (click)="cancelCheckout()"></button>
+    </div>
 
-  <!-- Step 1 — Connect wallet. Two parallel divs, one per branch. -->
-  <div data-testid="wallet-picker" [hidden]="connectedWallet()">
-    <p class="fw-bold mb-2">1. Connect your wallet</p>
-    <p class="mb-3" [hidden]="!installedOrdinalsAware().length">
-      <span data-testid="wallet-picker-detected">Detected:</span>
-      @for (w of installedOrdinalsAware(); track w.type; let last = $last) {
-        <a href="javascript:void(0)"
-           [attr.data-testid]="'wallet-connect-' + w.type"
-           (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
-      }.
-    </p>
-    <p class="mb-3" data-testid="wallet-picker-empty" [hidden]="installedOrdinalsAware().length">
-      No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.
-    </p>
-  </div>
+    <!-- Step 1 — Connect wallet -->
+    @if (!connectedWallet()) {
+      <div data-testid="wallet-picker">
+        <p class="fw-bold mb-2">1. Connect your wallet</p>
+        @if (installedOrdinalsAware().length) {
+          <p class="mb-3">
+            <span data-testid="wallet-picker-detected">Detected:</span>
+            @for (w of installedOrdinalsAware(); track w.type; let last = $last) {
+              <a href="javascript:void(0)"
+                 [attr.data-testid]="'wallet-connect-' + w.type"
+                 (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
+            }.
+          </p>
+        } @else {
+          <p class="mb-3" data-testid="wallet-picker-empty">
+            No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.
+          </p>
+        }
+      </div>
+    } @else {
+      <p class="mb-3" data-testid="wallet-connected">
+        <strong>1. Connected</strong> as
+        <span data-testid="mint-ordinals-address">{{ connectedWallet()!.ordinalsAddress }}</span>.
+        Paying from <code data-testid="mint-payment-address">{{ connectedWallet()!.paymentAddress }}</code>.
+        <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
+      </p>
 
-  <div [hidden]="!connectedWallet()">
-    <p class="mb-3" data-testid="wallet-connected">
-      <strong>1. Connected</strong> as
-      <span data-testid="mint-ordinals-address">{{ connectedWallet()?.ordinalsAddress ?? '' }}</span>.
-      Paying from <code data-testid="mint-payment-address">{{ connectedWallet()?.paymentAddress ?? '' }}</code>.
-      <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
-    </p>
-
-      <!-- Hidden markers so tests can read orchestrator state without
-           guessing from side-effects. -->
-      <span data-testid="mint-state" hidden>{{ orchestrator.state() }}</span>
-      <span data-testid="mint-sim-count" hidden>{{ simulations().length }}</span>
-      <span data-testid="mint-viable-count" hidden>{{ viableRows().length }}</span>
-      <span data-testid="mint-selected-txid" hidden>{{ orchestrator.selectedUtxo()?.txid ?? '' }}</span>
-      <span data-testid="mint-buckets" hidden>{{ bucketsDebug() }}</span>
-      <span data-testid="mint-error-message" hidden>{{ orchestrator.errorMessage() ?? '' }}</span>
-      <span data-testid="mint-form-valid" hidden>{{ mintForm().valid() }}</span>
-      <span data-testid="mint-form-fee-rate" hidden>{{ mintFormData().feeRate }}</span>
-      <span data-testid="mint-can-mint" hidden>{{ canMint() }}</span>
-
-      <!-- Step 2 — Fee rate. -->
+      <!-- Step 2 — Fee rate -->
       <p class="fw-bold mb-2 mt-4">2. Pick a fee rate</p>
       <div class="input-group mb-3">
         <input id="feeRate" data-testid="cube-fee-rate" type="number" class="form-control" [formField]="mintForm.feeRate" />
         <span class="input-group-text">sat/vB</span>
-        <!-- Tier buttons — text + hidden written imperatively from
-             an effect in the component (see feeTierEls viewChild).
-             Both [hidden] and {{ interpolation }} on these buttons
-             rendered stale across iterations 1-10, same #61662 class.
-             Template-side click handlers still bind fine because they
-             read the signal at click time, not on the mount tick. -->
-        <button #feeTierEco type="button" class="btn btn-outline-secondary" data-testid="fee-tier-eco" hidden (click)="setFeePreset(recommendedFees()?.economyFee ?? 1)" title="Economy">Eco</button>
-        <button #feeTierHour type="button" class="btn btn-outline-secondary" data-testid="fee-tier-hour" hidden (click)="setFeePreset(recommendedFees()?.hourFee ?? 1)" title="~1h">Hour</button>
-        <button #feeTierHalf type="button" class="btn btn-outline-secondary" data-testid="fee-tier-half" hidden (click)="setFeePreset(recommendedFees()?.halfHourFee ?? 1)" title="~30min">Half</button>
-        <button #feeTierFast type="button" class="btn btn-outline-secondary" data-testid="fee-tier-fast" hidden (click)="setFeePreset(recommendedFees()?.fastestFee ?? 1)" title="Next block">Fast</button>
+        @if (recommendedFees(); as fees) {
+          <button type="button" class="btn btn-outline-secondary text-nowrap" data-testid="fee-tier-eco" (click)="setFeePreset(fees.economyFee)" title="Economy">Eco {{ fees.economyFee }}</button>
+          <button type="button" class="btn btn-outline-secondary text-nowrap" data-testid="fee-tier-hour" (click)="setFeePreset(fees.hourFee)" title="~1h">Hour {{ fees.hourFee }}</button>
+          <button type="button" class="btn btn-outline-secondary text-nowrap" data-testid="fee-tier-half" (click)="setFeePreset(fees.halfHourFee)" title="~30min">Half {{ fees.halfHourFee }}</button>
+          <button type="button" class="btn btn-outline-secondary text-nowrap" data-testid="fee-tier-fast" (click)="setFeePreset(fees.fastestFee)" title="Next block">Fast {{ fees.fastestFee }}</button>
+        }
       </div>
 
-      <!-- Step 3 — Review + confirm. -->
+      <!-- Step 3 — Review + confirm -->
       <p class="fw-bold mb-2 mt-4">3. Review</p>
 
-      <p class="text-muted" data-testid="mint-loading-utxos" [hidden]="orchestrator.state() !== 'loading-utxos'">Loading your UTXOs…</p>
+      @if (orchestrator.state() === 'loading-utxos') {
+        <p class="text-muted" data-testid="mint-loading-utxos">Loading your UTXOs…</p>
+      }
 
-      <p class="text-muted" data-testid="mint-no-utxos"
-         [hidden]="!(viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length === 0)">
-        Fund <code>{{ connectedWallet()?.paymentAddress ?? '' }}</code> to continue.
-      </p>
-
-      <div class="alert alert-warning" data-testid="mint-insufficient-funds"
-           [hidden]="!(viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length > 0)">
-        Not enough funds at
-        <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
-        Add funds to <code>{{ connectedWallet()?.paymentAddress ?? '' }}</code> or lower the fee rate.
-      </div>
-
-      <!-- Interior text nodes written imperatively; #hidden toggle
-           on the container also via effect. Same #61662-class bug. -->
-      <div #mintFoundFundsEl class="mint-summary p-3 border rounded mb-3 bg-body"
-           data-testid="mint-found-funds" hidden>
-        <div class="d-flex justify-content-between">
-          <span class="text-muted small">Source</span>
-          <code #foundFundsSource class="small" data-testid="mint-found-funds-source"></code>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span class="text-muted small">Available</span>
-          <span #foundFundsAvailable data-testid="mint-found-funds-available"></span>
-        </div>
-        <div #foundFundsMinerFeeRow class="d-flex justify-content-between" hidden>
-          <span class="text-muted small">Miner fee</span>
-          <span #foundFundsMinerFee data-testid="mint-found-funds-miner-fee"></span>
-        </div>
-        <p class="mb-0 mt-2 text-muted small">
-          ✓ Best available UTXO auto-picked.
+      @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length === 0) {
+        <p class="text-muted" data-testid="mint-no-utxos">
+          Fund <code>{{ connectedWallet()!.paymentAddress }}</code> to continue.
         </p>
-      </div>
+      }
 
-      <details class="mb-3" data-testid="mint-expert-details" [hidden]="!(viableRows().length > 0)">
-        <summary class="text-muted small">Expert mode — choose a different funding UTXO</summary>
-        <div class="mt-2">
-          @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
-            <div class="p-2 border-bottom d-flex justify-content-between align-items-center"
-                 [attr.data-testid]="'mint-expert-row-' + idx">
-              <div class="me-3">
-                <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
-                — {{ row.utxo.value | number }} sat
-                · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
-                <span class="badge ms-2"
-                      [class.bg-success]="row.bucket === 'clean'"
-                      [class.bg-danger]="row.bucket === 'assets'"
-                      [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
-                      [class.bg-warning]="row.bucket === 'failed'">
-                  {{ bucketLabel(row.bucket) }}
-                </span>
-                <span class="badge bg-primary ms-2"
-                      [hidden]="!(orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout)">Selected</span>
-              </div>
-              <div class="text-nowrap">
-                <button type="button" class="btn btn-sm btn-outline-secondary me-2"
-                        [hidden]="!(row.bucket === 'unscanned' || row.bucket === 'failed')"
-                        (click)="scanUtxo(row.utxo)">
-                  {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
-                </button>
-                <button type="button" class="btn btn-sm"
-                        [attr.data-testid]="'mint-expert-pick-' + idx"
-                        [class.btn-outline-primary]="row.bucket !== 'assets'"
-                        [class.btn-outline-danger]="row.bucket === 'assets'"
-                        (click)="orchestrator.setSelectedUtxo(row.utxo)">
-                  {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
-                </button>
-              </div>
+      @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length > 0) {
+        <div class="alert alert-warning" data-testid="mint-insufficient-funds">
+          Not enough funds at
+          <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
+          Add funds to <code>{{ connectedWallet()!.paymentAddress }}</code> or lower the fee rate.
+        </div>
+      }
+
+      @if (viableRows().length > 0 && orchestrator.selectedUtxo(); as sel) {
+        <div class="mint-summary p-3 border rounded mb-3 bg-body" data-testid="mint-found-funds">
+          <div class="d-flex justify-content-between">
+            <span class="text-muted small">Source</span>
+            <code class="small" data-testid="mint-found-funds-source">{{ sel.txid.slice(0, 12) }}…:{{ sel.vout }}</code>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted small">Available</span>
+            <span data-testid="mint-found-funds-available">{{ sel.value | number }} sat</span>
+          </div>
+          @if (selectedRow(); as selRow) {
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Miner fee</span>
+              <span data-testid="mint-found-funds-miner-fee">commit {{ selRow.simulation.commitFeeSats }} + reveal {{ selRow.simulation.revealFeeSats }} = <strong>{{ selRow.simulation.totalFeeSats }}</strong> sat</span>
             </div>
           }
+          <p class="mb-0 mt-2 text-muted small">
+            ✓ Best available UTXO auto-picked.
+          </p>
         </div>
-      </details>
+      }
 
-      <!-- @if here would trigger #61662 — errorMessage would render empty
-           inside the fresh view. Permanent mount + [hidden]. -->
-      <div class="alert alert-danger"
-           data-testid="mint-error"
-           [hidden]="!(orchestrator.state() === 'error' && orchestrator.errorMessage())">
-        ❌ {{ orchestrator.errorMessage() ?? '' }}
-      </div>
+      @if (viableRows().length > 0) {
+        <details class="mb-3" data-testid="mint-expert-details">
+          <summary class="text-muted small">Expert mode — choose a different funding UTXO</summary>
+          <div class="mt-2">
+            @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
+              <div class="p-2 border-bottom d-flex justify-content-between align-items-center"
+                   [attr.data-testid]="'mint-expert-row-' + idx">
+                <div class="me-3">
+                  <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
+                  — {{ row.utxo.value | number }} sat
+                  · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
+                  <span class="badge ms-2"
+                        [class.bg-success]="row.bucket === 'clean'"
+                        [class.bg-danger]="row.bucket === 'assets'"
+                        [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
+                        [class.bg-warning]="row.bucket === 'failed'">
+                    {{ bucketLabel(row.bucket) }}
+                  </span>
+                  @if (orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout) {
+                    <span class="badge bg-primary ms-2">Selected</span>
+                  }
+                </div>
+                <div class="text-nowrap">
+                  @if (row.bucket === 'unscanned' || row.bucket === 'failed') {
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-2 text-nowrap" (click)="scanUtxo(row.utxo)">
+                      {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
+                    </button>
+                  }
+                  <button type="button" class="btn btn-sm text-nowrap"
+                          [attr.data-testid]="'mint-expert-pick-' + idx"
+                          [class.btn-outline-primary]="row.bucket !== 'assets'"
+                          [class.btn-outline-danger]="row.bucket === 'assets'"
+                          (click)="orchestrator.setSelectedUtxo(row.utxo)">
+                    {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </details>
+      }
 
-      <!-- Diag: identical interpolation to the mint-can-mint span but
-           physically adjacent to the button. If this reads 'true' the
-           interpolation at THIS position tracks correctly. -->
-      <span data-testid="mint-btn-should-be-disabled" hidden>{{ !canMint() }}</span>
-      <span data-testid="mint-btn-canmint-adjacent" hidden>{{ canMint() }}</span>
+      @if (orchestrator.state() === 'error' && orchestrator.errorMessage()) {
+        <div class="alert alert-danger" data-testid="mint-error">❌ {{ orchestrator.errorMessage() }}</div>
+      }
+
       <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
-        <button #mintBtnEl
-                type="button"
+        <button type="button"
                 data-testid="mint-btn"
-                class="btn btn-primary"
-                (click)="mint()">
+                class="btn btn-primary text-nowrap"
+                (click)="mint()"
+                [disabled]="!canMint() || orchestrator.state() === 'minting'">
           {{ orchestrator.state() === 'minting' ? 'Signing… please confirm in your wallet' : 'Confirm & broadcast' }}
         </button>
         <button type="button" class="btn btn-link" (click)="cancelCheckout()">Cancel</button>
       </div>
+    }
+  </section>
+}
+
+
+@if (orchestrator.successResult(); as res) {
+  <div class="alert alert-success mt-4" data-testid="mint-success">
+    ✅ Your cube has been broadcast. Reveal tx:
+    <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ res.revealTxId }}</code></a>
+    <p class="mb-2 mt-2 small text-muted">
+      The reveal tx spends the commit tx — anyone who wants to see the commit can open the reveal on ordpool.space and follow the input.
+    </p>
+    <!-- Test-only hook: the e2e verifies both commit and reveal land
+         on-chain, but the user only needs the reveal link. -->
+    <span data-testid="mint-commit-txid" hidden>{{ res.commitTxId }}</span>
+    You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
+    <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
+    <button type="button" class="btn btn-primary mt-2 text-nowrap" (click)="mintAnother()">Mint another cube</button>
   </div>
-</section>
+}
 
 
-<!-- Success alert stays permanently mounted; visibility flips via [hidden].
-     Wrapping this in `@if (successResult())` leaves every interior binding
-     ({{ x() }}, [attr]="…", any signal-read shape) empty in Angular 22
-     zoneless — the mount tick ships static HTML but the embedded view's
-     bindings never evaluate. Matches Angular issue #61662 (embedded view
-     created after initial CD registers its signal reads against the
-     parent's active consumer instead of its own).
-
-     Ruled out (all in CI):
-       @if (X; as res) + {{ res.field }}           → interior empty
-       @if (X()) + {{ computed() }}                 → interior empty
-       top-level @let + reference inside @if        → interior empty
-       + explicit OnPush on StartComponent          → interior empty
-       + AppComponent (parent) also OnPush          → interior empty (29244997967)
-
-     #61662 reporter says parent-OnPush fixes it, but that combo also
-     failed here — either the fix hasn't landed in @angular/core@22.0.6
-     (current latest stable; only 22.1.0-next.5 available above that)
-     or our tree has another default-CD parent we haven't found. Retry
-     `@if` on the next stable @angular/core bump. -->
-<div class="alert alert-success mt-4"
-     data-testid="mint-success"
-     [hidden]="!orchestrator.successResult()">
-  ✅ Your cube has been broadcast. Reveal tx:
-  <a [href]="'https://ordpool.space/tx/' + successRevealTxId()" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ successRevealTxId() }}</code></a>
-  <p class="mb-2 mt-2 small text-muted">
-    The reveal tx spends the commit tx — anyone who wants to see the commit can open the reveal on ordpool.space and follow the input.
-  </p>
-  <!-- Test-only hook: the e2e still verifies both commit and reveal
-       land on-chain, but the user only needs the reveal link. -->
-  <span data-testid="mint-commit-txid" hidden>{{ successCommitTxId() }}</span>
-  You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
-  <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
-  <button type="button" class="btn btn-primary mt-2" (click)="mintAnother()">Mint another cube</button>
-</div>
-
-
-@let past = pastFacade.pastMints() ?? [];
+@let past = pastMints.pastMints();
 @if (past.length) {
   <h2 class="mt-5">Your past mints</h2>
   <ul class="list-unstyled">
@@ -329,48 +288,54 @@
       <li class="mb-2">
         <small class="text-muted">{{ m.createdAt | slice:0:10 }}</small> —
         cube tx <a [href]="'https://ordpool.space/tx/' + m.revealTxId" target="_blank" rel="noopener"><code>{{ m.revealTxId.slice(0, 12) }}…</code></a>
-        (commit <a [href]="'https://ordpool.space/tx/' + m.commitTxId" target="_blank" rel="noopener"><code>{{ m.commitTxId.slice(0, 8) }}…</code></a>)
       </li>
     }
   </ul>
 }
 
-@let i = mintFacade.inscriptions();
 
 <h2 class="mt-5" id="latest">Minted cubes</h2>
 
-<p class="mb-3">
-  Here you see all <span data-testid="minted-cubes-total">{{ i.totalInscriptions }}</span> cubes that have been inscribed so far.
-  <!-- @if with alias would trigger #61662; span + [hidden]. -->
-  <span [hidden]="!cursor()?.lastScannedBlockHeight" data-testid="indexed-up-to">
-    Indexed up to block
-    <a [href]="'https://ordpool.space/block/' + (cursor()?.lastScannedBlockHeight ?? '')" target="_blank" rel="noopener">#{{ cursor()?.lastScannedBlockHeight ?? '' }}</a>.
-  </span>
-</p>
+@let inscriptionsList = inscriptionsResource.value();
+@if (inscriptionsList) {
+  <p class="mb-3">
+    Here you see all <span data-testid="minted-cubes-total">{{ inscriptionsList.totalInscriptions }}</span> cubes that have been inscribed so far.
+    @if (cursor()?.lastScannedBlockHeight; as h) {
+      Indexed up to block
+      <a [href]="'https://ordpool.space/block/' + h" target="_blank" rel="noopener">#{{ h }}</a>.
+    }
+  </p>
 
-<div class="row" data-testid="minted-cubes-grid">
-  @for (inscription of i.inscriptions; track inscription) {
-    <div class="col-6 col-md-4 col-lg-3">
-      <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
-    </div>
-  }
+  <div class="row" data-testid="minted-cubes-grid">
+    @for (inscription of inscriptionsList.inscriptions; track inscription) {
+      <div class="col-6 col-md-4 col-lg-3">
+        <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
+      </div>
+    }
 
-  <ngb-pagination
-    class="mt-4 d-flex justify-content-center"
-    [collectionSize]="i.totalInscriptions"
-    [page]="i.currentPage"
-    [pageSize]="i.itemsPerPage"
-    aria-label="Page Cubes"
-    [maxSize]="5"
-    [rotate]="true"
-    (pageChange)="mintFacade.loadInscriptions(i.itemsPerPage, $event)">
-  </ngb-pagination>
+    <ngb-pagination
+      class="mt-4 d-flex justify-content-center"
+      [collectionSize]="inscriptionsList.totalInscriptions"
+      [page]="inscriptionsList.currentPage"
+      [pageSize]="inscriptionsList.itemsPerPage"
+      aria-label="Page Cubes"
+      [maxSize]="5"
+      [rotate]="true"
+      (pageChange)="loadInscriptionsPage($event)">
+    </ngb-pagination>
+  </div>
+}
 
-  <app-loading-indicator
-    [state]="mintFacade.inscriptionsStatus()" class="mb-5"
-    sendDataText="Loading latest cubes…"
-    />
-</div>
+@if (inscriptionsResource.isLoading() && !inscriptionsResource.value()) {
+  <p class="text-muted mb-5">Loading latest cubes…</p>
+}
+
+@if (inscriptionsResource.error() && !inscriptionsResource.value()) {
+  <p class="text-danger mb-5">
+    Failed to load cubes.
+    <a href="javascript:void(0)" (click)="inscriptionsResource.reload()">Retry</a>
+  </p>
+}
 
 
 <h2 class="mt-2">Rarity & FAQs</h2>

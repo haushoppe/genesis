@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, signal, untracked, viewChild } from '@angular/core';
+import { DecimalPipe, SlicePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
-import { DecimalPipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 import {
@@ -19,16 +19,17 @@ import {
 } from 'ordpool-sdk';
 import { debounceTime, firstValueFrom, map } from 'rxjs';
 
+import { environment } from '../../environments/environment';
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
 import { CubePreviewTitleComponent } from '../layout/cube-preview/cube-preview-title.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
-import { LoadingIndicatorComponent } from '../layout/loading-indicator/loading-indicator.component';
-import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { getCubeHtml } from '../services/cube-html';
-import { CubeDetails } from '../store/mint.actions';
-import { MintFacade } from '../store/mint.facade';
-import { PastFacade } from '../store/past.facade';
-import { environment } from '../../environments/environment';
+import { CubesDataService } from '../services/cubes-data/cubes-data.service';
+import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
+import { CubeSuggestion } from '../services/cubes-data/types';
+import { InscriptionLookupService } from '../services/inscription-lookup.service';
+import { PastMintsService } from '../services/past-mints.service';
+import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
 
 /**
  * HAUS HOPPE donation address + amount — the reveal tx's optional
@@ -42,11 +43,6 @@ const HAUSHOPPE_TIP_SATS = environment.haushoppeTipSats;
 /** txid + `i` + index — the ord canonical inscription-id shape. */
 const INSCRIPTION_ID_PATTERN = /^[a-f0-9]{64}i\d+$/;
 
-/**
- * The mint form's data model. Six required inscription IDs, five
- * optional style fields, one fee rate. Signal Forms derives the
- * whole form structure from this shape.
- */
 interface MintFormData {
   inscriptionId1: string;
   inscriptionId2: string;
@@ -79,10 +75,6 @@ const INITIAL_MINT_FORM: MintFormData = {
   feeRate: 10,
 };
 
-/**
- * Schema: 6 required inscription IDs with the txid+i+index pattern,
- * fee rate required with min 1. Optional fields are left free.
- */
 const mintFormSchema = schema<MintFormData>((path) => {
   required(path.inscriptionId1);
   pattern(path.inscriptionId1, INSCRIPTION_ID_PATTERN);
@@ -100,6 +92,17 @@ const mintFormSchema = schema<MintFormData>((path) => {
   min(path.feeRate, 1);
 });
 
+const INSCRIPTION_ID_FIELDS = [
+  'inscriptionId1',
+  'inscriptionId2',
+  'inscriptionId3',
+  'inscriptionId4',
+  'inscriptionId5',
+  'inscriptionId6',
+] as const;
+
+const DEFAULT_ITEMS_PER_PAGE = 12;
+
 /** One row of the expert-panel UTXO picker. */
 export interface ViableInscribeSimulation {
   utxo: TxnOutput;
@@ -114,7 +117,6 @@ export interface ViableInscribeSimulation {
   styleUrls: ['./start.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    LoadingIndicatorComponent,
     InscriptionListItemComponent,
     CubePreviewComponent,
     CubePreviewTitleComponent,
@@ -129,18 +131,43 @@ export interface ViableInscribeSimulation {
   },
 })
 export class StartComponent {
-  protected readonly mintFacade = inject(MintFacade);
-  protected readonly pastFacade = inject(PastFacade);
   protected readonly walletService = inject(WalletService);
   protected readonly orchestrator = inject(InscribeMintOrchestrator);
+  protected readonly pastMints = inject(PastMintsService);
   private readonly scanner = inject(UtxoContentScanner);
   private readonly cubesData = inject(CubesDataService);
+  private readonly cubeSuggestionService = inject(CubeSuggestionService);
+  private readonly inscriptionLookup = inject(InscriptionLookupService);
 
   protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
 
-  // ---------- Source signals ----------
+  // ---------- Async resources (replaces NgRx effects/reducers) ----------
 
-  protected readonly cursor = toSignal(this.cubesData.getCursor());
+  /** Cursor over the ordinal-cubes-index — one static JSON blob. */
+  protected readonly cursorResource = rxResourceFixed({
+    stream: () => this.cubesData.getCursor(),
+  });
+  protected readonly cursor = computed(() => this.cursorResource.value() ?? null);
+
+  /** Paginated cubes list. Reactive on itemsPerPage + currentPage. */
+  protected readonly currentPage = signal(1);
+  protected readonly itemsPerPage = signal(DEFAULT_ITEMS_PER_PAGE);
+
+  protected readonly inscriptionsResource = rxResourceFixed({
+    params: () => ({ itemsPerPage: this.itemsPerPage(), page: this.currentPage() }),
+    stream: ({ params }) => this.cubesData.getInscriptions(params.itemsPerPage, params.page),
+  });
+
+  /** Suggestion pool — a fresh cube suggestion for the given collection.
+   *  `''` = any collection; changing the trigger reloads. */
+  protected readonly suggestionCollection = signal<string>('');
+  protected readonly suggestionResource = rxResourceFixed({
+    params: () => ({ collection: this.suggestionCollection() }),
+    stream: ({ params }) => this.cubeSuggestionService.getCubeSuggestion(params.collection),
+  });
+
+  // ---------- Wallet + orchestrator signals ----------
+
   protected readonly connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
   protected readonly wallets = toSignal(this.walletService.wallets$, {
     initialValue: { installedWallets: [], notInstalledWallets: [] },
@@ -156,8 +183,7 @@ export class StartComponent {
   protected readonly mintFormData = signal<MintFormData>(INITIAL_MINT_FORM);
   protected readonly mintForm = form(this.mintFormData, mintFormSchema);
 
-  /** Live cube preview data — derived from the form data signal. */
-  protected readonly cubeDetails = computed<CubeDetails>(() => {
+  protected readonly cubeDetails = computed(() => {
     const v = this.mintFormData();
     return {
       inscriptionIds: {
@@ -179,24 +205,10 @@ export class StartComponent {
 
   // ---------- Derived state ----------
 
-  /**
-   * Every installed on-chain-ordinals-aware wallet — powers the connect
-   * picker. `onChainOrdinals: false` is set upstream on wallets that
-   * detect but can't hold ordinal artifacts (Lightning-only Alby with no
-   * BTC backend, etc); those get filtered out here so the picker only
-   * shows options that can actually complete a cube mint.
-   */
   protected readonly installedOrdinalsAware = computed(() =>
     this.wallets().installedWallets.filter((w) => w.onChainOrdinals !== false),
   );
 
-  /**
-   * Combines the orchestrator's raw simulation rows with the scanner's
-   * asset-scan state. Filters to viable rows, sorts biggest-first, caps
-   * at 10, and annotates each with a bucket (clean / assets / unscanned
-   * / …). Same shape cat21.space's mint page uses — pure computed, no
-   * RxJS side effects.
-   */
   protected readonly viableRows = computed<ViableInscribeSimulation[]>(() => {
     const rows = this.simulations();
     const scanMap = this.scanStates();
@@ -213,50 +225,6 @@ export class StartComponent {
       });
   });
 
-  // ---------- Checkout state ----------
-
-  /**
-   * Classic e-commerce funnel: get the customer engaged with the fun
-   * part (configure a cube, see it spin) before we hit them with any
-   * annoying steps. `checkoutOpen` flips true when the user commits by
-   * clicking the CTA — that's the point where we reveal wallet-connect,
-   * fee picking, and UTXO review.
-   */
-  protected readonly checkoutOpen = signal(false);
-
-  /** Enables the top-level "Mint my cube!" CTA. */
-  protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
-
-  /**
-   * Computed views into orchestrator.successResult() — computed signals
-   * are tracked in the template and match cat21-indexer's proven
-   * pattern (successTxId() there). Prior `@let` + optional-chain in the
-   * template rendered as empty strings even though the SDK's signal
-   * clearly held the txids at the moment the template evaluated.
-   */
-  protected readonly successCommitTxId = computed(
-    () => this.orchestrator.successResult()?.commitTxId ?? '',
-  );
-  protected readonly successRevealTxId = computed(
-    () => this.orchestrator.successResult()?.revealTxId ?? '',
-  );
-
-  /**
-   * Compact diagnostic for the regtest e2e spec — semicolon-joined
-   * `<bucket>:<value>` per viable row so the spec can grep the raw
-   * scanner state when auto-pick misbehaves.
-   */
-  protected readonly bucketsDebug = computed(() =>
-    this.viableRows()
-      .map((r) => `${r.bucket}:${r.utxo.value}`)
-      .join(';'),
-  );
-
-  /**
-   * The full ViableInscribeSimulation row corresponding to the currently
-   * selected UTXO. Lets the template read simulation.commitFeeSats etc.
-   * without another lookup in each cell.
-   */
   protected readonly selectedRow = computed<ViableInscribeSimulation | null>(() => {
     const sel = this.orchestrator.selectedUtxo();
     if (!sel) return null;
@@ -265,11 +233,6 @@ export class StartComponent {
     ) ?? null;
   });
 
-  /**
-   * Everything the mint button gates on, collapsed into one computed so
-   * the template does exactly one signal read for `[disabled]`. All
-   * checks are pure signal reads — no form.valid subscription races.
-   */
   protected readonly canMint = computed(() =>
     this.viableRows().length > 0 &&
     this.orchestrator.selectedUtxo() !== null &&
@@ -277,99 +240,17 @@ export class StartComponent {
     this.mintForm().valid(),
   );
 
-  /**
-   * Inlined dependencies — reading `canMint()` from inside another
-   * computed produced stale values (iterations 4/5). Reading each
-   * primitive signal directly here so Angular can track them all
-   * against this consumer. Excludes `mintForm().valid()` on purpose;
-   * next iteration re-adds it if this passes.
-   */
-  protected readonly mintBtnDisabled = computed(() => {
-    const noViable = this.viableRows().length === 0;
-    const noSelected = this.orchestrator.selectedUtxo() === null;
-    const state = this.orchestrator.state();
-    const notReady = state !== 'ready';
-    const minting = state === 'minting';
-    return noViable || noSelected || notReady || minting;
-  }
-  ,
-  );
+  // ---------- Checkout state ----------
 
-  // ---------- Lifecycle ----------
+  protected readonly checkoutOpen = signal(false);
+  protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
+
+  // ---------- Constructor: reactive wiring ----------
 
   private lastWalletAddress: string | null = null;
 
-  /** ViewChild on the mint button — bypass Angular's property binding
-   *  and toggle the native `.disabled` attribute directly from an
-   *  effect(). Property bindings on this button consistently rendered
-   *  stale values across iterations 4-7 even though sibling
-   *  interpolations reading the same signals refreshed correctly. */
-  private readonly mintBtnEl = viewChild<ElementRef<HTMLButtonElement>>('mintBtnEl');
-  private readonly feeTierEco = viewChild<ElementRef<HTMLButtonElement>>('feeTierEco');
-  private readonly feeTierHour = viewChild<ElementRef<HTMLButtonElement>>('feeTierHour');
-  private readonly feeTierHalf = viewChild<ElementRef<HTMLButtonElement>>('feeTierHalf');
-  private readonly feeTierFast = viewChild<ElementRef<HTMLButtonElement>>('feeTierFast');
-  private readonly mintFoundFundsEl = viewChild<ElementRef<HTMLElement>>('mintFoundFundsEl');
-  private readonly foundFundsSource = viewChild<ElementRef<HTMLElement>>('foundFundsSource');
-  private readonly foundFundsAvailable = viewChild<ElementRef<HTMLElement>>('foundFundsAvailable');
-  private readonly foundFundsMinerFeeRow = viewChild<ElementRef<HTMLElement>>('foundFundsMinerFeeRow');
-  private readonly foundFundsMinerFee = viewChild<ElementRef<HTMLElement>>('foundFundsMinerFee');
-
   constructor() {
-    // Force-toggle mint-btn.disabled from an effect. Bypasses whatever
-    // is stopping Angular from re-checking the button's [attr.disabled].
-    effect(() => {
-      const enabled = this.canMint() && this.orchestrator.state() !== 'minting';
-      const el = this.mintBtnEl()?.nativeElement;
-      if (el) el.disabled = !enabled;
-    });
-
-    // Fee-tier buttons — same #61662 problem, imperative fix.
-    effect(() => {
-      const fees = this.recommendedFees();
-      const buttons: { el: ElementRef<HTMLButtonElement> | undefined; label: string; value: number | undefined }[] = [
-        { el: this.feeTierEco(), label: 'Eco', value: fees?.economyFee },
-        { el: this.feeTierHour(), label: 'Hour', value: fees?.hourFee },
-        { el: this.feeTierHalf(), label: 'Half', value: fees?.halfHourFee },
-        { el: this.feeTierFast(), label: 'Fast', value: fees?.fastestFee },
-      ];
-      for (const b of buttons) {
-        const el = b.el?.nativeElement;
-        if (!el) continue;
-        if (b.value != null) {
-          el.textContent = `${b.label} ${b.value}`;
-          el.hidden = false;
-        } else {
-          el.textContent = b.label;
-          el.hidden = true;
-        }
-      }
-    });
-
-    // mint-found-funds container + interior text nodes.
-    effect(() => {
-      const sel = this.orchestrator.selectedUtxo();
-      const rows = this.viableRows();
-      const container = this.mintFoundFundsEl()?.nativeElement;
-      const source = this.foundFundsSource()?.nativeElement;
-      const available = this.foundFundsAvailable()?.nativeElement;
-      const feeRow = this.foundFundsMinerFeeRow()?.nativeElement;
-      const feeText = this.foundFundsMinerFee()?.nativeElement;
-      if (!container) return;
-      const show = rows.length > 0 && sel !== null;
-      container.hidden = !show;
-      if (!show) return;
-      if (source) source.textContent = `${sel!.txid.slice(0, 12)}…:${sel!.vout}`;
-      if (available) available.textContent = `${sel!.value.toLocaleString('en-US')} sat`;
-      const selRow = this.selectedRow();
-      if (feeRow) feeRow.hidden = !selRow;
-      if (feeText && selRow) {
-        feeText.textContent = `commit ${selRow.simulation.commitFeeSats} + reveal ${selRow.simulation.revealFeeSats} = ${selRow.simulation.totalFeeSats} sat`;
-      }
-    });
-
-    // Reset the scanner's cache when the wallet changes. Initial
-    // null → wallet is a no-op (scanner is already empty).
+    // Reset the scanner's cache when the wallet changes.
     effect(() => {
       const addr = this.connectedWallet()?.ordinalsAddress ?? null;
       if (this.lastWalletAddress !== null && addr !== this.lastWalletAddress) {
@@ -378,17 +259,15 @@ export class StartComponent {
       this.lastWalletAddress = addr;
     });
 
-    // Eager-scan small viable UTXOs. Scanner dedupes internally so
-    // repeat triggers are free.
+    // Eager-scan small viable UTXOs.
     effect(() => {
       const rows = this.viableRows();
-      this.scanner.autoScan(rows.map((r) => ({ txid: r.utxo.txid, vout: r.utxo.vout, value: r.utxo.value })));
+      this.scanner.autoScan(
+        rows.map((r) => ({ txid: r.utxo.txid, vout: r.utxo.vout, value: r.utxo.value })),
+      );
     });
 
-    // Auto-pick the safest viable UTXO. Priority lives in the SDK
-    // (findAutoPickCandidate) so ordpool and cat21.space can't drift.
-    // Never nulls a live selection on transient empty emissions —
-    // that guards against reload-induced signal flap.
+    // Auto-pick the safest viable UTXO. Priority lives in the SDK.
     effect(() => {
       const rows = this.viableRows();
       if (rows.length === 0) return;
@@ -401,16 +280,14 @@ export class StartComponent {
       this.orchestrator.setSelectedUtxo(pick ? pick.utxo : null);
     });
 
-    // Fee rate → orchestrator. Debounced so a scrub through 1..99
-    // doesn't fan out 99 simulations.
+    // Fee rate → orchestrator, debounced.
     toObservable(this.mintFormData)
       .pipe(map((v) => v.feeRate), debounceTime(150))
       .subscribe((rate) => {
         if (rate && rate > 0) this.orchestrator.setFeeRate(rate);
       });
 
-    // Form value → orchestrator content. Only fires when the form is
-    // valid. Debounced so keystrokes don't fan out.
+    // Form → orchestrator content, debounced.
     toObservable(this.mintFormData)
       .pipe(debounceTime(150))
       .subscribe(() => {
@@ -423,31 +300,26 @@ export class StartComponent {
         });
       });
 
-    // #12345-style inscription-number lookup — resolve to a full
-    // inscription id via ord-proxy on debounce, then patch the field
-    // in place. Same shape as the pre-signal-forms mint form.
+    // #12345-style inscription-number lookup — debounced per field.
     for (const key of INSCRIPTION_ID_FIELDS) {
       toObservable(this.mintFormData)
         .pipe(map((v) => v[key]), debounceTime(1000))
         .subscribe((value) => {
           const trimmed = value.trim();
           if (!trimmed || !/^\d+$/.test(trimmed)) return;
-          this.mintFacade.lookupInscriptionId(trimmed).subscribe((inscriptionId) => {
-            if (!inscriptionId) return;
-            this.mintFormData.update((v) => ({ ...v, [key]: inscriptionId }));
+          this.inscriptionLookup.lookupById(trimmed).subscribe((id) => {
+            if (!id) return;
+            this.mintFormData.update((v) => ({ ...v, [key]: id }));
           });
         });
     }
 
-    // Initial fee rate on the orchestrator (matches the form default).
     this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
 
-    // When a new suggestion arrives from the store, patch its six ids
-    // into the form. Uses object identity to detect fresh emissions —
-    // NgRx re-emits a new reference on every dispatch of Success.
-    let lastSuggestion: unknown = undefined;
+    // Fresh suggestions from the resource → patch into the form.
+    let lastSuggestion: CubeSuggestion | undefined;
     effect(() => {
-      const suggestion = this.mintFacade.cubeSuggestion();
+      const suggestion = this.suggestionResource.value();
       if (!suggestion || suggestion === lastSuggestion) return;
       lastSuggestion = suggestion;
       this.mintFormData.update((v) => ({
@@ -466,20 +338,21 @@ export class StartComponent {
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;
-    const i = this.mintFacade.inscriptions();
-    if (!i.itemsPerPage) return;
-    const lastPage = Math.ceil(i.totalInscriptions / i.itemsPerPage);
-    if (event.key === 'ArrowLeft' && i.currentPage > 1) {
-      this.mintFacade.loadInscriptions(i.itemsPerPage, i.currentPage - 1);
-    } else if (event.key === 'ArrowRight' && i.currentPage < lastPage) {
-      this.mintFacade.loadInscriptions(i.itemsPerPage, i.currentPage + 1);
+    const list = this.inscriptionsResource.value();
+    if (!list || !list.itemsPerPage) return;
+    const lastPage = Math.ceil(list.totalInscriptions / list.itemsPerPage);
+    if (event.key === 'ArrowLeft' && list.currentPage > 1) {
+      this.currentPage.set(list.currentPage - 1);
+    } else if (event.key === 'ArrowRight' && list.currentPage < lastPage) {
+      this.currentPage.set(list.currentPage + 1);
     }
   }
 
+  loadInscriptionsPage(page: number) {
+    this.currentPage.set(page);
+  }
+
   connectWallet(type: KnownOrdinalWalletType) {
-    // WalletService.connectWallet is a cold observable; the (click)
-    // expression doesn't subscribe on its own, so the connect flow
-    // never runs unless we call .subscribe() here.
     this.walletService.connectWallet(type).subscribe({
       error: (err) => {
         // eslint-disable-next-line no-console
@@ -494,7 +367,8 @@ export class StartComponent {
   }
 
   craftAnotherCube() {
-    this.mintFacade.loadCubeSuggestion('');
+    // Reload the suggestion resource — same collection, fresh pick.
+    this.suggestionResource.reload();
   }
 
   cancelCheckout() {
@@ -504,8 +378,8 @@ export class StartComponent {
   async mint() {
     if (!this.canMint()) return;
 
-    // Belt-and-braces: sync content one more time in case the Mint
-    // click landed before the debounced form-value subscription fired.
+    // Belt-and-braces: sync content one more time in case the Mint click
+    // landed before the debounced form-value subscription fired.
     const html = getCubeHtml(this.cubeDetails());
     this.orchestrator.setContent({
       body: new TextEncoder().encode(html),
@@ -515,7 +389,7 @@ export class StartComponent {
 
     try {
       const result = await firstValueFrom(this.orchestrator.mint());
-      this.pastFacade.recordPastMint(result.commitTxId, result.revealTxId);
+      this.pastMints.record(result.commitTxId, result.revealTxId);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn('[cubes] mint threw:', err);
@@ -548,15 +422,6 @@ export class StartComponent {
     this.checkoutOpen.set(false);
   }
 }
-
-const INSCRIPTION_ID_FIELDS = [
-  'inscriptionId1',
-  'inscriptionId2',
-  'inscriptionId3',
-  'inscriptionId4',
-  'inscriptionId5',
-  'inscriptionId6',
-] as const;
 
 function isTextInputTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;

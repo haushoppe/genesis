@@ -1,5 +1,5 @@
 <iframe
-  [srcdoc]="mintFacade.getCubeHtml(cubeDetailsWithMockedTitle()) | safeHtml"
+  [srcdoc]="cubeHtml() | safeHtml"
   class=" p-3 mt-2"
   sandbox="allow-scripts"
   width="100%" height="500"

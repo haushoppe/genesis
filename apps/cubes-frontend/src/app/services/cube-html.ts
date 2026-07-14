@@ -1,7 +1,27 @@
 import { parseCube } from '../../shared/ordinals/parse-cube';
 import { isValidInscriptionId } from './is-valid-inscription-id';
 import { removeTrailingPipes } from './mint-service-remove-trailing-pipes';
-import { CubeDetails } from '../store/mint.actions';
+
+/** The six inscriptions displayed on the six cube faces. */
+export interface SixInscriptionIds {
+  inscriptionId1: string;
+  inscriptionId2: string;
+  inscriptionId3: string;
+  inscriptionId4: string;
+  inscriptionId5: string;
+  inscriptionId6: string;
+}
+
+/** Everything the mint form collects before it hands the HTML to the SDK. */
+export interface CubeDetails {
+  inscriptionIds: SixInscriptionIds;
+  title: string;
+  rotationSpeedX: string;
+  rotationSpeedY: string;
+  colorPane: string;
+  bgColor1: string;
+  bgColor2: string;
+}
 
 /**
  * Cube HTML shape ord renders when it fetches the inscription's body.

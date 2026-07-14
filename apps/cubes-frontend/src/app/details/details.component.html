@@ -1,105 +1,76 @@
-@let i = mintFacade.singleInscription();
-  <h3 class="mt-2 mb-2">{{ i?.inscription?.meta?.name || 'Ordinal Cube' }}</h3>
+@let d = details();
 
-  <!-- <div class="mt-1 mb-4">
-  <small class="text-muted">
-    Owned by
-    XXX
-  </small>
-</div> -->
+@if (d?.inscription; as insc) {
+  <h3 class="mt-2 mb-2">{{ insc.meta?.name || 'Ordinal Cube' }}</h3>
 
-  <ng-container>
-    <iframe
-      width="100%"
-      height="300"
-      [src]="getIframeSrc($safeNavigationMigration(i?.inscription?.inscriptionId)) | safeUrl"
-      sandbox="allow-scripts"
-    ></iframe>
-  </ng-container>
+  <iframe
+    width="100%"
+    height="300"
+    [src]="getIframeSrc(insc.inscriptionId) | safeUrl"
+    sandbox="allow-scripts"
+  ></iframe>
 
   <div class="clearfix">
-    @if (i?.previousInscriptionId) {
-    <a
-      [routerLink]="['/inscription', $safeNavigationMigration(i?.previousInscriptionId)]"
-      class="fw-bold mt-4 mb-4 float-start"
-      >« Previous Cube</a
-    >
-    } @if (i?.nextInscriptionId) {
-    <a
-      [routerLink]="['/inscription', $safeNavigationMigration(i?.nextInscriptionId)]"
-      class="fw-bold mt-4 mb-4 float-end"
-      >» Next Cube</a
-    >
+    @if (d?.previousInscriptionId; as prev) {
+      <a [routerLink]="['/inscription', prev]" class="fw-bold mt-4 mb-4 float-start">« Previous Cube</a>
+    }
+    @if (d?.nextInscriptionId; as next) {
+      <a [routerLink]="['/inscription', next]" class="fw-bold mt-4 mb-4 float-end">» Next Cube</a>
     }
   </div>
-
-  <app-loading-indicator
-    [state]="mintFacade.singleInscriptionStatus()"
-    sendDataText="Loading cube details…"
-  ></app-loading-indicator>
 
   <h4 class="mt-4">Details</h4>
 
   <div class="text-truncate" style="width: 70vw">
     <span class="d-inline-block" style="width: 160px">Inscription ID:</span>
-    <a
-      [href]="
-        environment.ordinalsExplorerDetails + $safeNavigationMigration(i?.inscription?.inscriptionId)
-      "
-      target="_blank"
-      >◉ {{ i?.inscription?.inscriptionId }}</a
-    >
+    <a [href]="environment.ordinalsExplorerDetails + insc.inscriptionId" target="_blank" rel="noopener">
+      ◉ {{ insc.inscriptionId }}
+    </a>
   </div>
 
   <div class="text-truncate" style="width: 70vw">
-    <span class="d-inline-block" style="width: 160px">Inscription Number:</span
-    >{{ i?.inscription?.inscriptionNumber }}
+    <span class="d-inline-block" style="width: 160px">Inscription Number:</span>{{ insc.inscriptionNumber }}
   </div>
 
   <div class="text-truncate" style="width: 70vw">
     <span class="d-inline-block" style="width: 160px">Block Height:</span>
-    <a
-      href="https://ordpool.space/block/{{ i?.inscription?.blockHeight }}"
-      target="_blank"
-      >🟧 {{ i?.inscription?.blockHeight }}</a
-    >
+    <a href="https://ordpool.space/block/{{ insc.blockHeight }}" target="_blank" rel="noopener">
+      🟧 {{ insc.blockHeight }}
+    </a>
   </div>
 
   <div class="text-truncate" style="width: 70vw">
     <span class="d-inline-block" style="width: 160px">Buy or Sell:</span>
-    <a
-      [href]="environment.satflowMarketplace + $safeNavigationMigration(i?.inscription?.inscriptionId)"
-      target="_blank"
-      >on Satflow</a
-    >
+    <a [href]="environment.satflowMarketplace + insc.inscriptionId" target="_blank" rel="noopener">on Satflow</a>
     &nbsp;|&nbsp;
-    <a
-      [href]="environment.ordNetMarketplace + $safeNavigationMigration(i?.inscription?.inscriptionNumber)"
-      target="_blank"
-      >on ord.net</a
-    >
+    <a [href]="environment.ordNetMarketplace + insc.inscriptionNumber" target="_blank" rel="noopener">on ord.net</a>
   </div>
 
   <h4 class="mt-4">Attributes</h4>
 
   <table>
-    @for (attribute of i?.inscription?.meta?.attributes; track attribute) {
-    <tr>
-      <td>{{ attribute.trait_type }}:</td>
-      <td class="ps-2">
-        @if (attribute.trait_type.includes('Side')) {
-        <a
-          [href]="environment.ordinalsExplorerDetails + attribute.value"
-          target="_blank"
-        >
-          ◉ {{ attribute.value | shortenAddress }}
-        </a>
-        } @if (!attribute.trait_type.includes('Side')) {
-        {{ attribute.value }}
-        }
-      </td>
-    </tr>
+    @for (attribute of insc.meta?.attributes ?? []; track attribute) {
+      <tr>
+        <td>{{ attribute.trait_type }}:</td>
+        <td class="ps-2">
+          @if (attribute.trait_type.includes('Side')) {
+            <a [href]="environment.ordinalsExplorerDetails + attribute.value" target="_blank" rel="noopener">
+              ◉ {{ attribute.value | shortenAddress }}
+            </a>
+          } @else {
+            {{ attribute.value }}
+          }
+        </td>
+      </tr>
     }
   </table>
+} @else if (detailsResource.isLoading()) {
+  <p class="text-muted mt-4">Loading cube details…</p>
+} @else if (detailsResource.error()) {
+  <p class="text-danger mt-4">
+    Failed to load cube details.
+    <a href="javascript:void(0)" (click)="detailsResource.reload()">Retry</a>
+  </p>
+}
 
-<a routerLink="/" class="btn btn btn-primary fw-bold mt-4 mb-4">« Back</a>
+<a routerLink="/" class="btn btn-primary fw-bold mt-4 mb-4">« Back</a>

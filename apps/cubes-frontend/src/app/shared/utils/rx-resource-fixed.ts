@@ -33,8 +33,10 @@ export function rxResourceFixed<T, P = void>(
   // Spread options to preserve defaultValue, equal, and injector
   const resource = rxResource<T, { userParams: P; _refresh: number }>({
     ...options, // Preserve all options (defaultValue, equal, injector)
-    params: () => ({
-      userParams: options.params?.() ?? (undefined as P),
+    params: (ctx) => ({
+      // Angular 22's params signature is `(ctx: ResourceParamsContext) => R`.
+      // Forward ctx so the wrapper stays a transparent shim.
+      userParams: options.params?.(ctx) ?? (undefined as P),
       _refresh: refreshKey()
     }),
     stream: (context) => {

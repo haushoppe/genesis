@@ -1,20 +1,11 @@
 import { provideHttpClient } from '@angular/common/http';
-import { ApplicationConfig, isDevMode, provideZonelessChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter, withInMemoryScrolling } from '@angular/router';
-import { provideEffects } from '@ngrx/effects';
-import { provideRouterStore, routerReducer } from '@ngrx/router-store';
-import { ActionReducer, provideState, provideStore } from '@ngrx/store';
-import { provideStoreDevtools } from '@ngrx/store-devtools';
-import { localStorageSync } from 'ngrx-store-localstorage';
+import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { bitcoinNetwork, cat21Config, Network, StorageLike, storage } from 'ordpool-sdk';
 
 import { environment } from '../environments/environment';
 import { ORDINAL_ROUTES } from './ordinal.routes';
-import { MintEffects } from './store/mint.effects';
-import { mintFeature } from './store/mint.reducer';
-import { pastFeature } from './store/past.reducer';
-import { CustomRouteSerializer } from './store/utils-ngrx-router/custom-route-serializer';
 
 /**
  * Thin adapter over the browser's localStorage that satisfies the
@@ -26,15 +17,6 @@ const browserLocalStorage: StorageLike = {
   setValue: (key, value) => localStorage.setItem(key, value),
   removeItem: (key) => localStorage.removeItem(key),
 };
-
-
-export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
-  return localStorageSync({
-    keys: ['past'],
-    rehydrate: true,
-    storageKeySerializer: (key) => `cube_${key}`
-  })(reducer);
-}
 
 
 export const appConfig: ApplicationConfig = {
@@ -65,30 +47,11 @@ export const appConfig: ApplicationConfig = {
     } },
     provideRouter(
       ORDINAL_ROUTES,
+      withComponentInputBinding(),
       withInMemoryScrolling({
         scrollPositionRestoration: 'enabled',
         anchorScrolling: 'enabled'
       })
     ),
-
-    // NgRx: single top-level slice, no per-route lazy providers.
-    provideStore({
-      router: routerReducer,
-    }, {
-      metaReducers: [localStorageSyncReducer]
-    }),
-    provideState(mintFeature),
-    provideState(pastFeature),
-    provideEffects(MintEffects),
-    provideRouterStore({
-      serializer: CustomRouteSerializer,
-    }),
-    provideStoreDevtools({
-      maxAge: 25,
-      logOnly: !isDevMode(),
-      autoPause: true,
-      trace: false,
-      traceLimit: 75,
-    }),
   ],
 };

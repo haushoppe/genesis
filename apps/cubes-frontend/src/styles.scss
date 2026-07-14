@@ -18,20 +18,19 @@ body {
 }
 
 
+// `strong` stays as the default bold on the body colour (light on
+// dark). Orange is reserved for the primary CTA (btn-primary) so the
+// eye picks it up.
 strong {
   font-weight: 700;
-  color: $primary;
 }
 
 h1, h2, h3, h4 {
-  // font-family: "Merriweather", sans-serif;
   font-family: "Inter", sans-serif;
   font-weight: 700;
-
   background: linear-gradient(to right, #dbdbdb, #5c5e62);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  // display: inline-block;
 }
 
 /* text-justify has been removed in Bootstrap 5 */
@@ -58,28 +57,6 @@ button:disabled {
   pointer-events: all !important;
 }
 
-
-// https://codepen.io/danielmariveles/pen/jPrwxv
-
-.btn-labeled {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.btn-label {
-  position: relative;
-  left: -0.75rem;
-  display: inline-block;
-  padding: 0.5rem 0.60rem 0.275rem 0.60rem;
-  background: rgba(0, 0, 0);
-  color: $primary;
-}
-
-.btn-label-text {
-  position: relative;
-  top: -1px;
-  display: inline-block;
-}
 
 .blocky-inline-ml {
   width: 1.1em;

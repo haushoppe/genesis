@@ -2,7 +2,7 @@
 
 <p class="mt-2">
   The world's smallest onchain gallery, visualized as a 3D cube. Permissionless. Immutable. Forever existing.<br class="d-none d-md-block">
-  Choose six images that are already on the <strong>🟧 Bitcoin</strong> blockchain and claim them with your own cube!
+  Choose six images that are already on the <strong>Bitcoin</strong> blockchain and claim them with your own cube!
 </p>
 
 
@@ -223,7 +223,7 @@
                     {{ bucketLabel(row.bucket) }}
                   </span>
                   @if (orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout) {
-                    <span class="badge bg-primary ms-2">Selected</span>
+                    <span class="badge bg-secondary ms-2">Selected</span>
                   }
                 </div>
                 <div class="text-nowrap">

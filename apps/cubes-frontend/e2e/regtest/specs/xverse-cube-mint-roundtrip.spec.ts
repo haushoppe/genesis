@@ -550,6 +550,19 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   }
   await shot(cubes, '05-mint-btn-enabled');
 
+  // Interior-content assertions — the whole reason we're here. The
+  // #61662 bug lets Angular mount a container div but leave every
+  // interior binding empty. `toBeVisible` on the outer div isn't
+  // enough — we have to prove the numbers inside actually rendered.
+  await expect(cubes.locator('[data-testid="fee-tier-eco"]')).toContainText(/Eco \d+/, { timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="fee-tier-hour"]')).toContainText(/Hour \d+/);
+  await expect(cubes.locator('[data-testid="fee-tier-half"]')).toContainText(/Half \d+/);
+  await expect(cubes.locator('[data-testid="fee-tier-fast"]')).toContainText(/Fast \d+/);
+  await expect(cubes.locator('[data-testid="mint-found-funds-source"]')).toContainText(/[0-9a-f]{12}…:\d+/);
+  await expect(cubes.locator('[data-testid="mint-found-funds-available"]')).toContainText(/\d[\d,\s]*\s*sat/);
+  await expect(cubes.locator('[data-testid="mint-found-funds-miner-fee"]')).toContainText(/commit \d+ \+ reveal \d+ = \d+ sat/);
+  console.log('[cube-mint] interior signal bindings all rendered — no #61662 regression');
+
   // Xverse routinely leaves a leftover chrome-extension "dashboard"
   // page open after the connect approval. When we click mint, Xverse
   // may reuse that leftover for the sign popup — but knownPages

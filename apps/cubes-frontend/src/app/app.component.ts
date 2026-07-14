@@ -18,6 +18,9 @@ import { CustomScrollService } from './custom-scroll.service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'data-bs-theme': 'dark',
+  },
   imports: [
     BannerComponent,
     FooterComponent,

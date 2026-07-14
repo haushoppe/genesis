@@ -305,6 +305,15 @@ export class StartComponent {
    *  stale values across iterations 4-7 even though sibling
    *  interpolations reading the same signals refreshed correctly. */
   private readonly mintBtnEl = viewChild<ElementRef<HTMLButtonElement>>('mintBtnEl');
+  private readonly feeTierEco = viewChild<ElementRef<HTMLButtonElement>>('feeTierEco');
+  private readonly feeTierHour = viewChild<ElementRef<HTMLButtonElement>>('feeTierHour');
+  private readonly feeTierHalf = viewChild<ElementRef<HTMLButtonElement>>('feeTierHalf');
+  private readonly feeTierFast = viewChild<ElementRef<HTMLButtonElement>>('feeTierFast');
+  private readonly mintFoundFundsEl = viewChild<ElementRef<HTMLElement>>('mintFoundFundsEl');
+  private readonly foundFundsSource = viewChild<ElementRef<HTMLElement>>('foundFundsSource');
+  private readonly foundFundsAvailable = viewChild<ElementRef<HTMLElement>>('foundFundsAvailable');
+  private readonly foundFundsMinerFeeRow = viewChild<ElementRef<HTMLElement>>('foundFundsMinerFeeRow');
+  private readonly foundFundsMinerFee = viewChild<ElementRef<HTMLElement>>('foundFundsMinerFee');
 
   constructor() {
     // Force-toggle mint-btn.disabled from an effect. Bypasses whatever
@@ -313,6 +322,50 @@ export class StartComponent {
       const enabled = this.canMint() && this.orchestrator.state() !== 'minting';
       const el = this.mintBtnEl()?.nativeElement;
       if (el) el.disabled = !enabled;
+    });
+
+    // Fee-tier buttons — same #61662 problem, imperative fix.
+    effect(() => {
+      const fees = this.recommendedFees();
+      const buttons: { el: ElementRef<HTMLButtonElement> | undefined; label: string; value: number | undefined }[] = [
+        { el: this.feeTierEco(), label: 'Eco', value: fees?.economyFee },
+        { el: this.feeTierHour(), label: 'Hour', value: fees?.hourFee },
+        { el: this.feeTierHalf(), label: 'Half', value: fees?.halfHourFee },
+        { el: this.feeTierFast(), label: 'Fast', value: fees?.fastestFee },
+      ];
+      for (const b of buttons) {
+        const el = b.el?.nativeElement;
+        if (!el) continue;
+        if (b.value != null) {
+          el.textContent = `${b.label} ${b.value}`;
+          el.hidden = false;
+        } else {
+          el.textContent = b.label;
+          el.hidden = true;
+        }
+      }
+    });
+
+    // mint-found-funds container + interior text nodes.
+    effect(() => {
+      const sel = this.orchestrator.selectedUtxo();
+      const rows = this.viableRows();
+      const container = this.mintFoundFundsEl()?.nativeElement;
+      const source = this.foundFundsSource()?.nativeElement;
+      const available = this.foundFundsAvailable()?.nativeElement;
+      const feeRow = this.foundFundsMinerFeeRow()?.nativeElement;
+      const feeText = this.foundFundsMinerFee()?.nativeElement;
+      if (!container) return;
+      const show = rows.length > 0 && sel !== null;
+      container.hidden = !show;
+      if (!show) return;
+      if (source) source.textContent = `${sel!.txid.slice(0, 12)}…:${sel!.vout}`;
+      if (available) available.textContent = `${sel!.value.toLocaleString('en-US')} sat`;
+      const selRow = this.selectedRow();
+      if (feeRow) feeRow.hidden = !selRow;
+      if (feeText && selRow) {
+        feeText.textContent = `commit ${selRow.simulation.commitFeeSats} + reveal ${selRow.simulation.revealFeeSats} = ${selRow.simulation.totalFeeSats} sat`;
+      }
     });
 
     // Reset the scanner's cache when the wallet changes. Initial

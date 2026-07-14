@@ -168,13 +168,16 @@
       <div class="input-group mb-3">
         <input id="feeRate" data-testid="cube-fee-rate" type="number" class="form-control" [formField]="mintForm.feeRate" />
         <span class="input-group-text">sat/vB</span>
-        <!-- @if (recommendedFees(); as fees) would trigger #61662; each
-             button is permanently mounted and hidden via [hidden] until
-             fees stream lands. -->
-        <button type="button" class="btn btn-outline-secondary" data-testid="fee-tier-eco" [hidden]="!recommendedFees()" (click)="setFeePreset(recommendedFees()?.economyFee ?? 1)" title="Economy">Eco {{ recommendedFees()?.economyFee ?? '' }}</button>
-        <button type="button" class="btn btn-outline-secondary" data-testid="fee-tier-hour" [hidden]="!recommendedFees()" (click)="setFeePreset(recommendedFees()?.hourFee ?? 1)" title="~1h">Hour {{ recommendedFees()?.hourFee ?? '' }}</button>
-        <button type="button" class="btn btn-outline-secondary" data-testid="fee-tier-half" [hidden]="!recommendedFees()" (click)="setFeePreset(recommendedFees()?.halfHourFee ?? 1)" title="~30min">Half {{ recommendedFees()?.halfHourFee ?? '' }}</button>
-        <button type="button" class="btn btn-outline-secondary" data-testid="fee-tier-fast" [hidden]="!recommendedFees()" (click)="setFeePreset(recommendedFees()?.fastestFee ?? 1)" title="Next block">Fast {{ recommendedFees()?.fastestFee ?? '' }}</button>
+        <!-- Tier buttons — text + hidden written imperatively from
+             an effect in the component (see feeTierEls viewChild).
+             Both [hidden] and {{ interpolation }} on these buttons
+             rendered stale across iterations 1-10, same #61662 class.
+             Template-side click handlers still bind fine because they
+             read the signal at click time, not on the mount tick. -->
+        <button #feeTierEco type="button" class="btn btn-outline-secondary" data-testid="fee-tier-eco" hidden (click)="setFeePreset(recommendedFees()?.economyFee ?? 1)" title="Economy">Eco</button>
+        <button #feeTierHour type="button" class="btn btn-outline-secondary" data-testid="fee-tier-hour" hidden (click)="setFeePreset(recommendedFees()?.hourFee ?? 1)" title="~1h">Hour</button>
+        <button #feeTierHalf type="button" class="btn btn-outline-secondary" data-testid="fee-tier-half" hidden (click)="setFeePreset(recommendedFees()?.halfHourFee ?? 1)" title="~30min">Half</button>
+        <button #feeTierFast type="button" class="btn btn-outline-secondary" data-testid="fee-tier-fast" hidden (click)="setFeePreset(recommendedFees()?.fastestFee ?? 1)" title="Next block">Fast</button>
       </div>
 
       <!-- Step 3 — Review + confirm. -->
@@ -194,22 +197,21 @@
         Add funds to <code>{{ connectedWallet()?.paymentAddress ?? '' }}</code> or lower the fee rate.
       </div>
 
-      <!-- @if with `as sel` alias would trigger #61662 — permanent mount
-           via [hidden]; interior null-safe reads. -->
-      <div class="mint-summary p-3 border rounded mb-3 bg-body"
-           data-testid="mint-found-funds"
-           [hidden]="!(viableRows().length > 0 && orchestrator.selectedUtxo())">
+      <!-- Interior text nodes written imperatively; #hidden toggle
+           on the container also via effect. Same #61662-class bug. -->
+      <div #mintFoundFundsEl class="mint-summary p-3 border rounded mb-3 bg-body"
+           data-testid="mint-found-funds" hidden>
         <div class="d-flex justify-content-between">
           <span class="text-muted small">Source</span>
-          <code class="small" data-testid="mint-found-funds-source">{{ (orchestrator.selectedUtxo()?.txid ?? '').slice(0, 12) }}…:{{ orchestrator.selectedUtxo()?.vout ?? '' }}</code>
+          <code #foundFundsSource class="small" data-testid="mint-found-funds-source"></code>
         </div>
         <div class="d-flex justify-content-between">
           <span class="text-muted small">Available</span>
-          <span data-testid="mint-found-funds-available">{{ (orchestrator.selectedUtxo()?.value ?? 0) | number }} sat</span>
+          <span #foundFundsAvailable data-testid="mint-found-funds-available"></span>
         </div>
-        <div class="d-flex justify-content-between" [hidden]="!selectedRow()">
+        <div #foundFundsMinerFeeRow class="d-flex justify-content-between" hidden>
           <span class="text-muted small">Miner fee</span>
-          <span data-testid="mint-found-funds-miner-fee">commit {{ selectedRow()?.simulation?.commitFeeSats ?? '' }} + reveal {{ selectedRow()?.simulation?.revealFeeSats ?? '' }} = <strong>{{ selectedRow()?.simulation?.totalFeeSats ?? '' }}</strong> sat</span>
+          <span #foundFundsMinerFee data-testid="mint-found-funds-miner-fee"></span>
         </div>
         <p class="mb-0 mt-2 text-muted small">
           ✓ Best available UTXO auto-picked.

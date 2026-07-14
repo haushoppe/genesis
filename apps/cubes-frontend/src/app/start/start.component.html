@@ -263,13 +263,13 @@
         ❌ {{ orchestrator.errorMessage() ?? '' }}
       </div>
 
-      <span data-testid="mint-btn-should-be-disabled" hidden>{{ !canMint() || orchestrator.state() === 'minting' }}</span>
+      <span data-testid="mint-btn-should-be-disabled" hidden>{{ mintBtnDisabled() }}</span>
       <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
         <button type="button"
                 data-testid="mint-btn"
                 class="btn btn-primary"
                 (click)="mint()"
-                [attr.disabled]="(!canMint() || orchestrator.state() === 'minting') ? '' : null">
+                [attr.disabled]="mintBtnDisabled() ? '' : null">
           {{ orchestrator.state() === 'minting' ? 'Signing… please confirm in your wallet' : 'Confirm & broadcast' }}
         </button>
         <button type="button" class="btn btn-link" (click)="cancelCheckout()">Cancel</button>

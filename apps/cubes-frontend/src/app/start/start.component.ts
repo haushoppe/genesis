@@ -277,6 +277,19 @@ export class StartComponent {
     this.mintForm().valid(),
   );
 
+  /**
+   * Collapsed `[disabled]` expression so the button template has a
+   * single signal read. Iteration 4 showed the combined inline
+   * expression `!canMint() || state === 'minting'` returned stale
+   * values in the diag span — same tick, same view scope, canMint()
+   * alone was true but the combined expression evaluated to true (the
+   * previous-tick canMint=false). Extracting to a computed makes the
+   * dependency tracking unambiguous.
+   */
+  protected readonly mintBtnDisabled = computed(
+    () => !this.canMint() || this.orchestrator.state() === 'minting',
+  );
+
   // ---------- Lifecycle ----------
 
   private lastWalletAddress: string | null = null;

@@ -159,6 +159,9 @@
       <span data-testid="mint-selected-txid" hidden>{{ orchestrator.selectedUtxo()?.txid ?? '' }}</span>
       <span data-testid="mint-buckets" hidden>{{ bucketsDebug() }}</span>
       <span data-testid="mint-error-message" hidden>{{ orchestrator.errorMessage() ?? '' }}</span>
+      <span data-testid="mint-form-valid" hidden>{{ mintForm().valid() }}</span>
+      <span data-testid="mint-form-fee-rate" hidden>{{ mintFormData().feeRate }}</span>
+      <span data-testid="mint-can-mint" hidden>{{ canMint() }}</span>
 
       <!-- Step 2 — Fee rate. -->
       <p class="fw-bold mb-2 mt-4">2. Pick a fee rate</p>

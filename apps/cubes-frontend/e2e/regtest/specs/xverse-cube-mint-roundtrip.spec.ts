@@ -542,6 +542,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
         formFeeRate: txt('mint-form-fee-rate'),
         canMintSignal: txt('mint-can-mint'),
         mintBtnShouldBeDisabled: txt('mint-btn-should-be-disabled'),
+        canMintAdjacent: txt('mint-btn-canmint-adjacent'),
         connected: q('wallet-connected') !== null,
         foundFundsInDom: q('mint-found-funds') !== null,
         mintBtnInDom: btn !== null,

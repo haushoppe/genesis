@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, signal, untracked, viewChild } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { DecimalPipe, SlicePipe } from '@angular/common';
@@ -299,7 +299,22 @@ export class StartComponent {
 
   private lastWalletAddress: string | null = null;
 
+  /** ViewChild on the mint button — bypass Angular's property binding
+   *  and toggle the native `.disabled` attribute directly from an
+   *  effect(). Property bindings on this button consistently rendered
+   *  stale values across iterations 4-7 even though sibling
+   *  interpolations reading the same signals refreshed correctly. */
+  private readonly mintBtnEl = viewChild<ElementRef<HTMLButtonElement>>('mintBtnEl');
+
   constructor() {
+    // Force-toggle mint-btn.disabled from an effect. Bypasses whatever
+    // is stopping Angular from re-checking the button's [attr.disabled].
+    effect(() => {
+      const enabled = this.canMint() && this.orchestrator.state() !== 'minting';
+      const el = this.mintBtnEl()?.nativeElement;
+      if (el) el.disabled = !enabled;
+    });
+
     // Reset the scanner's cache when the wallet changes. Initial
     // null → wallet is a no-op (scanner is already empty).
     effect(() => {

@@ -263,13 +263,17 @@
         ❌ {{ orchestrator.errorMessage() ?? '' }}
       </div>
 
+      <!-- Diag: identical interpolation to the mint-can-mint span but
+           physically adjacent to the button. If this reads 'true' the
+           interpolation at THIS position tracks correctly. -->
       <span data-testid="mint-btn-should-be-disabled" hidden>{{ !canMint() }}</span>
+      <span data-testid="mint-btn-canmint-adjacent" hidden>{{ canMint() }}</span>
       <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
-        <button type="button"
+        <button #mintBtnEl
+                type="button"
                 data-testid="mint-btn"
                 class="btn btn-primary"
-                (click)="mint()"
-                [attr.disabled]="canMint() ? null : ''">
+                (click)="mint()">
           {{ orchestrator.state() === 'minting' ? 'Signing… please confirm in your wallet' : 'Confirm & broadcast' }}
         </button>
         <button type="button" class="btn btn-link" (click)="cancelCheckout()">Cancel</button>

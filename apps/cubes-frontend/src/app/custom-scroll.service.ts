@@ -31,14 +31,9 @@ export class CustomScrollService {
           return;
         }
 
-        if (e.anchor && document.querySelector('#' + e.anchor)) {
-          this.viewportScroller.scrollToAnchor(e.anchor);
-          return;
-        }
-
-        // Anchor not in DOM yet — poll a few times, then give up. Keeps
-        // the service framework-agnostic; no need for a global ready-
-        // event bus.
+        // Poll a few times for late-arriving anchors (data-driven views
+        // may render after the Scroll event fires). Position-based
+        // restores don't need polling and land on the first tick.
         const deadline = Date.now() + 1500;
         const tryScroll = () => {
           if (e.anchor && document.querySelector('#' + e.anchor)) {
@@ -49,7 +44,7 @@ export class CustomScrollService {
             setTimeout(tryScroll, 100);
           }
         };
-        setTimeout(tryScroll, 50);
+        tryScroll();
       });
   }
 }

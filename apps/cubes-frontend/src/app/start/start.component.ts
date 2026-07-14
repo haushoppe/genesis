@@ -1,6 +1,6 @@
 import { DecimalPipe, SlicePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
@@ -10,6 +10,7 @@ import {
   findAutoPickCandidate,
   InscribeMintOrchestrator,
   KnownOrdinalWalletType,
+  RecommendedFees,
   SimulateInscribeFeesResult,
   TxnOutput,
   UtxoContentScanner,
@@ -17,7 +18,7 @@ import {
   UtxoScanState,
   WalletService,
 } from 'ordpool-sdk';
-import { debounceTime, firstValueFrom, map } from 'rxjs';
+import { debounceTime, firstValueFrom } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
@@ -26,7 +27,6 @@ import { InscriptionListItemComponent } from '../layout/inscription-list-item/in
 import { getCubeHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
-import { CubeSuggestion } from '../services/cubes-data/types';
 import { InscriptionLookupService } from '../services/inscription-lookup.service';
 import { PastMintsService } from '../services/past-mints.service';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
@@ -143,8 +143,22 @@ export class StartComponent {
   private readonly cubesData = inject(CubesDataService);
   private readonly cubeSuggestionService = inject(CubeSuggestionService);
   private readonly inscriptionLookup = inject(InscriptionLookupService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
+
+  /** Fee-tier preset buttons — configured once, rendered via @for. */
+  protected readonly feeTiers: ReadonlyArray<{
+    testId: string;
+    label: string;
+    title: string;
+    key: keyof RecommendedFees;
+  }> = [
+    { testId: 'fee-tier-eco',  label: 'Eco',  title: 'Economy',    key: 'economyFee'  },
+    { testId: 'fee-tier-hour', label: 'Hour', title: '~1h',        key: 'hourFee'     },
+    { testId: 'fee-tier-half', label: 'Half', title: '~30min',     key: 'halfHourFee' },
+    { testId: 'fee-tier-fast', label: 'Fast', title: 'Next block', key: 'fastestFee'  },
+  ];
 
   // ---------- Async resources (replaces NgRx effects/reducers) ----------
 
@@ -152,7 +166,6 @@ export class StartComponent {
   protected readonly cursorResource = rxResourceFixed({
     stream: () => this.cubesData.getCursor(),
   });
-  protected readonly cursor = computed(() => this.cursorResource.value() ?? null);
 
   /** Paginated cubes list. Reactive on itemsPerPage + currentPage. */
   protected readonly currentPage = signal(1);
@@ -189,22 +202,17 @@ export class StartComponent {
   protected readonly mintForm = form(this.mintFormData, mintFormSchema);
 
   protected readonly cubeDetails = computed(() => {
-    const v = this.mintFormData();
+    const {
+      inscriptionId1, inscriptionId2, inscriptionId3,
+      inscriptionId4, inscriptionId5, inscriptionId6,
+      feeRate: _feeRate, ...rest
+    } = this.mintFormData();
     return {
       inscriptionIds: {
-        inscriptionId1: v.inscriptionId1,
-        inscriptionId2: v.inscriptionId2,
-        inscriptionId3: v.inscriptionId3,
-        inscriptionId4: v.inscriptionId4,
-        inscriptionId5: v.inscriptionId5,
-        inscriptionId6: v.inscriptionId6,
+        inscriptionId1, inscriptionId2, inscriptionId3,
+        inscriptionId4, inscriptionId5, inscriptionId6,
       },
-      title: v.title,
-      rotationSpeedX: v.rotationSpeedX,
-      rotationSpeedY: v.rotationSpeedY,
-      colorPane: v.colorPane,
-      bgColor1: v.bgColor1,
-      bgColor2: v.bgColor2,
+      ...rest,
     };
   });
 
@@ -285,17 +293,13 @@ export class StartComponent {
       this.orchestrator.setSelectedUtxo(pick ? pick.utxo : null);
     });
 
-    // Fee rate → orchestrator, debounced.
+    // Form → orchestrator: fee rate + inscription-body HTML on the same
+    // 150 ms tick. `takeUntilDestroyed` ties the subscription to the
+    // component's lifetime so a route change doesn't leak callbacks.
     toObservable(this.mintFormData)
-      .pipe(map((v) => v.feeRate), debounceTime(150))
-      .subscribe((rate) => {
-        if (rate && rate > 0) this.orchestrator.setFeeRate(rate);
-      });
-
-    // Form → orchestrator content, debounced.
-    toObservable(this.mintFormData)
-      .pipe(debounceTime(150))
-      .subscribe(() => {
+      .pipe(debounceTime(150), takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => {
+        if (v.feeRate > 0) this.orchestrator.setFeeRate(v.feeRate);
         if (!this.mintForm().valid()) return;
         const html = getCubeHtml(this.cubeDetails());
         this.orchestrator.setContent({
@@ -305,28 +309,37 @@ export class StartComponent {
         });
       });
 
-    // #12345-style inscription-number lookup — debounced per field.
-    for (const key of INSCRIPTION_ID_FIELDS) {
-      toObservable(this.mintFormData)
-        .pipe(map((v) => v[key]), debounceTime(1000))
-        .subscribe((value) => {
+    // #12345-style inscription-number lookup — one shared 1 s debounce
+    // that snapshots all six id fields and only looks up the ones that
+    // changed to a plain numeric string since the last snapshot.
+    const lastSeen: Record<string, string> = {};
+    toObservable(this.mintFormData)
+      .pipe(debounceTime(1000), takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => {
+        for (const key of INSCRIPTION_ID_FIELDS) {
+          const value = v[key];
+          if (value === lastSeen[key]) continue;
+          lastSeen[key] = value;
           const trimmed = value.trim();
-          if (!trimmed || !/^\d+$/.test(trimmed)) return;
-          this.inscriptionLookup.lookupById(trimmed).subscribe((id) => {
-            if (!id) return;
-            this.mintFormData.update((v) => ({ ...v, [key]: id }));
-          });
-        });
-    }
+          if (!trimmed || !/^\d+$/.test(trimmed)) continue;
+          this.inscriptionLookup.lookupById(trimmed)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((id) => {
+              if (!id) return;
+              this.mintFormData.update((f) => f[key] === value ? { ...f, [key]: id } : f);
+            });
+        }
+      });
 
     this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
 
-    // Fresh suggestions from the resource → patch into the form.
-    let lastSuggestion: CubeSuggestion | undefined;
+    // Fresh suggestion from the resource → patch its 6 ids into the
+    // form. Angular's signal semantics only fire the effect when
+    // `suggestionResource.value()` actually changes reference (each
+    // resource resolve produces a new object), so no dedup closure.
     effect(() => {
       const suggestion = this.suggestionResource.value();
-      if (!suggestion || suggestion === lastSuggestion) return;
-      lastSuggestion = suggestion;
+      if (!suggestion) return;
       this.mintFormData.update((v) => ({
         ...v,
         inscriptionId1: suggestion.inscriptionId1,

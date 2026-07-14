@@ -152,10 +152,12 @@
         <input id="feeRate" data-testid="cube-fee-rate" type="number" class="form-control" [formField]="mintForm.feeRate" />
         <span class="input-group-text">sat/vB</span>
         @if (recommendedFees(); as fees) {
-          <button type="button" class="btn btn-outline-secondary text-nowrap" data-testid="fee-tier-eco" (click)="setFeePreset(fees.economyFee)" title="Economy">Eco {{ fees.economyFee }}</button>
-          <button type="button" class="btn btn-outline-secondary text-nowrap" data-testid="fee-tier-hour" (click)="setFeePreset(fees.hourFee)" title="~1h">Hour {{ fees.hourFee }}</button>
-          <button type="button" class="btn btn-outline-secondary text-nowrap" data-testid="fee-tier-half" (click)="setFeePreset(fees.halfHourFee)" title="~30min">Half {{ fees.halfHourFee }}</button>
-          <button type="button" class="btn btn-outline-secondary text-nowrap" data-testid="fee-tier-fast" (click)="setFeePreset(fees.fastestFee)" title="Next block">Fast {{ fees.fastestFee }}</button>
+          @for (tier of feeTiers; track tier.testId) {
+            <button type="button" class="btn btn-outline-secondary text-nowrap"
+                    [attr.data-testid]="tier.testId"
+                    [title]="tier.title"
+                    (click)="setFeePreset(fees[tier.key])">{{ tier.label }} {{ fees[tier.key] }}</button>
+          }
         }
       </div>
 
@@ -166,18 +168,18 @@
         <p class="text-muted" data-testid="mint-loading-utxos">Loading your UTXOs…</p>
       }
 
-      @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length === 0) {
-        <p class="text-muted" data-testid="mint-no-utxos">
-          Fund <code>{{ connectedWallet()!.paymentAddress }}</code> to continue.
-        </p>
-      }
-
-      @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length > 0) {
-        <div class="alert alert-warning" data-testid="mint-insufficient-funds">
-          Not enough funds at
-          <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
-          Add funds to <code>{{ connectedWallet()!.paymentAddress }}</code> or lower the fee rate.
-        </div>
+      @if (viableRows().length === 0 && orchestrator.state() === 'ready') {
+        @if (simulations().length === 0) {
+          <p class="text-muted" data-testid="mint-no-utxos">
+            Fund <code>{{ connectedWallet()!.paymentAddress }}</code> to continue.
+          </p>
+        } @else {
+          <div class="alert alert-warning" data-testid="mint-insufficient-funds">
+            Not enough funds at
+            <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
+            Add funds to <code>{{ connectedWallet()!.paymentAddress }}</code> or lower the fee rate.
+          </div>
+        }
       }
 
       @if (viableRows().length > 0 && orchestrator.selectedUtxo(); as sel) {
@@ -300,7 +302,7 @@
 @if (inscriptionsList) {
   <p class="mb-3">
     Here you see all <span data-testid="minted-cubes-total">{{ inscriptionsList.totalInscriptions }}</span> cubes that have been inscribed so far.
-    @if (cursor()?.lastScannedBlockHeight; as h) {
+    @if (cursorResource.value()?.lastScannedBlockHeight; as h) {
       Indexed up to block
       <a [href]="'https://ordpool.space/block/' + h" target="_blank" rel="noopener">#{{ h }}</a>.
     }

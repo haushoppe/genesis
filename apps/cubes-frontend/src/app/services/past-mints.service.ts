@@ -1,5 +1,7 @@
 import { effect, Injectable, signal } from '@angular/core';
 
+import { getLocalStore, setLocalStore } from './local-storage';
+
 const STORAGE_KEY = 'cube_past';
 
 export interface PastMint {
@@ -8,16 +10,12 @@ export interface PastMint {
   createdAt: string;
 }
 
-interface PastMintsState {
-  pastMints: PastMint[];
-}
-
 function readInitial(): PastMint[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = getLocalStore(STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as PastMintsState;
-    return Array.isArray(parsed?.pastMints) ? parsed.pastMints : [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed as PastMint[] : [];
   } catch {
     return [];
   }
@@ -27,20 +25,23 @@ function readInitial(): PastMint[] {
  * Persistent list of the user's past cube mints (commit + reveal
  * txids). Replaces the retired NgRx `past` slice + `ngrx-store-
  * localstorage` metaReducer. Signal state, plain effect writes to
- * localStorage under the same `cube_past` key the metaReducer used.
+ * localStorage under the same `cube_past` key.
  */
 @Injectable({ providedIn: 'root' })
 export class PastMintsService {
   readonly pastMints = signal<PastMint[]>(readInitial());
 
   constructor() {
+    // Skip the first tick — it would just echo back what readInitial()
+    // already returned. Subsequent changes get persisted.
+    let firstRun = true;
     effect(() => {
-      const state: PastMintsState = { pastMints: this.pastMints() };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch {
-        // Storage full or blocked (Safari private mode) — swallow.
+      const list = this.pastMints();
+      if (firstRun) {
+        firstRun = false;
+        return;
       }
+      setLocalStore(STORAGE_KEY, JSON.stringify(list));
     });
   }
 

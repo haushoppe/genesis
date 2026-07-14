@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { environment } from '../../environments/environment';
@@ -37,8 +37,6 @@ export class DetailsComponent {
     stream: ({ params }) => this.cubesData.getSingleInscription(params.id),
   });
 
-  protected readonly details = computed(() => this.detailsResource.value() ?? null);
-
   getIframeSrc(inscriptionId?: string | undefined): string {
     if (!inscriptionId) {
       return 'about:blank';
@@ -48,7 +46,7 @@ export class DetailsComponent {
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;
-    const i = this.details();
+    const i = this.detailsResource.value();
     if (event.key === 'ArrowLeft' && i?.previousInscriptionId) {
       this.router.navigate(['/inscription', i.previousInscriptionId]);
     } else if (event.key === 'ArrowRight' && i?.nextInscriptionId) {

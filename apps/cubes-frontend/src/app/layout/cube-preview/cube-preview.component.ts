@@ -3,9 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { CubeDetails, getCubeHtml } from '../../services/cube-html';
 
-type CubeDetailsInput = Omit<CubeDetails, 'title'>;
-
-const DEFAULT_CUBE_DETAILS: CubeDetailsInput = {
+const DEFAULT_CUBE_DETAILS: CubeDetails = {
   inscriptionIds: {
     inscriptionId1: '',
     inscriptionId2: '',
@@ -14,6 +12,7 @@ const DEFAULT_CUBE_DETAILS: CubeDetailsInput = {
     inscriptionId5: '',
     inscriptionId6: '',
   },
+  title: '',
   rotationSpeedX: '',
   rotationSpeedY: '',
   colorPane: '',
@@ -29,7 +28,10 @@ const DEFAULT_CUBE_DETAILS: CubeDetailsInput = {
   imports: [SafeHtmlPipe],
 })
 export class CubePreviewComponent {
-  readonly cubeDetails = input<CubeDetailsInput>(DEFAULT_CUBE_DETAILS);
+  /** Preview always renders with an empty title so the caller's
+   *  title never leaks into the iframe — the surrounding page shows
+   *  the title separately via `<app-cube-preview-title>`. */
+  readonly cubeDetails = input<CubeDetails>(DEFAULT_CUBE_DETAILS);
 
   protected readonly cubeHtml = computed(() =>
     getCubeHtml({ ...this.cubeDetails(), title: '' }),

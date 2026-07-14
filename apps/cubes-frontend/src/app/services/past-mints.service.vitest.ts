@@ -42,11 +42,9 @@ describe('PastMintsService', () => {
   it('rehydrates from localStorage on construction', async () => {
     localStorage.setItem(
       'cube_past',
-      JSON.stringify({
-        pastMints: [
-          { commitTxId: 'c-old', revealTxId: 'r-old', createdAt: '2026-01-01T00:00:00Z' },
-        ],
-      }),
+      JSON.stringify([
+        { commitTxId: 'c-old', revealTxId: 'r-old', createdAt: '2026-01-01T00:00:00Z' },
+      ]),
     );
     const svc = freshBed();
     expect(svc.pastMints()).toHaveLength(1);
@@ -59,8 +57,8 @@ describe('PastMintsService', () => {
     expect(svc.pastMints()).toEqual([]);
   });
 
-  it('tolerates non-array pastMints in payload', () => {
-    localStorage.setItem('cube_past', JSON.stringify({ pastMints: 'oops' }));
+  it('tolerates non-array payload', () => {
+    localStorage.setItem('cube_past', JSON.stringify({ some: 'object' }));
     const svc = freshBed();
     expect(svc.pastMints()).toEqual([]);
   });

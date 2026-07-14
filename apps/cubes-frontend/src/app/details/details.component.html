@@ -1,4 +1,4 @@
-@let d = details();
+@let d = detailsResource.value();
 
 @if (d?.inscription; as insc) {
   <h3 class="mt-2 mb-2">{{ insc.meta?.name || 'Ordinal Cube' }}</h3>

@@ -278,16 +278,21 @@ export class StartComponent {
   );
 
   /**
-   * Collapsed `[disabled]` expression so the button template has a
-   * single signal read. Iteration 4 showed the combined inline
-   * expression `!canMint() || state === 'minting'` returned stale
-   * values in the diag span — same tick, same view scope, canMint()
-   * alone was true but the combined expression evaluated to true (the
-   * previous-tick canMint=false). Extracting to a computed makes the
-   * dependency tracking unambiguous.
+   * Inlined dependencies — reading `canMint()` from inside another
+   * computed produced stale values (iterations 4/5). Reading each
+   * primitive signal directly here so Angular can track them all
+   * against this consumer. Excludes `mintForm().valid()` on purpose;
+   * next iteration re-adds it if this passes.
    */
-  protected readonly mintBtnDisabled = computed(
-    () => !this.canMint() || this.orchestrator.state() === 'minting',
+  protected readonly mintBtnDisabled = computed(() => {
+    const noViable = this.viableRows().length === 0;
+    const noSelected = this.orchestrator.selectedUtxo() === null;
+    const state = this.orchestrator.state();
+    const notReady = state !== 'ready';
+    const minting = state === 'minting';
+    return noViable || noSelected || notReady || minting;
+  }
+  ,
   );
 
   // ---------- Lifecycle ----------

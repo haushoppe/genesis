@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, ElementRef, inject, signal, untracked, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, signal, untracked, viewChild } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { DecimalPipe, SlicePipe } from '@angular/common';
@@ -306,8 +306,6 @@ export class StartComponent {
    *  interpolations reading the same signals refreshed correctly. */
   private readonly mintBtnEl = viewChild<ElementRef<HTMLButtonElement>>('mintBtnEl');
 
-  private readonly cdr = inject(ChangeDetectorRef);
-
   constructor() {
     // Force-toggle mint-btn.disabled from an effect. Bypasses whatever
     // is stopping Angular from re-checking the button's [attr.disabled].
@@ -315,34 +313,6 @@ export class StartComponent {
       const enabled = this.canMint() && this.orchestrator.state() !== 'minting';
       const el = this.mintBtnEl()?.nativeElement;
       if (el) el.disabled = !enabled;
-    });
-
-    // NUCLEAR OPTION: force a full CD sweep whenever any drawer-gating
-    // signal changes. Iterations 4-8 proved property bindings and
-    // interpolations across the drawer render stale values on signal
-    // changes even though the signal-tracker fires and computeds
-    // return fresh values. cdr.detectChanges() synchronously re-runs
-    // this component's view + all children, forcing every binding
-    // to re-evaluate. Reader effects with detectChanges() on a
-    // signal-only component is generally frowned upon but here it
-    // works around a genuine Angular 22 zoneless CD dispatch bug.
-    effect(() => {
-      // Track everything the drawer's control-flow + interpolations
-      // depend on so the effect fires on every relevant change.
-      this.orchestrator.state();
-      this.orchestrator.selectedUtxo();
-      this.orchestrator.errorMessage();
-      this.orchestrator.successResult();
-      this.recommendedFees();
-      this.viableRows();
-      this.simulations();
-      this.checkoutOpen();
-      this.connectedWallet();
-      this.installedOrdinalsAware();
-      this.selectedRow();
-      this.mintForm().valid();
-      this.mintFormData();
-      this.cdr.detectChanges();
     });
 
     // Reset the scanner's cache when the wallet changes. Initial

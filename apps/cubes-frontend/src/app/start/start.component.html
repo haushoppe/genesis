@@ -112,44 +112,44 @@
 </form>
 
 
-@if (checkoutOpen()) {
-  <!--
-    Checkout drawer. Progressive disclosure of the annoying steps:
-    connect wallet, wait for UTXOs, pick a fee, review, sign.
-    Everything the user only cares about AFTER committing.
-  -->
-  <section class="mt-4 p-4 border rounded bg-body-tertiary" data-testid="mint-checkout">
-    <div class="d-flex justify-content-between align-items-start">
-      <h3 class="h5 mb-3">Checkout</h3>
-      <button type="button" class="btn-close" aria-label="Cancel" (click)="cancelCheckout()"></button>
-    </div>
+<!-- Whole checkout drawer + all conditional branches use [hidden] instead of
+     @if. The #61662 workaround only works when the container view is
+     component-scope-mounted from initial CD — putting [hidden] on a
+     button inside a just-mounted @if is not enough (verified in run
+     29307142561: fee-tier-eco button existed in DOM but interior text
+     was still empty). So every control-flow decision in the checkout
+     flow flips visibility via [hidden], never mounts/unmounts. -->
+<section class="mt-4 p-4 border rounded bg-body-tertiary"
+         data-testid="mint-checkout"
+         [hidden]="!checkoutOpen()">
+  <div class="d-flex justify-content-between align-items-start">
+    <h3 class="h5 mb-3">Checkout</h3>
+    <button type="button" class="btn-close" aria-label="Cancel" (click)="cancelCheckout()"></button>
+  </div>
 
-    <!-- Step 1 — Connect wallet. -->
-    @if (!connectedWallet()) {
-      <div data-testid="wallet-picker">
-        <p class="fw-bold mb-2">1. Connect your wallet</p>
-        @if (installedOrdinalsAware().length) {
-          <p class="mb-3">
-            <span data-testid="wallet-picker-detected">Detected:</span>
-            @for (w of installedOrdinalsAware(); track w.type; let last = $last) {
-              <a href="javascript:void(0)"
-                 [attr.data-testid]="'wallet-connect-' + w.type"
-                 (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
-            }.
-          </p>
-        } @else {
-          <p class="mb-3" data-testid="wallet-picker-empty">
-            No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.
-          </p>
-        }
-      </div>
-    } @else {
-      <p class="mb-3" data-testid="wallet-connected">
-        <strong>1. Connected</strong> as
-        <span data-testid="mint-ordinals-address">{{ connectedWallet()!.ordinalsAddress }}</span>.
-        Paying from <code data-testid="mint-payment-address">{{ connectedWallet()!.paymentAddress }}</code>.
-        <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
-      </p>
+  <!-- Step 1 — Connect wallet. Two parallel divs, one per branch. -->
+  <div data-testid="wallet-picker" [hidden]="connectedWallet()">
+    <p class="fw-bold mb-2">1. Connect your wallet</p>
+    <p class="mb-3" [hidden]="!installedOrdinalsAware().length">
+      <span data-testid="wallet-picker-detected">Detected:</span>
+      @for (w of installedOrdinalsAware(); track w.type; let last = $last) {
+        <a href="javascript:void(0)"
+           [attr.data-testid]="'wallet-connect-' + w.type"
+           (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
+      }.
+    </p>
+    <p class="mb-3" data-testid="wallet-picker-empty" [hidden]="installedOrdinalsAware().length">
+      No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.
+    </p>
+  </div>
+
+  <div [hidden]="!connectedWallet()">
+    <p class="mb-3" data-testid="wallet-connected">
+      <strong>1. Connected</strong> as
+      <span data-testid="mint-ordinals-address">{{ connectedWallet()?.ordinalsAddress ?? '' }}</span>.
+      Paying from <code data-testid="mint-payment-address">{{ connectedWallet()?.paymentAddress ?? '' }}</code>.
+      <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
+    </p>
 
       <!-- Hidden markers so tests can read orchestrator state without
            guessing from side-effects. -->
@@ -177,23 +177,19 @@
       <!-- Step 3 — Review + confirm. -->
       <p class="fw-bold mb-2 mt-4">3. Review</p>
 
-      @if (orchestrator.state() === 'loading-utxos') {
-        <p class="text-muted" data-testid="mint-loading-utxos">Loading your UTXOs…</p>
-      }
+      <p class="text-muted" data-testid="mint-loading-utxos" [hidden]="orchestrator.state() !== 'loading-utxos'">Loading your UTXOs…</p>
 
-      @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length === 0) {
-        <p class="text-muted" data-testid="mint-no-utxos">
-          Fund <code>{{ connectedWallet()!.paymentAddress }}</code> to continue.
-        </p>
-      }
+      <p class="text-muted" data-testid="mint-no-utxos"
+         [hidden]="!(viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length === 0)">
+        Fund <code>{{ connectedWallet()?.paymentAddress ?? '' }}</code> to continue.
+      </p>
 
-      @if (viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length > 0) {
-        <div class="alert alert-warning" data-testid="mint-insufficient-funds">
-          Not enough funds at
-          <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
-          Add funds to <code>{{ connectedWallet()!.paymentAddress }}</code> or lower the fee rate.
-        </div>
-      }
+      <div class="alert alert-warning" data-testid="mint-insufficient-funds"
+           [hidden]="!(viableRows().length === 0 && orchestrator.state() === 'ready' && simulations().length > 0)">
+        Not enough funds at
+        <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
+        Add funds to <code>{{ connectedWallet()?.paymentAddress ?? '' }}</code> or lower the fee rate.
+      </div>
 
       <!-- @if with `as sel` alias would trigger #61662 — permanent mount
            via [hidden]; interior null-safe reads. -->
@@ -217,47 +213,44 @@
         </p>
       </div>
 
-      @if (viableRows().length > 0) {
-        <details class="mb-3" data-testid="mint-expert-details">
-          <summary class="text-muted small">Expert mode — choose a different funding UTXO</summary>
-          <div class="mt-2">
-            @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
-              <div class="p-2 border-bottom d-flex justify-content-between align-items-center"
-                   [attr.data-testid]="'mint-expert-row-' + idx">
-                <div class="me-3">
-                  <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
-                  — {{ row.utxo.value | number }} sat
-                  · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
-                  <span class="badge ms-2"
-                        [class.bg-success]="row.bucket === 'clean'"
-                        [class.bg-danger]="row.bucket === 'assets'"
-                        [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
-                        [class.bg-warning]="row.bucket === 'failed'">
-                    {{ bucketLabel(row.bucket) }}
-                  </span>
-                  @if (orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout) {
-                    <span class="badge bg-primary ms-2">Selected</span>
-                  }
-                </div>
-                <div class="text-nowrap">
-                  @if (row.bucket === 'unscanned' || row.bucket === 'failed') {
-                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" (click)="scanUtxo(row.utxo)">
-                      {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
-                    </button>
-                  }
-                  <button type="button" class="btn btn-sm"
-                          [attr.data-testid]="'mint-expert-pick-' + idx"
-                          [class.btn-outline-primary]="row.bucket !== 'assets'"
-                          [class.btn-outline-danger]="row.bucket === 'assets'"
-                          (click)="orchestrator.setSelectedUtxo(row.utxo)">
-                    {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
-                  </button>
-                </div>
+      <details class="mb-3" data-testid="mint-expert-details" [hidden]="!(viableRows().length > 0)">
+        <summary class="text-muted small">Expert mode — choose a different funding UTXO</summary>
+        <div class="mt-2">
+          @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
+            <div class="p-2 border-bottom d-flex justify-content-between align-items-center"
+                 [attr.data-testid]="'mint-expert-row-' + idx">
+              <div class="me-3">
+                <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
+                — {{ row.utxo.value | number }} sat
+                · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
+                <span class="badge ms-2"
+                      [class.bg-success]="row.bucket === 'clean'"
+                      [class.bg-danger]="row.bucket === 'assets'"
+                      [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
+                      [class.bg-warning]="row.bucket === 'failed'">
+                  {{ bucketLabel(row.bucket) }}
+                </span>
+                <span class="badge bg-primary ms-2"
+                      [hidden]="!(orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout)">Selected</span>
               </div>
-            }
-          </div>
-        </details>
-      }
+              <div class="text-nowrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary me-2"
+                        [hidden]="!(row.bucket === 'unscanned' || row.bucket === 'failed')"
+                        (click)="scanUtxo(row.utxo)">
+                  {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
+                </button>
+                <button type="button" class="btn btn-sm"
+                        [attr.data-testid]="'mint-expert-pick-' + idx"
+                        [class.btn-outline-primary]="row.bucket !== 'assets'"
+                        [class.btn-outline-danger]="row.bucket === 'assets'"
+                        (click)="orchestrator.setSelectedUtxo(row.utxo)">
+                  {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </details>
 
       <!-- @if here would trigger #61662 — errorMessage would render empty
            inside the fresh view. Permanent mount + [hidden]. -->
@@ -273,17 +266,12 @@
                 class="btn btn-primary"
                 (click)="mint()"
                 [disabled]="!canMint() || orchestrator.state() === 'minting'">
-          @if (orchestrator.state() === 'minting') {
-            Signing… please confirm in your wallet
-          } @else {
-            Confirm & broadcast
-          }
+          {{ orchestrator.state() === 'minting' ? 'Signing… please confirm in your wallet' : 'Confirm & broadcast' }}
         </button>
         <button type="button" class="btn btn-link" (click)="cancelCheckout()">Cancel</button>
       </div>
-    }
-  </section>
-}
+  </div>
+</section>
 
 
 <!-- Success alert stays permanently mounted; visibility flips via [hidden].

@@ -193,6 +193,20 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     // eslint-disable-next-line no-console
     console.log(`[cubes pageerror] ${err.message}`);
   });
+  // Stub /api/v1/fees/recommended — regtest stack has no ordpool-backend,
+  // so this endpoint would 404 otherwise. Fixed values so the fee-tier
+  // button assertions below have deterministic content to check.
+  await cubes.route('**/api/v1/fees/recommended', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' },
+      body: JSON.stringify({
+        fastestFee: 5, halfHourFee: 3, hourFee: 1, economyFee: 1, minimumFee: 1,
+      }),
+    });
+  });
+
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 

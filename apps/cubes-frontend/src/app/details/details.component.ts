@@ -22,7 +22,11 @@ import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
   },
 })
 export class DetailsComponent {
-  readonly inscriptionId = input<string>('');
+  /** Route param `/inscription/:inscriptionId` bound via
+   *  `withComponentInputBinding()`. Angular guarantees a value (the
+   *  route matcher won't fire otherwise), so `input.required` is
+   *  correct. */
+  readonly inscriptionId = input.required<string>();
 
   private readonly cubesData = inject(CubesDataService);
   private readonly router = inject(Router);

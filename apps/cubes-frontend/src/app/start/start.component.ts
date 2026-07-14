@@ -1,5 +1,5 @@
 import { DecimalPipe, SlicePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
@@ -131,6 +131,11 @@ export interface ViableInscribeSimulation {
   },
 })
 export class StartComponent {
+  /** Route param on `/mint/:collectionSymbol` — bound via
+   *  `withComponentInputBinding()`. Absent on the plain `/` route,
+   *  so default to '' (any collection). */
+  readonly collectionSymbol = input<string>('');
+
   protected readonly walletService = inject(WalletService);
   protected readonly orchestrator = inject(InscribeMintOrchestrator);
   protected readonly pastMints = inject(PastMintsService);
@@ -158,11 +163,11 @@ export class StartComponent {
     stream: ({ params }) => this.cubesData.getInscriptions(params.itemsPerPage, params.page),
   });
 
-  /** Suggestion pool — a fresh cube suggestion for the given collection.
-   *  `''` = any collection; changing the trigger reloads. */
-  protected readonly suggestionCollection = signal<string>('');
+  /** Fresh cube suggestion — reactive on the route param (`/mint/:sym`).
+   *  Reloading via `.reload()` gets a new pick from the same
+   *  collection. */
   protected readonly suggestionResource = rxResourceFixed({
-    params: () => ({ collection: this.suggestionCollection() }),
+    params: () => ({ collection: this.collectionSymbol() }),
     stream: ({ params }) => this.cubeSuggestionService.getCubeSuggestion(params.collection),
   });
 

@@ -1,0 +1,7 @@
+// The connected-state popover needs a bit more room than the
+// ng-bootstrap default so both addresses + copy buttons fit on one
+// line without wrapping.
+:host ::ng-deep .wallet-popover .popover {
+  max-width: 22rem;
+  min-width: 18rem;
+}

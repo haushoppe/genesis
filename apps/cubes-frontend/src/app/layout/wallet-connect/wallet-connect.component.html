@@ -1,0 +1,131 @@
+<ng-template #connectModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="wallet-connect-title">Connect wallet</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    @if (connectError(); as err) {
+      <p class="alert alert-danger py-2 px-3 mb-3 small" role="alert">Connection failed: {{ err }}</p>
+    }
+
+    @if (wallets().installedWallets.length > 0) {
+      <p class="fw-bold small mb-2" data-testid="wallet-picker-detected">Detected wallets:</p>
+      <ul class="list-unstyled mb-3">
+        @for (w of wallets().installedWallets; track w.type) {
+          <li class="mb-2">
+            <button type="button"
+                    class="btn btn-outline-light w-100 text-start text-nowrap"
+                    [attr.data-testid]="'wallet-connect-' + w.type"
+                    [disabled]="connectButtonDisabled()"
+                    (click)="connectWallet(w.type)">
+              {{ w.label }}
+              @if (w.subLabel) {
+                <small class="text-muted d-block">{{ w.subLabel }}</small>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="text-muted small mb-3" data-testid="wallet-picker-empty">
+        No supported wallets detected in this browser.
+      </p>
+    }
+
+    @if (wallets().notInstalledWallets.length > 0) {
+      <p class="fw-bold small mb-2 mt-3">Not installed — click to download:</p>
+      <ul class="list-unstyled mb-0">
+        @for (w of wallets().notInstalledWallets; track w.type) {
+          <li class="mb-2">
+            <a class="btn btn-outline-secondary w-100 text-start text-nowrap"
+               [href]="w.downloadLink"
+               target="_blank"
+               rel="noopener">
+              {{ w.label }}
+              @if (w.subLabel) {
+                <small class="text-muted d-block">{{ w.subLabel }}</small>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</ng-template>
+
+@if (connectedWallet(); as wallet) {
+  <button
+    #walletPopover="ngbPopover"
+    type="button"
+    class="btn btn-sm text-nowrap"
+    [class.btn-outline-light]="!networkMismatch()"
+    [class.btn-outline-warning]="networkMismatch()"
+    [ngbPopover]="popContent"
+    [popoverTitle]="popTitle"
+    [autoClose]="'outside'"
+    popoverClass="wallet-popover"
+    data-testid="wallet-connected-btn"
+    [title]="networkMismatch()
+      ? 'Wallet is on the wrong network — expected ' + expectedNetworkGroup
+      : 'Connected via ' + knownOrdinalWallets[wallet.type].label">
+    @if (networkMismatch()) {
+      <span aria-hidden="true" class="me-1">⚠</span>
+    }
+    <i class="bi bi-wallet2 me-1"></i>
+    <code data-testid="wallet-connected-address">{{ shortAddress(wallet.paymentAddress) }}</code>
+  </button>
+
+  <ng-template #popTitle>
+    <strong>Connected — {{ knownOrdinalWallets[wallet.type].label }}</strong>
+  </ng-template>
+
+  <ng-template #popContent>
+    @if (networkMismatch()) {
+      <div class="alert alert-warning py-2 px-3 mb-3 small" role="alert">
+        <strong>Wrong network.</strong> This site expects
+        <code>{{ expectedNetworkGroup }}</code>, but your wallet returned
+        a different address prefix. Switch the network in your wallet, then reconnect.
+      </div>
+    }
+    <div class="mb-2">
+      <div class="small text-muted">Ordinals address</div>
+      <div class="d-flex align-items-center gap-2">
+        <code class="small text-truncate" data-testid="wallet-popover-ordinals-address" [title]="wallet.ordinalsAddress">
+          {{ shortAddress(wallet.ordinalsAddress) }}
+        </code>
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2"
+                (click)="copyToClipboard(wallet.ordinalsAddress)"
+                title="Copy ordinals address">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+    </div>
+    <div class="mb-3">
+      <div class="small text-muted">Payment address</div>
+      <div class="d-flex align-items-center gap-2">
+        <code class="small text-truncate" data-testid="wallet-popover-payment-address" [title]="wallet.paymentAddress">
+          {{ shortAddress(wallet.paymentAddress) }}
+        </code>
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2"
+                (click)="copyToClipboard(wallet.paymentAddress)"
+                title="Copy payment address">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+    </div>
+    <button type="button"
+            class="btn btn-outline-danger btn-sm w-100 text-nowrap"
+            data-testid="wallet-disconnect"
+            (click)="disconnect(walletPopover)">
+      Disconnect
+    </button>
+  </ng-template>
+} @else {
+  <button type="button"
+          class="btn btn-outline-light btn-sm text-nowrap"
+          data-testid="wallet-connect-btn"
+          (click)="open()">
+    <i class="bi bi-wallet2 me-1"></i>
+    Connect wallet
+  </button>
+}

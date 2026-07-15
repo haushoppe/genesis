@@ -1,7 +1,17 @@
-<div class="pt-2 pb-2 logo-container">
-  <a routerLink="/" rel="home" role="navigation" aria-label="Go to home">
-    <img src="/assets/haushoppe-logo.svg" class="logo" alt="HAUS HOPPE logo">
-  </a>
+<div class="header-bar d-flex align-items-center pt-2 pb-2">
+  <!-- Flex spacer keeps the logo centred while the connect button
+       floats hard-right. Only needed at >=md; on mobile the logo
+       hugs the left. -->
+  <div class="header-side d-none d-md-block"></div>
 
-  <small class="presents">presents</small>
+  <div class="logo-container">
+    <a routerLink="/" rel="home" role="navigation" aria-label="Go to home">
+      <img src="/assets/haushoppe-logo.svg" class="logo" alt="HAUS HOPPE logo">
+    </a>
+    <small class="presents">presents</small>
+  </div>
+
+  <div class="header-side ms-auto pe-2 pe-md-3">
+    <app-wallet-connect />
+  </div>
 </div>

@@ -9,7 +9,6 @@ import {
   bucketOf,
   findAutoPickCandidate,
   InscribeMintOrchestrator,
-  KnownOrdinalWalletType,
   RecommendedFees,
   SimulateInscribeFeesResult,
   TxnOutput,
@@ -188,9 +187,6 @@ export class StartComponent {
   // ---------- Wallet + orchestrator signals ----------
 
   protected readonly connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
-  protected readonly wallets = toSignal(this.walletService.wallets$, {
-    initialValue: { installedWallets: [], notInstalledWallets: [] },
-  });
   protected readonly simulations = toSignal(this.orchestrator.simulations$, { initialValue: [] });
   protected readonly scanStates = toSignal(this.scanner.states$, {
     initialValue: new Map<string, UtxoScanState>() as ReadonlyMap<string, UtxoScanState>,
@@ -218,10 +214,6 @@ export class StartComponent {
   });
 
   // ---------- Derived state ----------
-
-  protected readonly installedOrdinalsAware = computed(() =>
-    this.wallets().installedWallets.filter((w) => w.onChainOrdinals !== false),
-  );
 
   protected readonly viableRows = computed<ViableInscribeSimulation[]>(() => {
     const rows = this.simulations();
@@ -259,6 +251,12 @@ export class StartComponent {
   protected readonly checkoutOpen = signal(false);
   protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
 
+  /** True while the user has clicked Mint but the connect flow hasn't
+   *  completed yet. Set by `startCheckout()` when no wallet is connected;
+   *  cleared by an effect below the moment a wallet arrives, which then
+   *  opens the drawer automatically. */
+  private readonly pendingCheckout = signal(false);
+
   // ---------- Constructor: reactive wiring ----------
 
   private lastWalletAddress: string | null = null;
@@ -271,6 +269,16 @@ export class StartComponent {
         this.scanner.reset();
       }
       this.lastWalletAddress = addr;
+    });
+
+    // If the user clicked Mint while disconnected, we asked the top-right
+    // widget for a connect flow. Once a wallet lands, honour that
+    // pending intent by opening the drawer.
+    effect(() => {
+      if (this.pendingCheckout() && this.connectedWallet()) {
+        this.pendingCheckout.set(false);
+        this.checkoutOpen.set(true);
+      }
     });
 
     // Eager-scan small viable UTXOs.
@@ -371,19 +379,15 @@ export class StartComponent {
     this.currentPage.set(page);
   }
 
-  connectWallet(type: KnownOrdinalWalletType) {
-    this.walletService.connectWallet(type)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        error: (err) => {
-          // eslint-disable-next-line no-console
-          console.warn('[cubes] connect failed', type, err);
-        },
-      });
-  }
-
   startCheckout() {
     if (!this.canOpenCheckout()) return;
+    // Not connected → hand off to the top-right widget. The pending flag
+    // + effect above will open the drawer once a wallet arrives.
+    if (!this.connectedWallet()) {
+      this.pendingCheckout.set(true);
+      this.walletService.requestWalletConnect();
+      return;
+    }
     this.checkoutOpen.set(true);
   }
 

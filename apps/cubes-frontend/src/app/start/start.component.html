@@ -119,35 +119,20 @@
       <button type="button" class="btn-close" aria-label="Cancel" (click)="cancelCheckout()"></button>
     </div>
 
-    <!-- Step 1 — Connect wallet -->
-    @if (!connectedWallet()) {
-      <div data-testid="wallet-picker">
-        <p class="fw-bold mb-2">1. Connect your wallet</p>
-        @if (installedOrdinalsAware().length) {
-          <p class="mb-3">
-            <span data-testid="wallet-picker-detected">Detected:</span>
-            @for (w of installedOrdinalsAware(); track w.type; let last = $last) {
-              <a href="javascript:void(0)"
-                 [attr.data-testid]="'wallet-connect-' + w.type"
-                 (click)="connectWallet(w.type)">{{ w.label }}</a>{{ last ? '' : ', ' }}
-            }.
-          </p>
-        } @else {
-          <p class="mb-3" data-testid="wallet-picker-empty">
-            No ordinals-aware wallet detected. Install one of Xverse, Leather, Unisat, OKX, Phantom, or Oyl to continue.
-          </p>
-        }
-      </div>
-    } @else {
-      <p class="mb-3" data-testid="wallet-connected">
-        <strong>1. Connected</strong> as
-        <span data-testid="mint-ordinals-address">{{ connectedWallet()!.ordinalsAddress }}</span>.
-        Paying from <code data-testid="mint-payment-address">{{ connectedWallet()!.paymentAddress }}</code>.
-        <a href="javascript:void(0)" data-testid="wallet-disconnect" (click)="walletService.disconnectWallet()">Disconnect</a>.
+    <!--
+      Connect step lives in the top-right <app-wallet-connect>; the
+      Mint CTA triggers `walletService.requestWalletConnect()` when
+      the user isn't connected yet, then auto-opens this drawer on
+      the next wallet emit. So by the time this <section> renders,
+      a wallet is always attached.
+    -->
+    @if (connectedWallet(); as wallet) {
+      <p class="mb-3 small text-muted" data-testid="wallet-connected">
+        Signing with <code data-testid="mint-payment-address">{{ wallet.paymentAddress }}</code>.
       </p>
 
-      <!-- Step 2 — Fee rate -->
-      <p class="fw-bold mb-2 mt-4">2. Pick a fee rate</p>
+      <!-- Step 1 — Fee rate -->
+      <p class="fw-bold mb-2 mt-4">1. Pick a fee rate</p>
       <div class="input-group mb-3">
         <input id="feeRate" data-testid="cube-fee-rate" type="number" class="form-control" [formField]="mintForm.feeRate" />
         <span class="input-group-text">sat/vB</span>
@@ -161,8 +146,8 @@
         }
       </div>
 
-      <!-- Step 3 — Review + confirm -->
-      <p class="fw-bold mb-2 mt-4">3. Review</p>
+      <!-- Step 2 — Review + confirm -->
+      <p class="fw-bold mb-2 mt-4">2. Review</p>
 
       @if (orchestrator.state() === 'loading-utxos') {
         <p class="text-muted" data-testid="mint-loading-utxos">Loading your UTXOs…</p>

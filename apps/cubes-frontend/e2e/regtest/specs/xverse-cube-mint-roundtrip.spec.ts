@@ -222,14 +222,16 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   const mintCta = cubes.locator('[data-testid="mint-cta"]');
   await expect(mintCta).toBeEnabled({ timeout: 10_000 });
   await mintCta.click();
-  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
 
-  // The Detected: list only renders after wallets$ has polled at
-  // least once (500ms) — now inside the drawer.
+  // New UX: mint-cta triggers `walletService.requestWalletConnect()`
+  // when the user isn't connected yet, so the wallet-connect modal
+  // (top-right widget) opens first — not the drawer. The drawer
+  // opens automatically once a wallet lands (see the `pendingCheckout`
+  // effect in start.component).
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-xverse"]');
   await expect(connectLink).toBeVisible({ timeout: 10_000 });
-  await shot(cubes, '02b-drawer-opened');
+  await shot(cubes, '02b-wallet-picker-open');
 
   // Click "Xverse" — SDK's WalletService.connectWallet fires
   // xverseConnector.connect, which spawns Xverse's approval popup.

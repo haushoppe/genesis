@@ -56,3 +56,6 @@ z_extra/magic-eden-archive/magic-eden-data-dump/
 apps/*/playwright-report
 apps/*/test-results
 apps/*/.playwright
+
+# Claude Code transient scheduler state (see also ~/.gitignore_global)
+.claude/scheduled_tasks.lock

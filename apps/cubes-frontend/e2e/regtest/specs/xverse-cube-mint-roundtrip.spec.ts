@@ -210,10 +210,13 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
-  // The configurator + six side inputs are always visible. Fill them
-  // first — the top-level `mint-cta` is disabled until the form is
-  // valid, and it's what opens the checkout drawer (which is where
-  // the wallet picker lives).
+  // Normal users lean on the auto-suggested cube; the six side inputs
+  // are hidden behind the "Customize" <details>. This spec pins the
+  // exact IDs it later checks on-chain, so we open the details first
+  // and fill them explicitly.
+  await cubes.locator('[data-testid="configurator-advanced"]').evaluate(
+    (el: HTMLDetailsElement) => { el.open = true; },
+  );
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
@@ -365,8 +368,12 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await waitForUtxoAt(paymentAddr, Math.round(FUND_AMOUNT_BTC * 1e8));
 
   // ─── Step 4: set fee rate inside the already-open drawer ──────
-  // Six side ids were filled pre-drawer; only the fee-rate lives
-  // inside the drawer's step-2 panel and needs setting here.
+  // Fee-rate + tier presets + UTXO breakdown all moved behind the
+  // drawer's "Advanced" <details> in the readability pass. Open it
+  // first, then set the fee.
+  await cubes.locator('[data-testid="mint-advanced"]').evaluate(
+    (el: HTMLDetailsElement) => { el.open = true; },
+  );
   await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 10_000 });
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-fee-set');
@@ -395,6 +402,10 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   }
 
   // Refill the six sides — form state doesn't persist across reload.
+  // Six side inputs live inside the "Customize" <details>; open it first.
+  await cubes.locator('[data-testid="configurator-advanced"]').evaluate(
+    (el: HTMLDetailsElement) => { el.open = true; },
+  );
   await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
@@ -404,6 +415,10 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await expect(mintCtaAfterReload).toBeEnabled({ timeout: 10_000 });
   await mintCtaAfterReload.click();
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+  // Fee-rate lives inside the drawer's "Advanced" <details>.
+  await cubes.locator('[data-testid="mint-advanced"]').evaluate(
+    (el: HTMLDetailsElement) => { el.open = true; },
+  );
   await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04b-drawer-reopened-after-reload');
@@ -468,6 +483,9 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       await reapprove2.getByRole('button', { name: /^Connect$/i }).first().click({ force: true, timeout: 15_000 }).catch(() => undefined);
       await reapprove2.close().catch(() => undefined);
     }
+    await cubes.locator('[data-testid="configurator-advanced"]').evaluate(
+      (el: HTMLDetailsElement) => { el.open = true; },
+    );
     await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
     for (let i = 0; i < 6; i++) {
       await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
@@ -477,6 +495,9 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     await mintCtaAfter2nd.click();
     await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
     await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+    await cubes.locator('[data-testid="mint-advanced"]').evaluate(
+      (el: HTMLDetailsElement) => { el.open = true; },
+    );
     await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
     await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   }

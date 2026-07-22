@@ -26,8 +26,10 @@ import { InscriptionListItemComponent } from '../layout/inscription-list-item/in
 import { getCubeHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
+import { formatSats } from '../services/format-sats';
 import { InscriptionLookupService } from '../services/inscription-lookup.service';
 import { PastMintsService } from '../services/past-mints.service';
+import { PriceService } from '../services/price.service';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
 
 /**
@@ -155,16 +157,35 @@ export class StartComponent {
   private readonly cubesData = inject(CubesDataService);
   private readonly cubeSuggestionService = inject(CubeSuggestionService);
   private readonly inscriptionLookup = inject(InscriptionLookupService);
+  private readonly priceService = inject(PriceService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
   protected readonly feeTiers = FEE_TIERS;
+  protected readonly sideIndices = [1, 2, 3, 4, 5, 6] as const;
+
+  /** Signal-Forms field accessor for `inscriptionIdN` by side number. */
+  protected sideField(n: 1 | 2 | 3 | 4 | 5 | 6) {
+    return ({
+      1: this.mintForm.inscriptionId1,
+      2: this.mintForm.inscriptionId2,
+      3: this.mintForm.inscriptionId3,
+      4: this.mintForm.inscriptionId4,
+      5: this.mintForm.inscriptionId5,
+      6: this.mintForm.inscriptionId6,
+    })[n];
+  }
 
   // ---------- Async resources ----------
 
   /** Cursor over the ordinal-cubes-index — one static JSON blob. */
   protected readonly cursorResource = rxResourceFixed({
     stream: () => this.cubesData.getCursor(),
+  });
+
+  /** BTC/USD price for the cost readouts. Null on error / regtest. */
+  protected readonly btcUsdResource = rxResourceFixed({
+    stream: () => this.priceService.getBtcUsd(),
   });
 
   /** Paginated cubes list. Reactive on itemsPerPage + currentPage. */
@@ -250,6 +271,29 @@ export class StartComponent {
 
   protected readonly checkoutOpen = signal(false);
   protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
+
+  /**
+   * User-facing wallet spend for the auto-picked UTXO — miner fees
+   * (commit + reveal) + the 546-sat postage kept as the cube UTXO
+   * + the small HAUSHOPPE tip. Everything the wallet debits.
+   */
+  protected readonly totalSpendSats = computed<number | null>(() => {
+    const row = this.selectedRow();
+    return row ? row.simulation.fundingRequirementSats : null;
+  });
+
+  /** Human-friendly cost line — `"3,000 sat (~$1.85)"` or just `"3,000 sat"`. */
+  protected readonly totalSpendLabel = computed<string>(() => {
+    const sats = this.totalSpendSats();
+    if (sats == null) return '';
+    return formatSats(sats, this.btcUsdResource.value() ?? null);
+  });
+
+  /** Short middle-ellipsis form of the connected payment address. */
+  protected readonly connectedAddressShort = computed<string>(() => {
+    const addr = this.connectedWallet()?.paymentAddress ?? '';
+    return addr.length > 12 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
+  });
 
   /** True while the user has clicked Mint but the connect flow hasn't
    *  completed yet. Set by `startCheckout()` when no wallet is connected;

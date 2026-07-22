@@ -6,104 +6,79 @@
 </p>
 
 
-<h2 class="mt-5" id="mint">Configure your cube</h2>
+<h2 class="mt-5" id="mint">Craft your cube</h2>
 
 <!--
-  Configurator is ALWAYS visible so a first-time visitor can play with
-  it before hitting any friction (wallet connect, fees, UTXO picking).
-  Classic checkout pattern: engage first, checkout second.
-  Two-column shape from the 2025 design: form on the left, live preview
-  on the right so the cube spins next to the inputs that drive it.
+  Suggestion loads on page-open so the preview is populated from the
+  start. Normal users just click "Craft another cube" until they like
+  it, then Mint. The 6 inscription-id inputs + title are behind
+  <details> for the few pros who want manual control.
 -->
 <form (submit)="$event.preventDefault(); startCheckout()">
 
-  <div class="row">
+  <div class="row align-items-start">
 
-    <div class="col-md-6 col-12">
-      <div class="bg-dark p-3 mt-4 pe-4 rounded">
+    <div class="col-md-6 col-12 order-2 order-md-1">
+      <div class="d-flex flex-column gap-3 mt-4">
+        <button type="submit"
+                class="btn btn-primary btn-lg text-nowrap"
+                data-testid="mint-cta"
+                [disabled]="!canOpenCheckout() || checkoutOpen()">
+          <i class="bi bi-box"></i>
+          Mint my cube!
+        </button>
 
-        <p class="text-muted small mb-3">
-          Paste an inscription id (<code>txid + i + index</code>) or a number like <code>#12345</code>.
-        </p>
+        <button type="button"
+                class="btn btn-outline-light text-nowrap"
+                data-testid="craft-another-cube"
+                (click)="craftAnotherCube()">
+          <i class="bi bi-arrow-clockwise"></i>
+          Craft another cube
+        </button>
 
-        <div class="form-group row mt-2">
-          <label class="col-4 col-form-label" for="inscriptionId1">Side 1:</label>
-          <div class="col-8">
-            <input id="inscriptionId1" data-testid="cube-side-1" type="text" class="form-control" [formField]="mintForm.inscriptionId1" placeholder="1. Inscription Number or ID" autocomplete="off" />
-          </div>
-        </div>
+        @if (!canOpenCheckout() && !suggestionResource.isLoading()) {
+          <p class="text-muted small text-center mb-0">
+            Loading a suggestion… or open Customize below to enter your own inscriptions.
+          </p>
+        }
 
-        <div class="form-group row mt-2">
-          <label class="col-4 col-form-label" for="inscriptionId2">Side 2:</label>
-          <div class="col-8">
-            <input id="inscriptionId2" data-testid="cube-side-2" type="text" class="form-control" [formField]="mintForm.inscriptionId2" placeholder="2. Inscription Number or ID" autocomplete="off" />
-          </div>
-        </div>
+        <details class="mt-3 bg-dark p-3 rounded" data-testid="configurator-advanced">
+          <summary class="text-muted small" style="cursor: pointer">
+            <i class="bi bi-sliders me-1"></i>
+            Customize — pick your own 6 inscriptions
+          </summary>
 
-        <div class="form-group row mt-2">
-          <label class="col-4 col-form-label" for="inscriptionId3">Side 3:</label>
-          <div class="col-8">
-            <input id="inscriptionId3" data-testid="cube-side-3" type="text" class="form-control" [formField]="mintForm.inscriptionId3" placeholder="3. Inscription Number or ID" autocomplete="off" />
-          </div>
-        </div>
+          <p class="text-muted small mt-3 mb-3">
+            Paste an inscription id (<code>txid + i + index</code>) or a number like <code>#12345</code>.
+          </p>
 
-        <div class="form-group row mt-2">
-          <label class="col-4 col-form-label" for="inscriptionId4">Side 4:</label>
-          <div class="col-8">
-            <input id="inscriptionId4" data-testid="cube-side-4" type="text" class="form-control" [formField]="mintForm.inscriptionId4" placeholder="4. Inscription Number or ID" autocomplete="off" />
-          </div>
-        </div>
-
-        <div class="form-group row mt-2">
-          <label class="col-4 col-form-label" for="inscriptionId5">Side 5:</label>
-          <div class="col-8">
-            <input id="inscriptionId5" data-testid="cube-side-5" type="text" class="form-control" [formField]="mintForm.inscriptionId5" placeholder="5. Inscription Number or ID" autocomplete="off" />
-          </div>
-        </div>
-
-        <div class="form-group row mt-2">
-          <label class="col-4 col-form-label" for="inscriptionId6">Side 6:</label>
-          <div class="col-8">
-            <input id="inscriptionId6" data-testid="cube-side-6" type="text" class="form-control" [formField]="mintForm.inscriptionId6" placeholder="6. Inscription Number or ID" autocomplete="off" />
-          </div>
-        </div>
-
-        <div class="form-group row mt-2">
-          <label class="col-4 col-form-label" for="title">Title:</label>
-          <div class="col-8">
-            <input id="title" data-testid="cube-title" type="text" class="form-control" [formField]="mintForm.title" placeholder="Optional" autocomplete="off" />
-          </div>
-        </div>
-
-        <div class="form-group row mt-4">
-          <div class="col-12 d-flex flex-column flex-md-row justify-content-center align-items-center pt-3 pb-1 gap-3">
-            <button type="button"
-                    class="btn btn-outline-light text-nowrap"
-                    data-testid="craft-another-cube"
-                    (click)="craftAnotherCube()">
-              <i class="bi bi-arrow-clockwise"></i>
-              Craft another cube
-            </button>
-
-            <button type="submit"
-                    class="btn btn-primary text-nowrap"
-                    data-testid="mint-cta"
-                    [disabled]="!canOpenCheckout() || checkoutOpen()">
-              <i class="bi bi-box"></i>
-              Mint my cube!
-            </button>
-          </div>
-          @if (!canOpenCheckout()) {
-            <div class="col-12 text-center text-muted small mt-2">
-              Fill in all six inscription IDs to continue.
+          @for (n of sideIndices; track n) {
+            <div class="form-group row mt-2">
+              <label class="col-4 col-form-label" [attr.for]="'inscriptionId' + n">Side {{ n }}:</label>
+              <div class="col-8">
+                <input [id]="'inscriptionId' + n"
+                       [attr.data-testid]="'cube-side-' + n"
+                       type="text"
+                       class="form-control"
+                       [formField]="sideField(n)"
+                       [placeholder]="n + '. Inscription Number or ID'"
+                       autocomplete="off" />
+              </div>
             </div>
           }
-        </div>
 
+          <div class="form-group row mt-2">
+            <label class="col-4 col-form-label" for="title">Title:</label>
+            <div class="col-8">
+              <input id="title" data-testid="cube-title" type="text" class="form-control"
+                     [formField]="mintForm.title" placeholder="Optional" autocomplete="off" />
+            </div>
+          </div>
+        </details>
       </div>
     </div>
 
-    <div class="col-md-6 col-12 text-center">
+    <div class="col-md-6 col-12 text-center order-1 order-md-2">
       <app-cube-preview [cubeDetails]="cubeDetails()" />
       <app-cube-preview-title [title]="cubeDetails().title" />
     </div>
@@ -128,108 +103,127 @@
     -->
     @if (connectedWallet(); as wallet) {
       <p class="mb-3 small text-muted" data-testid="wallet-connected">
-        Signing with <code data-testid="mint-payment-address">{{ wallet.paymentAddress }}</code>.
+        Paying from your wallet
+        (<code data-testid="mint-payment-address" [title]="wallet.paymentAddress">{{ connectedAddressShort() }}</code>).
       </p>
 
-      <!-- Step 1 — Fee rate -->
-      <p class="fw-bold mb-2 mt-4">1. Pick a fee rate</p>
-      <div class="input-group mb-3">
-        <input id="feeRate" data-testid="cube-fee-rate" type="number" class="form-control" [formField]="mintForm.feeRate" />
-        <span class="input-group-text">sat/vB</span>
-        @if (recommendedFees(); as fees) {
-          @for (tier of feeTiers; track tier.testId) {
-            <button type="button" class="btn btn-outline-secondary text-nowrap"
-                    [attr.data-testid]="tier.testId"
-                    [title]="tier.title"
-                    (click)="setFeePreset(fees[tier.key])">{{ tier.label }} {{ fees[tier.key] }}</button>
-          }
-        }
-      </div>
-
-      <!-- Step 2 — Review + confirm -->
-      <p class="fw-bold mb-2 mt-4">2. Review</p>
-
+      <!-- Loading / empty / insufficient states. -->
       @if (orchestrator.state() === 'loading-utxos') {
-        <p class="text-muted" data-testid="mint-loading-utxos">Loading your UTXOs…</p>
+        <p class="text-muted" data-testid="mint-loading-utxos">Checking your wallet…</p>
       }
 
       @if (viableRows().length === 0 && orchestrator.state() === 'ready') {
         @if (simulations().length === 0) {
           <p class="text-muted" data-testid="mint-no-utxos">
-            Fund <code>{{ connectedWallet()!.paymentAddress }}</code> to continue.
+            Send some BTC to <code>{{ wallet.paymentAddress }}</code> to continue.
           </p>
         } @else {
           <div class="alert alert-warning" data-testid="mint-insufficient-funds">
-            Not enough funds at
-            <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB.
-            Add funds to <code>{{ connectedWallet()!.paymentAddress }}</code> or lower the fee rate.
+            Your wallet doesn't have enough BTC at
+            <strong>{{ mintFormData().feeRate }}</strong>&nbsp;sat/vB. Add more BTC or lower the fee rate in Advanced.
           </div>
         }
       }
 
-      @if (viableRows().length > 0 && orchestrator.selectedUtxo(); as sel) {
+      <!-- Primary summary — cost on one line, no jargon. -->
+      @if (viableRows().length > 0 && orchestrator.selectedUtxo()) {
         <div class="mint-summary p-3 border rounded mb-3 bg-body" data-testid="mint-found-funds">
-          <div class="d-flex justify-content-between">
-            <span class="text-muted small">Source</span>
-            <code class="small" data-testid="mint-found-funds-source">{{ sel.txid.slice(0, 12) }}…:{{ sel.vout }}</code>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Cost</span>
+            <strong data-testid="mint-total-cost">{{ totalSpendLabel() }}</strong>
           </div>
-          <div class="d-flex justify-content-between">
-            <span class="text-muted small">Available</span>
-            <span data-testid="mint-found-funds-available">{{ sel.value | number }} sat</span>
-          </div>
-          @if (selectedRow(); as selRow) {
-            <div class="d-flex justify-content-between">
-              <span class="text-muted small">Miner fee</span>
-              <span data-testid="mint-found-funds-miner-fee">commit {{ selRow.simulation.commitFeeSats }} + reveal {{ selRow.simulation.revealFeeSats }} = <strong>{{ selRow.simulation.totalFeeSats }}</strong> sat</span>
-            </div>
-          }
           <p class="mb-0 mt-2 text-muted small">
-            ✓ Best available UTXO auto-picked.
+            Debited from your wallet on Mint. Includes the tiny inscription output that stays as your cube.
           </p>
         </div>
       }
 
-      @if (viableRows().length > 0) {
-        <details class="mb-3" data-testid="mint-expert-details">
-          <summary class="text-muted small">Expert mode — choose a different funding UTXO</summary>
-          <div class="mt-2">
-            @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
-              <div class="p-2 border-bottom d-flex justify-content-between align-items-center"
-                   [attr.data-testid]="'mint-expert-row-' + idx">
-                <div class="me-3">
-                  <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
-                  — {{ row.utxo.value | number }} sat
-                  · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
-                  <span class="badge ms-2"
-                        [class.bg-success]="row.bucket === 'clean'"
-                        [class.bg-danger]="row.bucket === 'assets'"
-                        [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
-                        [class.bg-warning]="row.bucket === 'failed'">
-                    {{ bucketLabel(row.bucket) }}
-                  </span>
-                  @if (orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout) {
-                    <span class="badge bg-secondary ms-2">Selected</span>
-                  }
-                </div>
-                <div class="text-nowrap">
-                  @if (row.bucket === 'unscanned' || row.bucket === 'failed') {
-                    <button type="button" class="btn btn-sm btn-outline-secondary me-2 text-nowrap" (click)="scanUtxo(row.utxo)">
-                      {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
-                    </button>
-                  }
-                  <button type="button" class="btn btn-sm text-nowrap"
-                          [attr.data-testid]="'mint-expert-pick-' + idx"
-                          [class.btn-outline-primary]="row.bucket !== 'assets'"
-                          [class.btn-outline-danger]="row.bucket === 'assets'"
-                          (click)="orchestrator.setSelectedUtxo(row.utxo)">
-                    {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
-                  </button>
-                </div>
-              </div>
+      <!-- Advanced: fee-rate control + fee breakdown + UTXO picker. -->
+      <details class="mb-3" data-testid="mint-advanced">
+        <summary class="text-muted small" style="cursor: pointer">
+          <i class="bi bi-sliders me-1"></i>
+          Advanced — fee rate + UTXO
+        </summary>
+
+        <div class="mt-3">
+          <p class="fw-bold small mb-2">Fee rate</p>
+          <div class="input-group mb-3">
+            <input id="feeRate" data-testid="cube-fee-rate" type="number" class="form-control" [formField]="mintForm.feeRate" />
+            <span class="input-group-text">sat/vB</span>
+            @if (recommendedFees(); as fees) {
+              @for (tier of feeTiers; track tier.testId) {
+                <button type="button" class="btn btn-outline-secondary text-nowrap"
+                        [attr.data-testid]="tier.testId"
+                        [title]="tier.title"
+                        (click)="setFeePreset(fees[tier.key])">{{ tier.label }} {{ fees[tier.key] }}</button>
+              }
             }
           </div>
-        </details>
-      }
+
+          @if (viableRows().length > 0 && orchestrator.selectedUtxo(); as sel) {
+            <div class="p-3 border rounded mb-3 bg-body">
+              <p class="fw-bold small mb-2">Breakdown</p>
+              <div class="d-flex justify-content-between">
+                <span class="text-muted small">Source</span>
+                <code class="small" data-testid="mint-found-funds-source">{{ sel.txid.slice(0, 12) }}…:{{ sel.vout }}</code>
+              </div>
+              <div class="d-flex justify-content-between">
+                <span class="text-muted small">Available</span>
+                <span data-testid="mint-found-funds-available">{{ sel.value | number }} sat</span>
+              </div>
+              @if (selectedRow(); as selRow) {
+                <div class="d-flex justify-content-between">
+                  <span class="text-muted small">Miner fee</span>
+                  <span data-testid="mint-found-funds-miner-fee">commit {{ selRow.simulation.commitFeeSats }} + reveal {{ selRow.simulation.revealFeeSats }} = <strong>{{ selRow.simulation.totalFeeSats }}</strong> sat</span>
+                </div>
+              }
+              <p class="mb-0 mt-2 text-muted small">✓ Best available UTXO auto-picked.</p>
+            </div>
+          }
+
+          @if (viableRows().length > 0) {
+            <details class="mb-0" data-testid="mint-expert-details">
+              <summary class="text-muted small" style="cursor: pointer">Choose a different funding UTXO</summary>
+              <div class="mt-2">
+                @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
+                  <div class="p-2 border-bottom d-flex justify-content-between align-items-center"
+                       [attr.data-testid]="'mint-expert-row-' + idx">
+                    <div class="me-3">
+                      <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
+                      — {{ row.utxo.value | number }} sat
+                      · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
+                      <span class="badge ms-2"
+                            [class.bg-success]="row.bucket === 'clean'"
+                            [class.bg-danger]="row.bucket === 'assets'"
+                            [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
+                            [class.bg-warning]="row.bucket === 'failed'">
+                        {{ bucketLabel(row.bucket) }}
+                      </span>
+                      @if (orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout) {
+                        <span class="badge bg-secondary ms-2">Selected</span>
+                      }
+                    </div>
+                    <div class="text-nowrap">
+                      @if (row.bucket === 'unscanned' || row.bucket === 'failed') {
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-2 text-nowrap" (click)="scanUtxo(row.utxo)">
+                          {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
+                        </button>
+                      }
+                      <button type="button" class="btn btn-sm text-nowrap"
+                              [attr.data-testid]="'mint-expert-pick-' + idx"
+                              [class.btn-outline-primary]="row.bucket !== 'assets'"
+                              [class.btn-outline-danger]="row.bucket === 'assets'"
+                              (click)="orchestrator.setSelectedUtxo(row.utxo)">
+                        {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </details>
+          }
+        </div>
+      </details>
 
       @if (orchestrator.state() === 'error' && orchestrator.errorMessage()) {
         <div class="alert alert-danger" data-testid="mint-error">❌ {{ orchestrator.errorMessage() }}</div>
@@ -238,10 +232,16 @@
       <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
         <button type="button"
                 data-testid="mint-btn"
-                class="btn btn-primary text-nowrap"
+                class="btn btn-primary btn-lg text-nowrap"
                 (click)="mint()"
                 [disabled]="!canMint() || orchestrator.state() === 'minting'">
-          {{ orchestrator.state() === 'minting' ? 'Signing… please confirm in your wallet' : 'Confirm & broadcast' }}
+          @if (orchestrator.state() === 'minting') {
+            Waiting for your wallet to confirm…
+          } @else if (totalSpendSats()) {
+            Mint for {{ totalSpendLabel() }}
+          } @else {
+            Mint
+          }
         </button>
         <button type="button" class="btn btn-link" (click)="cancelCheckout()">Cancel</button>
       </div>
@@ -252,17 +252,24 @@
 
 @if (orchestrator.successResult(); as res) {
   <div class="alert alert-success mt-4" data-testid="mint-success">
-    ✅ Your cube has been broadcast. Reveal tx:
-    <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ res.revealTxId }}</code></a>
-    <p class="mb-2 mt-2 small text-muted">
-      The reveal tx spends the commit tx — anyone who wants to see the commit can open the reveal on ordpool.space and follow the input.
+    <h3 class="h5 mb-2">🎉 Your cube is being stored on Bitcoin</h3>
+    <p class="mb-2">
+      In about 10 minutes it will appear in <em>Your past mints</em> below and in the
+      <em>Minted cubes</em> grid. Nothing more to do — the transaction is on its way.
     </p>
-    <!-- Test-only hook: the e2e verifies both commit and reveal land
-         on-chain, but the user only needs the reveal link. -->
+    <p class="small text-muted mb-3">
+      Follow it live on
+      <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ res.revealTxId.slice(0, 12) }}…</code></a>
+      (opens ordpool.space).
+    </p>
+    <!-- Test-only hook: the e2e verifies both commit + reveal confirm
+         on-chain; the user only needs the reveal link above. -->
     <span data-testid="mint-commit-txid" hidden>{{ res.commitTxId }}</span>
-    You also just minted <strong>2 free CAT-21 cats</strong> — nLockTime=21 on both txs. Claim them at
-    <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
-    <button type="button" class="btn btn-primary mt-2 text-nowrap" (click)="mintAnother()">Mint another cube</button>
+    <p class="small mb-3">
+      Bonus: you also minted <strong>2 free CAT-21 cats</strong> as a side effect.
+      Claim them at <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
+    </p>
+    <button type="button" class="btn btn-primary text-nowrap" (click)="mintAnother()">Mint another cube</button>
   </div>
 }
 

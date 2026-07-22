@@ -260,11 +260,12 @@
     </p>
     <p class="small text-muted mb-3">
       Follow it live on
-      <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid">{{ res.revealTxId.slice(0, 12) }}…</code></a>
+      <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code>{{ res.revealTxId.slice(0, 12) }}…</code></a>
       (opens ordpool.space).
     </p>
-    <!-- Test-only hook: the e2e verifies both commit + reveal confirm
+    <!-- Test-only hooks: the e2e verifies both commit + reveal confirm
          on-chain; the user only needs the reveal link above. -->
+    <span data-testid="mint-reveal-txid" hidden>{{ res.revealTxId }}</span>
     <span data-testid="mint-commit-txid" hidden>{{ res.commitTxId }}</span>
     <p class="small mb-3">
       Bonus: you also minted <strong>2 free CAT-21 cats</strong> as a side effect.

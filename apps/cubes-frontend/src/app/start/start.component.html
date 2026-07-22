@@ -104,7 +104,8 @@
     @if (connectedWallet(); as wallet) {
       <p class="mb-3 small text-muted" data-testid="wallet-connected">
         Paying from your wallet
-        (<code data-testid="mint-payment-address" [title]="wallet.paymentAddress">{{ connectedAddressShort() }}</code>).
+        (<code [title]="wallet.paymentAddress">{{ connectedAddressShort() }}</code>).
+        <span class="visually-hidden" data-testid="mint-payment-address">{{ wallet.paymentAddress }}</span>
       </p>
 
       <!-- Loading / empty / insufficient states. -->

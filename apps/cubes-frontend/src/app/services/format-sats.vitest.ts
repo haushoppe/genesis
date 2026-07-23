@@ -16,13 +16,19 @@ describe('formatSats', () => {
     expect(formatSats(546, 65000)).toBe('546 sat (~$0.35)');
   });
 
-  it('shows <$0.01 for sub-cent amounts', () => {
+  it('shows <$0.01 only for strictly-positive sub-cent amounts', () => {
     // 10 sat at 65000 = 0.0065 USD → below cent
     expect(formatSats(10, 65000)).toBe('10 sat (<$0.01)');
   });
 
-  it('scales cleanly at high sat counts', () => {
+  it('renders zero as $0.00, not <$0.01', () => {
+    expect(formatSats(0, 65000)).toBe('0 sat ($0.00)');
+  });
+
+  it('groups thousand separators in the USD amount', () => {
     // 1 BTC at 100k USD/BTC = 100,000
-    expect(formatSats(100_000_000, 100_000)).toBe('100,000,000 sat (~$100000.00)');
+    expect(formatSats(100_000_000, 100_000)).toBe('100,000,000 sat (~$100,000.00)');
+    // 10k sats at 65000 = 6.50 USD
+    expect(formatSats(10_000, 65000)).toBe('10,000 sat (~$6.50)');
   });
 });

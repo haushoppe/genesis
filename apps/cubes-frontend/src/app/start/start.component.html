@@ -9,7 +9,7 @@
   <p class="mb-0 small">
     <strong class="text-white">How it works:</strong>
     <span class="text-muted">
-      Pick 6 images → Connect your wallet → Pay ~$1 in BTC → Your cube is forever on-chain.
+      Pick 6 images → Connect your wallet → Pay a few dollars in BTC → Your cube is forever on-chain.
     </span>
   </p>
 </div>
@@ -45,9 +45,17 @@
         </button>
 
         @if (!canOpenCheckout() && !suggestionResource.isLoading()) {
-          <p class="text-muted small text-center mb-0">
-            Loading a suggestion… or open Customize below to enter your own inscriptions.
-          </p>
+          @if (suggestionResource.error()) {
+            <div class="alert alert-warning small text-center mb-0" role="alert" data-testid="suggestion-error">
+              Couldn't load a suggestion.
+              <a href="#" (click)="$event.preventDefault(); suggestionResource.reload()">Try again</a>
+              — or open Customize below to enter your own inscriptions.
+            </div>
+          } @else {
+            <p class="text-muted small text-center mb-0">
+              Loading a suggestion… or open Customize below to enter your own inscriptions.
+            </p>
+          }
         }
 
         <details class="mt-3 bg-dark p-3 rounded" data-testid="configurator-advanced">
@@ -60,16 +68,16 @@
             Paste an inscription id (<code>txid + i + index</code>) or a number like <code>#12345</code>.
           </p>
 
-          @for (n of sideIndices; track n) {
+          @for (key of sideKeys; track key; let i = $index) {
             <div class="form-group row mt-2">
-              <label class="col-4 col-form-label" [attr.for]="'inscriptionId' + n">Side {{ n }}:</label>
+              <label class="col-4 col-form-label" [attr.for]="'inscriptionId' + (i + 1)">Side {{ i + 1 }}:</label>
               <div class="col-8">
-                <input [id]="'inscriptionId' + n"
-                       [attr.data-testid]="'cube-side-' + n"
+                <input [id]="'inscriptionId' + (i + 1)"
+                       [attr.data-testid]="'cube-side-' + (i + 1)"
                        type="text"
                        class="form-control"
-                       [formField]="sideField(n)"
-                       [placeholder]="n + '. Inscription Number or ID'"
+                       [formField]="mintForm[key]"
+                       [placeholder]="(i + 1) + '. Inscription Number or ID'"
                        autocomplete="off" />
               </div>
             </div>
@@ -96,7 +104,7 @@
 
 
 @if (checkoutOpen()) {
-  <section class="mt-4 p-4 border rounded bg-body-tertiary" data-testid="mint-checkout">
+  <section class="mt-4 p-4 border rounded bg-body-tertiary" data-testid="mint-checkout" aria-live="polite">
     <div class="d-flex justify-content-between align-items-start">
       <h3 class="h5 mb-3">Checkout</h3>
       <button type="button" class="btn-close" aria-label="Cancel" (click)="cancelCheckout()"></button>
@@ -147,8 +155,11 @@
         </div>
       }
 
-      <!-- Advanced: fee-rate control + fee breakdown + UTXO picker. -->
-      <details class="mb-3" data-testid="mint-advanced">
+      <!-- Advanced: fee-rate control + fee breakdown + UTXO picker.
+           Auto-opened when the insufficient-funds alert fires so the
+           user can find the fee-rate the alert points at without
+           hunting for the disclosure. -->
+      <details class="mb-3" data-testid="mint-advanced" [attr.open]="hasInsufficientFunds() ? '' : null">
         <summary class="text-muted small" style="cursor: pointer">
           <i class="bi bi-sliders me-1"></i>
           Advanced — fee rate + UTXO
@@ -235,7 +246,9 @@
       </details>
 
       @if (orchestrator.state() === 'error' && orchestrator.errorMessage()) {
-        <div class="alert alert-danger" data-testid="mint-error">❌ {{ orchestrator.errorMessage() }}</div>
+        <div class="alert alert-danger" role="alert" data-testid="mint-error">
+          <span data-testid="mint-error-message">❌ {{ orchestrator.errorMessage() }}</span>
+        </div>
       }
 
       <div class="d-flex flex-wrap align-items-center gap-3 mt-3">

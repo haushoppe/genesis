@@ -8,6 +8,7 @@ import {
   AUTO_SCAN_MAX_VALUE_SAT,
   bucketOf,
   findAutoPickCandidate,
+  getMinimumUtxoSize,
   InscribeMintOrchestrator,
   RecommendedFees,
   SimulateInscribeFeesResult,
@@ -162,19 +163,8 @@ export class StartComponent {
 
   protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
   protected readonly feeTiers = FEE_TIERS;
-  protected readonly sideIndices = [1, 2, 3, 4, 5, 6] as const;
-
-  /** Signal-Forms field accessor for `inscriptionIdN` by side number. */
-  protected sideField(n: 1 | 2 | 3 | 4 | 5 | 6) {
-    return ({
-      1: this.mintForm.inscriptionId1,
-      2: this.mintForm.inscriptionId2,
-      3: this.mintForm.inscriptionId3,
-      4: this.mintForm.inscriptionId4,
-      5: this.mintForm.inscriptionId5,
-      6: this.mintForm.inscriptionId6,
-    })[n];
-  }
+  /** Keys of the six inscription-id form fields, in cube-side order. */
+  protected readonly sideKeys = INSCRIPTION_ID_FIELDS;
 
   // ---------- Async resources ----------
 
@@ -183,8 +173,16 @@ export class StartComponent {
     stream: () => this.cubesData.getCursor(),
   });
 
-  /** BTC/USD price for the cost readouts. Null on error / regtest. */
+  /**
+   * BTC/USD price for the cost readouts. Null on error / regtest.
+   * The `priceRefreshTick` params dep drives a 5-minute refetch, so
+   * an all-day-tab keeps a fresh rate and a transient first-fetch
+   * null clears on the next tick instead of hiding the USD suffix
+   * for the whole session.
+   */
+  private readonly priceRefreshTick = signal(0);
   protected readonly btcUsdResource = rxResourceFixed({
+    params: () => ({ tick: this.priceRefreshTick() }),
     stream: () => this.priceService.getBtcUsd(),
   });
 
@@ -267,6 +265,17 @@ export class StartComponent {
     this.mintForm().valid(),
   );
 
+  /**
+   * True when the wallet has UTXOs but none large enough at the
+   * current fee rate. Used by the template to auto-open the Advanced
+   * <details> that owns the fee-rate control the alert points at.
+   */
+  protected readonly hasInsufficientFunds = computed(() =>
+    this.viableRows().length === 0 &&
+    this.orchestrator.state() === 'ready' &&
+    this.simulations().length > 0,
+  );
+
   // ---------- Checkout state ----------
 
   protected readonly checkoutOpen = signal(false);
@@ -274,12 +283,25 @@ export class StartComponent {
 
   /**
    * User-facing wallet spend for the auto-picked UTXO — miner fees
-   * (commit + reveal) + the 546-sat postage kept as the cube UTXO
-   * + the small HAUSHOPPE tip. Everything the wallet debits.
+   * (commit + reveal) + the 546-sat postage kept as the cube UTXO +
+   * the small HAUSHOPPE tip. Everything the wallet debits.
+   *
+   * `fundingRequirementSats` is the MINIMUM the UTXO must cover; the
+   * wallet's actual debit equals `utxo.value - change`, and when
+   * `change < dustLimit` the PSBT drops the change output and the
+   * wallet signs a debit for the entire UTXO. Report the honest
+   * amount the user will see in their wallet prompt.
    */
   protected readonly totalSpendSats = computed<number | null>(() => {
     const row = this.selectedRow();
-    return row ? row.simulation.fundingRequirementSats : null;
+    if (!row) return null;
+    const funding = row.simulation.fundingRequirementSats;
+    const utxoValue = row.utxo.value;
+    const wallet = this.connectedWallet();
+    if (!wallet) return funding;
+    const changeMin = getMinimumUtxoSize(wallet.paymentAddress);
+    const change = utxoValue - funding;
+    return change < changeMin ? utxoValue : funding;
   });
 
   /** Human-friendly cost line — `"3,000 sat (~$1.85)"` or just `"3,000 sat"`. */
@@ -306,6 +328,15 @@ export class StartComponent {
   private lastWalletAddress: string | null = null;
 
   constructor() {
+    // Nudge the BTC/USD price every 5 min. Bare `rxResourceFixed` fires
+    // its stream once per params-change; without this heartbeat the
+    // rate goes stale on a long-lived tab, and a first-fetch null
+    // hides the USD suffix for the rest of the session.
+    const priceIntervalId = setInterval(() => {
+      this.priceRefreshTick.update((n) => n + 1);
+    }, 5 * 60 * 1000);
+    this.destroyRef.onDestroy(() => clearInterval(priceIntervalId));
+
     // Reset the scanner's cache when the wallet changes.
     effect(() => {
       const addr = this.connectedWallet()?.ordinalsAddress ?? null;

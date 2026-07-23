@@ -26,7 +26,14 @@ export class PriceService {
   getBtcUsd(): Observable<number | null> {
     if (!this.base) return of(null);
     return this.http.get<PriceResponse>(`${this.base}/api/v1/prices`).pipe(
-      map((p) => p?.USD ?? null),
+      // Upstream (ordpool-backend price-updater) seeds `USD: -1` on
+      // cold start and can transiently return 0 / non-number values
+      // when a fetch fails. Treat anything that isn't a positive
+      // finite number as "no price".
+      map((p) => {
+        const v = p?.USD;
+        return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+      }),
       catchError(() => of(null)),
     );
   }

@@ -4,6 +4,7 @@
 // Expects the regtest stack to be up via `e2e/regtest-bootstrap.sh`
 // and `REGTEST_FUNDED_ADDR` / `REGTEST_FUNDED_WIF` set in env.
 
+import type { Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 
 const ELECTRS_URL = process.env.REGTEST_ELECTRS_URL ?? 'http://localhost:3000';
@@ -622,5 +623,19 @@ export async function waitForOrdStockInscription(
   throw new Error(
     `stock ord did not surface inscription ${id} within ${timeoutMs}ms; ` +
     `last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+  );
+}
+
+/**
+ * Force-open a `<details>` element identified by its `data-testid`.
+ * The mint UI hides fee-rate + UTXO controls and the six-side inputs
+ * behind collapsed `<details>` for normal users; specs that drive
+ * those controls must open the disclosure first, otherwise
+ * `.fill()` throws on inputs whose ancestor `display: none` makes
+ * them non-actionable.
+ */
+export async function openDetails(page: Page, testId: string): Promise<void> {
+  await page.locator(`[data-testid="${testId}"]`).evaluate(
+    (el: HTMLDetailsElement) => { el.open = true; },
   );
 }

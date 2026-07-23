@@ -357,7 +357,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // uses — no localStorage divination.
   const paymentAddrLocator = cubes.locator('[data-testid="mint-payment-address"]');
   await expect(paymentAddrLocator).toBeVisible({ timeout: 15_000 });
-  const paymentAddr = (await paymentAddrLocator.textContent())?.trim() ?? '';
+  const paymentAddr = (await paymentAddrLocator.getAttribute('aria-label'))?.trim() ?? '';
   expect(paymentAddr).toMatch(/^bcrt1q|^bcrt1p|^m[a-zA-Z0-9]/);
   console.log(`[cube-mint] payment address: ${paymentAddr}`);
 
@@ -453,7 +453,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   //   back a different bech32 address than the one we funded. If they
   //   differ, fund the new one too and reload once more so the
   //   orchestrator's utxos$ re-fires against the funded address.
-  const paymentAddrAfterReload = (await paymentAddrLocator.textContent())?.trim() ?? '';
+  const paymentAddrAfterReload = (await paymentAddrLocator.getAttribute('aria-label'))?.trim() ?? '';
   console.log(`[cube-mint] payment address after reload: ${paymentAddrAfterReload}`);
   if (paymentAddrAfterReload !== paymentAddr) {
     console.log(`[cube-mint] address changed across reload: ${paymentAddr} -> ${paymentAddrAfterReload}, refunding`);
@@ -496,7 +496,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   //   only happen if the SAME URL through the browser's fetch (via
   //   the dev-server proxy → electrs) returns []. Prove or disprove
   //   before waiting on the banner.
-  const currentAddr = (await paymentAddrLocator.textContent())?.trim() ?? '';
+  const currentAddr = (await paymentAddrLocator.getAttribute('aria-label'))?.trim() ?? '';
   const proxyProbe = await cubes.evaluate(async (addr) => {
     try {
       const res = await fetch(`/api/address/${addr}/utxo`, { cache: 'no-store' });
@@ -691,7 +691,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await shot(cubes, '06-cubes-success');
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
-  const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').textContent())?.trim() ?? '';
+  const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').getAttribute('aria-label'))?.trim() ?? '';
   if (!commitTxId || !revealTxId) {
     const successHtml = await cubes.evaluate(() => {
       const el = document.querySelector('[data-testid="mint-success"]');

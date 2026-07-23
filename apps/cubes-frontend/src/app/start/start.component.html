@@ -120,8 +120,9 @@
     @if (connectedWallet(); as wallet) {
       <p class="mb-3 small text-muted" data-testid="wallet-connected">
         Paying from your wallet
-        (<code [title]="wallet.paymentAddress">{{ connectedAddressShort() }}</code>).
-        <span class="visually-hidden" data-testid="mint-payment-address">{{ wallet.paymentAddress }}</span>
+        (<code data-testid="mint-payment-address"
+               [attr.aria-label]="wallet.paymentAddress"
+               [title]="wallet.paymentAddress">{{ connectedAddressShort() }}</code>).
       </p>
 
       <!-- Loading / empty / insufficient states. -->
@@ -281,12 +282,14 @@
     </p>
     <p class="small text-muted mb-3">
       Follow it live on
-      <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code>{{ res.revealTxId.slice(0, 12) }}…</code></a>
+      <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid" [attr.aria-label]="res.revealTxId">{{ res.revealTxId.slice(0, 12) }}…</code></a>
       (opens ordpool.space).
     </p>
-    <!-- Test-only hooks: the e2e verifies both commit + reveal confirm
-         on-chain; the user only needs the reveal link above. -->
-    <span data-testid="mint-reveal-txid" hidden>{{ res.revealTxId }}</span>
+    <!-- Test-only hook: the e2e verifies both commit + reveal confirm
+         on-chain; the user only needs the reveal link above.
+         Reveal-txid gets the full value via aria-label on the visible
+         <code> above; commit-txid has no visible surface, so it stays
+         a hidden test hook. -->
     <span data-testid="mint-commit-txid" hidden>{{ res.commitTxId }}</span>
     <p class="small mb-3">
       Bonus: you also minted <strong>2 free CAT-21 cats</strong> as a side effect.

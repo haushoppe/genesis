@@ -8,6 +8,14 @@ export interface PastMint {
   commitTxId: string;
   revealTxId: string;
   createdAt: string;
+  /**
+   * Six inscription IDs the user picked for this cube. Populated for
+   * new mints; empty when rehydrated from a pre-2026-07 payload that
+   * predates this field. Read by CubeSuggestionService to bar
+   * just-minted IDs from re-suggestion before ord+the hourly index
+   * catch up (~70 min lag).
+   */
+  inscriptionIds: string[];
 }
 
 function readInitial(): PastMint[] {
@@ -15,7 +23,13 @@ function readInitial(): PastMint[] {
     const raw = getLocalStore(STORAGE_KEY);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed as PastMint[] : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((m: Partial<PastMint>) => ({
+      commitTxId: m.commitTxId ?? '',
+      revealTxId: m.revealTxId ?? '',
+      createdAt: m.createdAt ?? '',
+      inscriptionIds: Array.isArray(m.inscriptionIds) ? m.inscriptionIds : [],
+    }));
   } catch {
     return [];
   }
@@ -45,9 +59,9 @@ export class PastMintsService {
     });
   }
 
-  record(commitTxId: string, revealTxId: string): void {
+  record(commitTxId: string, revealTxId: string, inscriptionIds: string[] = []): void {
     this.pastMints.update((list) => [
-      { commitTxId, revealTxId, createdAt: new Date().toISOString() },
+      { commitTxId, revealTxId, createdAt: new Date().toISOString(), inscriptionIds },
       ...list,
     ]);
   }

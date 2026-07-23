@@ -27,8 +27,15 @@ describe('PastMintsService', () => {
     svc.record('commit-1', 'reveal-1');
     const list = svc.pastMints();
     expect(list).toHaveLength(1);
-    expect(list[0]).toMatchObject({ commitTxId: 'commit-1', revealTxId: 'reveal-1' });
+    expect(list[0]).toMatchObject({ commitTxId: 'commit-1', revealTxId: 'reveal-1', inscriptionIds: [] });
     expect(list[0].createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('records the six inscription ids when provided', () => {
+    const svc = freshBed();
+    const ids = ['a'.repeat(64) + 'i0', 'b'.repeat(64) + 'i0'];
+    svc.record('commit-1', 'reveal-1', ids);
+    expect(svc.pastMints()[0].inscriptionIds).toEqual(ids);
   });
 
   it('records multiple mints newest-first', () => {
@@ -49,6 +56,7 @@ describe('PastMintsService', () => {
     const svc = freshBed();
     expect(svc.pastMints()).toHaveLength(1);
     expect(svc.pastMints()[0].revealTxId).toBe('r-old');
+    expect(svc.pastMints()[0].inscriptionIds).toEqual([]);
   });
 
   it('tolerates corrupt localStorage payload', () => {

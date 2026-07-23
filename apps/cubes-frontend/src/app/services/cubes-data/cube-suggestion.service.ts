@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, defer, firstValueFrom, from } from 'rxjs';
 
+import { PastMintsService } from '../past-mints.service';
 import { CubesDataService } from './cubes-data.service';
 import { ArchiveCollection, ArchiveDataService } from './archive-data.service';
 import { CubeSuggestion } from './types';
@@ -30,6 +31,8 @@ const SIDE_TRAIT_TYPES = new Set(['Side 1', 'Side 2', 'Side 3', 'Side 4', 'Side 
 @Injectable({ providedIn: 'root' })
 export class CubeSuggestionService {
 
+  private readonly pastMints = inject(PastMintsService);
+
   constructor(
     private cubesData: CubesDataService,
     private archive: ArchiveDataService,
@@ -52,6 +55,13 @@ export class CubeSuggestionService {
           claimed.add(attr.value);
         }
       }
+    }
+
+    // Local mints haven't reached the hourly cubes.json index yet
+    // (typical lag: ord ~10 min + hourly cron up to 60 min). Union the
+    // user's own recent mints so we never re-suggest their own IDs.
+    for (const mint of this.pastMints.pastMints()) {
+      for (const id of mint.inscriptionIds) claimed.add(id);
     }
 
     let candidates: ArchiveCollection[];

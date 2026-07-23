@@ -390,9 +390,15 @@ export class StartComponent {
     // form. Angular's signal semantics only fire the effect when
     // `suggestionResource.value()` actually changes reference (each
     // resource resolve produces a new object), so no dedup closure.
+    // Guard against overwriting while checkout is open: the user is
+    // reviewing a specific cube; a background suggestion arriving
+    // (e.g. from `craftAnotherCube()` that also closes the drawer, or
+    // a route-param change) must not silently swap the cube the Mint
+    // click is about to inscribe.
     effect(() => {
       const suggestion = this.suggestionResource.value();
       if (!suggestion) return;
+      if (this.checkoutOpen()) return;
       this.mintFormData.update((v) => ({
         ...v,
         inscriptionId1: suggestion.inscriptionId1,
@@ -436,7 +442,11 @@ export class StartComponent {
   }
 
   craftAnotherCube() {
-    // Reload the suggestion resource — same collection, fresh pick.
+    // If the drawer is open, close it first — the effect guard skips
+    // suggestion patches while checkoutOpen is true, so without this
+    // the click would silently no-op mid-review. Closing surfaces the
+    // fresh cube back in the preview and lets the user decide.
+    this.checkoutOpen.set(false);
     this.suggestionResource.reload();
   }
 
@@ -458,7 +468,9 @@ export class StartComponent {
 
     try {
       const result = await firstValueFrom(this.orchestrator.mint());
-      this.pastMints.record(result.commitTxId, result.revealTxId);
+      const form = this.mintFormData();
+      const inscriptionIds = INSCRIPTION_ID_FIELDS.map((k) => form[k]);
+      this.pastMints.record(result.commitTxId, result.revealTxId, inscriptionIds);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn('[cubes] mint threw:', err);
@@ -495,6 +507,10 @@ export class StartComponent {
     this.mintFormData.set(INITIAL_MINT_FORM);
     this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
     this.checkoutOpen.set(false);
+    // Actively pull a fresh cube. The just-minted IDs are already in
+    // PastMintsService and the CubeSuggestionService unions them into
+    // its claimed set, so the new suggestion never picks any of them.
+    this.suggestionResource.reload();
   }
 }
 

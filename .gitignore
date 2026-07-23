@@ -52,9 +52,10 @@ kendo-ui-license.txt
 z_extra/magic-eden-archive.zip
 z_extra/magic-eden-archive/magic-eden-data-dump/
 
-# Playwright artifacts
-apps/*/playwright-report
-apps/*/test-results
+# Playwright artifacts (both the default `test-results` / `playwright-
+# report` and the `-regtest` variants that the regtest suite writes to)
+apps/*/playwright-report*
+apps/*/test-results*
 apps/*/.playwright
 
 # Claude Code transient scheduler state (see also ~/.gitignore_global)

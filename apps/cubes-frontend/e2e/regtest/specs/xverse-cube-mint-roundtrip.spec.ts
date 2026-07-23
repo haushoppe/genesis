@@ -177,22 +177,39 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
 
   // ─── Step 2: open cubes-frontend + connect wallet via UI ───────
   const cubes = await context.newPage();
+
+  // Collect uncaught pageerrors + unfiltered console.errors and fail
+  // the test at the end if any surfaced. Covers rule §11 (browser
+  // errors fail the test) of ~/Work/ordpool/E2E_BEST_PRACTICES.md.
+  // Known-noise 404s (regtest has no /api/v1/prices etc.) are filtered
+  // so real JS regressions can't hide behind them.
+  const IGNORED_CONSOLE: RegExp[] = [
+    /Failed to load resource:.*404/,
+    /Failed to load resource:.*net::/,
+  ];
+  const browserErrors: string[] = [];
+
   // Surface browser console errors + page errors so a silent connect
   // failure inside sats-connect doesn't just look like "popup never
   // opened".
   cubes.on('console', (msg) => {
     const t = msg.type();
+    const text = msg.text();
     // Also surface console.warn: the BROADCAST-DEBUG interceptor uses
     // console.warn to log every POST /api/tx round-trip. Filtering on
     // 'error' only masked that trace entirely on prior CI runs.
     if (t === 'error' || t === 'warning') {
       // eslint-disable-next-line no-console
-      console.log(`[cubes console.${t}] ${msg.text()}`);
+      console.log(`[cubes console.${t}] ${text}`);
+    }
+    if (t === 'error' && !IGNORED_CONSOLE.some((re) => re.test(text))) {
+      browserErrors.push(`console.error: ${text}`);
     }
   });
   cubes.on('pageerror', (err) => {
     // eslint-disable-next-line no-console
     console.log(`[cubes pageerror] ${err.message}`);
+    browserErrors.push(`pageerror: ${err.message}`);
   });
   // Stub /api/v1/fees/recommended — regtest stack has no ordpool-backend,
   // so this endpoint would 404 otherwise. Fixed values so the fee-tier
@@ -604,15 +621,20 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   const knownPagesBeforeMint = new Set(context.pages());
   await mintBtnLocator.click();
 
-  // Give the SDK's mint chain 3s to either open the sign popup or set
-  // an errorMessage. Prior CI stalled here — the popup never came and
-  // waitForApprovalPopup silently waited out the entire 120s window.
-  await cubes.waitForTimeout(3000);
-  const postMintErr = (await cubes.locator('[data-testid="mint-error-message"]').textContent().catch(() => ''))?.trim();
-  const postMintState = (await cubes.locator('[data-testid="mint-state"]').textContent().catch(() => ''))?.trim();
-  console.log(`[cube-mint] post-click 3s state="${postMintState}" errorMessage="${postMintErr}"`);
-  if (postMintErr && !postMintErr.includes('cancel')) {
-    throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
+  // Race an error-message state against the eventual sign popup. If
+  // the SDK's mint chain synchronously errors (simulation blew up,
+  // PSBT build threw), the alert becomes visible within a couple of
+  // hundred ms; we surface a specific error instead of letting the
+  // 120s waitForApprovalPopup below silently time out. If the alert
+  // never shows within the budget, no error surfaced — proceed.
+  const errLocator = cubes.locator('[data-testid="mint-error-message"]');
+  await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
+  if (await errLocator.isVisible()) {
+    const postMintErr = (await errLocator.textContent())?.trim() ?? '';
+    console.log(`[cube-mint] mint-error-message surfaced: "${postMintErr}"`);
+    if (postMintErr && !postMintErr.includes('cancel')) {
+      throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
+    }
   }
 
   // Xverse's regtest flow re-prompts for address confirmation on every
@@ -687,6 +709,11 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   console.log('[cube-mint] Confirm clicked, waiting for mint-success');
 
   await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
+  // Complement the positive success proof with the ARIA-state proof
+  // that the mint button dropped out of its `minting` phase — catches
+  // the pathological "success alert rendered but orchestrator still
+  // stuck in minting state" regression.
+  await expect(cubes.locator('[data-testid="mint-btn"]')).toHaveAttribute('aria-busy', 'false');
   console.log('[cube-mint] mint-success visible; extracting txids');
   await shot(cubes, '06-cubes-success');
 
@@ -734,4 +761,14 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     .sort((a, b) => a.trait_type.localeCompare(b.trait_type))
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
+
+  // Rule §11 assertion: after the full mint arc is proven, fail the
+  // test if any unfiltered browser console.error or pageerror surfaced
+  // during the run. Every JS regression in the mint flow becomes a
+  // regtest failure — no more "test green, feature broken" gap.
+  if (browserErrors.length) {
+    throw new Error(
+      `Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:\n  - ${browserErrors.join('\n  - ')}`,
+    );
+  }
 });

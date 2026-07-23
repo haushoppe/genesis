@@ -257,7 +257,8 @@
                 data-testid="mint-btn"
                 class="btn btn-primary btn-lg text-nowrap"
                 (click)="mint()"
-                [disabled]="!canMint() || orchestrator.state() === 'minting'">
+                [disabled]="!canMint() || orchestrator.state() === 'minting'"
+                [attr.aria-busy]="orchestrator.state() === 'minting'">
           @if (orchestrator.state() === 'minting') {
             Waiting for your wallet to confirm…
           } @else if (totalSpendSats()) {

@@ -181,11 +181,20 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // Collect uncaught pageerrors + unfiltered console.errors and fail
   // the test at the end if any surfaced. Covers rule §11 (browser
   // errors fail the test) of ~/Work/ordpool/E2E_BEST_PRACTICES.md.
-  // Known-noise 404s (regtest has no /api/v1/prices etc.) are filtered
-  // so real JS regressions can't hide behind them.
+  // Known-noise entries stay filtered so real JS regressions can't
+  // hide behind them:
+  //   - 404s / net::* failures on regtest-absent endpoints
+  //   - SDK diagnostics that use console.error for visibility, not
+  //     for signalling a bug (e.g. `[sdk:inscribe] connectedWallet$
+  //     emit w=null lastAddr=undefined`)
+  //   - CORS blocks on side-inscription placeholder SVGs the cube
+  //     preview iframe tries to load (regtest doesn't ship those
+  //     assets; the iframe is null-origin so any /assets fetch fails)
   const IGNORED_CONSOLE: RegExp[] = [
     /Failed to load resource:.*404/,
     /Failed to load resource:.*net::/,
+    /^\[sdk:/,
+    /has been blocked by CORS policy/,
   ];
   const browserErrors: string[] = [];
 

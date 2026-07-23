@@ -8,6 +8,9 @@ best-practices playbook — the same patterns apply here.
 1. Workspace `/Users/johanneshoppe/Work/ordpool/CLAUDE.md`
 2. `genesis/CLAUDE.md` (this repo)
 3. This file (frontend-specific)
+4. Before any E2E work: workspace `/Users/johanneshoppe/Work/ordpool/E2E_BEST_PRACTICES.md`
+   (data-testid first, click instead of `goto`, wait on states, secure-first-then-refactor,
+   regtest bootstrap, wallet-load pattern, `openDetails` helper convention).
 
 ## HARD RULE: No NgRx in this app
 

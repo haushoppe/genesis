@@ -67,6 +67,7 @@ jobs:
           - leather
           - unisat
           - oyl
+          - wizz
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -231,6 +232,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh oyl
+
+      - name: Cache Wizz extension
+        if: matrix.wallet == 'wizz'
+        id: wizz-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/cubes-frontend/e2e/regtest/extensions/wizz
+          # Version tag lives in playwright-bootstrap.sh; keep in sync.
+          key: wizz-extension-v2.13.4
+
+      - name: Fetch Wizz .crx from ordpool-sdk release mirror
+        if: matrix.wallet == 'wizz' && steps.wizz-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash e2e/regtest/playwright-bootstrap.sh wizz
 
       - name: Bring up bitcoind + electrs + ord-stock
         # cat21-ord isn't needed for cube inscribes (cubes are

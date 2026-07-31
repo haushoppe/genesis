@@ -1,0 +1,388 @@
+/* eslint-disable no-console */
+import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+
+import { getCubeHtml } from '../../../src/app/services/cube-html';
+import { parseCube } from '../../../src/shared/ordinals/parse-cube';
+import {
+  waitForElectrsSync,
+  waitForUtxoAt,
+  waitForTxConfirmed,
+  rpc,
+  mineBlocks,
+  waitForOrdStockSync,
+  getStockOrdContent,
+  openDetails,
+} from '../regtest-helpers';
+import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-popup';
+
+/**
+ * Full user-flow proof for Wizz — cubes.haushoppe.art end-to-end on
+ * regtest. Wizz is a Unisat fork, so the SDK path is identical to
+ * Unisat (connector-shim rewrites mainnet → bcrt on connect;
+ * wallet-side-address shim translates back to mainnet for
+ * toSignInputs on sign). Cubes self-send gate skip from f8d80e4
+ * also applies — Wizz is single-address like Unisat.
+ *
+ * Wizz-specific deltas:
+ *   - Onboarding is text-anchored (Wizz strips testids from its
+ *     build). Sequence: "I already have a wallet" → 2 password
+ *     inputs → "Wizz Wallet" source picker → 12 mnemonic inputs →
+ *     "Native Segwit (P2WPKH)" address-type → 3 Ant-Design
+ *     `label.ant-checkbox-wrapper` Security Tips → OK.
+ *   - CI hostility: Wizz mounts a `configs.wizz.cash` remote-config
+ *     fetch that hangs in CI. Route-abort the request.
+ *   - Approval popup is URL-anchored at `notification.html#/approval`
+ *     (Unisat-fork).
+ *   - Sign button rendered with a spinner overlay + custom braille
+ *     chars in textContent — click INSIDE page.evaluate to
+ *     atomically match + click.
+ */
+
+const EXT_PATH = path.resolve(__dirname, '../extensions/wizz');
+const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
+const CUBES_URL = 'http://localhost:4203/';
+const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+const TEST_MNEMONIC_WORDS = TEST_MNEMONIC.split(' ');
+const TEST_PASSWORD = 'correct-horse-battery-staple-Tr0ub4dor-9876';
+
+const FUND_AMOUNT_BTC = 0.002;
+
+const CUBE_SIDE_IDS = [
+  'a'.repeat(64) + 'i0',
+  'b'.repeat(64) + 'i0',
+  'c'.repeat(64) + 'i0',
+  'd'.repeat(64) + 'i0',
+  'e'.repeat(64) + 'i0',
+  'f'.repeat(64) + 'i0',
+];
+
+let context: BrowserContext;
+let extensionId: string;
+
+async function shot(p: Page, name: string): Promise<void> {
+  await p.screenshot({
+    path: path.resolve(RESULTS_DIR, `wizz-cube-mint-${name}.png`),
+    fullPage: true,
+  }).catch(() => undefined);
+}
+
+async function onboardWizz(page: Page): Promise<void> {
+  await page.setViewportSize({ width: 400, height: 800 });
+  await page.goto(`chrome-extension://${extensionId}/index.html`, { waitUntil: 'domcontentloaded' });
+
+  await expect(page.getByText('I already have a wallet', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await page.getByText('I already have a wallet', { exact: true }).click();
+
+  const pwInputs = page.locator('input[type="password"]');
+  await expect(pwInputs.first()).toBeVisible({ timeout: 15_000 });
+  const pwCount = await pwInputs.count();
+  for (let i = 0; i < pwCount; i++) {
+    await pwInputs.nth(i).fill(TEST_PASSWORD);
+  }
+  await page.getByRole('button', { name: /^continue$/i }).first().click();
+
+  await expect(page.getByText('Wizz Wallet', { exact: true }).first()).toBeVisible({ timeout: 10_000 });
+  await page.getByText('Wizz Wallet', { exact: true }).first().click({ force: true });
+
+  const mnemonicInputs = page.locator('input[type="text"], input[type="password"]');
+  await expect(mnemonicInputs.first()).toBeVisible({ timeout: 15_000 });
+  for (let i = 0; i < TEST_MNEMONIC_WORDS.length; i++) {
+    await mnemonicInputs.nth(i).fill(TEST_MNEMONIC_WORDS[i]);
+  }
+  await page.getByRole('button', { name: /^continue$/i }).first().click();
+
+  await expect(page.getByText('Native Segwit (P2WPKH)', { exact: true }).first()).toBeVisible({ timeout: 10_000 });
+  await page.getByText('Native Segwit (P2WPKH)', { exact: true }).first().click({ force: true });
+  const continueBtn = page.getByRole('button', { name: /^continue$/i }).last();
+  await continueBtn.scrollIntoViewIfNeeded();
+  await continueBtn.click();
+
+  await expect(page.getByText('Security Tips', { exact: true })).toBeVisible({ timeout: 10_000 });
+  const checkboxes = page.locator('label.ant-checkbox-wrapper');
+  await expect(checkboxes).toHaveCount(3, { timeout: 10_000 });
+  const cbCount = await checkboxes.count();
+  for (let i = 0; i < cbCount; i++) {
+    await checkboxes.nth(i).click();
+  }
+  await page.getByRole('button', { name: /^ok$/i }).click();
+
+  await page.waitForFunction(() => {
+    const t = (document.body.innerText || '').toLowerCase();
+    return t.includes('receive') || t.includes('send') || t.includes('balance');
+  }, undefined, { timeout: 60_000, polling: 500 });
+}
+
+async function approveWizzConnectPopup(ctx: BrowserContext, knownPages: Set<Page>): Promise<void> {
+  const approval = await waitForApprovalPopup({
+    context: ctx,
+    knownPages,
+    timeoutMs: 60_000,
+    isApproval: async (p) => {
+      await p.waitForURL(/notification\.html#\/approval/, { timeout: 60_000 });
+      return true;
+    },
+  });
+  await shot(approval, '03a-connect-popup');
+  // Wizz inherits Unisat's connect-approval — Connect is a styled div.
+  await approval.getByText(/^Connect$/).first().click();
+  await approval.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
+}
+
+async function approveWizzSignPopup(ctx: BrowserContext, knownPages: Set<Page>): Promise<void> {
+  const approval = await waitForApprovalPopup({
+    context: ctx,
+    knownPages,
+    timeoutMs: 120_000,
+    isApproval: async (p) => {
+      await p.waitForURL(/notification\.html#\/approval/, { timeout: 120_000 });
+      return true;
+    },
+  });
+  await shot(approval, '05a-sign-popup');
+  // Sign button carries a spinner overlay + custom braille chars in
+  // textContent while Wizz analyses the PSBT — atomically match +
+  // click inside page.evaluate to sidestep the pointer-events race.
+  await approval.waitForFunction(() => {
+    const isSignButton = (el: Element) => {
+      const text = (el.textContent || '').trim();
+      return /^\s*[⠀-⣿•●]?\s*Sign\s*$/i.test(text);
+    };
+    const els = Array.from(document.querySelectorAll<HTMLElement>('button, [role="button"], div'));
+    const candidate = els.find(isSignButton);
+    if (!candidate) return null;
+    const style = getComputedStyle(candidate);
+    if (style.pointerEvents === 'none') return null;
+    if (parseFloat(style.opacity) < 0.7) return null;
+    candidate.click();
+    return { text: candidate.textContent };
+  }, undefined, { timeout: 60_000, polling: 250 });
+  console.log('[wizz-mint] clicked sign-button (popup may have closed)');
+}
+
+test.beforeAll(async () => {
+  if (!fs.existsSync(path.join(EXT_PATH, 'manifest.json'))) {
+    throw new Error(
+      `Wizz extension not unpacked at ${EXT_PATH}. ` +
+      `Run: bash e2e/regtest/playwright-bootstrap.sh wizz`,
+    );
+  }
+
+  const tip = Number(rpc('getblockcount').trim());
+  if (tip < 101) {
+    throw new Error(
+      `regtest tip is ${tip} (<101). ` +
+      `Run: bash e2e/regtest/regtest-bootstrap.sh`,
+    );
+  }
+
+  const workingDir = path.resolve(RESULTS_DIR, `wizz-user-data-dir-${process.pid}-${Date.now()}`);
+  fs.mkdirSync(workingDir, { recursive: true });
+
+  context = await chromium.launchPersistentContext(workingDir, {
+    headless: false,
+    args: [
+      `--disable-extensions-except=${EXT_PATH}`,
+      `--load-extension=${EXT_PATH}`,
+      '--no-sandbox',
+      '--disable-dev-shm-usage',
+    ],
+  });
+  // Block Wizz's remote-config fetch that hangs in CI (no outbound
+  // to configs.wizz.cash on GHA runners).
+  await context.route('**/configs.wizz.cash/**', route => route.abort());
+
+  let [worker] = context.serviceWorkers();
+  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  extensionId = worker.url().split('/')[2];
+
+  const primer = await context.newPage();
+  await onboardWizz(primer);
+  await shot(primer, '00-onboarded');
+  await primer.close();
+});
+
+test.afterAll(async () => {
+  await context?.close();
+});
+
+test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
+  test.setTimeout(360_000);
+
+  const cubes = await context.newPage();
+  const browserErrors: string[] = [];
+  const IGNORED_CONSOLE: RegExp[] = [
+    /Failed to load resource:.*404/,
+    /Failed to load resource:.*net::/,
+    /^\[sdk:/,
+    /has been blocked by CORS policy/,
+  ];
+  cubes.on('console', (msg) => {
+    if (msg.type() !== 'error') return;
+    const text = msg.text();
+    console.log(`[wizz-mint console.error] ${text}`);
+    if (!IGNORED_CONSOLE.some((re) => re.test(text))) {
+      browserErrors.push(`console.error: ${text}`);
+    }
+  });
+  cubes.on('pageerror', (err) => {
+    console.log(`[wizz-mint pageerror] ${err.message}`);
+    browserErrors.push(`pageerror: ${err.message}`);
+  });
+
+  await cubes.route('**/api/v1/fees/recommended', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' },
+      body: JSON.stringify({
+        fastestFee: 5, halfHourFee: 3, hourFee: 1, economyFee: 1, minimumFee: 1,
+      }),
+    });
+  });
+
+  await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+
+  await openDetails(cubes, 'configurator-advanced');
+  for (let i = 0; i < 6; i++) {
+    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
+  }
+  await shot(cubes, '02a-form-filled');
+
+  const mintCta = cubes.locator('[data-testid="mint-cta"]');
+  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
+  await mintCta.click();
+
+  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
+  const connectLink = cubes.locator('[data-testid="wallet-connect-wizz"]');
+  await expect(connectLink).toBeVisible({ timeout: 10_000 });
+  await shot(cubes, '02b-wallet-picker-open');
+
+  const knownPagesBeforeConnect = new Set(context.pages());
+  await connectLink.click();
+  await approveWizzConnectPopup(context, knownPagesBeforeConnect);
+  await cubes.bringToFront();
+
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+
+  await cubes.locator('[data-testid="wallet-connected-btn"]').click();
+  const paymentAddrLoc = cubes.locator('[data-testid="wallet-popover-payment-address"]');
+  await expect(paymentAddrLoc).toBeVisible({ timeout: 15_000 });
+  const paymentAddr = ((await paymentAddrLoc.getAttribute('title')) ?? (await paymentAddrLoc.textContent()) ?? '').trim();
+  expect(paymentAddr).toMatch(/^bcrt1q/);
+  console.log(`[wizz-mint] payment address: ${paymentAddr}`);
+  await cubes.locator('[data-testid="wallet-connected-btn"]').click();
+
+  rpc('-rpcwallet=cubes-e2e', 'sendtoaddress', paymentAddr, String(FUND_AMOUNT_BTC));
+  await waitForElectrsSync(mineBlocks(1));
+  await waitForUtxoAt(paymentAddr, Math.round(FUND_AMOUNT_BTC * 1e8));
+
+  await cubes.reload({ waitUntil: 'domcontentloaded' });
+
+  const knownPagesBeforeReconnect = new Set(context.pages());
+  const reapprovePromise = waitForApprovalPopup({
+    context,
+    knownPages: knownPagesBeforeReconnect,
+    timeoutMs: 15_000,
+    isApproval: async (p) => {
+      await p.waitForURL(/notification\.html#\/approval/, { timeout: 15_000 });
+      return true;
+    },
+  }).catch(() => null);
+  const reapprove = await reapprovePromise;
+  if (reapprove) {
+    await reapprove.getByText(/^Connect$/).first().click();
+    await reapprove.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
+  }
+  await cubes.bringToFront();
+  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 45_000 });
+
+  await openDetails(cubes, 'configurator-advanced');
+  for (let i = 0; i < 6; i++) {
+    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
+  }
+  const mintCtaAfterReload = cubes.locator('[data-testid="mint-cta"]');
+  await expect(mintCtaAfterReload).toBeEnabled({ timeout: 15_000 });
+  await mintCtaAfterReload.click();
+  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+  await openDetails(cubes, 'mint-advanced');
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
+  await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
+  await shot(cubes, '04-drawer-open');
+
+  const expectedCubeHtml = getCubeHtml({
+    inscriptionIds: {
+      inscriptionId1: CUBE_SIDE_IDS[0],
+      inscriptionId2: CUBE_SIDE_IDS[1],
+      inscriptionId3: CUBE_SIDE_IDS[2],
+      inscriptionId4: CUBE_SIDE_IDS[3],
+      inscriptionId5: CUBE_SIDE_IDS[4],
+      inscriptionId6: CUBE_SIDE_IDS[5],
+    },
+    title: '',
+    rotationSpeedX: '',
+    rotationSpeedY: '',
+    colorPane: '',
+    bgColor1: '',
+    bgColor2: '',
+  });
+  expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
+
+  const mintBtn = cubes.locator('[data-testid="mint-btn"]');
+  await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+
+  await closeLeftoverExtensionPages(context, [cubes]);
+  const knownPagesBeforeSign = new Set(context.pages());
+  await mintBtn.click();
+
+  const errLocator = cubes.locator('[data-testid="mint-error-message"]');
+  await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
+  if (await errLocator.isVisible()) {
+    const postMintErr = (await errLocator.textContent())?.trim() ?? '';
+    if (postMintErr && !postMintErr.includes('cancel')) {
+      throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
+    }
+  }
+
+  await approveWizzSignPopup(context, knownPagesBeforeSign);
+
+  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
+  await expect(cubes.locator('[data-testid="mint-btn"]')).toHaveAttribute('aria-busy', 'false');
+  await shot(cubes, '06-success');
+
+  const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
+  const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').getAttribute('aria-label'))?.trim() ?? '';
+  expect(commitTxId).toMatch(/^[0-9a-f]{64}$/);
+  expect(revealTxId).toMatch(/^[0-9a-f]{64}$/);
+  console.log(`[wizz-mint] commit=${commitTxId.slice(0, 12)}… reveal=${revealTxId.slice(0, 12)}…`);
+
+  await waitForElectrsSync(mineBlocks(1));
+  await waitForTxConfirmed(commitTxId);
+  await waitForElectrsSync(mineBlocks(1));
+  const revealTx = await waitForTxConfirmed(revealTxId);
+  expect(revealTx.status.block_hash).toBeTruthy();
+
+  await waitForOrdStockSync(Number(rpc('getblockcount').trim()));
+  const inscriptionId = `${revealTxId}i0`;
+  const { bytes: onChainBytes, contentType } = await getStockOrdContent(inscriptionId);
+  expect(contentType).toBe('text/html;charset=utf-8');
+
+  const onChainHtml = new TextDecoder().decode(onChainBytes);
+  expect(onChainHtml).toBe(expectedCubeHtml);
+
+  const parsed = parseCube(onChainHtml);
+  expect(parsed).toBeTruthy();
+  const parsedSides = parsed!
+    .filter((t) => /^Side \d$/.test(t.trait_type))
+    .sort((a, b) => a.trait_type.localeCompare(b.trait_type))
+    .map((t) => t.value);
+  expect(parsedSides).toEqual(CUBE_SIDE_IDS);
+
+  if (browserErrors.length) {
+    throw new Error(
+      `Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:\n  - ${browserErrors.join('\n  - ')}`,
+    );
+  }
+});

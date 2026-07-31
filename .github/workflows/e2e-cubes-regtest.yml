@@ -127,20 +127,60 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh xverse
 
-      - name: Cache CAT-21 wallet extension
+      # CAT-21 wallet doesn't ship a published .crx yet (unlike
+      # Xverse/Leather/Unisat/OKX/Phantom/Wizz/Oyl/Alby which are
+      # mirrored on ordpool-space/ordpool-sdk releases). Same pattern
+      # as cat21-indexer/.github/workflows/e2e-regtest-mint-cat21wallet.yml:
+      # checkout cat21-wallet source, pnpm build, then hand the
+      # unpacked dist to playwright-bootstrap.sh via the
+      # CAT21_WALLET_LOCAL_DIST env-var branch (the bootstrap script
+      # already supports this at line 97).
+      - name: Checkout cat21-wallet (extension source)
         if: matrix.wallet == 'cat21wallet'
-        id: cat21wallet-cache
+        working-directory: ${{ github.workspace }}
+        run: git clone --depth 1 --branch main https://github.com/ordpool-space/cat21-wallet _cat21-wallet-src
+
+      - name: Setup pnpm for cat21-wallet build
+        if: matrix.wallet == 'cat21wallet'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Cache cat21-wallet pnpm store
+        if: matrix.wallet == 'cat21wallet'
         uses: actions/cache@v4
         with:
-          path: apps/cubes-frontend/e2e/regtest/extensions/cat21wallet
-          # Version tag lives in playwright-bootstrap.sh; keep in
-          # sync manually — a bump there needs a bump here.
-          key: cat21wallet-extension-v6.103.0.675
+          path: ~/.local/share/pnpm/store
+          key: cubes-cat21wallet-pnpm-${{ hashFiles('_cat21-wallet-src/pnpm-lock.yaml') }}
+          restore-keys: |
+            cubes-cat21wallet-pnpm-
 
-      - name: Fetch CAT-21 wallet .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-cache.outputs.cache-hit != 'true'
+      - name: Cache cat21-wallet extension dist
+        if: matrix.wallet == 'cat21wallet'
+        id: cat21wallet-dist-cache
+        uses: actions/cache@v4
+        with:
+          path: _cat21-wallet-src/apps/extension/dist
+          # Rebuild only when wallet source changes. Keys off the
+          # source files themselves so a wallet-repo push invalidates
+          # the cache automatically.
+          key: cubes-cat21wallet-dist-${{ hashFiles('_cat21-wallet-src/pnpm-lock.yaml', '_cat21-wallet-src/apps/extension/**/*.ts', '_cat21-wallet-src/apps/extension/**/*.tsx', '_cat21-wallet-src/packages/**/*.ts') }}
+
+      - name: Install cat21-wallet dependencies
+        if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ github.workspace }}/_cat21-wallet-src
+        run: pnpm install --frozen-lockfile
+
+      - name: Build cat21-wallet extension
+        if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ github.workspace }}/_cat21-wallet-src
+        run: pnpm build:extension
+
+      - name: Stage cat21-wallet extension via LOCAL_DIST bootstrap
+        if: matrix.wallet == 'cat21wallet'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CAT21_WALLET_LOCAL_DIST: ${{ github.workspace }}/_cat21-wallet-src/apps/extension/dist
         run: bash e2e/regtest/playwright-bootstrap.sh cat21wallet
 
       - name: Bring up bitcoind + electrs + ord-stock

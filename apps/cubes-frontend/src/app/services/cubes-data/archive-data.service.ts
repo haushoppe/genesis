@@ -76,7 +76,13 @@ export class ArchiveDataService {
     // .csv.gz as application/gzip, not as content-encoded text.
     const res = await fetch(`${ARCHIVE_BASE}/inscriptions/${encodeURIComponent(symbol)}.csv.gz`);
     if (!res.ok) throw new Error(`Inscriptions fetch for ${symbol} failed: HTTP ${res.status}`);
-    const stream = res.body!.pipeThrough(new DecompressionStream('gzip'));
+    // `.body` is legitimately null on HTTP 204 and some opaque-response
+    // paths that still satisfy `.ok`. Explicit guard beats the workspace-
+    // banned non-null `!`; empty stream would silently produce an empty
+    // collection and `CubeSuggestionService` would treat that as "no
+    // usable images" and burn through all 250 candidates.
+    if (!res.body) throw new Error(`Inscriptions fetch for ${symbol} returned an empty body (HTTP ${res.status})`);
+    const stream = res.body.pipeThrough(new DecompressionStream('gzip'));
     const text = await new Response(stream).text();
     // Each line is `id,contentType` — both fields are comma-safe by construction
     // so a plain split is fine.

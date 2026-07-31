@@ -18,14 +18,9 @@ import {
   UtxoContentScanner,
   UtxoScanBucket,
   UtxoScanState,
+  validateInscribeOperation,
   WalletService,
 } from 'ordpool-sdk';
-// `validateInscribeOperation` is a pure helper and lives only in the
-// SDK's `/core` subpath today; the Angular entry (`ordpool-sdk`)
-// doesn't re-export it. Follow-up: add `export * from
-// './inscribe-validation';` to `ordpool-sdk/src/index.ts` so all
-// consumers can reach it from one import.
-import { validateInscribeOperation } from 'ordpool-sdk/core';
 import { debounceTime, firstValueFrom } from 'rxjs';
 
 import { environment } from '../../environments/environment';

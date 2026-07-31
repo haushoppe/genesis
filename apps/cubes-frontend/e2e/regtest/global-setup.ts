@@ -230,8 +230,15 @@ async function dumpStorage(context: BrowserContext, extensionId: string): Promis
 }
 
 export default async function globalSetup(): Promise<void> {
+  // globalSetup is Xverse-specific: it clones a onboarded seed
+  // user-data-dir the xverse spec reuses. Every other wallet's
+  // matrix job runs without the xverse .crx unpacked, so a hard
+  // throw here would break cat21wallet / alby / leather / … jobs
+  // for no reason. Soft-skip; if the xverse spec runs without the
+  // extension, IT throws a targeted error.
   if (!fs.existsSync(path.join(EXT_PATH, 'manifest.json'))) {
-    throw new Error(`Xverse extension not unpacked at ${EXT_PATH}. Run e2e/playwright/playwright-bootstrap.sh.`);
+    console.log(`[globalSetup] Xverse extension not present at ${EXT_PATH} — skipping seed onboarding (only needed by the xverse spec).`);
+    return;
   }
 
   // Skip re-onboarding if the seed dir + dump already exist from

@@ -355,9 +355,22 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
-  // Stub-based window.alby lives from before-page-scripts (via
-  // addInitScript), so cubes' first wallets$ detection check
-  // sees it. No wait+reload needed.
+  // Diagnostic: verify the addInitScript stub actually attached to
+  // the page's window.alby (Playwright's page-world scope).
+  const stubDiag = await cubes.evaluate(() => {
+    const w = window as unknown as { alby?: { webbtc?: { signPsbt?: unknown; getAddress?: unknown } }; __albyBypassSignPsbt?: unknown };
+    return {
+      albyType: typeof w.alby,
+      hasWebbtc: !!w.alby?.webbtc,
+      hasSignPsbt: typeof w.alby?.webbtc?.signPsbt,
+      hasGetAddress: typeof w.alby?.webbtc?.getAddress,
+      bridgeExposed: typeof w.__albyBypassSignPsbt,
+    };
+  });
+  console.log(`[alby-mint:diag] window.alby state = ${JSON.stringify(stubDiag)}`);
+  if (stubDiag.albyType !== 'object') {
+    throw new Error(`window.alby stub did not attach — state=${JSON.stringify(stubDiag)}`);
+  }
 
   await openDetails(cubes, 'configurator-advanced');
   for (let i = 0; i < 6; i++) {

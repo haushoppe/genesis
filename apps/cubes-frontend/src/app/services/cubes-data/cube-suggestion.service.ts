@@ -109,7 +109,7 @@ export class CubeSuggestionService {
       pool.splice(idx, 1);
     }
 
-    throw new Error('Could not find enough unclaimed tokens!');
+    throw new Error('Could not find enough unclaimed inscriptions!');
   }
 }
 

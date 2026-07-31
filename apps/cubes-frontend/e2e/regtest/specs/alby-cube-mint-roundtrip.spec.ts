@@ -335,31 +335,29 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
         },
       },
     };
+    // Getter/setter pair: Alby's real inpage script attempts
+    // `window.alby = <realProvider>` on every navigation. A frozen
+    // `value:` property would throw "Cannot assign to read only
+    // property 'alby'" — noise that rule §11 flags. Instead, the
+    // setter silently no-ops so Alby's assignment is a valid
+    // JS expression that just doesn't stick.
+    let installedStub = stub;
     Object.defineProperty(window, 'alby', {
-      value: stub,
-      writable: false,
+      get() { return installedStub; },
+      set(_v) { /* swallow Alby's inpage override */ },
       configurable: false,
     });
+    void installedStub;
     // eslint-disable-next-line no-console
-    console.log('[alby-mint] installed window.alby SW-bypass stub');
+    console.log('[alby-mint] installed window.alby SW-bypass stub (getter/setter)');
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
-  // Cubes' WalletService polls window for wallets 4 times over 2s
-  // right after Angular boots (ordpool-sdk wallet.service.ts:88).
-  // Alby's inpage script can inject late in CI under CPU load,
-  // missing that window. Wait explicitly for window.alby, then
-  // reload cubes so a fresh wallets$ subscription catches it.
-  await cubes.waitForFunction(
-    () => Boolean((window as unknown as { alby?: unknown }).alby),
-    undefined,
-    { timeout: 60_000, polling: 250 },
-  );
-  console.log('[alby-mint] window.alby present; reloading cubes for fresh wallet detection');
-  await cubes.reload({ waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  // Stub-based window.alby lives from before-page-scripts (via
+  // addInitScript), so cubes' first wallets$ detection check
+  // sees it. No wait+reload needed.
 
   await openDetails(cubes, 'configurator-advanced');
   for (let i = 0; i < 6; i++) {

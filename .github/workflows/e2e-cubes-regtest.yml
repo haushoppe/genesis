@@ -69,12 +69,7 @@ jobs:
           - oyl
           - wizz
           - alby
-          # okx: onboarding flakes in CI at the #ui-ses-iframe step
-          # after CDP-clicking "Seed phrase or private key". Same
-          # flake the SDK's okx-mint spec chronicled through iter
-          # 37-79. Spec preserved as okx-cube-mint-roundtrip.spec.ts;
-          # matrix disabled while a more resilient onboard lands.
-          #- okx
+          - okx
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:

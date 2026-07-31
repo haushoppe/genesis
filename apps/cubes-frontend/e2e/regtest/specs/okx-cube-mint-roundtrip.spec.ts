@@ -29,6 +29,12 @@ import { onboardOkx } from '../onboard-okx';
  *     into cubes-frontend/e2e/regtest/onboard-okx.ts).
  *   - Chromium arg `--disable-blink-features=AutomationControlled`
  *     required — OKX's popup detection sniffs for automation.
+ *   - Context launched with `chromium.launchPersistentContext('')`
+ *     (empty user-data-dir string) — OKX auto-opens its welcome
+ *     page on extension install; the spec REUSES that page as
+ *     onboardPage via `context.waitForEvent('page')`. Using a
+ *     filesystem-path workingDir + fresh `context.newPage()`
+ *     bypasses the auto-opened onboarding and lands on about:blank.
  *   - Connect popup anchored on "Connect account" HEADER text (not
  *     just any Connect button — OKX pre-emptively opens a "Confirm
  *     Trade" sign popup during connect that would false-match).
@@ -59,6 +65,7 @@ const CUBE_SIDE_IDS = [
 
 let context: BrowserContext;
 let extensionId: string;
+let onboardPage: Page | null = null;
 
 async function shot(p: Page, name: string): Promise<void> {
   await p.screenshot({
@@ -139,10 +146,13 @@ test.beforeAll(async () => {
     );
   }
 
-  const workingDir = path.resolve(RESULTS_DIR, `okx-user-data-dir-${process.pid}-${Date.now()}`);
-  fs.mkdirSync(workingDir, { recursive: true });
-
-  context = await chromium.launchPersistentContext(workingDir, {
+  // SDK spec parity: empty user-data-dir string (Chromium auto-creates
+  // a fresh in-memory profile), and REUSE OKX's auto-opened welcome
+  // page instead of creating a fresh newPage(). OKX opens its
+  // onboarding tab on extension install; my earlier version's
+  // `context.newPage()` landed on about:blank and the onboarding
+  // never surfaced.
+  context = await chromium.launchPersistentContext('', {
     headless: false,
     args: [
       `--disable-extensions-except=${EXT_PATH}`,
@@ -156,12 +166,20 @@ test.beforeAll(async () => {
   if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
   extensionId = worker.url().split('/')[2];
 
-  const primer = await context.newPage();
-  // onboardOkx uses the shared BIP-39 test seed + OKX-specific test
-  // password (baked into the helper). Signature: (page, extensionId).
-  await onboardOkx(primer, extensionId);
-  await shot(primer, '00-onboarded');
-  await primer.close();
+  try {
+    onboardPage = await context.waitForEvent('page', {
+      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}`),
+      timeout: 15_000,
+    });
+  } catch {
+    /* fall through to newPage below */
+  }
+  test.setTimeout(240_000);
+  if (!onboardPage) onboardPage = await context.newPage();
+  await onboardOkx(onboardPage, extensionId);
+  await shot(onboardPage, '00-onboarded');
+  // Do NOT close onboardPage — the OKX suite reuses it for the
+  // wallet-approval popup Page reference (SDK spec pattern).
 });
 
 test.afterAll(async () => {

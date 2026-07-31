@@ -318,6 +318,20 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
+  // Cubes' WalletService polls window for wallets 4 times over 2s
+  // right after Angular boots (ordpool-sdk wallet.service.ts:88).
+  // Alby's inpage script can inject late in CI under CPU load,
+  // missing that window. Wait explicitly for window.alby, then
+  // reload cubes so a fresh wallets$ subscription catches it.
+  await cubes.waitForFunction(
+    () => Boolean((window as unknown as { alby?: unknown }).alby),
+    undefined,
+    { timeout: 60_000, polling: 250 },
+  );
+  console.log('[alby-mint] window.alby present; reloading cubes for fresh wallet detection');
+  await cubes.reload({ waitUntil: 'domcontentloaded' });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+
   await openDetails(cubes, 'configurator-advanced');
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);

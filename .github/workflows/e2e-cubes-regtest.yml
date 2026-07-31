@@ -68,6 +68,7 @@ jobs:
           - unisat
           - oyl
           - wizz
+          - alby
           # okx: onboarding flakes in CI at the #ui-ses-iframe step
           # after CDP-clicking "Seed phrase or private key". Same
           # flake the SDK's okx-mint spec chronicled through iter
@@ -268,6 +269,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh okx
+
+      - name: Cache Alby extension
+        if: matrix.wallet == 'alby'
+        id: alby-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/cubes-frontend/e2e/regtest/extensions/alby
+          # Version tag lives in playwright-bootstrap.sh; keep in sync.
+          key: alby-extension-v3.14.2
+
+      - name: Fetch Alby .crx from ordpool-sdk release mirror
+        if: matrix.wallet == 'alby' && steps.alby-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash e2e/regtest/playwright-bootstrap.sh alby
 
       - name: Bring up bitcoind + electrs + ord-stock
         # cat21-ord isn't needed for cube inscribes (cubes are

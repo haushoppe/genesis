@@ -64,6 +64,7 @@ jobs:
           # blocked on an SDK derivation shim landing).
           - xverse
           - cat21wallet
+          - leather
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -182,6 +183,22 @@ jobs:
         env:
           CAT21_WALLET_LOCAL_DIST: ${{ github.workspace }}/_cat21-wallet-src/apps/extension/dist
         run: bash e2e/regtest/playwright-bootstrap.sh cat21wallet
+
+      - name: Cache Leather extension
+        if: matrix.wallet == 'leather'
+        id: leather-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/cubes-frontend/e2e/regtest/extensions/leather
+          # Version tag lives in playwright-bootstrap.sh; keep in sync
+          # manually — a bump there needs a bump here.
+          key: leather-extension-v6.102.0
+
+      - name: Fetch Leather .crx from ordpool-sdk release mirror
+        if: matrix.wallet == 'leather' && steps.leather-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash e2e/regtest/playwright-bootstrap.sh leather
 
       - name: Bring up bitcoind + electrs + ord-stock
         # cat21-ord isn't needed for cube inscribes (cubes are

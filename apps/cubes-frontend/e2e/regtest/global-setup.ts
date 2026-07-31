@@ -145,10 +145,14 @@ async function primeAndSwitchToRegtest(context: BrowserContext, extensionId: str
   const primer = await context.newPage();
   await primer.setViewportSize({ width: 400, height: 800 });
   await primer.goto(`chrome-extension://${extensionId}/popup.html`, { waitUntil: 'domcontentloaded' });
+  // 60 s (up from 30 s) — CI matrix now runs 3 wallet jobs in
+  // parallel on shared GHA runners, so Xverse's popup can take
+  // longer to render its post-onboard state. Flaked on the 30 s
+  // ceiling once (run 30617082, Leather-matrix-adding commit).
   await primer.waitForFunction(() => {
     const t = (document.body.innerText || '').toLowerCase();
     return t.includes('account 1') || t.includes('not now') || t.includes('zest');
-  }, undefined, { timeout: 30_000, polling: 250 });
+  }, undefined, { timeout: 60_000, polling: 250 });
   const notNow = primer.getByText('Not now', { exact: true }).first();
   if (await notNow.isVisible({ timeout: 1_500 }).catch(() => false)) {
     await notNow.click({ force: true }).catch(() => undefined);

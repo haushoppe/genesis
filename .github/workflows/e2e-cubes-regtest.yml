@@ -65,6 +65,7 @@ jobs:
           - xverse
           - cat21wallet
           - leather
+          - unisat
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -199,6 +200,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh leather
+
+      - name: Cache Unisat extension
+        if: matrix.wallet == 'unisat'
+        id: unisat-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/cubes-frontend/e2e/regtest/extensions/unisat
+          # Version tag lives in playwright-bootstrap.sh; keep in sync.
+          key: unisat-extension-v1.7.15
+
+      - name: Fetch Unisat .crx from ordpool-sdk release mirror
+        if: matrix.wallet == 'unisat' && steps.unisat-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash e2e/regtest/playwright-bootstrap.sh unisat
 
       - name: Bring up bitcoind + electrs + ord-stock
         # cat21-ord isn't needed for cube inscribes (cubes are

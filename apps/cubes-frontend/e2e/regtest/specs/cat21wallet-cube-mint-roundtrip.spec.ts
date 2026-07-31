@@ -295,7 +295,12 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
     await reapprove.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
   }
   await cubes.bringToFront();
-  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+  // Post-reload the mint drawer is closed, so [data-testid="wallet-connected"]
+  // (which lives INSIDE the drawer's connected-wallet block, start.html:121)
+  // isn't rendered yet. Use the always-visible header button as the
+  // reconnected-state gate; the drawer's own testid gets re-asserted
+  // after we click mint-cta below.
+  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 45_000 });
 
   // Re-fill the six sides — form state doesn't survive reload.
   await openDetails(cubes, 'configurator-advanced');

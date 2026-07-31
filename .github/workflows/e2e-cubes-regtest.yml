@@ -53,11 +53,17 @@ jobs:
       fail-fast: false
       matrix:
         wallet:
-          # Only Xverse is spec'd today. Adding a wallet: create
+          # Adding a wallet: create
           # `apps/cubes-frontend/e2e/regtest/specs/<name>-cube-mint-roundtrip.spec.ts`
           # + add it here + add a matching Cache/Download step in
           # the .crx block below.
+          #
+          # See ../WALLET-COMPATIBILITY.md for the coverage matrix +
+          # per-wallet blockers (most non-Xverse connectors ignore
+          # Network.Regtest, so their cubes-frontend spec is
+          # blocked on an SDK derivation shim landing).
           - xverse
+          - cat21wallet
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -120,6 +126,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh xverse
+
+      - name: Cache CAT-21 wallet extension
+        if: matrix.wallet == 'cat21wallet'
+        id: cat21wallet-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/cubes-frontend/e2e/regtest/extensions/cat21wallet
+          # Version tag lives in playwright-bootstrap.sh; keep in
+          # sync manually — a bump there needs a bump here.
+          key: cat21wallet-extension-v6.103.0.675
+
+      - name: Fetch CAT-21 wallet .crx from ordpool-sdk release mirror
+        if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash e2e/regtest/playwright-bootstrap.sh cat21wallet
 
       - name: Bring up bitcoind + electrs + ord-stock
         # cat21-ord isn't needed for cube inscribes (cubes are

@@ -251,6 +251,11 @@
           <span data-testid="mint-error-message">❌ {{ orchestrator.errorMessage() }}</span>
         </div>
       }
+      @if (mintGateError(); as msg) {
+        <div class="alert alert-danger" role="alert" data-testid="mint-gate-error">
+          <span data-testid="mint-gate-error-message">❌ {{ msg }}</span>
+        </div>
+      }
 
       <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
         <button type="button"

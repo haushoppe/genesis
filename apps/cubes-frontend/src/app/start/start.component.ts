@@ -8,8 +8,10 @@ import {
   AUTO_SCAN_MAX_VALUE_SAT,
   bucketOf,
   findAutoPickCandidate,
+  getAddressNetwork,
   getMinimumUtxoSize,
   InscribeMintOrchestrator,
+  Network,
   RecommendedFees,
   SimulateInscribeFeesResult,
   TxnOutput,
@@ -18,13 +20,19 @@ import {
   UtxoScanState,
   WalletService,
 } from 'ordpool-sdk';
+// `validateInscribeOperation` is a pure helper and lives only in the
+// SDK's `/core` subpath today; the Angular entry (`ordpool-sdk`)
+// doesn't re-export it. Follow-up: add `export * from
+// './inscribe-validation';` to `ordpool-sdk/src/index.ts` so all
+// consumers can reach it from one import.
+import { validateInscribeOperation } from 'ordpool-sdk/core';
 import { debounceTime, firstValueFrom } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
 import { CubePreviewTitleComponent } from '../layout/cube-preview/cube-preview-title.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
-import { getCubeHtml } from '../services/cube-html';
+import { getCubeHtml, isCubeWarningHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { formatSats } from '../services/format-sats';
@@ -282,6 +290,13 @@ export class StartComponent {
   protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
 
   /**
+   * Populated when mint() bails on either the Warning-HTML sentinel
+   * or the SDK inscribe gate. Rendered as a role=alert red banner in
+   * the drawer; clears on the next successful mint attempt.
+   */
+  protected readonly mintGateError = signal<string | null>(null);
+
+  /**
    * User-facing wallet spend for the auto-picked UTXO — miner fees
    * (commit + reveal) + the 546-sat postage kept as the cube UTXO +
    * the small HAUSHOPPE tip. Everything the wallet debits.
@@ -487,12 +502,60 @@ export class StartComponent {
 
   async mint() {
     if (!this.canMint()) return;
+    const wallet = this.connectedWallet();
+    if (!wallet) return;
 
     // Belt-and-braces: sync content one more time in case the Mint click
     // landed before the debounced form-value subscription fired.
     const html = getCubeHtml(this.cubeDetails());
+    const body = new TextEncoder().encode(html);
+
+    // Guard 1: cubeHtml refuses to build past parseCube. Never let the
+    // red Warning fallback land as an on-chain inscription — the user
+    // pays for whatever bytes we sign, and a broken red page is
+    // permanent. Belt-and-braces on top of the global entity escape.
+    if (isCubeWarningHtml(html)) {
+      this.mintGateError.set('The cube data would produce an invalid inscription. Try a simpler title.');
+      return;
+    }
+
+    // Guard 2: SDK inscribe gate. Cubes is the pilot inscribe consumer
+    // and sets the pattern for every future one — the same gate cat21's
+    // orchestrators use, adapted for the inscribe surface. Pins tip
+    // address to HAUSHOPPE, enforces mainnet on prod builds, caps the
+    // tip so a bugged feeRate can't drain the wallet.
+    const gate = validateInscribeOperation({
+      config: {
+        network: this.deriveNetwork(),
+        allowedTipAddresses: [HAUSHOPPE_TIP_ADDRESS],
+        maxTipValueSats: 100_000,
+        maxFeeRatePerVbyte: 1000,
+        ownPaymentAddress: wallet.paymentAddress,
+      },
+      operation: {
+        kind: 'inscribe',
+        intent: {
+          recipient: wallet.ordinalsAddress,
+          feeRate: this.mintFormData().feeRate,
+          body,
+          contentType: 'text/html;charset=utf-8',
+          tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
+        },
+      },
+    });
+    if (!gate.ok) {
+      this.mintGateError.set(
+        `Mint refused (${gate.reason}${gate.detail ? ': ' + gate.detail : ''}). ` +
+        `This is a safety check — please report if you were minting a normal cube.`,
+      );
+      // eslint-disable-next-line no-console
+      console.warn('[cubes] mint gate rejected:', gate.reason, gate.detail);
+      return;
+    }
+    this.mintGateError.set(null);
+
     this.orchestrator.setContent({
-      body: new TextEncoder().encode(html),
+      body,
       contentType: 'text/html;charset=utf-8',
       tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
     });
@@ -505,6 +568,21 @@ export class StartComponent {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn('[cubes] mint threw:', err);
+    }
+  }
+
+  /**
+   * Map the environment's own tip-address network onto the SDK's
+   * `Network` enum. Regtest env → Network.Regtest; mainnet env →
+   * Network.Mainnet. The tip address is the single source of truth
+   * for network context — main.ts already asserts mainnet at boot
+   * for prod builds, so this can never return a wrong value in prod.
+   */
+  private deriveNetwork(): Network {
+    switch (getAddressNetwork(HAUSHOPPE_TIP_ADDRESS)) {
+      case 'mainnet': return Network.Mainnet;
+      case 'regtest': return Network.Regtest;
+      case 'testnet': return Network.Testnet3;
     }
   }
 

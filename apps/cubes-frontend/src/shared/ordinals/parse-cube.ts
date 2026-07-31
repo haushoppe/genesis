@@ -58,9 +58,21 @@ export function parseCube(cubeHtmlRaw: string): { trait_type: string; value: str
     ];
 
     if (titleMatch) {
-      const title = titleMatch
-        .replace('&lt;', '<')
-        .replace('&gt;', '>');
+      // Single-pass regex decode. `&amp;` MUST decode last (or in the
+      // same pass) so a literal `&lt;` in the user's title (encoded as
+      // `&amp;lt;`) round-trips back to `&lt;`, not `<`. A prior
+      // implementation used sequential `.replace('&lt;', '<')` /
+      // `.replace('&gt;', '>')`, which was both non-global (only the
+      // first occurrence per title decoded) and would have collapsed
+      // `&amp;lt;` → `&<` in the wrong order. This regex handles the
+      // full HTML-entity set escapeCubeTitle produces in one pass.
+      const ENTITY_MAP: Record<string, string> = {
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&quot;': '"',
+      };
+      const title = titleMatch.replace(/&(amp|lt|gt|quot);/g, (m) => ENTITY_MAP[m] ?? m);
 
       traits = [...traits, { 'trait_type': 'Title', 'value': title }]
     }

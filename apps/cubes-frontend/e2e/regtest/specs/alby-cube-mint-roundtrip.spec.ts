@@ -323,22 +323,29 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
-  // Diagnostic: verify the addInitScript stub actually attached to
-  // the page's window.alby (Playwright's page-world scope).
-  const stubDiag = await cubes.evaluate(() => {
-    const w = window as unknown as { alby?: { webbtc?: { signPsbt?: unknown; getAddress?: unknown } }; __albyBypassSignPsbt?: unknown };
-    return {
-      albyType: typeof w.alby,
-      hasWebbtc: !!w.alby?.webbtc,
-      hasSignPsbt: typeof w.alby?.webbtc?.signPsbt,
-      hasGetAddress: typeof w.alby?.webbtc?.getAddress,
-      bridgeExposed: typeof w.__albyBypassSignPsbt,
-    };
-  });
-  console.log(`[alby-mint:diag] window.alby state = ${JSON.stringify(stubDiag)}`);
-  if (stubDiag.albyType !== 'object') {
-    throw new Error(`window.alby stub did not attach — state=${JSON.stringify(stubDiag)}`);
-  }
+  // Cubes' WalletService.wallets$ polls at 0/500/1000/1500ms after
+  // Angular boots (ordpool-sdk wallet.service.ts:88). Alby's inpage
+  // script can inject late in CI under CPU load, missing that
+  // window. Wait explicitly for window.alby, then reload cubes so a
+  // fresh wallets$ subscription catches Alby's already-injected inpage.
+  await cubes.waitForFunction(
+    () => Boolean((window as unknown as { alby?: unknown }).alby),
+    undefined,
+    { timeout: 60_000, polling: 250 },
+  );
+  console.log('[alby-mint] window.alby present; reloading cubes for fresh wallet detection');
+  await cubes.reload({ waitUntil: 'domcontentloaded' });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  // Confirm the signPsbt patch armed on the new page load.
+  await cubes.waitForFunction(
+    () => {
+      const wb = (window as unknown as { alby?: { webbtc?: { signPsbt?: { __cubesBypassed?: boolean } } } }).alby?.webbtc;
+      return Boolean(wb?.signPsbt && (wb.signPsbt as { __cubesBypassed?: boolean }).__cubesBypassed);
+    },
+    undefined,
+    { timeout: 30_000, polling: 100 },
+  );
+  console.log('[alby-mint] alby.webbtc.signPsbt is patched');
 
   await openDetails(cubes, 'configurator-advanced');
   for (let i = 0; i < 6; i++) {

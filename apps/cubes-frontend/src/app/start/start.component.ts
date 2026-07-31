@@ -525,7 +525,15 @@ export class StartComponent {
         allowedTipAddresses: [HAUSHOPPE_TIP_ADDRESS],
         maxTipValueSats: 100_000,
         maxFeeRatePerVbyte: 1000,
-        ownPaymentAddress: wallet.paymentAddress,
+        // Skip the SDK's self-send check when the wallet uses ONE
+        // address for both payment + ordinals (Unisat/Wizz/OKX). For
+        // those wallets `wallet.paymentAddress === wallet.ordinalsAddress`
+        // is by design, not an accidental self-send — the gate's
+        // recipient-equals-ownPaymentAddress check would refuse every
+        // legitimate mint. Dual-address wallets keep the guard.
+        ownPaymentAddress: wallet.paymentAddress === wallet.ordinalsAddress
+          ? undefined
+          : wallet.paymentAddress,
       },
       operation: {
         kind: 'inscribe',

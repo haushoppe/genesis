@@ -276,80 +276,48 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
   });
 
   // Expose the SW-bypass to the cubes page BEFORE navigation.
+  // Only signPsbt is bypassed; Alby's real inpage provides
+  // enable() + webbtc.getAddress() through its public API (proven
+  // in the SDK's own Alby spec).
   await cubes.exposeFunction('__albyBypassSignPsbt', async (psbtHex: string) => {
     return await albySignViaSw(psbtHex);
   });
-  await cubes.exposeFunction('__albyGetAddressViaSw', async () => {
-    return await seedPage.evaluate(async () => {
-      const c = (globalThis as unknown as { chrome: { runtime: {
-        sendMessage: (msg: unknown) => Promise<unknown>;
-      } } }).chrome;
-      const resp = await c.runtime.sendMessage({
-        application: 'LBE',
-        prompt: true,
-        action: 'webbtc/getAddress',
-        args: {},
-        origin: { internal: true },
-      }) as { data?: { address: string; publicKey: string }; error?: string };
-      if (resp.error || !resp.data?.address) {
-        throw new Error(`Alby webbtc/getAddress failed: ${JSON.stringify(resp)}`);
-      }
-      return resp.data;
-    });
-  });
 
-  // Install a FULL window.alby stub in addInitScript (runs before ALL
-  // page scripts, before Alby's own inpage script). Cubes'
-  // WalletService.wallets$ polls at 0/500/1000/1500ms; Alby's real
-  // inpage script often lands after all four checks in CI, so the
-  // stub is what cubes' detection sees. Every method the SDK's Alby
-  // connector calls (enable / webbtc.enable / webbtc.getAddress /
-  // webbtc.signPsbt) is routed through Playwright-exposed
-  // SW-bypass functions on seedPage.
+  // Selectively bypass ONLY alby.webbtc.signPsbt via addInitScript.
+  // Alby's real inpage script provides enable() + webbtc.getAddress()
+  // — those work through Alby's public API (proven in the SDK's own
+  // alby-mint spec, which auto-clicks Alby's Connect popup).
+  // signPsbt's popup React confirm() never resolves in headless CI
+  // (SDK spec iter 105+ verified); we replace it with a proxy that
+  // fires the SAME SW route Alby's own popup would call after the
+  // user clicked Confirm — no wallet-side crypto bypassed.
   //
-  // We freeze `window.alby` so Alby's real inpage script can't
-  // override it. That IS a bypass of Alby's real inpage — but for
-  // this test the bypass is intentional. Cubes never touches Alby's
-  // UI directly; it only cares that `alby.webbtc.signPsbt(hex)`
-  // returns a valid `{signed: <wire-tx-hex>}`. The stub's signPsbt
-  // fires the SAME SW route Alby's real popup would call after the
-  // user clicked Confirm.
+  // Patching pattern: wait until Alby's real inpage sets
+  // `window.alby.webbtc.signPsbt`, then wrap it. Polls until
+  // Alby lands (or 30s cap). Idempotent via a marker property.
   await cubes.addInitScript(() => {
     const win = window as unknown as {
-      alby?: unknown;
+      alby?: { webbtc?: { signPsbt?: (hex: string, opts?: unknown) => Promise<{ signed: string }> } };
       __albyBypassSignPsbt?: (hex: string) => Promise<string>;
-      __albyGetAddressViaSw?: () => Promise<{ address: string; publicKey: string }>;
     };
-    const stub = {
-      enable: async () => undefined,
-      webbtc: {
-        enable: async () => undefined,
-        getAddress: async () => {
-          if (!win.__albyGetAddressViaSw) throw new Error('__albyGetAddressViaSw not exposed');
-          return await win.__albyGetAddressViaSw();
-        },
-        signPsbt: async (hex: string, _opts?: unknown) => {
-          if (!win.__albyBypassSignPsbt) throw new Error('__albyBypassSignPsbt not exposed');
-          const signed = await win.__albyBypassSignPsbt(hex);
-          return { signed };
-        },
-      },
+    const patch = () => {
+      const wb = win.alby?.webbtc;
+      if (!wb?.signPsbt) return false;
+      const original = wb.signPsbt as unknown as { __cubesBypassed?: boolean };
+      if (original.__cubesBypassed) return true;
+      wb.signPsbt = async (hex: string, _opts?: unknown) => {
+        if (!win.__albyBypassSignPsbt) throw new Error('__albyBypassSignPsbt not exposed');
+        const signed = await win.__albyBypassSignPsbt(hex);
+        return { signed };
+      };
+      (wb.signPsbt as unknown as { __cubesBypassed?: boolean }).__cubesBypassed = true;
+      // eslint-disable-next-line no-console
+      console.log('[alby-mint] patched alby.webbtc.signPsbt with SW-bypass proxy');
+      return true;
     };
-    // Getter/setter pair: Alby's real inpage script attempts
-    // `window.alby = <realProvider>` on every navigation. A frozen
-    // `value:` property would throw "Cannot assign to read only
-    // property 'alby'" — noise that rule §11 flags. Instead, the
-    // setter silently no-ops so Alby's assignment is a valid
-    // JS expression that just doesn't stick.
-    let installedStub = stub;
-    Object.defineProperty(window, 'alby', {
-      get() { return installedStub; },
-      set(_v) { /* swallow Alby's inpage override */ },
-      configurable: false,
-    });
-    void installedStub;
-    // eslint-disable-next-line no-console
-    console.log('[alby-mint] installed window.alby SW-bypass stub (getter/setter)');
+    if (patch()) return;
+    const id = setInterval(() => { if (patch()) clearInterval(id); }, 50);
+    setTimeout(() => clearInterval(id), 30_000);
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });

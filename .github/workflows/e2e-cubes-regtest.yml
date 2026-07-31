@@ -68,6 +68,7 @@ jobs:
           - unisat
           - oyl
           - wizz
+          - okx
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -247,6 +248,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh wizz
+
+      - name: Cache OKX extension
+        if: matrix.wallet == 'okx'
+        id: okx-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/cubes-frontend/e2e/regtest/extensions/okx
+          # Version tag lives in playwright-bootstrap.sh; keep in sync.
+          key: okx-extension-v4.1.0
+
+      - name: Fetch OKX .crx from ordpool-sdk release mirror
+        if: matrix.wallet == 'okx' && steps.okx-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash e2e/regtest/playwright-bootstrap.sh okx
 
       - name: Bring up bitcoind + electrs + ord-stock
         # cat21-ord isn't needed for cube inscribes (cubes are

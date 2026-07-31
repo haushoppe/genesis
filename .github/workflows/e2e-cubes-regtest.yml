@@ -66,6 +66,7 @@ jobs:
           - cat21wallet
           - leather
           - unisat
+          - oyl
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -215,6 +216,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh unisat
+
+      - name: Cache Oyl extension
+        if: matrix.wallet == 'oyl'
+        id: oyl-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/cubes-frontend/e2e/regtest/extensions/oyl
+          # Version tag lives in playwright-bootstrap.sh; keep in sync.
+          key: oyl-extension-v1.17.1
+
+      - name: Fetch Oyl .crx from ordpool-sdk release mirror
+        if: matrix.wallet == 'oyl' && steps.oyl-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash e2e/regtest/playwright-bootstrap.sh oyl
 
       - name: Bring up bitcoind + electrs + ord-stock
         # cat21-ord isn't needed for cube inscribes (cubes are

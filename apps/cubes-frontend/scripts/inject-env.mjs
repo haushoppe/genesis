@@ -37,16 +37,27 @@ const tipAddress = (process.env.HAUSHOPPE_TIP_ADDRESS ?? '').trim();
 const tipSatsRaw = (process.env.HAUSHOPPE_TIP_SATS ?? '').trim();
 
 /**
- * Cheap shape check: real mainnet P2TR addresses start with `bc1p`
- * and are 62 chars, bech32m alphabet only. Full checksum validation
- * runs at boot in main.ts via ordpool-sdk's getAddressFormat +
- * getAddressNetwork.
+ * Cheap shape check: any real mainnet Bitcoin address (P2TR, P2WPKH,
+ * P2WSH, P2SH, P2PKH). Full checksum + network validation runs at
+ * boot in main.ts via ordpool-sdk's getAddressFormat +
+ * getAddressNetwork; this script only rejects obvious garbage so
+ * the build fails early with a helpful error instead of running to
+ * ng-build.
  */
-function looksLikeMainnetP2TR(addr) {
-  if (!addr) return false;
-  if (!addr.startsWith('bc1p')) return false;
-  if (addr.length !== 62) return false;
-  return /^[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/.test(addr.slice(4));
+function looksLikeMainnetAddress(addr) {
+  if (!addr || /\s/.test(addr)) return false;
+  // bech32 / bech32m mainnet: `bc1` + [pqzr…] (SegWit v0 P2WPKH/P2WSH,
+  // SegWit v1 P2TR). Length range covers P2WPKH (42) through P2WSH (62).
+  if (addr.startsWith('bc1')) {
+    return addr.length >= 42 && addr.length <= 62
+      && /^bc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/.test(addr);
+  }
+  // Legacy base58: P2PKH `1...` or P2SH `3...`. Length 26-35.
+  if (/^[13]/.test(addr)) {
+    return addr.length >= 26 && addr.length <= 35
+      && /^[1-9A-HJ-NP-Za-km-z]+$/.test(addr);
+  }
+  return false;
 }
 
 const template = readFileSync(TEMPLATE, 'utf8');
@@ -54,9 +65,9 @@ const template = readFileSync(TEMPLATE, 'utf8');
 let injectedAddress = tipAddress;
 let injectedSats = tipSatsRaw ? Number(tipSatsRaw) : null;
 
-if (!looksLikeMainnetP2TR(tipAddress)) {
+if (!looksLikeMainnetAddress(tipAddress)) {
   const msg = tipAddress
-    ? `HAUSHOPPE_TIP_ADDRESS "${tipAddress}" is not a mainnet P2TR address (bc1p..., 62 chars).`
+    ? `HAUSHOPPE_TIP_ADDRESS "${tipAddress}" is not a mainnet Bitcoin address (bc1p/bc1q/1/3 prefix).`
     : 'HAUSHOPPE_TIP_ADDRESS is unset.';
   if (isCi) {
     console.error(`[inject-env] ${msg} Refusing to build.`);

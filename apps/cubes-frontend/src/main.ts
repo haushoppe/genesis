@@ -26,9 +26,13 @@ if (environment.production) {
       `The HAUSHOPPE_TIP_ADDRESS CI secret is missing or malformed. Underlying error: ${(err as Error).message}`,
     );
   }
-  if (format !== 'P2TR' || network !== 'mainnet') {
+  // Any mainnet address format is fine for the tip vout (the SDK's
+  // addOutputAddress handles P2TR, P2WPKH, P2WSH, P2SH, P2PKH). Only
+  // reject a wrong-network address, since a regtest bcrt1p/testnet
+  // address in a mainnet bundle silently loses the tip on broadcast.
+  if (network !== 'mainnet') {
     throw new Error(
-      `cubes-frontend prod boot: haushoppeTipAddress "${tip}" is ${format}/${network}, expected P2TR/mainnet. ` +
+      `cubes-frontend prod boot: haushoppeTipAddress "${tip}" is ${format}/${network}, expected mainnet. ` +
       `Check the HAUSHOPPE_TIP_ADDRESS CI secret.`,
     );
   }

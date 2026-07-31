@@ -58,5 +58,10 @@ apps/*/playwright-report*
 apps/*/test-results*
 apps/*/.playwright
 
+# Build-time env-injected environment file (produced by
+# apps/cubes-frontend/scripts/inject-env.mjs from HAUSHOPPE_TIP_ADDRESS
+# and consumed by angular.json production fileReplacements).
+apps/cubes-frontend/src/environments/environment.prod.generated.ts
+
 # Claude Code transient scheduler state (see also ~/.gitignore_global)
 .claude/scheduled_tasks.lock

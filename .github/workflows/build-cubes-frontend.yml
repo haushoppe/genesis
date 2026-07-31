@@ -32,7 +32,14 @@ jobs:
 
     - run: npm ci
     - run: npm test --if-present
-    - run: npm run build
+    - name: Build (with HAUSHOPPE_TIP_ADDRESS injected)
+      env:
+        # Real mainnet P2TR address baked into the prod bundle at build
+        # time by scripts/inject-env.mjs. Missing / malformed value fails
+        # the build; the SPA's main.ts also refuses to boot if the
+        # placeholder ever slips through.
+        HAUSHOPPE_TIP_ADDRESS: ${{ secrets.HAUSHOPPE_TIP_ADDRESS }}
+      run: npm run build
 
     - name: Deploy to haushoppe/cubes-frontend-build@main
       env:

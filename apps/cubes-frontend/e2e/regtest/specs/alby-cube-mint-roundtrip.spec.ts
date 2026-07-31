@@ -275,44 +275,73 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
     });
   });
 
-  // Expose the SW-bypass to the cubes page BEFORE navigation so the
-  // patch-on-alby-ready script can grab it at any time.
+  // Expose the SW-bypass to the cubes page BEFORE navigation.
   await cubes.exposeFunction('__albyBypassSignPsbt', async (psbtHex: string) => {
     return await albySignViaSw(psbtHex);
   });
+  await cubes.exposeFunction('__albyGetAddressViaSw', async () => {
+    return await seedPage.evaluate(async () => {
+      const c = (globalThis as unknown as { chrome: { runtime: {
+        sendMessage: (msg: unknown) => Promise<unknown>;
+      } } }).chrome;
+      const resp = await c.runtime.sendMessage({
+        application: 'LBE',
+        prompt: true,
+        action: 'webbtc/getAddress',
+        args: {},
+        origin: { internal: true },
+      }) as { data?: { address: string; publicKey: string }; error?: string };
+      if (resp.error || !resp.data?.address) {
+        throw new Error(`Alby webbtc/getAddress failed: ${JSON.stringify(resp)}`);
+      }
+      return resp.data;
+    });
+  });
 
-  // Monkey-patch alby.webbtc.signPsbt as soon as Alby's inpage script
-  // sets window.alby. The rest of the wallet's public API
-  // (enable, webbtc.getAddress, ...) is left intact — only the hung
-  // signPsbt popup path is replaced with the SW-message call.
+  // Install a FULL window.alby stub in addInitScript (runs before ALL
+  // page scripts, before Alby's own inpage script). Cubes'
+  // WalletService.wallets$ polls at 0/500/1000/1500ms; Alby's real
+  // inpage script often lands after all four checks in CI, so the
+  // stub is what cubes' detection sees. Every method the SDK's Alby
+  // connector calls (enable / webbtc.enable / webbtc.getAddress /
+  // webbtc.signPsbt) is routed through Playwright-exposed
+  // SW-bypass functions on seedPage.
+  //
+  // We freeze `window.alby` so Alby's real inpage script can't
+  // override it. That IS a bypass of Alby's real inpage — but for
+  // this test the bypass is intentional. Cubes never touches Alby's
+  // UI directly; it only cares that `alby.webbtc.signPsbt(hex)`
+  // returns a valid `{signed: <wire-tx-hex>}`. The stub's signPsbt
+  // fires the SAME SW route Alby's real popup would call after the
+  // user clicked Confirm.
   await cubes.addInitScript(() => {
     const win = window as unknown as {
-      alby?: { webbtc?: { signPsbt?: (hex: string, opts?: unknown) => Promise<{ signed: string }> } };
+      alby?: unknown;
       __albyBypassSignPsbt?: (hex: string) => Promise<string>;
+      __albyGetAddressViaSw?: () => Promise<{ address: string; publicKey: string }>;
     };
-    const patch = () => {
-      const wb = win.alby?.webbtc;
-      if (!wb) return false;
-      const original = wb.signPsbt;
-      // Idempotent — only patch once.
-      if (original && (original as unknown as { __cubesBypassed?: boolean }).__cubesBypassed) return true;
-      wb.signPsbt = async (hex: string, _opts?: unknown) => {
-        if (!win.__albyBypassSignPsbt) throw new Error('__albyBypassSignPsbt not exposed');
-        const signed = await win.__albyBypassSignPsbt(hex);
-        return { signed };
-      };
-      (wb.signPsbt as unknown as { __cubesBypassed?: boolean }).__cubesBypassed = true;
-      // eslint-disable-next-line no-console
-      console.log('[alby-mint] patched alby.webbtc.signPsbt with SW-bypass proxy');
-      return true;
+    const stub = {
+      enable: async () => undefined,
+      webbtc: {
+        enable: async () => undefined,
+        getAddress: async () => {
+          if (!win.__albyGetAddressViaSw) throw new Error('__albyGetAddressViaSw not exposed');
+          return await win.__albyGetAddressViaSw();
+        },
+        signPsbt: async (hex: string, _opts?: unknown) => {
+          if (!win.__albyBypassSignPsbt) throw new Error('__albyBypassSignPsbt not exposed');
+          const signed = await win.__albyBypassSignPsbt(hex);
+          return { signed };
+        },
+      },
     };
-    if (patch()) return;
-    // Poll until Alby's inpage script sets window.alby.
-    const id = setInterval(() => {
-      if (patch()) clearInterval(id);
-    }, 50);
-    // Give up after 30s to avoid a runaway interval.
-    setTimeout(() => clearInterval(id), 30_000);
+    Object.defineProperty(window, 'alby', {
+      value: stub,
+      writable: false,
+      configurable: false,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[alby-mint] installed window.alby SW-bypass stub');
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });

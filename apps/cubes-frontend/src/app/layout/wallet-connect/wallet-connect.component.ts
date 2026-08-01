@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, DestroyRef, TemplateRef, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, TemplateRef, effect, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NgbModal, NgbModalRef, NgbPopover, NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
 import { KnownOrdinalWallets, KnownOrdinalWalletType, WalletService } from 'ordpool-sdk';
@@ -26,18 +26,8 @@ export class WalletConnectComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
-  private readonly walletsRaw = toSignal(this.walletService.wallets$, {
+  protected readonly wallets = toSignal(this.walletService.wallets$, {
     initialValue: { installedWallets: [], notInstalledWallets: [] },
-  });
-
-  /** Drop wallets whose `onChainOrdinals` flag is explicitly false —
-   *  a cube mint needs on-chain BTC. */
-  protected readonly wallets = computed(() => {
-    const raw = this.walletsRaw();
-    return {
-      installedWallets: raw.installedWallets.filter((w) => w.onChainOrdinals !== false),
-      notInstalledWallets: raw.notInstalledWallets.filter((w) => w.onChainOrdinals !== false),
-    };
   });
 
   /** True when the connected wallet's address prefix doesn't match

@@ -26,7 +26,10 @@ import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-p
  *
  *   - Onboard from BIP-39 mnemonic (no cloned seed user-data-dir like
  *     Xverse): sign-in-link → 12 word inputs → password → dashboard.
- *   - CAT-21 wallet's SDK connector maps `Network.Regtest → 'devnet'`,
+ *   - CAT-21 wallet's SDK connector maps `Network.Regtest → 'regtest'`
+ *     (the standard Bitcoin term — cat21-wallet also accepts Leather's
+ *     legacy `'devnet'` alias for back-compat, but the SDK sends
+ *     `'regtest'` per `toLeatherNetworkString` in `src/network.ts`),
  *     so `getAddresses` returns `bcrt1q…` / `bcrt1p…` directly. No
  *     regtest-derivation shim needed on the cubes side (Leather /
  *     other wallets are blocked on this until their connectors

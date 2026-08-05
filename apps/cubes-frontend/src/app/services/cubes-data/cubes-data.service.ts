@@ -21,6 +21,8 @@ interface ExternalCube {
   contentLength?: number;
   attributes: { trait_type: string; value: string }[];
   name: string;
+  /** Added 2026-08-05; older cached payloads may omit it. */
+  firstOwner?: string | null;
 }
 
 /** Shape of cursor.json — how far the indexer has walked. */
@@ -116,5 +118,6 @@ function toInscriptionExtended(c: ExternalCube): InscriptionExtended {
     inscriptionNumber: c.inscriptionNumber,
     blockHeight: c.blockHeight,
     meta: { name: c.name, attributes: c.attributes },
+    firstOwner: c.firstOwner ?? null,
   };
 }

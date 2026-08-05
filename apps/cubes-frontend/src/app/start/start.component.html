@@ -306,14 +306,29 @@
 }
 
 
-@let past = pastMints.pastMints();
-@if (past.length) {
-  <h2 class="mt-5">Your past mints</h2>
-  <ul class="list-unstyled">
-    @for (m of past; track m.revealTxId) {
+<h2 class="mt-5" data-testid="my-cubes-heading">Your past mints</h2>
+@let mine = pastMints.myCubes();
+@let hasWallet = !!connectedWallet();
+@if (!hasWallet) {
+  <p class="text-muted" data-testid="my-cubes-empty-no-wallet">
+    Connect your wallet to see cubes you've minted.
+  </p>
+} @else if (mine.length === 0) {
+  <p class="text-muted" data-testid="my-cubes-empty-none">
+    No cubes minted from this wallet yet. Mint one above and it'll show up here.
+  </p>
+} @else {
+  <ul class="list-unstyled" data-testid="my-cubes-list">
+    @for (m of mine; track m.revealTxId) {
       <li class="mb-2">
-        <small class="text-muted">{{ m.createdAt | slice:0:10 }}</small> —
-        cube tx <a [href]="'https://ordpool.space/tx/' + m.revealTxId" target="_blank" rel="noopener"><code>{{ m.revealTxId.slice(0, 12) }}…</code></a>
+        @if (m.source === 'index') {
+          <a [routerLink]="['/inscription', m.inscriptionId]"><strong>Cube #{{ m.inscriptionNumber }}</strong></a> —
+          cube tx <a [href]="'https://ordpool.space/tx/' + m.revealTxId" target="_blank" rel="noopener"><code>{{ m.revealTxId.slice(0, 12) }}…</code></a>
+        } @else {
+          <small class="text-muted">{{ m.createdAt | slice:0:10 }}</small> —
+          cube tx <a [href]="'https://ordpool.space/tx/' + m.revealTxId" target="_blank" rel="noopener"><code>{{ m.revealTxId.slice(0, 12) }}…</code></a>
+          <span class="badge text-bg-secondary ms-1" title="Waiting for the hourly index to catch up">indexing…</span>
+        }
       </li>
     }
   </ul>

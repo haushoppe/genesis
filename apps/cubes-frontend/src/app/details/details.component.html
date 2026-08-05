@@ -39,6 +39,20 @@
     </a>
   </div>
 
+  @if (insc.firstOwner; as firstOwner) {
+    <div class="text-truncate" style="width: 70vw" data-testid="details-first-owner">
+      <span class="d-inline-block" style="width: 160px">Minted by:</span>
+      <a
+        [href]="'https://ordpool.space/address/' + firstOwner"
+        target="_blank"
+        rel="noopener"
+        [title]="firstOwner"
+      >
+        ◉ {{ firstOwner | shortenAddress }}
+      </a>
+    </div>
+  }
+
   <div class="text-truncate" style="width: 70vw">
     <span class="d-inline-block" style="width: 160px">Buy or Sell:</span>
     <a [href]="environment.satflowMarketplace + insc.inscriptionId" target="_blank" rel="noopener">on Satflow</a>

@@ -1,5 +1,9 @@
-import { effect, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, Signal, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { WalletService } from 'ordpool-sdk';
 
+import { CubesDataService } from './cubes-data/cubes-data.service';
+import { InscriptionExtended } from './cubes-data/types';
 import { getLocalStore, setLocalStore } from './local-storage';
 
 const STORAGE_KEY = 'cube_past';
@@ -18,6 +22,32 @@ export interface PastMint {
   inscriptionIds: string[];
 }
 
+/**
+ * Unified item shape rendered by "My cubes". Two sources merged:
+ *
+ * - `index`: the cube already appears in the public cubes.json index
+ *   because it was minted by the currently-connected wallet. Rich
+ *   metadata (inscription number, block height) is available.
+ * - `local`: the cube was minted this session (or by this browser in
+ *   the past) and hasn't landed in the hourly index yet. Only txids
+ *   are available. Self-purges once the index catches up.
+ */
+export type MyCube =
+  | {
+      source: 'index';
+      inscriptionId: string;
+      inscriptionNumber: number;
+      blockHeight: number;
+      revealTxId: string;
+      firstOwner: string | null;
+    }
+  | {
+      source: 'local';
+      revealTxId: string;
+      commitTxId: string;
+      createdAt: string;
+    };
+
 function readInitial(): PastMint[] {
   try {
     const raw = getLocalStore(STORAGE_KEY);
@@ -35,19 +65,87 @@ function readInitial(): PastMint[] {
   }
 }
 
+function normalizeAddr(addr: string | null | undefined): string {
+  return typeof addr === 'string' ? addr.trim().toLowerCase() : '';
+}
+
+function revealTxidFromInscriptionId(inscriptionId: string): string {
+  const m = inscriptionId.match(/^([0-9a-f]{64})i\d+$/i);
+  return m ? m[1].toLowerCase() : '';
+}
+
 /**
- * Persistent list of the user's past cube mints (commit + reveal
- * txids). Replaces the retired NgRx `past` slice + `ngrx-store-
- * localstorage` metaReducer. Signal state, plain effect writes to
- * localStorage under the same `cube_past` key.
+ * User's cube history. Two roles:
+ *
+ * 1. Volatile buffer for just-minted cubes not yet in the hourly
+ *    `ordinal-cubes-index` (localStorage under `cube_past`). Populated
+ *    by `record(...)` after a successful mint.
+ * 2. Composed with the currently-connected wallet's ordinals address
+ *    and the public index to derive `myCubes` — the durable per-
+ *    wallet history. localStorage entries self-purge as soon as their
+ *    reveal txid appears in the index, so localStorage stays small.
+ *
+ * Consumers should read `myCubes` for display and call `record` after
+ * a successful mint. `pastMints` is exposed but only for tests /
+ * internal wiring — components should not depend on it directly.
  */
 @Injectable({ providedIn: 'root' })
 export class PastMintsService {
   readonly pastMints = signal<PastMint[]>(readInitial());
 
+  private readonly walletService = inject(WalletService);
+  private readonly cubesData = inject(CubesDataService);
+
+  private readonly wallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
+  private readonly allCubes: Signal<InscriptionExtended[]> = toSignal(
+    this.cubesData.getAllCubes(),
+    { initialValue: [] as InscriptionExtended[] },
+  );
+
+  /**
+   * Every cube attributable to the currently-connected wallet's
+   * ordinals address, unioned with just-minted-but-not-yet-indexed
+   * entries from localStorage. Empty when no wallet is connected.
+   */
+  readonly myCubes: Signal<MyCube[]> = computed<MyCube[]>(() => {
+    const w = this.wallet();
+    const addr = normalizeAddr(w?.ordinalsAddress);
+    if (!addr) return [];
+
+    const cubes = this.allCubes();
+    const indexRevealTxids = new Set(
+      cubes.map((c) => revealTxidFromInscriptionId(c.inscriptionId)),
+    );
+
+    const fromIndex: MyCube[] = cubes
+      .filter((c) => normalizeAddr(c.firstOwner) === addr)
+      .map((c) => ({
+        source: 'index' as const,
+        inscriptionId: c.inscriptionId,
+        inscriptionNumber: c.inscriptionNumber,
+        blockHeight: c.blockHeight,
+        revealTxId: revealTxidFromInscriptionId(c.inscriptionId),
+        firstOwner: c.firstOwner ?? null,
+      }));
+
+    // Pending: localStorage entries whose revealTxid isn't in the
+    // index yet. These are the just-minted cubes waiting for the
+    // hourly grind to catch up.
+    const fromLocal: MyCube[] = this.pastMints()
+      .filter((m) => m.revealTxId && !indexRevealTxids.has(m.revealTxId.toLowerCase()))
+      .map((m) => ({
+        source: 'local' as const,
+        revealTxId: m.revealTxId,
+        commitTxId: m.commitTxId,
+        createdAt: m.createdAt,
+      }));
+
+    // Local first (newest / pending on top), then index-derived.
+    return [...fromLocal, ...fromIndex];
+  });
+
   constructor() {
-    // Skip the first tick — it would just echo back what readInitial()
-    // already returned. Subsequent changes get persisted.
+    // Persist pastMints signal → localStorage. Skip first tick (echo).
     let firstRun = true;
     effect(() => {
       const list = this.pastMints();
@@ -56,6 +154,25 @@ export class PastMintsService {
         return;
       }
       setLocalStore(STORAGE_KEY, JSON.stringify(list));
+    });
+
+    // Self-cleanup: whenever the index changes, drop any localStorage
+    // entries whose revealTxid has landed in it. Keeps the volatile
+    // buffer small and prevents duplicate rows in myCubes (index +
+    // local both matching the same reveal txid).
+    effect(() => {
+      const cubes = this.allCubes();
+      if (cubes.length === 0) return;
+      const indexRevealTxids = new Set(
+        cubes.map((c) => revealTxidFromInscriptionId(c.inscriptionId)),
+      );
+      const current = this.pastMints();
+      const filtered = current.filter(
+        (m) => m.revealTxId && !indexRevealTxids.has(m.revealTxId.toLowerCase()),
+      );
+      if (filtered.length !== current.length) {
+        this.pastMints.set(filtered);
+      }
     });
   }
 

@@ -742,6 +742,21 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   expect(revealTxId).toMatch(/^[0-9a-f]{64}$/);
   console.log(`[cube-mint] commit=${commitTxId.slice(0, 12)}… reveal=${revealTxId.slice(0, 12)}…`);
 
+  // ─── "My cubes" (pending-path) — the just-minted cube must appear
+  //     in the myCubes signal via the localStorage overlay, since the
+  //     public cubes.json index hasn't caught up yet. Proves the
+  //     wallet-derived "My cubes" list actually populates end-to-end.
+  //     Full self-cleanup (localStorage entry drops once the index
+  //     has it) is unit-tested in past-mints.service.vitest.ts —
+  //     hard to simulate an index-catchup in E2E without a fixture
+  //     override, and unit tests cover that transition deterministically.
+  const myList = cubes.getByTestId('my-cubes-list');
+  await expect(myList).toBeVisible({ timeout: 30_000 });
+  await expect(myList).toContainText(revealTxId.slice(0, 12));
+  // Pending items carry the "indexing…" badge; indexed items don't.
+  await expect(myList.locator('li').filter({ hasText: revealTxId.slice(0, 12) }).locator('.badge'))
+    .toContainText(/indexing/i);
+
   // ─── Step 7: mine both txs into blocks ─────────────────────────
   await waitForElectrsSync(mineBlocks(1));
   await waitForTxConfirmed(commitTxId);

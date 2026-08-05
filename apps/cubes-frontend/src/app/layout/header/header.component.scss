@@ -37,11 +37,13 @@
   .logo {
     width: 400px;
     height: 48px;
-    margin-right: 20px;
   }
 
+  // Own line under the logo — logo and "presents" stack instead of
+  // sitting side-by-side. `.logo-container` is `text-align: center`,
+  // so the block-level "presents" centers under the logo.
   .presents {
-    display: inline;
+    display: block;
     font-weight: 500;
     color: #6c757d;
   }

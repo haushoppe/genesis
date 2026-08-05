@@ -1,3 +1,13 @@
+// Every iframe on this page renders a cube in a sandboxed context.
+// The cube's inline JS sets its own dark background once it runs, but
+// the iframe element itself renders on the browser default (white)
+// for the 1-2 s between `[src]` binding and cube JS painting. That
+// window flashes white on every cube-to-cube navigation. Match the
+// page's own gradient endpoint so the flash disappears.
+iframe {
+  background: #000;
+}
+
 // X-Small devices (portrait phones, less than 576px)
 @media (min-width: 0) {
   iframe  {

@@ -2,7 +2,7 @@ import { DecimalPipe, SlicePipe } from '@angular/common';
 import { Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 import {
   AUTO_SCAN_MAX_VALUE_SAT,
@@ -163,6 +163,7 @@ export class StartComponent {
   private readonly inscriptionLookup = inject(InscriptionLookupService);
   private readonly priceService = inject(PriceService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
   protected readonly feeTiers = FEE_TIERS;
@@ -488,6 +489,36 @@ export class StartComponent {
     // the click would silently no-op mid-review. Closing surfaces the
     // fresh cube back in the preview and lets the user decide.
     this.checkoutOpen.set(false);
+    this.suggestionResource.reload();
+  }
+
+  /**
+   * Reshuffle within the same collection the current suggestion came
+   * from. Navigates to `/mint/<symbol>` (or stays there) so the route
+   * param survives page reloads, then reloads the suggestion resource
+   * — which reads `collectionSymbol()` from the route and restricts
+   * the pick pool to that collection.
+   */
+  async craftAnotherFromSameCollection(): Promise<void> {
+    const symbol = this.suggestionResource.value()?.collectionSymbol;
+    if (!symbol) return;
+    this.checkoutOpen.set(false);
+    if (this.collectionSymbol() !== symbol) {
+      await this.router.navigate(['/mint', symbol]);
+    }
+    this.suggestionResource.reload();
+  }
+
+  /**
+   * Reshuffle across all popular collections. Navigates back to `/`
+   * (drops the collectionSymbol route param) so the pick pool is the
+   * unrestricted archive, then reloads.
+   */
+  async craftAnotherFromAnyCollection(): Promise<void> {
+    this.checkoutOpen.set(false);
+    if (this.collectionSymbol()) {
+      await this.router.navigate(['/']);
+    }
     this.suggestionResource.reload();
   }
 

@@ -16,6 +16,22 @@
 
 <h2 class="mt-5" id="mint">Craft your cube</h2>
 
+@let suggestion = suggestionResource.value();
+@if (suggestion) {
+  <p class="mb-3" data-testid="suggestion-description">
+    We've pieced together a recommendation for you, highlighting the art from the
+    <strong data-testid="suggestion-collection-name">{{ suggestion.collectionName }}</strong>
+    collection.<br class="d-none d-md-block">
+    If it catches your eye, mint it! If not, let's craft a new cube
+    <a href="javascript:void(0)"
+       data-testid="suggestion-shuffle-same"
+       (click)="craftAnotherFromSameCollection()">from this collection</a> or
+    <a href="javascript:void(0)"
+       data-testid="suggestion-shuffle-any"
+       (click)="craftAnotherFromAnyCollection()">from another collection</a>.
+  </p>
+}
+
 <!--
   Suggestion loads on page-open so the preview is populated from the
   start. Normal users just click "Craft another cube" until they like

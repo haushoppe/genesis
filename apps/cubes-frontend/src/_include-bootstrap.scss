@@ -34,9 +34,16 @@
 @import "bootstrap/scss/alert";
 // @import "bootstrap/scss/progress";
 // @import "bootstrap/scss/list-group";
-// @import "bootstrap/scss/close";
+// The wallet-connect widget uses `ngb-modal` with a Bootstrap-styled
+// dialog + a `.btn-close` (X) button in the header. Without these
+// two imports the modal + backdrop have no styling and render as
+// unstyled block content at the end of `<body>`, so opening it
+// looks to the user like the page scrolled to a strange fragment.
+// Root cause of the "clicking Connect wallet scrolls the page
+// instead of opening a popup" report.
+@import "bootstrap/scss/close";
 // @import "bootstrap/scss/toasts";
-// @import "bootstrap/scss/modal";
+@import "bootstrap/scss/modal";
 // @import "bootstrap/scss/tooltip";
 // @import "bootstrap/scss/popover";
 // @import "bootstrap/scss/carousel";

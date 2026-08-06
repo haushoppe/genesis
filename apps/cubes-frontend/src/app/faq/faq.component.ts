@@ -42,7 +42,7 @@ export class FaqComponent {
     {
       question: 'How do I create a cube?',
       answer:
-        'Connect an ordinals-aware Bitcoin wallet (Xverse, Leather, Unisat, OKX, Phantom, or Oyl), enter six Inscription IDs into the form, and click "Mint my cube!". Each cube displays the image of one inscription on each of its six sides. Your wallet will prompt you to sign a commit transaction; a reveal transaction follows automatically. When the reveal confirms, your cube is live on-chain and lands on your ordinals address.',
+        'Connect an ordinals-aware Bitcoin wallet (Xverse, Leather, Unisat, OKX, or Phantom), enter six Inscription IDs into the form, and click "Mint my cube!". Each cube displays the image of one inscription on each of its six sides. Your wallet will prompt you to sign a commit transaction; a reveal transaction follows automatically. When the reveal confirms, your cube is live on-chain and lands on your ordinals address.',
     },
     {
       question: 'What is the TXIDiN format?',
@@ -52,7 +52,7 @@ export class FaqComponent {
     {
       question: 'What is a taproot address?',
       answer:
-        'A taproot address is a type of Bitcoin address that starts with "bc1p"... . This type of address is best suited to receive Ordinals. Use any ordinals-aware wallet (Xverse, Leather, Unisat, OKX, Phantom, or Oyl).',
+        'A taproot address is a type of Bitcoin address that starts with "bc1p"... . This type of address is best suited to receive Ordinals. Use any ordinals-aware wallet (Xverse, Leather, Unisat, OKX, or Phantom).',
     },
     {
       question: 'How do I pay for my cube?',
@@ -72,7 +72,7 @@ export class FaqComponent {
     {
       question: 'Which wallet should I use to manage my Ordinals?',
       answer:
-        'Any ordinals-aware Bitcoin wallet works — the mint page auto-detects installed extensions. Good non-custodial choices: <a href="https://www.xverse.app/" target="_blank" rel="noopener">Xverse</a>, <a href="https://leather.io/" target="_blank" rel="noopener">Leather</a>, <a href="https://unisat.io/" target="_blank" rel="noopener">Unisat</a>, <a href="https://www.okx.com/web3" target="_blank" rel="noopener">OKX Wallet</a>, Phantom (BTC), or <a href="https://oyl.io/" target="_blank" rel="noopener">Oyl</a>. All keep you in full control of your funds.',
+        'Any ordinals-aware Bitcoin wallet works — the mint page auto-detects installed extensions. Good non-custodial choices: <a href="https://www.xverse.app/" target="_blank" rel="noopener">Xverse</a>, <a href="https://leather.io/" target="_blank" rel="noopener">Leather</a>, <a href="https://unisat.io/" target="_blank" rel="noopener">Unisat</a>, <a href="https://www.okx.com/web3" target="_blank" rel="noopener">OKX Wallet</a>, or Phantom (BTC). All keep you in full control of your funds.',
     },
     {
       question: 'Do I get anything extra when I mint a cube?',

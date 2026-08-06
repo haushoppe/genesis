@@ -66,10 +66,15 @@ jobs:
           - cat21wallet
           - leather
           - unisat
-          - oyl
           - wizz
           - alby
           - okx
+          # Oyl removed 2026-08-06: vendor decommissioned the mainnet.ordit.io
+          # relay-validator backend the extension calls during signPsbt
+          # (DNS NXDOMAIN). The .crx still installs but every sign attempt
+          # hangs indefinitely waiting for that backend. Re-add if Oyl
+          # (or a successor) ships a new release that stands its own
+          # infra back up.
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -134,7 +139,7 @@ jobs:
         run: bash e2e/regtest/playwright-bootstrap.sh xverse
 
       # CAT-21 wallet doesn't ship a published .crx yet (unlike
-      # Xverse/Leather/Unisat/OKX/Phantom/Wizz/Oyl/Alby which are
+      # Xverse/Leather/Unisat/OKX/Phantom/Wizz/Alby which are
       # mirrored on ordpool-space/ordpool-sdk releases). Same pattern
       # as cat21-indexer/.github/workflows/e2e-regtest-mint-cat21wallet.yml:
       # checkout cat21-wallet source, pnpm build, then hand the
@@ -219,21 +224,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh unisat
-
-      - name: Cache Oyl extension
-        if: matrix.wallet == 'oyl'
-        id: oyl-cache
-        uses: actions/cache@v4
-        with:
-          path: apps/cubes-frontend/e2e/regtest/extensions/oyl
-          # Version tag lives in playwright-bootstrap.sh; keep in sync.
-          key: oyl-extension-v1.17.1
-
-      - name: Fetch Oyl .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'oyl' && steps.oyl-cache.outputs.cache-hit != 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash e2e/regtest/playwright-bootstrap.sh oyl
 
       - name: Cache Wizz extension
         if: matrix.wallet == 'wizz'

@@ -22,7 +22,7 @@ yet written.**
 | `global-setup.ts` (Xverse seed hydration) | copied, paths adjusted |
 | `wait-helpers.ts` + `approval-popup.ts` + `cat21wallet-sign-popup.ts` | copied |
 | `onboard-okx.ts` + `onboard-phantom.ts` | copied |
-| `onboard-leather.ts` / `onboard-unisat.ts` / `onboard-oyl.ts` / `onboard-alby.ts` | **TODO** (extract from SDK per-wallet specs) |
+| `onboard-leather.ts` / `onboard-unisat.ts` / `onboard-alby.ts` | **TODO** (extract from SDK per-wallet specs) |
 | `specs/xverse-cube-mint-roundtrip.spec.ts` | **TODO** — the reference spec |
 | Other 7 wallet specs | **TODO** — templated from xverse |
 | `honest-wallet-coverage.spec.ts` (audit gate) | **TODO** |
@@ -86,9 +86,10 @@ Priority order for the follow-up work:
 3. **CI workflow** — get the empty scaffold running on GitHub Actions
    so failure surfaces are visible even before every wallet is
    covered.
-4. **Fan out to the other 7 wallets**: Leather, Unisat, OKX, Phantom,
-   Oyl, CAT-21 Wallet, xpub. Each needs its own onboarding module +
-   spec.
+4. **Fan out to the other 6 wallets**: Leather, Unisat, OKX, Phantom,
+   CAT-21 Wallet, xpub. Each needs its own onboarding module +
+   spec. (Oyl was removed 2026-08-06 after vendor decommissioned
+   its backend infra; re-add if a new release or successor ships.)
 5. **Audit gate** — a Jest / Playwright spec that verifies every entry
    in `KnownOrdinalWalletType` has a matching
    `<wallet>-cube-mint-roundtrip.spec.ts`.

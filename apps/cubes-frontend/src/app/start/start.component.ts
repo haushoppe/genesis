@@ -433,13 +433,21 @@ export class StartComponent {
     // form. Angular's signal semantics only fire the effect when
     // `suggestionResource.value()` actually changes reference (each
     // resource resolve produces a new object), so no dedup closure.
-    // `checkoutOpen` read via untracked() so closing the drawer does
-    // NOT re-run this with a stale suggestion and clobber manual edits
-    // (findings #7 + #14). Only a suggestion change fires the patch.
+    // Two guards, both via untracked() so the effect only re-runs when
+    // the suggestion itself changes:
+    //  - checkoutOpen: don't clobber the cube the user is about to mint
+    //  - anyFilled: don't clobber user-entered inscription IDs. This is
+    //    the race the alby E2E hit — page-load slower than usual, so
+    //    suggestion resolved DURING the test's fill sequence and
+    //    overwrote already-typed sides. Suggestions apply only to a
+    //    still-blank form; craftAnotherCube() clears the form first.
     effect(() => {
       const suggestion = this.suggestionResource.value();
       if (!suggestion) return;
       if (untracked(() => this.checkoutOpen())) return;
+      const current = untracked(() => this.mintFormData());
+      const anyFilled = INSCRIPTION_ID_FIELDS.some((k) => current[k]);
+      if (anyFilled) return;
       this.mintFormData.update((v) => ({
         ...v,
         inscriptionId1: suggestion.inscriptionId1,
@@ -483,15 +491,22 @@ export class StartComponent {
   }
 
   craftAnotherCube() {
-    // If the drawer is open, close it first — the effect guard skips
-    // suggestion patches while checkoutOpen is true, so without this
-    // the click would silently no-op mid-review. Closing surfaces the
-    // fresh cube back in the preview and lets the user decide.
-    // Also the handler for the two shuffle anchors: their routerLink
-    // handles route navigation (with fragment="mint" so anchor-scroll
-    // holds the viewport) and this reload re-emits with whichever
-    // collectionSymbol() the router lands on next tick.
+    // Close the drawer + clear the six sides so the suggestion-effect
+    // guard sees an empty form and applies the new suggestion when
+    // reload() resolves. Without the clear the anyFilled guard would
+    // skip forever after the first suggestion. Also the click handler
+    // for the shuffle anchors — their routerLink navigates + fragment
+    // holds viewport; this reload re-emits for the new collection.
     this.checkoutOpen.set(false);
+    this.mintFormData.update((v) => ({
+      ...v,
+      inscriptionId1: '',
+      inscriptionId2: '',
+      inscriptionId3: '',
+      inscriptionId4: '',
+      inscriptionId5: '',
+      inscriptionId6: '',
+    }));
     this.suggestionResource.reload();
   }
 

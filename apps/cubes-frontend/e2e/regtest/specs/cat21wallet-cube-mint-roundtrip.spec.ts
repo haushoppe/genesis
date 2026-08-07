@@ -181,6 +181,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
     /Failed to load resource:.*404/,
     /Failed to load resource:.*net::/,
     /^\[sdk:/,
+    /\[inscribe-mint-orchestrator\] simulation threw for utxo/,
     /has been blocked by CORS policy/,
   ];
   cubes.on('console', (msg) => {

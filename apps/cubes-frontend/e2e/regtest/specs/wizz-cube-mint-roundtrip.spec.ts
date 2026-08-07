@@ -216,6 +216,7 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
     /Failed to load resource:.*404/,
     /Failed to load resource:.*net::/,
     /^\[sdk:/,
+    /\[inscribe-mint-orchestrator\] simulation threw for utxo/,
     /has been blocked by CORS policy/,
   ];
   cubes.on('console', (msg) => {

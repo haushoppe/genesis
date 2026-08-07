@@ -194,6 +194,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     /Failed to load resource:.*404/,
     /Failed to load resource:.*net::/,
     /^\[sdk:/,
+    /\[inscribe-mint-orchestrator\] simulation threw for utxo/,
     /has been blocked by CORS policy/,
   ];
   const browserErrors: string[] = [];

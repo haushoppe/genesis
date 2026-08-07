@@ -488,19 +488,10 @@ export class StartComponent {
     // suggestion patches while checkoutOpen is true, so without this
     // the click would silently no-op mid-review. Closing surfaces the
     // fresh cube back in the preview and lets the user decide.
-    this.checkoutOpen.set(false);
-    this.suggestionResource.reload();
-  }
-
-  /**
-   * Called by the two shuffle-suggestion anchors. The anchor's own
-   * routerLink handles route navigation (with fragment="mint" so
-   * anchor-scrolling holds the viewport at the mint section — no
-   * top-scroll jump on click). This method just closes the drawer +
-   * kicks the suggestion resource to reload; reload() re-emits with
-   * whatever collectionSymbol() the router lands on next tick.
-   */
-  reshuffleSuggestion(): void {
+    // Also the handler for the two shuffle anchors: their routerLink
+    // handles route navigation (with fragment="mint" so anchor-scroll
+    // holds the viewport) and this reload re-emits with whichever
+    // collectionSymbol() the router lands on next tick.
     this.checkoutOpen.set(false);
     this.suggestionResource.reload();
   }

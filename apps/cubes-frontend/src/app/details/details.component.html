@@ -88,7 +88,7 @@
 } @else if (detailsResource.error()) {
   <p class="text-danger mt-4">
     Failed to load cube details.
-    <a href="javascript:void(0)" (click)="detailsResource.reload()">Retry</a>
+    <button type="button" class="btn btn-link p-0 align-baseline" (click)="detailsResource.reload()">Retry</button>
   </p>
 }
 

@@ -26,11 +26,11 @@
     <a [routerLink]="['/mint', suggestion.collectionSymbol]"
        fragment="mint"
        data-testid="suggestion-shuffle-same"
-       (click)="reshuffleSuggestion()">from this collection</a> or
+       (click)="craftAnotherCube()">from this collection</a> or
     <a [routerLink]="['/']"
        fragment="mint"
        data-testid="suggestion-shuffle-any"
-       (click)="reshuffleSuggestion()">from another collection</a>.
+       (click)="craftAnotherCube()">from another collection</a>.
   </p>
 }
 
@@ -66,7 +66,7 @@
           @if (suggestionResource.error()) {
             <div class="alert alert-warning small text-center mb-0" role="alert" data-testid="suggestion-error">
               Couldn't load a suggestion.
-              <a href="#" (click)="$event.preventDefault(); suggestionResource.reload()">Try again</a>
+              <button type="button" class="btn btn-link p-0 align-baseline" (click)="suggestionResource.reload()">Try again</button>
               — or open Customize below to enter your own inscriptions.
             </div>
           } @else {
@@ -395,7 +395,7 @@
 @if (inscriptionsResource.error() && !inscriptionsResource.value()) {
   <p class="text-danger mb-5">
     Failed to load cubes.
-    <a href="javascript:void(0)" (click)="inscriptionsResource.reload()">Retry</a>
+    <button type="button" class="btn btn-link p-0 align-baseline" (click)="inscriptionsResource.reload()">Retry</button>
   </p>
 }
 

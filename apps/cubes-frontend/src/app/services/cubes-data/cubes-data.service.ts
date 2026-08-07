@@ -21,7 +21,7 @@ interface ExternalCube {
   contentLength?: number;
   attributes: { trait_type: string; value: string }[];
   name: string;
-  /** Added 2026-08-05; older cached payloads may omit it. */
+  /** Optional — pre-schema-bump cached payloads may omit it. */
   firstOwner?: string | null;
 }
 
@@ -32,8 +32,8 @@ export interface IndexCursor {
   lastScannedBlockHeight?: number;
   /**
    * Unix seconds — the timestamp of the block at
-   * `lastScannedBlockHeight`. Added 2026-08-07; may be absent on
-   * cached responses served before the schema bump.
+   * `lastScannedBlockHeight`. Optional — pre-schema-bump cached
+   * responses may omit it.
    */
   lastScannedBlockTimestamp?: number;
   blessedTipAtLastRun: number;

@@ -24,9 +24,8 @@ export interface InscriptionExtended {
   meta: Meta;
   /**
    * Lowercased ordinals address that received this cube's reveal-tx
-   * vout[0] — the mint recipient, immutable on-chain history. Absent
-   * on stale cached responses served before the 2026-08-05 index
-   * schema bump added the field; new grind runs always populate it.
+   * vout[0]. Optional because early index payloads pre-date the
+   * field; new grind runs always populate it.
    */
   firstOwner?: string | null;
 }

@@ -1,7 +1,7 @@
 import { computed, effect, inject, Injectable, Signal, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { WalletService } from 'ordpool-sdk';
-import { catchError, of } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
 
 import { CubesDataService } from './cubes-data/cubes-data.service';
 import { InscriptionExtended } from './cubes-data/types';
@@ -94,14 +94,23 @@ export class PastMintsService {
   private readonly cubesData = inject(CubesDataService);
 
   private readonly wallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
-  private readonly allCubes: Signal<InscriptionExtended[]> = toSignal(
-    // catchError → toSignal never re-throws on read even if the
-    // shared HTTP request failed. UI reads the empty array and
-    // renders "no cubes"; a manual reload via any rxResourceFixed
-    // consumer re-fetches (resetOnError on the shareReplay).
-    this.cubesData.getAllCubes().pipe(catchError(() => of([] as InscriptionExtended[]))),
-    { initialValue: [] as InscriptionExtended[] },
+
+  // Wrap emissions so the template can distinguish "index still
+  // loading" from "index loaded, wallet owns zero cubes" — critical
+  // for the empty-state message that would otherwise mislead a user
+  // whose 3 mints are already in cubes.json but hasn't landed yet.
+  // catchError → toSignal never re-throws; UI treats an errored
+  // load as "loaded with empty index" so the retry surface stays in
+  // rxResourceFixed consumers instead of here.
+  private readonly allCubesSource = toSignal(
+    this.cubesData.getAllCubes().pipe(
+      map((cubes) => ({ loaded: true, cubes })),
+      catchError(() => of({ loaded: true, cubes: [] as InscriptionExtended[] })),
+    ),
+    { initialValue: { loaded: false, cubes: [] as InscriptionExtended[] } },
   );
+  private readonly allCubes: Signal<InscriptionExtended[]> = computed(() => this.allCubesSource().cubes);
+  readonly indexReady = computed(() => this.allCubesSource().loaded);
 
   /** Reveal-txids in the index WITH a resolved firstOwner. Local
    *  entries only self-purge once their reveal shows up here — if

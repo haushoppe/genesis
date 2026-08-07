@@ -252,6 +252,27 @@ describe('PastMintsService — myCubes derivation', () => {
     expect(svc.myCubes()).toEqual([]);
   });
 
+  it('indexReady stays false until cubes.json emits (finding #13)', async () => {
+    // Local stub that doesn't emit until we tell it to — the shared
+    // CubesDataServiceStub uses a BehaviorSubject that emits [] on
+    // subscribe, which would false-positive this test.
+    TestBed.resetTestingModule();
+    const wallet = new WalletServiceStub();
+    const pending = new (await import('rxjs')).Subject<InscriptionExtended[]>();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: WalletService, useValue: wallet },
+        { provide: CubesDataService, useValue: { getAllCubes: () => pending.asObservable() } },
+      ],
+    });
+    const svc = TestBed.inject(PastMintsService);
+    expect(svc.indexReady()).toBe(false);
+    pending.next([]);
+    TestBed.tick();
+    expect(svc.indexReady()).toBe(true);
+  });
+
   it('pre-fix localStorage entries without ordinalsAddress remain visible for any wallet (backcompat)', async () => {
     // Simulate a pre-fix payload: no ordinalsAddress field.
     localStorage.setItem(

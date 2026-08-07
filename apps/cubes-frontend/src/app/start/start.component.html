@@ -331,6 +331,10 @@
   <p class="text-muted" data-testid="my-cubes-empty-no-wallet">
     Connect your wallet to see cubes you've minted.
   </p>
+} @else if (!pastMints.indexReady()) {
+  <p class="text-muted" data-testid="my-cubes-loading">
+    Loading your cubes…
+  </p>
 } @else if (mine.length === 0) {
   <p class="text-muted" data-testid="my-cubes-empty-none">
     No cubes minted from this wallet yet. Mint one above and it'll show up here.

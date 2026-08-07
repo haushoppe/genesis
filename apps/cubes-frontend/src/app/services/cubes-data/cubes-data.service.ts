@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, ReplaySubject, defer, map, of, shareReplay, switchMap, throwError } from 'rxjs';
+import { Observable, ReplaySubject, defer, map, of, share, switchMap, throwError } from 'rxjs';
 
 import {
   CubeSuggestion,
@@ -48,15 +48,27 @@ export interface IndexCursor {
 @Injectable({ providedIn: 'root' })
 export class CubesDataService {
 
-  // resetOnError so a first-load 5xx doesn't stick: rxResourceFixed
-  // .reload() re-subscribes and gets a fresh HTTP call.
+  // Replay-share with resetOnError so a first-load 5xx doesn't stick:
+  // rxResourceFixed .reload() re-subscribes and gets a fresh HTTP call.
+  // shareReplay's ShareReplayConfig doesn't expose resetOnError in
+  // rxjs 7.8, so use `share` with an explicit ReplaySubject connector.
   private readonly all$ = this.http.get<ExternalCube[]>(CUBES_URL).pipe(
     map((raw) => raw.map(toInscriptionExtended)),
-    shareReplay({ bufferSize: 1, refCount: false, resetOnError: true }),
+    share({
+      connector: () => new ReplaySubject<InscriptionExtended[]>(1),
+      resetOnError: true,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    }),
   );
 
   private readonly cursor$ = this.http.get<IndexCursor>(CURSOR_URL).pipe(
-    shareReplay({ bufferSize: 1, refCount: false, resetOnError: true }),
+    share({
+      connector: () => new ReplaySubject<IndexCursor>(1),
+      resetOnError: true,
+      resetOnComplete: false,
+      resetOnRefCountZero: false,
+    }),
   );
 
   constructor(private http: HttpClient) {}

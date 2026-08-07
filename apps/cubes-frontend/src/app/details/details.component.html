@@ -23,8 +23,13 @@
 
   <div class="text-truncate" style="width: 70vw">
     <span class="d-inline-block" style="width: 160px">Inscription ID:</span>
-    <a [href]="environment.ordinalsExplorerDetails + insc.inscriptionId" target="_blank" rel="noopener">
-      ◉ {{ insc.inscriptionId }}
+    <a
+      [href]="environment.ordinalsExplorerDetails + insc.inscriptionId"
+      target="_blank"
+      rel="noopener"
+      [title]="insc.inscriptionId"
+    >
+      ◉ {{ insc.inscriptionId | shortenAddress }}
     </a>
   </div>
 

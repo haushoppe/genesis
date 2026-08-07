@@ -5,17 +5,6 @@
 @import "_include-bootstrap.scss";
 @import "_form-control.scss";
 
-// Declare the app as dark-themed so form controls, scrollbars,
-// system colours AND cross-origin iframes (details page cube viewer,
-// cube-preview) render with dark canvas defaults instead of the
-// browser's default light. Without this, an iframe navigating to a
-// document that doesn't set its own body-bg (like the on-chain cube
-// HTML, which is JS-rendered) paints a white canvas until the JS
-// runs, producing a visible flash on every cube-to-cube swap.
-:root {
-  color-scheme: dark;
-}
-
 body {
   font-family: "Yantramanav", sans-serif;
   font-weight: 300;

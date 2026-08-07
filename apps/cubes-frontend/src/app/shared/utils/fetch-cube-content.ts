@@ -1,7 +1,10 @@
+import { environment } from '../../../environments/environment';
 import { withDarkColorScheme } from './with-dark-color-scheme';
 
-// CORS-enabled, so the response can go into a srcdoc.
-const ORD_CONTENT_BASE = 'https://ordinals.com/content';
+// Derive the CORS-enabled /content base from the environment's
+// /preview base — regtest points at localhost:8081 so tests hit
+// the local ord instead of mainnet.
+const ORD_CONTENT_BASE = environment.ordinalsExplorerIframe.replace(/\/preview\/$/, '/content');
 
 // Cube bodies are on-chain immutable, so cache forever.
 const cache = new Map<string, Promise<string>>();

@@ -433,15 +433,13 @@ export class StartComponent {
     // form. Angular's signal semantics only fire the effect when
     // `suggestionResource.value()` actually changes reference (each
     // resource resolve produces a new object), so no dedup closure.
-    // Guard against overwriting while checkout is open: the user is
-    // reviewing a specific cube; a background suggestion arriving
-    // (e.g. from `craftAnotherCube()` that also closes the drawer, or
-    // a route-param change) must not silently swap the cube the Mint
-    // click is about to inscribe.
+    // `checkoutOpen` read via untracked() so closing the drawer does
+    // NOT re-run this with a stale suggestion and clobber manual edits
+    // (findings #7 + #14). Only a suggestion change fires the patch.
     effect(() => {
       const suggestion = this.suggestionResource.value();
       if (!suggestion) return;
-      if (this.checkoutOpen()) return;
+      if (untracked(() => this.checkoutOpen())) return;
       this.mintFormData.update((v) => ({
         ...v,
         inscriptionId1: suggestion.inscriptionId1,

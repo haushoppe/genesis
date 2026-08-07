@@ -48,17 +48,15 @@ export interface IndexCursor {
 @Injectable({ providedIn: 'root' })
 export class CubesDataService {
 
-  /**
-   * One in-flight HTTP request, replayed to every concurrent caller.
-   * Reuses the result for the rest of the session.
-   */
+  // resetOnError so a first-load 5xx doesn't stick: rxResourceFixed
+  // .reload() re-subscribes and gets a fresh HTTP call.
   private readonly all$ = this.http.get<ExternalCube[]>(CUBES_URL).pipe(
     map((raw) => raw.map(toInscriptionExtended)),
-    shareReplay({ bufferSize: 1, refCount: false }),
+    shareReplay({ bufferSize: 1, refCount: false, resetOnError: true }),
   );
 
   private readonly cursor$ = this.http.get<IndexCursor>(CURSOR_URL).pipe(
-    shareReplay({ bufferSize: 1, refCount: false }),
+    shareReplay({ bufferSize: 1, refCount: false, resetOnError: true }),
   );
 
   constructor(private http: HttpClient) {}

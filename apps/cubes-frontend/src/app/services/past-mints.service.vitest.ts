@@ -222,4 +222,50 @@ describe('PastMintsService — myCubes derivation', () => {
     TestBed.tick();
     expect(svc.myCubes()).toEqual([]);
   });
+
+  // Regression tests for the code-review findings on 2026-08-07.
+
+  it('keeps a local entry visible when the indexed cube still has firstOwner=null (finding #5)', async () => {
+    const { svc, wallet, cubes } = freshBed();
+    const addr = 'bc1paddr';
+    wallet.connectedWallet$.next({ ordinalsAddress: addr, paymentAddress: 'bc1qx' });
+    const revealTxid = 'a'.repeat(64);
+    svc.record('c-x', revealTxid, []);
+    // Cube is in the index but esplora backfill hasn't resolved firstOwner yet.
+    cubes.setCubes([makeCube({ txid: revealTxid, firstOwner: null })]);
+    TestBed.tick();
+    // localStorage entry must NOT be pruned, and it must still appear in myCubes.
+    expect(svc.pastMints()).toHaveLength(1);
+    expect(svc.myCubes()).toHaveLength(1);
+    expect(svc.myCubes()[0].source).toBe('local');
+  });
+
+  it('does not leak a pending mint from wallet A into wallet B (finding #6)', async () => {
+    const { svc, wallet, cubes } = freshBed();
+    cubes.setCubes([]);
+    // Record while connected as wallet A.
+    wallet.connectedWallet$.next({ ordinalsAddress: 'bc1pwallet-a', paymentAddress: 'bc1qa' });
+    svc.record('c1', 'reveal-from-a', []);
+    // Switch to wallet B — the pending mint from A must NOT show up.
+    wallet.connectedWallet$.next({ ordinalsAddress: 'bc1pwallet-b', paymentAddress: 'bc1qb' });
+    TestBed.tick();
+    expect(svc.myCubes()).toEqual([]);
+  });
+
+  it('pre-fix localStorage entries without ordinalsAddress remain visible for any wallet (backcompat)', async () => {
+    // Simulate a pre-fix payload: no ordinalsAddress field.
+    localStorage.setItem(
+      'cube_past',
+      JSON.stringify([
+        { commitTxId: 'c-old', revealTxId: 'reveal-old', createdAt: '2026-01-01T00:00:00Z', inscriptionIds: [] },
+      ]),
+    );
+    const { svc, wallet, cubes } = freshBed();
+    cubes.setCubes([]);
+    wallet.connectedWallet$.next({ ordinalsAddress: 'bc1panywallet', paymentAddress: 'bc1qx' });
+    TestBed.tick();
+    // Backcompat: empty ordinalsAddress = wildcard, shows for any wallet.
+    expect(svc.myCubes()).toHaveLength(1);
+    expect(svc.myCubes()[0].source).toBe('local');
+  });
 });

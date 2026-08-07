@@ -1,4 +1,4 @@
-import { Directive, ElementRef, OnDestroy, OnInit, inject, input } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input, DestroyRef } from '@angular/core';
 
 import { fetchCubeSrcdoc } from '../shared/utils/fetch-cube-content';
 import { withDarkColorScheme } from '../shared/utils/with-dark-color-scheme';
@@ -26,49 +26,71 @@ export const placeholderAsString = withDarkColorScheme(
 
 /**
  * Fetch the cube body on intersection and set it as srcdoc; swap to
- * the placeholder when the iframe leaves the viewport.
+ * the placeholder when the iframe leaves the viewport. Also re-fetches
+ * on `toggleInscriptionId` change so a reused iframe (details-page
+ * prev/next) shows the new cube instead of stale content.
  */
 @Directive({
   selector: '[appToggleIframe]',
   standalone: true
 })
-export class ToggleIframeDirective implements OnInit, OnDestroy {
+export class ToggleIframeDirective {
 
   readonly toggleInscriptionId = input('');
 
   private readonly element = inject(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
   private intersectionObserver: IntersectionObserver | undefined;
   private currentFetch: Promise<void> | null = null;
+  private isIntersecting = false;
+  private appliedId = '';
 
-  ngOnInit() {
+  constructor() {
     this.intersectionObserver = new IntersectionObserver((entries) => {
       for (const entry of entries) {
-        const inscriptionId = this.toggleInscriptionId();
-        if (!inscriptionId) continue;
-        if (entry.isIntersecting) {
-          this.applyFetchedSrcdoc(inscriptionId);
-        } else {
-          this.currentFetch = null;
-          this.element.nativeElement.srcdoc = placeholderAsString;
-        }
+        this.isIntersecting = entry.isIntersecting;
+        this.reconcile();
       }
     });
-
     this.intersectionObserver.observe(this.element.nativeElement);
+    this.destroyRef.onDestroy(() => this.intersectionObserver?.disconnect());
+
+    // Re-fetch when the input signal changes while the iframe stays visible.
+    effect(() => {
+      this.toggleInscriptionId();
+      this.reconcile();
+    });
   }
 
-  ngOnDestroy() {
-    this.intersectionObserver?.disconnect();
+  private reconcile(): void {
+    const inscriptionId = this.toggleInscriptionId();
+    if (!this.isIntersecting || !inscriptionId) {
+      if (this.appliedId !== '__placeholder__') {
+        this.appliedId = '__placeholder__';
+        this.currentFetch = null;
+        this.element.nativeElement.srcdoc = placeholderAsString;
+      }
+      return;
+    }
+    if (this.appliedId === inscriptionId) return;
+    this.applyFetchedSrcdoc(inscriptionId);
   }
 
   private applyFetchedSrcdoc(inscriptionId: string): void {
-    this.element.nativeElement.srcdoc = placeholderAsString;
+    // Only show the placeholder if we don't already have the correct body up.
+    // Cache-hit re-intersections skip the placeholder flash entirely.
+    if (this.appliedId !== inscriptionId && this.appliedId !== '__placeholder__') {
+      this.element.nativeElement.srcdoc = placeholderAsString;
+      this.appliedId = '__placeholder__';
+    }
     const fetchPromise = fetchCubeSrcdoc(inscriptionId).then((srcdoc) => {
-      // Skip if the observer swapped us mid-flight.
       if (this.currentFetch !== fetchPromise) return;
+      if (this.toggleInscriptionId() !== inscriptionId) return;
+      if (!this.isIntersecting) return;
       this.element.nativeElement.srcdoc = srcdoc;
+      this.appliedId = inscriptionId;
     }).catch(() => {
-      // Placeholder stays.
+      // Placeholder stays visible on failure.
     });
     this.currentFetch = fetchPromise;
   }

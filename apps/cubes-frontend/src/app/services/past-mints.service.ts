@@ -1,6 +1,7 @@
 import { computed, effect, inject, Injectable, Signal, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { WalletService } from 'ordpool-sdk';
+import { catchError, of } from 'rxjs';
 
 import { CubesDataService } from './cubes-data/cubes-data.service';
 import { InscriptionExtended } from './cubes-data/types';
@@ -12,13 +13,13 @@ export interface PastMint {
   commitTxId: string;
   revealTxId: string;
   createdAt: string;
-  /**
-   * Six inscription IDs the user picked for this cube. Populated for
-   * new mints; empty when rehydrated from a pre-2026-07 payload that
-   * predates this field. Read by CubeSuggestionService to bar
-   * just-minted IDs from re-suggestion before ord+the hourly index
-   * catch up (~70 min lag).
-   */
+  /** Ordinals-recipient address of the mint. Filters fromLocal to
+   *  the currently-connected wallet; empty string on pre-fix entries
+   *  (treated as wildcard for backward compat). */
+  ordinalsAddress: string;
+  /** Six inscription IDs the user picked for this cube. Read by
+   *  CubeSuggestionService to bar just-minted IDs from re-suggestion
+   *  before ord + the hourly index catch up (~70 min lag). */
   inscriptionIds: string[];
 }
 
@@ -26,11 +27,10 @@ export interface PastMint {
  * Unified item shape rendered by "My cubes". Two sources merged:
  *
  * - `index`: the cube already appears in the public cubes.json index
- *   because it was minted by the currently-connected wallet. Rich
- *   metadata (inscription number, block height) is available.
+ *   and its firstOwner matches the connected wallet.
  * - `local`: the cube was minted this session (or by this browser in
- *   the past) and hasn't landed in the hourly index yet. Only txids
- *   are available. Self-purges once the index catches up.
+ *   the past) and either isn't in the index yet OR is in the index
+ *   with firstOwner still null (esplora backfill pending).
  */
 export type MyCube =
   | {
@@ -58,6 +58,7 @@ function readInitial(): PastMint[] {
       commitTxId: m.commitTxId ?? '',
       revealTxId: m.revealTxId ?? '',
       createdAt: m.createdAt ?? '',
+      ordinalsAddress: typeof m.ordinalsAddress === 'string' ? m.ordinalsAddress : '',
       inscriptionIds: Array.isArray(m.inscriptionIds) ? m.inscriptionIds : [],
     }));
   } catch {
@@ -75,19 +76,15 @@ function revealTxidFromInscriptionId(inscriptionId: string): string {
 }
 
 /**
- * User's cube history. Two roles:
+ * User's cube history.
  *
- * 1. Volatile buffer for just-minted cubes not yet in the hourly
- *    `ordinal-cubes-index` (localStorage under `cube_past`). Populated
- *    by `record(...)` after a successful mint.
- * 2. Composed with the currently-connected wallet's ordinals address
- *    and the public index to derive `myCubes` — the durable per-
- *    wallet history. localStorage entries self-purge as soon as their
- *    reveal txid appears in the index, so localStorage stays small.
- *
- * Consumers should read `myCubes` for display and call `record` after
- * a successful mint. `pastMints` is exposed but only for tests /
- * internal wiring — components should not depend on it directly.
+ * - `pastMints`: volatile per-browser buffer of just-minted cubes,
+ *   persisted to localStorage under `cube_past`. Populated by
+ *   `record(...)` after a successful mint.
+ * - `myCubes`: derived signal — index cubes owned by the connected
+ *   wallet, unioned with local entries not yet resolved in the index.
+ *   Local entries self-purge as soon as the index has a non-null
+ *   firstOwner for them, keeping localStorage small.
  */
 @Injectable({ providedIn: 'root' })
 export class PastMintsService {
@@ -98,22 +95,27 @@ export class PastMintsService {
 
   private readonly wallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
   private readonly allCubes: Signal<InscriptionExtended[]> = toSignal(
-    this.cubesData.getAllCubes(),
+    // catchError → toSignal never re-throws on read even if the
+    // shared HTTP request failed. UI reads the empty array and
+    // renders "no cubes"; a manual reload via any rxResourceFixed
+    // consumer re-fetches (resetOnError on the shareReplay).
+    this.cubesData.getAllCubes().pipe(catchError(() => of([] as InscriptionExtended[]))),
     { initialValue: [] as InscriptionExtended[] },
   );
 
-  /** Set of reveal-txids present in the public cubes.json index.
-   *  Shared by `myCubes` (dedupes local overlay) and the self-cleanup
-   *  effect (prunes localStorage entries once landed in the index). */
-  private readonly indexRevealTxids = computed<Set<string>>(
-    () => new Set(this.allCubes().map((c) => revealTxidFromInscriptionId(c.inscriptionId))),
+  /** Reveal-txids in the index WITH a resolved firstOwner. Local
+   *  entries only self-purge once their reveal shows up here — if
+   *  the index has the cube but firstOwner is still null (esplora
+   *  backfill pending), we keep the local entry visible so the cube
+   *  never disappears mid-flight. */
+  private readonly resolvedIndexRevealTxids = computed<Set<string>>(
+    () => new Set(
+      this.allCubes()
+        .filter((c) => c.firstOwner !== null && c.firstOwner !== undefined)
+        .map((c) => revealTxidFromInscriptionId(c.inscriptionId)),
+    ),
   );
 
-  /**
-   * Every cube attributable to the currently-connected wallet's
-   * ordinals address, unioned with just-minted-but-not-yet-indexed
-   * entries from localStorage. Empty when no wallet is connected.
-   */
   readonly myCubes: Signal<MyCube[]> = computed<MyCube[]>(() => {
     const addr = normalizeAddr(this.wallet()?.ordinalsAddress);
     if (!addr) return [];
@@ -129,12 +131,16 @@ export class PastMintsService {
         firstOwner: c.firstOwner ?? null,
       }));
 
-    // Pending: localStorage entries whose revealTxid isn't in the
-    // index yet. These are the just-minted cubes waiting for the
-    // hourly grind to catch up.
-    const known = this.indexRevealTxids();
+    const resolved = this.resolvedIndexRevealTxids();
     const fromLocal: MyCube[] = this.pastMints()
-      .filter((m) => m.revealTxId && !known.has(m.revealTxId.toLowerCase()))
+      .filter((m) => {
+        if (!m.revealTxId) return false;
+        if (resolved.has(m.revealTxId.toLowerCase())) return false;
+        // Wallet scoping: empty ordinalsAddress = pre-fix entry,
+        // treat as wildcard for backward compat.
+        const mAddr = normalizeAddr(m.ordinalsAddress);
+        return !mAddr || mAddr === addr;
+      })
       .map((m) => ({
         source: 'local',
         revealTxId: m.revealTxId,
@@ -142,12 +148,11 @@ export class PastMintsService {
         createdAt: m.createdAt,
       }));
 
-    // Local first (newest / pending on top), then index-derived.
     return [...fromLocal, ...fromIndex];
   });
 
   constructor() {
-    // Persist pastMints signal → localStorage. Skip first tick (echo).
+    // Persist pastMints → localStorage. Skip first tick (rehydrate echo).
     let firstRun = true;
     effect(() => {
       const list = this.pastMints();
@@ -158,16 +163,14 @@ export class PastMintsService {
       setLocalStore(STORAGE_KEY, JSON.stringify(list));
     });
 
-    // Self-cleanup: whenever the index changes, drop any localStorage
-    // entries whose revealTxid has landed in it. Keeps the volatile
-    // buffer small and prevents duplicate rows in myCubes. Guarded
-    // no-op when nothing needs pruning so the pastMints signal
-    // doesn't emit spuriously.
+    // Self-cleanup: drop localStorage entries once the index has a
+    // resolved firstOwner for them. Waits for firstOwner!=null so a
+    // still-backfilling index entry doesn't make the cube vanish.
     effect(() => {
-      const known = this.indexRevealTxids();
-      if (known.size === 0) return;
+      const resolved = this.resolvedIndexRevealTxids();
+      if (resolved.size === 0) return;
       const current = untracked(() => this.pastMints());
-      const filtered = current.filter((m) => m.revealTxId && !known.has(m.revealTxId.toLowerCase()));
+      const filtered = current.filter((m) => m.revealTxId && !resolved.has(m.revealTxId.toLowerCase()));
       if (filtered.length !== current.length) {
         this.pastMints.set(filtered);
       }
@@ -175,8 +178,9 @@ export class PastMintsService {
   }
 
   record(commitTxId: string, revealTxId: string, inscriptionIds: string[] = []): void {
+    const ordinalsAddress = normalizeAddr(untracked(() => this.wallet())?.ordinalsAddress);
     this.pastMints.update((list) => [
-      { commitTxId, revealTxId, createdAt: new Date().toISOString(), inscriptionIds },
+      { commitTxId, revealTxId, createdAt: new Date().toISOString(), ordinalsAddress, inscriptionIds },
       ...list,
     ]);
   }

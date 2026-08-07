@@ -1,9 +1,16 @@
 /**
- * Prepend a color-scheme=dark meta to a cube's HTML body so the
- * iframe canvas paints dark instead of white while the cube JS is
- * still loading. Display-only wrapper — never send to the SDK.
+ * Inject a color-scheme=dark meta into a cube's HTML head so the
+ * iframe canvas paints dark instead of white during cube JS load.
+ * Display-only wrapper — never send to the SDK.
+ *
+ * Handles both shapes: bodies that already have a `<head>` get the
+ * meta prepended inside it; bodies without one get a fresh `<head>`.
  */
+const META = '<meta name="color-scheme" content="dark">';
+
 export function withDarkColorScheme(cubeBodyHtml: string): string {
-  const META_HEAD = '<head><meta name="color-scheme" content="dark"></head>';
-  return cubeBodyHtml.replace(/^<html>/i, `<html>${META_HEAD}`);
+  if (/<head\b[^>]*>/i.test(cubeBodyHtml)) {
+    return cubeBodyHtml.replace(/<head\b[^>]*>/i, (m) => `${m}${META}`);
+  }
+  return cubeBodyHtml.replace(/^<html\b[^>]*>/i, (m) => `${m}<head>${META}</head>`);
 }

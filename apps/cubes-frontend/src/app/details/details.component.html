@@ -35,8 +35,13 @@
   <div class="text-truncate" style="width: 70vw">
     <span class="d-inline-block" style="width: 160px">Block Height:</span>
     <a href="https://ordpool.space/block/{{ insc.blockHeight }}" target="_blank" rel="noopener">
-      ₿ {{ insc.blockHeight }}
+      {{ insc.blockHeight }}
     </a>
+    @if (insc.timestamp) {
+      <span class="text-muted ms-2" data-testid="details-block-utc">
+        (mined {{ (insc.timestamp * 1000) | date:'yyyy-MM-dd HH:mm':'UTC' }} UTC)
+      </span>
+    }
   </div>
 
   @if (insc.firstOwner; as firstOwner) {

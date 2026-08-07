@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
@@ -12,6 +13,7 @@ import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
   templateUrl: './details.component.html',
   styleUrls: ['./details.component.scss'],
   imports: [
+    DatePipe,
     RouterLink,
     SafeUrlPipe,
     ShortenAddressPipe,

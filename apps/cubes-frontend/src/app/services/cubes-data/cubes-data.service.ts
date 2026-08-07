@@ -30,6 +30,12 @@ export interface IndexCursor {
   lastScannedId: string;
   lastScannedNumber: number;
   lastScannedBlockHeight?: number;
+  /**
+   * Unix seconds — the timestamp of the block at
+   * `lastScannedBlockHeight`. Added 2026-08-07; may be absent on
+   * cached responses served before the schema bump.
+   */
+  lastScannedBlockTimestamp?: number;
   blessedTipAtLastRun: number;
   lastScanAt: string;
   source: string;
@@ -117,6 +123,7 @@ function toInscriptionExtended(c: ExternalCube): InscriptionExtended {
     inscriptionId: c.inscriptionId,
     inscriptionNumber: c.inscriptionNumber,
     blockHeight: c.blockHeight,
+    timestamp: c.timestamp,
     meta: { name: c.name, attributes: c.attributes },
     firstOwner: c.firstOwner ?? null,
   };

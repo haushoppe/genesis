@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, Signal, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { WalletService } from 'ordpool-sdk';
 
@@ -102,25 +102,26 @@ export class PastMintsService {
     { initialValue: [] as InscriptionExtended[] },
   );
 
+  /** Set of reveal-txids present in the public cubes.json index.
+   *  Shared by `myCubes` (dedupes local overlay) and the self-cleanup
+   *  effect (prunes localStorage entries once landed in the index). */
+  private readonly indexRevealTxids = computed<Set<string>>(
+    () => new Set(this.allCubes().map((c) => revealTxidFromInscriptionId(c.inscriptionId))),
+  );
+
   /**
    * Every cube attributable to the currently-connected wallet's
    * ordinals address, unioned with just-minted-but-not-yet-indexed
    * entries from localStorage. Empty when no wallet is connected.
    */
   readonly myCubes: Signal<MyCube[]> = computed<MyCube[]>(() => {
-    const w = this.wallet();
-    const addr = normalizeAddr(w?.ordinalsAddress);
+    const addr = normalizeAddr(this.wallet()?.ordinalsAddress);
     if (!addr) return [];
 
-    const cubes = this.allCubes();
-    const indexRevealTxids = new Set(
-      cubes.map((c) => revealTxidFromInscriptionId(c.inscriptionId)),
-    );
-
-    const fromIndex: MyCube[] = cubes
+    const fromIndex: MyCube[] = this.allCubes()
       .filter((c) => normalizeAddr(c.firstOwner) === addr)
       .map((c) => ({
-        source: 'index' as const,
+        source: 'index',
         inscriptionId: c.inscriptionId,
         inscriptionNumber: c.inscriptionNumber,
         blockHeight: c.blockHeight,
@@ -131,10 +132,11 @@ export class PastMintsService {
     // Pending: localStorage entries whose revealTxid isn't in the
     // index yet. These are the just-minted cubes waiting for the
     // hourly grind to catch up.
+    const known = this.indexRevealTxids();
     const fromLocal: MyCube[] = this.pastMints()
-      .filter((m) => m.revealTxId && !indexRevealTxids.has(m.revealTxId.toLowerCase()))
+      .filter((m) => m.revealTxId && !known.has(m.revealTxId.toLowerCase()))
       .map((m) => ({
-        source: 'local' as const,
+        source: 'local',
         revealTxId: m.revealTxId,
         commitTxId: m.commitTxId,
         createdAt: m.createdAt,
@@ -158,18 +160,14 @@ export class PastMintsService {
 
     // Self-cleanup: whenever the index changes, drop any localStorage
     // entries whose revealTxid has landed in it. Keeps the volatile
-    // buffer small and prevents duplicate rows in myCubes (index +
-    // local both matching the same reveal txid).
+    // buffer small and prevents duplicate rows in myCubes. Guarded
+    // no-op when nothing needs pruning so the pastMints signal
+    // doesn't emit spuriously.
     effect(() => {
-      const cubes = this.allCubes();
-      if (cubes.length === 0) return;
-      const indexRevealTxids = new Set(
-        cubes.map((c) => revealTxidFromInscriptionId(c.inscriptionId)),
-      );
-      const current = this.pastMints();
-      const filtered = current.filter(
-        (m) => m.revealTxId && !indexRevealTxids.has(m.revealTxId.toLowerCase()),
-      );
+      const known = this.indexRevealTxids();
+      if (known.size === 0) return;
+      const current = untracked(() => this.pastMints());
+      const filtered = current.filter((m) => m.revealTxId && !known.has(m.revealTxId.toLowerCase()));
       if (filtered.length !== current.length) {
         this.pastMints.set(filtered);
       }

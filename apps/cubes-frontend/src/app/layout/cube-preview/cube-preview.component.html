@@ -1,13 +1,6 @@
-<!--
-  `background: #000` on the iframe covers the ~1-2 s window between
-  the srcdoc binding and the cube JS painting — without it the
-  cube-to-cube swap flashes white every time. The cube's own JS
-  then paints its dark bg on top, so the transition is dark → dark.
--->
 <iframe
   [srcdoc]="cubeHtml() | safeHtml"
   class=" p-3 mt-2"
   sandbox="allow-scripts"
   width="100%" height="500"
-  style="background: #000"
 ></iframe>

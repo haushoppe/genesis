@@ -15,6 +15,12 @@ export interface InscriptionExtended {
   inscriptionId: string;
   inscriptionNumber: number;
   blockHeight: number;
+  /**
+   * Unix seconds — the timestamp of the block that contains this
+   * cube's reveal tx. Immutable on-chain fact, stored directly in
+   * the static index so the UI never has to round-trip.
+   */
+  timestamp?: number;
   meta: Meta;
   /**
    * Lowercased ordinals address that received this cube's reveal-tx

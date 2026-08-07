@@ -8,11 +8,7 @@
       <iframe
         class="responsive-iframe"
         appToggleIframe
-        [toggleSrc]="
-          environment.ordinalsExplorerIframe +
-          ins.inscriptionId +
-          '?cache-buster'
-        "
+        [toggleInscriptionId]="ins.inscriptionId"
         sandbox="allow-scripts"
       ></iframe>
     </div>

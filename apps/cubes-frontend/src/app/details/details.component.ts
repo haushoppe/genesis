@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { environment } from '../../environments/environment';
 import { ShortenAddressPipe } from '../layout/shorten-address.pipe';
-import { SafeUrlPipe } from '../safe-url.pipe';
+import { ToggleIframeDirective } from '../layout/toggle-iframe.directive';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
 
@@ -15,8 +15,8 @@ import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
   imports: [
     DatePipe,
     RouterLink,
-    SafeUrlPipe,
     ShortenAddressPipe,
+    ToggleIframeDirective,
   ],
   host: {
     '(window:keydown)': 'onKeydown($event)',
@@ -37,13 +37,6 @@ export class DetailsComponent {
     params: () => ({ id: this.inscriptionId() }),
     stream: ({ params }) => this.cubesData.getSingleInscription(params.id),
   });
-
-  getIframeSrc(inscriptionId?: string | undefined): string {
-    if (!inscriptionId) {
-      return 'about:blank';
-    }
-    return environment.ordinalsExplorerIframe + inscriptionId + '?cache-buster';
-  }
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;

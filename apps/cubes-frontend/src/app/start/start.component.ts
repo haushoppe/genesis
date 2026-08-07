@@ -45,8 +45,9 @@ import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
 const HAUSHOPPE_TIP_ADDRESS = environment.haushoppeTipAddress;
 const HAUSHOPPE_TIP_SATS = environment.haushoppeTipSats;
 
-/** txid + `i` + index — the ord canonical inscription-id shape. */
-const INSCRIPTION_ID_PATTERN = /^[a-f0-9]{64}i\d+$/;
+// ord canonical inscription-id: 64 hex + `i` + non-negative integer
+// without leading zeros. `i08262` etc. would 404 on lookup.
+const INSCRIPTION_ID_PATTERN = /^[a-f0-9]{64}i(0|[1-9]\d*)$/;
 
 interface MintFormData {
   inscriptionId1: string;

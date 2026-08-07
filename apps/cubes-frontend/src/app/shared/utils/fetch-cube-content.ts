@@ -1,19 +1,17 @@
 import { withDarkColorScheme } from './with-dark-color-scheme';
 
 /**
- * Cross-origin ord instance that serves the raw HTML body of any
- * inscription. CORS-enabled (`Access-Control-Allow-Origin: *`), so we
- * can `fetch()` an inscription's body from the browser and turn it
- * into a `srcdoc` blob — bypassing the "cross-origin src iframe with
- * white canvas" trap that mobile Chrome falls into.
+ * Ord instance we `fetch()` cube bodies from. CORS-enabled
+ * (`Access-Control-Allow-Origin: *`) so the browser can turn the
+ * response into a `srcdoc` blob — bypassing the "cross-origin src
+ * iframe with white canvas" trap that mobile Chrome falls into.
+ * See `withDarkColorScheme` for the flash-mitigation this enables.
  *
- * See `withDarkColorScheme` for the flash-mitigation this fetch
- * enables. Alternative would be `/content/<id>` on our own origin
- * (Cloudflare Pages redirects it), but the redirect target is
- * cross-origin anyway; fetching directly here means one round-trip
- * instead of one-plus-redirect.
+ * `ordinals.com` is measurably faster than `ord.ordpool.space` (large
+ * CDN vs. one VPS) — swap in for tile / details fetches to keep
+ * page paint responsive on slow mobile networks.
  */
-const ORD_CONTENT_BASE = 'https://ord.ordpool.space/content';
+const ORD_CONTENT_BASE = 'https://ordinals.com/content';
 
 /**
  * Session-lifetime cache of fetched cube bodies. Same-cube-across-

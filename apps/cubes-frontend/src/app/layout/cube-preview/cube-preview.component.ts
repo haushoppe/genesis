@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 
 import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { CubeDetails, getCubeHtml } from '../../services/cube-html';
+import { withDarkColorScheme } from '../../shared/utils/with-dark-color-scheme';
 
 const DEFAULT_CUBE_DETAILS: CubeDetails = {
   inscriptionIds: {
@@ -31,7 +32,14 @@ export class CubePreviewComponent {
    *  the title separately via `<app-cube-preview-title>`. */
   readonly cubeDetails = input<CubeDetails>(DEFAULT_CUBE_DETAILS);
 
-  protected readonly cubeHtml = computed(() =>
-    getCubeHtml({ ...this.cubeDetails(), title: '' }),
+  /**
+   * The srcdoc-ready HTML for the preview iframe. Wraps `getCubeHtml`'s
+   * on-chain-identical body in a small display shell that injects
+   * `<meta name="color-scheme" content="dark">` — required so the
+   * iframe canvas doesn't paint white on browsers whose OS prefers
+   * light (mobile Chrome in default state). See `withDarkColorScheme`.
+   */
+  protected readonly cubeSrcdoc = computed(() =>
+    withDarkColorScheme(getCubeHtml({ ...this.cubeDetails(), title: '' })),
   );
 }

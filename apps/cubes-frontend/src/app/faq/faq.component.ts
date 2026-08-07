@@ -57,7 +57,7 @@ export class FaqComponent {
     {
       question: 'How do I pay for my cube?',
       answer:
-        'Your wallet pays the two on-chain transactions (commit + reveal) directly from its funded payment address. There is no invoice, no third-party middleman, and no Lightning fallback — just a normal wallet-signed Bitcoin transaction. Make sure your payment address holds enough BTC before you click Mint.',
+        'Your wallet pays the two on-chain transactions (commit + reveal) directly from its funded payment address. There is no invoice, no third-party middleman, and no Lightning fallback, just a normal wallet-signed Bitcoin transaction. Make sure your payment address holds enough BTC before you click Mint.',
     },
     {
       question: 'What happens after I click Mint?',
@@ -72,12 +72,12 @@ export class FaqComponent {
     {
       question: 'Which wallet should I use to manage my Ordinals?',
       answer:
-        'Any ordinals-aware Bitcoin wallet works — the mint page auto-detects installed extensions. Good non-custodial choices: <a href="https://www.xverse.app/" target="_blank" rel="noopener">Xverse</a>, <a href="https://leather.io/" target="_blank" rel="noopener">Leather</a>, <a href="https://unisat.io/" target="_blank" rel="noopener">Unisat</a>, <a href="https://www.okx.com/web3" target="_blank" rel="noopener">OKX Wallet</a>, or Phantom (BTC). All keep you in full control of your funds.',
+        'Any ordinals-aware Bitcoin wallet works. The mint page auto-detects installed extensions. Good non-custodial choices: <a href="https://www.xverse.app/" target="_blank" rel="noopener">Xverse</a>, <a href="https://leather.io/" target="_blank" rel="noopener">Leather</a>, <a href="https://unisat.io/" target="_blank" rel="noopener">Unisat</a>, <a href="https://www.okx.com/web3" target="_blank" rel="noopener">OKX Wallet</a>, or Phantom (BTC). All keep you in full control of your funds.',
     },
     {
       question: 'Do I get anything extra when I mint a cube?',
       answer:
-        'Yes. Every cube mint also inscribes two <a href="https://cat21.space/" target="_blank" rel="noopener">CAT-21</a> cats as a side effect — the commit and the reveal transactions both carry <code>nLockTime=21</code>, which is the CAT-21 protocol marker. Two free cats per cube, on the house. Claim them at <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.',
+        'Yes. Every cube mint also inscribes two <a href="https://cat21.space/" target="_blank" rel="noopener">CAT-21</a> cats as a side effect: the commit and the reveal transactions both carry <code>nLockTime=21</code>, which is the CAT-21 protocol marker. Two free cats per cube, on the house. Claim them at <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.',
     },
     {
       question: 'What is the "utility" of this project?',

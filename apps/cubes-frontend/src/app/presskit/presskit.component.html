@@ -86,12 +86,12 @@
       <strong>Testimonial (by Johannes)</strong><br>
 
       I didn't want to create an art collection where all works are already known at the beginning.
-      Therefore, it was my goal that all parameters for the mint can be entered by the collector — inspired by fx(params).
+      Therefore, it was my goal that all parameters for the mint can be entered by the collector, inspired by fx(params).
       For the project's initial launch, cubes were minted through a hosted inscription service, which is the de-facto standard for most "lazy mints".<br>
       <br>
-      That model requires trust in a third party — the inscription service creates an order for you, and after you pay for the order, they hopefully start the inscription.
+      That model requires trust in a third party: the inscription service creates an order for you, and after you pay for the order, they hopefully start the inscription.
       In line with the Bitcoin ethos of self-custody and trustlessness, the optimal approach is for my collectors to create the transaction on their own, using their own device and private key.
-      Cubes-frontend now uses <a href="https://github.com/ordpool-space/ordpool-sdk">ordpool-sdk</a> to build and broadcast commit + reveal transactions directly from any ordinals-aware wallet — no OrdinalsBot, no OrdinalsBot referral kickback, no intermediary.
+      Cubes-frontend now uses <a href="https://github.com/ordpool-space/ordpool-sdk">ordpool-sdk</a> to build and broadcast commit + reveal transactions directly from any ordinals-aware wallet. No OrdinalsBot, no OrdinalsBot referral kickback, no intermediary.
     </p>
 
     <p>
@@ -99,7 +99,7 @@
 
       The website detects installed ordinals wallets (Xverse, Leather, Unisat, OKX, Phantom) automatically and offers each as a connect option.
       Once connected, the mint form loads UTXOs from the wallet's payment address and estimates commit + reveal fees per candidate UTXO.
-      Click <strong>"Mint my cube!"</strong> — your wallet prompts you to sign the commit; the reveal is signed with an ephemeral key generated in-browser and broadcast right after.
+      Click <strong>"Mint my cube!"</strong>. Your wallet prompts you to sign the commit; the reveal is signed with an ephemeral key generated in-browser and broadcast right after.
       As a fun side effect, both transactions carry <code>nLockTime=21</code>, so every cube mint also mints two free CAT-21 cats.
     </p>
 

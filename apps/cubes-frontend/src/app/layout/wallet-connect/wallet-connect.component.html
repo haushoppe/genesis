@@ -33,7 +33,7 @@
     }
 
     @if (wallets().notInstalledWallets.length > 0) {
-      <p class="fw-bold small mb-2 mt-3">Not installed — click to download:</p>
+      <p class="fw-bold small mb-2 mt-3">Not installed. Click to download:</p>
       <ul class="list-unstyled mb-0">
         @for (w of wallets().notInstalledWallets; track w.type) {
           <li class="mb-2">
@@ -66,7 +66,7 @@
     popoverClass="wallet-popover"
     data-testid="wallet-connected-btn"
     [title]="networkMismatch()
-      ? 'Wallet is on the wrong network — expected ' + expectedNetworkGroup
+      ? 'Wallet is on the wrong network. Expected: ' + expectedNetworkGroup
       : 'Connected via ' + knownOrdinalWallets[wallet.type].label">
     @if (networkMismatch()) {
       <span aria-hidden="true" class="me-1">⚠</span>
@@ -76,7 +76,7 @@
   </button>
 
   <ng-template #popTitle>
-    <strong>Connected — {{ knownOrdinalWallets[wallet.type].label }}</strong>
+    <strong>Connected: {{ knownOrdinalWallets[wallet.type].label }}</strong>
   </ng-template>
 
   <ng-template #popContent>

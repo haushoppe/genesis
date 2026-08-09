@@ -1,9 +1,6 @@
 {
   "/content/*": {
-    "x-target": "https://ordinals.com/",
-    "y-target": "https://ord-mirror.magiceden.dev/",
-    "z-target": "https://www.ord.io/",
-    "target": "https://explorer.ordinalsbot.com/",
+    "target": "https://ordinals.com/",
     "secure": false,
     "logLevel": "debug",
     "changeOrigin": true

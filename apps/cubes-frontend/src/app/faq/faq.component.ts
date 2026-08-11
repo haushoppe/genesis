@@ -37,22 +37,17 @@ export class FaqComponent {
     },
     {
       question: 'Where can I find suitable inscriptions with images?',
-      answer: `Your best bet is to search at <a href="https://magiceden.io/ordinals" target="_blank" rel="noopener">Magic Eden</a> or <a href="https://www.ord.io/?contentType=image" target="_blank" rel="noopener">Ord.io</a>. Make sure that none of the sides of your cube turns black, that would be a pity. For animated GIFs, only the first frame will be displayed.`,
+      answer: `The mint page already suggests a curated collection by default and pre-fills the six sides for you. Just mint what you like, or click "Craft another cube" to reshuffle. If you'd rather pick your own, open the Customize panel and paste six inscription-ids. Any ordinals explorer works to browse for images, e.g. <a href="https://ordpool.space/" target="_blank" rel="noopener">ordpool.space</a> (our own) or <a href="https://ordinals.com/" target="_blank" rel="noopener">ordinals.com</a>. <strong>Avoid black sides at all costs</strong>: a broken or missing inscription renders as a black face and ruins the cube. Only the first frame of animated GIFs is shown.`,
     },
     {
       question: 'How do I create a cube?',
       answer:
-        'Connect an ordinals-aware Bitcoin wallet (Xverse, Leather, Unisat, OKX, or Phantom), enter six Inscription IDs into the form, and click "Mint my cube!". Each cube displays the image of one inscription on each of its six sides. Your wallet will prompt you to sign a commit transaction; a reveal transaction follows automatically. When the reveal confirms, your cube is live on-chain and lands on your ordinals address.',
+        'Click <strong>Connect wallet</strong> and pick your ordinals-aware Bitcoin wallet, then enter six Inscription IDs into the form (or use the pre-filled suggestion) and click <strong>"Mint my cube!"</strong>. Each cube displays the image of one inscription on each of its six sides. Your wallet prompts you to sign a commit transaction; a reveal transaction follows automatically. When the reveal confirms, your cube is live on-chain and lands on your ordinals address.',
     },
     {
       question: 'What is the TXIDiN format?',
       answer:
         'Inscription IDs are of the form TXID<strong>i</strong>N, where TXID is the transaction ID of the reveal transaction, and N is the index of the inscription in the reveal transaction. The small letter <strong>"i"</strong> separates both entries. Please provide six Inscription IDs to create a new cube!',
-    },
-    {
-      question: 'What is a taproot address?',
-      answer:
-        'A taproot address is a type of Bitcoin address that starts with "bc1p"... . This type of address is best suited to receive Ordinals. Use any ordinals-aware wallet (Xverse, Leather, Unisat, OKX, or Phantom).',
     },
     {
       question: 'How do I pay for my cube?',
@@ -72,7 +67,7 @@ export class FaqComponent {
     {
       question: 'Which wallet should I use to manage my Ordinals?',
       answer:
-        'Any ordinals-aware Bitcoin wallet works. The mint page auto-detects installed extensions. Good non-custodial choices: <a href="https://www.xverse.app/" target="_blank" rel="noopener">Xverse</a>, <a href="https://leather.io/" target="_blank" rel="noopener">Leather</a>, <a href="https://unisat.io/" target="_blank" rel="noopener">Unisat</a>, <a href="https://www.okx.com/web3" target="_blank" rel="noopener">OKX Wallet</a>, or Phantom (BTC). All keep you in full control of your funds.',
+        'Click <strong>Connect wallet</strong> at the top-right to see every wallet we support. All are non-custodial: you keep full control of your funds. If you\'re not sure which one to pick, <a href="https://www.xverse.app/" target="_blank" rel="noopener">Xverse</a> is a safe default.',
     },
     {
       question: 'Do I get anything extra when I mint a cube?',

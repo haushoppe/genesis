@@ -46,6 +46,16 @@
 
     <div class="col-md-6 col-12 order-2 order-md-1">
       <div class="d-flex flex-column gap-3 mt-4">
+        <!-- Cost visible from first paint. Estimate before the wallet
+             is connected; once a UTXO is picked the exact number takes
+             over in the mint-summary block below. -->
+        @if (!selectedRow()) {
+          <div class="d-flex justify-content-between align-items-baseline" data-testid="mint-cost-estimate">
+            <span class="text-muted">Cost <small>(estimate)</small></span>
+            <strong>{{ typicalMintLabel() }}</strong>
+          </div>
+        }
+
         <button type="submit"
                 class="btn btn-primary btn-lg text-nowrap"
                 data-testid="mint-cta"

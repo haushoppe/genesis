@@ -46,13 +46,14 @@
 
     <div class="col-md-6 col-12 order-2 order-md-1">
       <div class="d-flex flex-column gap-3 mt-4">
-        <!-- Cost visible from first paint. Estimate before the wallet
-             is connected; once a UTXO is picked the exact number takes
-             over in the mint-summary block below. -->
-        @if (!selectedRow()) {
+        <!-- Cost visible from first paint. Pre-connect: SDK
+             simulation with the actual cube body against a synthetic
+             p2wpkh-payment funding input. Once a UTXO is picked, the
+             exact number for the wallet's real UTXO takes over below. -->
+        @if (!selectedRow() && preConnectMintLabel()) {
           <div class="d-flex justify-content-between align-items-baseline" data-testid="mint-cost-estimate">
-            <span class="text-muted">Cost <small>(estimate)</small></span>
-            <strong>{{ typicalMintLabel() }}</strong>
+            <span class="text-muted">Cost</span>
+            <strong>{{ preConnectMintLabel() }}</strong>
           </div>
         }
 
@@ -339,7 +340,10 @@
 @let hasWallet = !!connectedWallet();
 @if (!hasWallet) {
   <p class="text-muted" data-testid="my-cubes-empty-no-wallet">
-    Connect your wallet to see cubes you've minted.
+    <button type="button" class="btn btn-link p-0 align-baseline"
+            data-testid="my-cubes-connect-link"
+            (click)="walletService.requestWalletConnect()">Connect your wallet</button>
+    to see cubes you've minted.
   </p>
 } @else if (!pastMints.indexReady()) {
   <p class="text-muted" data-testid="my-cubes-loading">

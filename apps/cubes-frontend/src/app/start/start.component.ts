@@ -9,11 +9,15 @@ import {
   bucketOf,
   findAutoPickCandidate,
   getAddressNetwork,
+  getDummyKeypair,
   getMinimumUtxoSize,
   InscribeMintOrchestrator,
   Network,
+  prepareInscribeFundingInput,
   RecommendedFees,
+  simulateInscribeFees,
   SimulateInscribeFeesResult,
+  toScureNetwork,
   TxnOutput,
   UtxoContentScanner,
   UtxoScanBucket,
@@ -323,24 +327,56 @@ export class StartComponent {
     return formatSats(sats, this.btcUsdResource.value() ?? null);
   });
 
-  // Wallet-agnostic mint-cost estimate based on typical cube tx sizes.
-  // Shown BEFORE the user connects so the price question is answered
-  // on first paint. Once a UTXO is picked, totalSpendLabel above shows
-  // the exact number and this estimate hides.
-  //
-  // Numbers: commit tx ~= 200 vB (1 taproot input + 2 outputs), reveal
-  // tx ~= 900 vB (script-path spend + ~570-byte inscription witness at
-  // 1/4 weight). Plus 546 sat postage + the HAUSHOPPE tip.
-  private static readonly TYPICAL_COMMIT_VBYTES = 200;
-  private static readonly TYPICAL_REVEAL_VBYTES = 900;
-  protected readonly typicalMintSats = computed<number>(() => {
-    const feeRate = Math.max(1, this.mintFormData().feeRate);
-    const fees = (StartComponent.TYPICAL_COMMIT_VBYTES + StartComponent.TYPICAL_REVEAL_VBYTES) * feeRate;
-    return fees + 546 + HAUSHOPPE_TIP_SATS;
+  /**
+   * Wallet-agnostic mint-cost — computed by running the SDK's
+   * `simulateInscribeFees` against a synthetic Xverse-shaped
+   * (p2wpkh payment) funding input and the ACTUAL cube body
+   * (title-varying byte count) at the current fee-rate. Shown
+   * before the user connects a wallet; once a UTXO is picked,
+   * `totalSpendLabel` above takes over with the exact number for
+   * the connected wallet's real UTXO.
+   */
+  protected readonly preConnectMintSats = computed<number | null>(() => {
+    const form = this.mintFormData();
+    if (form.feeRate <= 0) return null;
+    const html = getCubeHtml(this.cubeDetails());
+    if (isCubeWarningHtml(html)) return null;
+    const body = new TextEncoder().encode(html);
+    try {
+      const network = this.deriveNetwork();
+      const scureNet = toScureNetwork(network);
+      const dummy = getDummyKeypair(scureNet);
+      // p2wpkh matches Xverse's payment-address format for new
+      // accounts and every other native-segwit-payment wallet we
+      // support. Small delta versus p2sh-p2wpkh legacy Xverse.
+      const fundingInput = prepareInscribeFundingInput({
+        utxo: { txid: 'f'.repeat(64), vout: 0, value: 10_000_000, status: { confirmed: true } },
+        paymentPublicKey: dummy.dummyPublicKey,
+        paymentAddress: dummy.addressP2WPKH,
+        isSimulation: true,
+        network,
+      });
+      const sim = simulateInscribeFees({
+        feeRatePerVbyte: form.feeRate,
+        body,
+        contentType: 'text/html;charset=utf-8',
+        fundingInput,
+        senderChangeAddress: dummy.addressP2WPKH,
+        recipientAddress: dummy.addressP2TR,
+        ephemeralPubkeyXonly: dummy.xOnlyDummyPublicKey,
+        tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
+        network,
+      });
+      return sim.fundingRequirementSats;
+    } catch {
+      return null;
+    }
   });
-  protected readonly typicalMintLabel = computed<string>(() =>
-    formatSats(this.typicalMintSats(), this.btcUsdResource.value() ?? null),
-  );
+  protected readonly preConnectMintLabel = computed<string>(() => {
+    const sats = this.preConnectMintSats();
+    if (sats == null) return '';
+    return formatSats(sats, this.btcUsdResource.value() ?? null);
+  });
 
   /** Short middle-ellipsis form of the connected payment address. */
   protected readonly connectedAddressShort = computed<string>(() => {

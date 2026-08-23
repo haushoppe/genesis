@@ -1,7 +1,7 @@
 import { DatePipe, DecimalPipe, SlicePipe } from '@angular/common';
 import { Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { form, min, pattern, required, schema, FormField } from '@angular/forms/signals';
+import { form, max, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 import {
@@ -25,7 +25,7 @@ import {
   validateInscribeOperation,
   WalletService,
 } from 'ordpool-sdk';
-import { debounceTime, firstValueFrom } from 'rxjs';
+import { debounceTime, firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
@@ -100,6 +100,10 @@ const mintFormSchema = schema<MintFormData>((path) => {
   pattern(path.inscriptionId6, INSCRIPTION_ID_PATTERN);
   required(path.feeRate);
   min(path.feeRate, 1);
+  // Reject Infinity (`1e999`) / NaN and cap at the SDK gate's 1000
+  // sat/vB ceiling so a fat-fingered rate can't sail past validation
+  // (Infinity <= 1000 and NaN <= 1000 both evaluate false).
+  max(path.feeRate, 1000);
 });
 
 const INSCRIPTION_ID_FIELDS = [
@@ -336,66 +340,75 @@ export class StartComponent {
   private readonly cubeBody = computed<Uint8Array>(() => new TextEncoder().encode(this.cubeHtml()));
 
   /**
-   * Debounced inputs for the pre-connect cost sim: a 150 ms tick (same
-   * as the orchestrator body build) so live typing in the title / id /
-   * colour fields does not re-run simulateInscribeFees (3 PSBT builds)
-   * on every keystroke.
+   * Constant-derived simulation context: the dummy p2wpkh keypair +
+   * synthetic funding input the pre-connect cost sim runs against. It
+   * depends only on HAUSHOPPE_TIP_ADDRESS's network, never on any form
+   * input, so a dep-free `computed` derives the keypair once (lazily,
+   * on first read) and caches it for the component's life instead of
+   * re-deriving it on every recompute. A throw here (invalid address)
+   * surfaces inside the sim's try/catch below.
    */
-  private readonly debouncedMintInputs = toSignal(
+  private readonly simContext = computed(() => {
+    const network = this.deriveNetwork();
+    const dummy = getDummyKeypair(toScureNetwork(network));
+    // p2wpkh matches Xverse's payment-address format for new accounts
+    // and every other native-segwit-payment wallet we support. Small
+    // delta versus p2sh-p2wpkh legacy Xverse.
+    const fundingInput = prepareInscribeFundingInput({
+      utxo: { txid: 'f'.repeat(64), vout: 0, value: 10_000_000, status: { confirmed: true } },
+      paymentPublicKey: dummy.dummyPublicKey,
+      paymentAddress: dummy.addressP2WPKH,
+      isSimulation: true,
+      network,
+    });
+    return { network, dummy, fundingInput };
+  });
+
+  /**
+   * Wallet-agnostic mint-cost: runs the SDK's `simulateInscribeFees`
+   * against the synthetic Xverse-shaped funding input (see `simContext`)
+   * and the ACTUAL cube body (title-varying byte count) at the current
+   * fee-rate. Debounced 150 ms so live typing in the title / id / colour
+   * fields does not re-run the sim (3 PSBT builds) on every keystroke.
+   * The sim + its error logging live in the observable's `map`, not a
+   * `computed`, so the derivation stays a pure signal. Shown before the
+   * user connects a wallet; once a UTXO is picked, `totalSpendLabel`
+   * above takes over with the exact number for the connected wallet's
+   * real UTXO.
+   */
+  protected readonly preConnectMintSats = toSignal(
     toObservable(computed(() => ({
       feeRate: this.mintFormData().feeRate,
       body: this.cubeBody(),
       warn: isCubeWarningHtml(this.cubeHtml()),
-    }))).pipe(debounceTime(150)),
+    }))).pipe(
+      debounceTime(150),
+      map(({ feeRate, body, warn }): number | null => {
+        // Reject non-finite rates (Infinity from a `1e999` input, NaN) so
+        // the Cost line never renders "Infinity sat" / "NaN sat".
+        if (warn || !Number.isFinite(feeRate) || feeRate <= 0) return null;
+        try {
+          const { network, dummy, fundingInput } = this.simContext();
+          const sim = simulateInscribeFees({
+            feeRatePerVbyte: feeRate,
+            body,
+            contentType: 'text/html;charset=utf-8',
+            fundingInput,
+            senderChangeAddress: dummy.addressP2WPKH,
+            recipientAddress: dummy.addressP2TR,
+            ephemeralPubkeyXonly: dummy.xOnlyDummyPublicKey,
+            tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
+            network,
+          });
+          return sim.fundingRequirementSats;
+        } catch (err) {
+          console.warn('[cubes] pre-connect cost simulation failed', err);
+          return null;
+        }
+      }),
+    ),
+    { initialValue: null },
   );
-
-  /**
-   * Wallet-agnostic mint-cost: computed by running the SDK's
-   * `simulateInscribeFees` against a synthetic Xverse-shaped
-   * (p2wpkh payment) funding input and the ACTUAL cube body
-   * (title-varying byte count) at the current fee-rate. Shown
-   * before the user connects a wallet; once a UTXO is picked,
-   * `totalSpendLabel` above takes over with the exact number for
-   * the connected wallet's real UTXO.
-   */
-  protected readonly preConnectMintSats = computed<number | null>(() => {
-    const inputs = this.debouncedMintInputs();
-    if (!inputs) return null;
-    const { feeRate, body, warn } = inputs;
-    // Reject non-finite rates (Infinity from a `1e999` input, NaN) so the
-    // Cost line never renders "Infinity sat" / "NaN sat".
-    if (warn || !Number.isFinite(feeRate) || feeRate <= 0) return null;
-    try {
-      const network = this.deriveNetwork();
-      const scureNet = toScureNetwork(network);
-      const dummy = getDummyKeypair(scureNet);
-      // p2wpkh matches Xverse's payment-address format for new
-      // accounts and every other native-segwit-payment wallet we
-      // support. Small delta versus p2sh-p2wpkh legacy Xverse.
-      const fundingInput = prepareInscribeFundingInput({
-        utxo: { txid: 'f'.repeat(64), vout: 0, value: 10_000_000, status: { confirmed: true } },
-        paymentPublicKey: dummy.dummyPublicKey,
-        paymentAddress: dummy.addressP2WPKH,
-        isSimulation: true,
-        network,
-      });
-      const sim = simulateInscribeFees({
-        feeRatePerVbyte: feeRate,
-        body,
-        contentType: 'text/html;charset=utf-8',
-        fundingInput,
-        senderChangeAddress: dummy.addressP2WPKH,
-        recipientAddress: dummy.addressP2TR,
-        ephemeralPubkeyXonly: dummy.xOnlyDummyPublicKey,
-        tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
-        network,
-      });
-      return sim.fundingRequirementSats;
-    } catch (err) {
-      console.warn('[cubes] pre-connect cost simulation failed', err);
-      return null;
-    }
-  });
   protected readonly preConnectMintLabel = computed<string>(() => {
     const sats = this.preConnectMintSats();
     if (sats == null) return '';
@@ -474,7 +487,11 @@ export class StartComponent {
     toObservable(this.mintFormData)
       .pipe(debounceTime(150), takeUntilDestroyed(this.destroyRef))
       .subscribe((v) => {
-        if (v.feeRate > 0) this.orchestrator.setFeeRate(v.feeRate);
+        // Only forward finite, positive rates: an Infinity/NaN feeRate would
+        // make every UTXO's fundingRequirementSats Infinity, tripping a false
+        // "insufficient funds" alert. The form's max(1000) validator disables
+        // Mint for such a rate; this keeps the orchestrator sim clean too.
+        if (Number.isFinite(v.feeRate) && v.feeRate > 0) this.orchestrator.setFeeRate(v.feeRate);
         if (!this.mintForm().valid()) return;
         this.orchestrator.setContent({
           body: this.cubeBody(),

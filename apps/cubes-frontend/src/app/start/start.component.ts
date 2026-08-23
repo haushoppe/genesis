@@ -327,8 +327,30 @@ export class StartComponent {
     return formatSats(sats, this.btcUsdResource.value() ?? null);
   });
 
+  /** The cube HTML for the current form, memoised so the parseCube
+   *  round-trip runs once per cubeDetails change (shared by the
+   *  pre-connect cost, the orchestrator body build, and mint()). */
+  private readonly cubeHtml = computed<string>(() => getCubeHtml(this.cubeDetails()));
+
+  /** The exact bytes inscribed for the current cube. */
+  private readonly cubeBody = computed<Uint8Array>(() => new TextEncoder().encode(this.cubeHtml()));
+
   /**
-   * Wallet-agnostic mint-cost — computed by running the SDK's
+   * Debounced inputs for the pre-connect cost sim: a 150 ms tick (same
+   * as the orchestrator body build) so live typing in the title / id /
+   * colour fields does not re-run simulateInscribeFees (3 PSBT builds)
+   * on every keystroke.
+   */
+  private readonly debouncedMintInputs = toSignal(
+    toObservable(computed(() => ({
+      feeRate: this.mintFormData().feeRate,
+      body: this.cubeBody(),
+      warn: isCubeWarningHtml(this.cubeHtml()),
+    }))).pipe(debounceTime(150)),
+  );
+
+  /**
+   * Wallet-agnostic mint-cost: computed by running the SDK's
    * `simulateInscribeFees` against a synthetic Xverse-shaped
    * (p2wpkh payment) funding input and the ACTUAL cube body
    * (title-varying byte count) at the current fee-rate. Shown
@@ -337,11 +359,12 @@ export class StartComponent {
    * the connected wallet's real UTXO.
    */
   protected readonly preConnectMintSats = computed<number | null>(() => {
-    const form = this.mintFormData();
-    if (form.feeRate <= 0) return null;
-    const html = getCubeHtml(this.cubeDetails());
-    if (isCubeWarningHtml(html)) return null;
-    const body = new TextEncoder().encode(html);
+    const inputs = this.debouncedMintInputs();
+    if (!inputs) return null;
+    const { feeRate, body, warn } = inputs;
+    // Reject non-finite rates (Infinity from a `1e999` input, NaN) so the
+    // Cost line never renders "Infinity sat" / "NaN sat".
+    if (warn || !Number.isFinite(feeRate) || feeRate <= 0) return null;
     try {
       const network = this.deriveNetwork();
       const scureNet = toScureNetwork(network);
@@ -357,7 +380,7 @@ export class StartComponent {
         network,
       });
       const sim = simulateInscribeFees({
-        feeRatePerVbyte: form.feeRate,
+        feeRatePerVbyte: feeRate,
         body,
         contentType: 'text/html;charset=utf-8',
         fundingInput,
@@ -368,7 +391,8 @@ export class StartComponent {
         network,
       });
       return sim.fundingRequirementSats;
-    } catch {
+    } catch (err) {
+      console.warn('[cubes] pre-connect cost simulation failed', err);
       return null;
     }
   });
@@ -452,9 +476,8 @@ export class StartComponent {
       .subscribe((v) => {
         if (v.feeRate > 0) this.orchestrator.setFeeRate(v.feeRate);
         if (!this.mintForm().valid()) return;
-        const html = getCubeHtml(this.cubeDetails());
         this.orchestrator.setContent({
-          body: new TextEncoder().encode(html),
+          body: this.cubeBody(),
           contentType: 'text/html;charset=utf-8',
           tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
         });
@@ -576,8 +599,8 @@ export class StartComponent {
 
     // Belt-and-braces: sync content one more time in case the Mint click
     // landed before the debounced form-value subscription fired.
-    const html = getCubeHtml(this.cubeDetails());
-    const body = new TextEncoder().encode(html);
+    const html = this.cubeHtml();
+    const body = this.cubeBody();
 
     // Guard 1: cubeHtml refuses to build past parseCube. Never let the
     // red Warning fallback land as an on-chain inscription — the user
@@ -656,10 +679,15 @@ export class StartComponent {
    * for prod builds, so this can never return a wrong value in prod.
    */
   private deriveNetwork(): Network {
-    switch (getAddressNetwork(HAUSHOPPE_TIP_ADDRESS)) {
+    const group = getAddressNetwork(HAUSHOPPE_TIP_ADDRESS);
+    switch (group) {
       case 'mainnet': return Network.Mainnet;
       case 'regtest': return Network.Regtest;
       case 'testnet': return Network.Testnet3;
+      // Fail loudly if the SDK's AddressNetworkGroup union ever widens
+      // (e.g. a distinct signet/testnet4) instead of leaking undefined
+      // into toScureNetwork / the signing path.
+      default: throw new Error(`Unhandled address network group: ${group}`);
     }
   }
 

@@ -8,47 +8,116 @@
       <p class="alert alert-danger py-2 px-3 mb-3 small" role="alert">Connection failed: {{ err }}</p>
     }
 
-    @if (wallets().installedWallets.length > 0) {
-      <p class="fw-bold small mb-2" data-testid="wallet-picker-detected">Detected wallets:</p>
-      <ul class="list-unstyled mb-3">
-        @for (w of wallets().installedWallets; track w.type) {
-          <li class="mb-2">
-            <button type="button"
-                    class="btn btn-outline-light w-100 text-start text-nowrap"
-                    [attr.data-testid]="'wallet-connect-' + w.type"
-                    [disabled]="connectButtonDisabled()"
-                    (click)="connectWallet(w.type)">
-              {{ w.label }}
-              @if (w.subLabel) {
-                <small class="text-muted d-block">{{ w.subLabel }}</small>
-              }
-            </button>
-          </li>
-        }
-      </ul>
-    } @else {
-      <p class="text-muted small mb-3" data-testid="wallet-picker-empty">
-        No supported wallets detected in this browser.
-      </p>
-    }
+    <p class="fw-bold small mb-2" data-testid="wallet-picker-detected">Wallets that can inscribe:</p>
+    <ul class="list-unstyled mb-0" data-testid="wallet-picker-list">
+      @for (row of rows(); track row.type) {
+        <li class="wallet-row d-flex align-items-center gap-2 mb-2">
+          <img class="wallet-logo" [src]="row.logo" alt="" width="22" height="22">
+          <span class="wallet-name text-truncate">
+            {{ row.label }}
+            @if (row.subLabel) {
+              <small class="text-muted d-block">{{ row.subLabel }}</small>
+            }
+          </span>
 
-    @if (wallets().notInstalledWallets.length > 0) {
-      <p class="fw-bold small mb-2 mt-3">Not installed. Click to download:</p>
-      <ul class="list-unstyled mb-0">
-        @for (w of wallets().notInstalledWallets; track w.type) {
-          <li class="mb-2">
-            <a class="btn btn-outline-secondary w-100 text-start text-nowrap"
-               [href]="w.downloadLink"
-               target="_blank"
-               rel="noopener">
-              {{ w.label }}
-              @if (w.subLabel) {
-                <small class="text-muted d-block">{{ w.subLabel }}</small>
+          <button type="button"
+                  class="info-btn btn btn-link p-0 lh-1"
+                  [ngbPopover]="infoContent"
+                  [popoverTitle]="row.label"
+                  triggers="click"
+                  [autoClose]="'outside'"
+                  popoverClass="wallet-info-popover"
+                  [attr.data-testid]="'wallet-info-' + row.type"
+                  [attr.aria-label]="'What does ' + row.label + ' support?'">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+          </button>
+
+          <span class="ms-auto flex-shrink-0">
+            @switch (row.kind) {
+              @case ('connect') {
+                <button type="button"
+                        class="btn btn-sm btn-outline-light text-nowrap"
+                        [attr.data-testid]="'wallet-connect-' + row.type"
+                        [disabled]="connectButtonDisabled()"
+                        (click)="connectWallet(row.type)">
+                  Connect
+                </button>
               }
-            </a>
-          </li>
-        }
-      </ul>
+              @case ('deep-link') {
+                <a class="btn btn-sm btn-outline-light text-nowrap"
+                   [href]="row.deepLink"
+                   rel="noopener">
+                  Open in {{ row.label }}
+                </a>
+              }
+              @case ('download') {
+                <a class="btn btn-sm btn-outline-secondary text-nowrap"
+                   [href]="row.downloadLink"
+                   target="_blank"
+                   rel="noopener">
+                  Get wallet
+                </a>
+              }
+              @case ('watch-only-deferred') {
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary text-nowrap"
+                        disabled
+                        title="Watch-only export is coming soon on cubes.">
+                  Watch-only (soon)
+                </button>
+              }
+            }
+          </span>
+
+          <ng-template #infoContent>
+            <div class="wallet-info small">
+              <div class="mb-2">
+                @for (p of row.platforms; track p) {
+                  <span class="badge text-bg-secondary me-1">{{ p }}</span>
+                }
+                <div class="text-muted mt-1">{{ row.signingModeLine }}</div>
+              </div>
+
+              <div class="mb-2">
+                <div class="fw-bold">To inscribe here</div>
+                <div>
+                  <span class="cap-icon">{{ row.actionCapability.icon }}</span>
+                  {{ row.actionCapability.wording }}
+                </div>
+                @if (row.actionCapability.caveat) {
+                  <div class="cap-caveat text-muted">{{ row.actionCapability.caveat }}</div>
+                }
+              </div>
+
+              <div class="mb-2">
+                <div class="fw-bold">Everything this wallet can do</div>
+                <ul class="list-unstyled mb-0">
+                  @for (c of row.allCapabilities; track c.displayName) {
+                    <li class="cap-line">
+                      <span class="cap-icon">{{ c.icon }}</span>
+                      <span class="cap-name">{{ c.displayName }}</span>
+                      @if (c.caveat) {
+                        <span class="cap-caveat text-muted d-block">{{ c.caveat }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+
+              @if (row.note) {
+                <div class="cap-note text-muted border-top pt-2">{{ row.note }}</div>
+              }
+            </div>
+          </ng-template>
+        </li>
+      }
+    </ul>
+
+    @if (noneInstalled()) {
+      <p class="text-muted small mb-0 mt-3" data-testid="wallet-picker-empty">
+        No wallet detected in this browser. Install one above, or open this page inside
+        your wallet's in-app browser.
+      </p>
     }
   </div>
 </ng-template>
@@ -120,7 +189,8 @@
       Disconnect
     </button>
   </ng-template>
-} @else {
+}
+@else {
   <button type="button"
           class="btn btn-outline-light btn-sm text-nowrap"
           data-testid="wallet-connect-btn"

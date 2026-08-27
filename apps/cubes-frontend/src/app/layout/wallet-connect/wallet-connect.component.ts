@@ -1,13 +1,36 @@
-import { ChangeDetectorRef, Component, DestroyRef, TemplateRef, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, TemplateRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NgbModal, NgbModalRef, NgbPopover, NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
-import { KnownOrdinalWallets, KnownOrdinalWalletType, WalletService } from 'ordpool-sdk';
+import {
+  KnownOrdinalWallets, KnownOrdinalWalletType, WalletCapability, WalletPlatform,
+  WalletService, walletInAppBrowserDeepLink, walletsSupporting,
+} from 'ordpool-sdk';
+import { buildPickerRows } from './wallet-picker-rows';
+
+/**
+ * Where this browser can reach a wallet provider. Desktop is the
+ * extension case; Mobile is a wallet's in-app dApp browser (Xverse /
+ * OKX), which injects the same provider so the connect path is
+ * identical. A mobile plain browser has no injected provider: its rows
+ * fall through to the not-detected state.
+ */
+function detectPlatform(): WalletPlatform {
+  if (typeof navigator === 'undefined') return WalletPlatform.Desktop;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    ? WalletPlatform.Mobile
+    : WalletPlatform.Desktop;
+}
 
 /**
  * Always-visible wallet-connect widget for the app-shell header.
- * Mirrors cat21-indexer's WalletConnect: NgbModal for the picker,
- * NgbPopover for the connected-state menu with addresses +
- * copy-to-clipboard + disconnect.
+ * NgbModal for the picker, NgbPopover for the connected-state menu.
+ *
+ * The picker is driven by the SDK capability matrix: it offers exactly
+ * the wallets that can inscribe on the current platform
+ * (`walletsSupporting(Inscription, {platform})`), cross-referenced with
+ * runtime provider detection to mark each Connect vs Get-extension.
+ * Every row carries an info popover sourced from the matrix, per the
+ * binding wallet-picker-ux-shared.md spec.
  *
  * Extra vs cat21-indexer: subscribes to `walletConnectRequested$` so
  * any consumer (e.g. the Mint CTA in start.component) can trigger the
@@ -29,6 +52,46 @@ export class WalletConnectComponent {
   protected readonly wallets = toSignal(this.walletService.wallets$, {
     initialValue: { installedWallets: [], notInstalledWallets: [] },
   });
+
+  /** Which platform's wallet set to offer. Fixed per session (the UA
+   *  doesn't change), so a plain field is enough. */
+  protected readonly platform = detectPlatform();
+
+  /** Wallet types with a provider detected in this browser right now. */
+  private readonly installedTypes = computed(
+    () => new Set(this.wallets().installedWallets.map((w) => w.type)),
+  );
+
+  /**
+   * A wallet's in-app-browser deep link for the current page, or null.
+   * Only on mobile: on desktop the in-app browser is not the reachable
+   * surface, so a not-detected wallet is a Get-wallet, never an Open-in.
+   */
+  private readonly deepLinkFor = (wallet: KnownOrdinalWalletType): string | null =>
+    this.platform === WalletPlatform.Mobile && typeof window !== 'undefined'
+      ? walletInAppBrowserDeepLink(wallet, window.location.href)
+      : null;
+
+  /**
+   * The picker rows: inscription-capable wallets for this platform, in
+   * matrix order, each tagged Connect / Open-in / Get-wallet / Watch-only
+   * and carrying its info-popover data.
+   */
+  protected readonly rows = computed(() =>
+    buildPickerRows(
+      walletsSupporting(WalletCapability.Inscription, { platform: this.platform }),
+      this.installedTypes(),
+      WalletCapability.Inscription,
+      KnownOrdinalWallets,
+      this.deepLinkFor,
+    ),
+  );
+
+  /** True when no offered wallet has a provider detected. Drives the
+   *  "no wallet detected" hint under the list. */
+  protected readonly noneInstalled = computed(
+    () => !this.rows().some((r) => r.kind === 'connect'),
+  );
 
   /** True when the connected wallet's address prefix doesn't match
    *  the configured network (mainnet/regtest/testnet). Drives the

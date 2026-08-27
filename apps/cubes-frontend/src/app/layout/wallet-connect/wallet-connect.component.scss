@@ -5,3 +5,60 @@
   max-width: 22rem;
   min-width: 18rem;
 }
+
+// The per-row info popover holds the full capability list, so it needs
+// more width than the default and a scroll cap on very small viewports.
+:host ::ng-deep .wallet-info-popover .popover {
+  max-width: 20rem;
+  min-width: 16rem;
+}
+
+.wallet-row {
+  .wallet-logo {
+    flex-shrink: 0;
+    border-radius: 4px;
+    object-fit: contain;
+  }
+
+  // The name column takes the slack so the info icon + action button
+  // stay pinned to the right; long sub-labels truncate instead of
+  // pushing the action off-row.
+  .wallet-name {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .info-btn {
+    flex-shrink: 0;
+    color: var(--bs-secondary-color, #adb5bd);
+    line-height: 1;
+
+    &:hover,
+    &:focus {
+      color: var(--bs-body-color, #f8f9fa);
+    }
+  }
+}
+
+.wallet-info {
+  .cap-line {
+    margin-bottom: 0.15rem;
+  }
+
+  // Fixed-width status glyph so the capability names align in a column.
+  .cap-icon {
+    display: inline-block;
+    width: 1.1em;
+    text-align: center;
+  }
+
+  .cap-caveat {
+    font-size: 0.85em;
+    line-height: 1.25;
+  }
+
+  .cap-note {
+    font-size: 0.85em;
+    line-height: 1.3;
+  }
+}

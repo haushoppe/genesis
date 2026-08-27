@@ -7,7 +7,7 @@ import {
   WalletMatrixEntry,
   WalletPlatform,
   capabilityOf,
-} from 'ordpool-sdk';
+} from 'ordpool-sdk/core';
 
 /**
  * Presentation model that turns SDK capability-matrix rows into the
@@ -122,7 +122,7 @@ function signingModeLine(mode: WalletMatrixEntry['signingMode']): string {
  * @param candidates matrix entries from `walletsSupporting(action, {platform})`.
  * @param installedTypes wallet types with a provider detected at runtime.
  * @param action the capability the current page performs (Inscription on cubes).
- * @param meta `KnownOrdinalWallets` — logos, download links, sub-labels.
+ * @param meta `KnownOrdinalWallets`: logos, download links, sub-labels.
  * @param deepLinkFor resolves a wallet's in-app-browser deep link, or null
  *   (the SDK verifies only some; only used for a not-detected injected wallet).
  */

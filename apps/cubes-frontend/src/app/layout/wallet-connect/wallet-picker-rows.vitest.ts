@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   KnownOrdinalWallets, KnownOrdinalWalletType, WalletCapability, WalletPlatform, walletsSupporting,
-} from 'ordpool-sdk';
+} from 'ordpool-sdk/core';
 import { buildPickerRows } from './wallet-picker-rows';
 
 /**
@@ -44,7 +44,7 @@ describe('buildPickerRows (Inscription, Desktop)', () => {
     const offer = alby?.allCapabilities.find((c) => c.displayName === 'Sell (create an offer)');
     expect(offer?.icon).toBe('✕');
     expect(offer?.wording).toBe('Not available with this wallet');
-    expect(offer?.caveat).toContain('signs EVERY input');
+    expect(offer?.caveat).toContain('cannot create offers');
   });
 
   it('tags a not-detected injected wallet with an available deep link as deep-link, others as download', () => {
@@ -57,6 +57,24 @@ describe('buildPickerRows (Inscription, Desktop)', () => {
     expect(xverse?.deepLink).toBe('https://connect.xverse.app/browser?url=x');
     const leather = deepLinked.find((r) => r.type === KnownOrdinalWalletType.leather);
     expect(leather?.kind).toBe('download');
+  });
+
+  it('offers exactly the desktop inscription set, in matrix order', () => {
+    // Positive-equality pin of the full ordered row set. Locks both the
+    // membership and the matrix order in one assertion; Phantom/Binance
+    // (mobile-only) being absent is a consequence of this list, not a
+    // separate negative check. If the SDK matrix reorders or adds/removes
+    // a desktop inscription wallet, this is the test that catches it.
+    expect(rows([]).map((r) => r.type)).toEqual([
+      KnownOrdinalWalletType.cat21wallet,
+      KnownOrdinalWalletType.xverse,
+      KnownOrdinalWalletType.leather,
+      KnownOrdinalWalletType.unisat,
+      KnownOrdinalWalletType.wizz,
+      KnownOrdinalWalletType.okx,
+      KnownOrdinalWalletType.alby,
+      KnownOrdinalWalletType.xpub,
+    ]);
   });
 
   it('excludes mobile-only wallets from the desktop set (Phantom, Binance)', () => {

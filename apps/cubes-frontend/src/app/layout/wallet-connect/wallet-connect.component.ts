@@ -3,8 +3,14 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NgbModal, NgbModalRef, NgbPopover, NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
 import {
   KnownOrdinalWallets, KnownOrdinalWalletType, WalletCapability, WalletPlatform,
-  WalletService, walletInAppBrowserDeepLink, walletsSupporting,
-} from 'ordpool-sdk';
+  walletInAppBrowserDeepLink, walletsSupporting,
+} from 'ordpool-sdk/core';
+// WalletService is an Angular @Injectable and lives only in the main
+// (Angular) entry, not in /core. The matrix symbols above are pure and
+// come from /core; the string-enum values are identity-equal across
+// both entries, so comparisons against a WalletService-sourced
+// `wallet.type` stay correct.
+import { WalletService } from 'ordpool-sdk';
 import { buildPickerRows } from './wallet-picker-rows';
 
 /**
@@ -128,7 +134,7 @@ export class WalletConnectComponent {
   }
 
   open(): void {
-    if (this.modalRef) return; // already open — remote-trigger no-op
+    if (this.modalRef) return; // already open: remote-trigger no-op
     this.connectButtonDisabled.set(false);
     this.connectError.set(null);
     this.modalRef = this.modalService.open(this.connectTemplate(), {

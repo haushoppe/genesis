@@ -439,3 +439,57 @@
   If you have any outstanding questions,
   <a routerLink="/faq">please refer to our FAQ section.</a>
 </p>
+
+<!-- Watch-only (xpub) export/paste signing bridge. Opened by psbtPrompt
+     while an xpub-wallet inscribe waits for the user to sign the commit
+     PSBT in their own wallet. Injected wallets never open it. -->
+<ng-template #psbtSignModal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="watch-only-sign-title">Sign in your own wallet</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="cancelSignedPsbt()"></button>
+  </div>
+  <div class="modal-body">
+    <p class="small text-muted mb-3">
+      Nothing is signed in your browser. Download or copy this unsigned PSBT, open it in
+      your wallet (Sparrow, Electrum, Coldcard, Ledger, Trezor, …), sign it, then paste the
+      signed PSBT back here. We finalize and broadcast it.
+    </p>
+
+    @if (psbtUnsigned(); as unsigned) {
+      <label class="form-label small fw-bold mb-1" for="watch-only-unsigned">Unsigned PSBT</label>
+      <textarea id="watch-only-unsigned"
+                class="form-control form-control-sm mb-2 font-monospace"
+                rows="3"
+                readonly
+                data-testid="watch-only-unsigned-psbt">{{ unsigned.base64 }}</textarea>
+      <div class="d-flex gap-2 mb-3">
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                data-testid="watch-only-copy"
+                (click)="copyUnsignedPsbt()">Copy</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                data-testid="watch-only-download"
+                (click)="downloadUnsignedPsbt()">Download .psbt</button>
+      </div>
+    }
+
+    <label class="form-label small fw-bold mb-1" for="watch-only-signed">Signed PSBT</label>
+    <textarea id="watch-only-signed"
+              class="form-control form-control-sm font-monospace"
+              rows="3"
+              autocomplete="off" autocapitalize="off" spellcheck="false"
+              placeholder="Paste the signed PSBT (base64 or hex)…"
+              data-testid="watch-only-signed-psbt"
+              [value]="psbtSignedInput()"
+              (input)="setSignedPsbtInput(signedField.value)"
+              #signedField></textarea>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelSignedPsbt()">Cancel</button>
+    <button type="button" class="btn btn-sm btn-primary"
+            data-testid="watch-only-submit"
+            [disabled]="!psbtSignedInput().trim()"
+            (click)="submitSignedPsbt()">
+      Finalize &amp; broadcast
+    </button>
+  </div>
+</ng-template>

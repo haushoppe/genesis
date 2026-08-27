@@ -25,9 +25,9 @@ describe('buildPickerRows (Inscription, Desktop)', () => {
     expect(xverse?.downloadLink).toBe('https://www.xverse.app/download');
   });
 
-  it('tags xpub as watch-only-deferred with no download link, regardless of detection', () => {
+  it('tags xpub as watch-only with no download link, regardless of detection', () => {
     const xpub = rows([]).find((r) => r.type === KnownOrdinalWalletType.xpub);
-    expect(xpub?.kind).toBe('watch-only-deferred');
+    expect(xpub?.kind).toBe('watch-only');
     expect(xpub?.downloadLink).toBeUndefined();
     expect(xpub?.signingModeLine).toBe('You sign in your own wallet (Sparrow, Coldcard, Ledger, …)');
   });

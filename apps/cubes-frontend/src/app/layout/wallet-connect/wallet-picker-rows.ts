@@ -61,10 +61,11 @@ export interface CapabilityLine {
  * - `deep-link`: injected wallet not present here, but reachable via its
  *   mobile in-app browser (a docs-verified deep link exists). "Open in X".
  * - `download`: injected wallet with no provider and no deep link (get it).
- * - `watch-only-deferred`: signs out-of-page. Wired in a follow-up slice
- *   (connectXpub + the PSBT export bridge in the mint flow); disabled here.
+ * - `watch-only`: signs out-of-page (Sparrow / Electrum / Coldcard / Ledger
+ *   / …). The row opens a paste-xpub connect; each inscribe then exports a
+ *   PSBT the user signs in their own wallet and pastes back.
  */
-export type WalletRowKind = 'connect' | 'deep-link' | 'download' | 'watch-only-deferred';
+export type WalletRowKind = 'connect' | 'deep-link' | 'download' | 'watch-only';
 
 export interface WalletRowVM {
   type: KnownOrdinalWalletType;
@@ -138,7 +139,7 @@ export function buildPickerRows(
     const detected = installedTypes.has(entry.wallet);
     const deepLink = entry.signingMode === 'watch-only' || detected ? null : deepLinkFor(entry.wallet);
     const kind: WalletRowKind =
-      entry.signingMode === 'watch-only' ? 'watch-only-deferred'
+      entry.signingMode === 'watch-only' ? 'watch-only'
         : detected ? 'connect'
           : deepLink ? 'deep-link'
             : 'download';

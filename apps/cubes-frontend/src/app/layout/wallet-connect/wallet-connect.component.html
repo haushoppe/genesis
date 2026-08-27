@@ -58,12 +58,12 @@
                   Get wallet
                 </a>
               }
-              @case ('watch-only-deferred') {
+              @case ('watch-only') {
                 <button type="button"
-                        class="btn btn-sm btn-outline-secondary text-nowrap"
-                        disabled
-                        title="Watch-only export is coming soon on cubes.">
-                  Watch-only (soon)
+                        class="btn btn-sm btn-outline-light text-nowrap"
+                        [attr.data-testid]="'wallet-connect-' + row.type"
+                        (click)="openXpubForm()">
+                  Connect (xpub)
                 </button>
               }
             }
@@ -112,6 +112,59 @@
         </li>
       }
     </ul>
+
+    @if (xpubOpen()) {
+      <div class="xpub-form border rounded p-3 mt-3" data-testid="wallet-xpub-form">
+        <p class="fw-bold small mb-1">Connect a watch-only wallet</p>
+        <p class="text-muted small mb-2">
+          Paste your account extended public key (xpub / ypub / zpub / tpub). Nothing is
+          signed in the browser: every inscribe hands you a PSBT to sign in your own wallet
+          (Sparrow, Electrum, Coldcard, Ledger, Trezor, …) and paste back.
+        </p>
+
+        <textarea class="form-control form-control-sm mb-2 font-monospace"
+                  rows="3"
+                  autocomplete="off" autocapitalize="off" spellcheck="false"
+                  placeholder="xpub… / ypub… / zpub… / tpub…"
+                  data-testid="wallet-xpub-input"
+                  [value]="xpubInput()"
+                  (input)="setXpubInput(xpubField.value)"
+                  #xpubField></textarea>
+
+        @if (xpubNeedsScriptType()) {
+          <label class="form-label small mb-1" for="xpub-script-type">Account type</label>
+          <select id="xpub-script-type"
+                  class="form-select form-select-sm mb-2"
+                  data-testid="wallet-xpub-script-type"
+                  (change)="setXpubScriptType(scriptSel.value)"
+                  #scriptSel>
+            <option value="p2tr" [selected]="xpubScriptType() === 'p2tr'">Taproot (recommended)</option>
+            <option value="p2wpkh" [selected]="xpubScriptType() === 'p2wpkh'">Native SegWit</option>
+            <option value="p2sh-p2wpkh" [selected]="xpubScriptType() === 'p2sh-p2wpkh'">Nested SegWit</option>
+            <option value="p2pkh" [selected]="xpubScriptType() === 'p2pkh'">Legacy</option>
+          </select>
+        }
+
+        @if (xpubError(); as err) {
+          <p class="alert alert-warning py-2 px-3 mb-2 small" role="alert" data-testid="wallet-xpub-error">{{ err }}</p>
+        }
+
+        <div class="d-flex gap-2">
+          <button type="button"
+                  class="btn btn-sm btn-outline-light text-nowrap"
+                  data-testid="wallet-xpub-connect"
+                  [disabled]="xpubConnecting() || !xpubInput().trim()"
+                  (click)="connectXpub()">
+            {{ xpubConnecting() ? 'Scanning…' : 'Connect' }}
+          </button>
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary text-nowrap"
+                  (click)="cancelXpubForm()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    }
 
     @if (noneInstalled()) {
       <p class="text-muted small mb-0 mt-3" data-testid="wallet-picker-empty">

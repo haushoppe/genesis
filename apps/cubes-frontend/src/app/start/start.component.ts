@@ -1,9 +1,9 @@
 import { DatePipe, DecimalPipe, SlicePipe } from '@angular/common';
-import { Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, signal, TemplateRef, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, max, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
-import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef, NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 import {
   AUTO_SCAN_MAX_VALUE_SAT,
   bucketOf,
@@ -25,7 +25,7 @@ import {
   validateInscribeOperation,
   WalletService,
 } from 'ordpool-sdk';
-import { debounceTime, firstValueFrom, map } from 'rxjs';
+import { catchError, debounceTime, finalize, firstValueFrom, from, map, Observable, throwError } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
@@ -173,6 +173,7 @@ export class StartComponent {
   private readonly inscriptionLookup = inject(InscriptionLookupService);
   private readonly priceService = inject(PriceService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(NgbModal);
 
   protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
   protected readonly feeTiers = FEE_TIERS;
@@ -300,6 +301,15 @@ export class StartComponent {
    * the drawer; clears on the next successful mint attempt.
    */
   protected readonly mintGateError = signal<string | null>(null);
+
+  // ---------- Watch-only (xpub) export/paste signing bridge ----------
+
+  /** The unsigned PSBT shown to the user while a watch-only mint waits.
+   *  Null except while the export/paste modal is open. */
+  protected readonly psbtUnsigned = signal<{ base64: string; hex: string } | null>(null);
+  protected readonly psbtSignedInput = signal('');
+  private psbtModalRef: NgbModalRef | undefined;
+  private readonly psbtSignTemplate = viewChild.required<TemplateRef<unknown>>('psbtSignModal');
 
   /**
    * User-facing wallet spend for the auto-picked UTXO — miner fees
@@ -609,6 +619,68 @@ export class StartComponent {
     this.checkoutOpen.set(false);
   }
 
+  /**
+   * The watch-only signing bridge. `InscribeMintOrchestrator.mint()` invokes
+   * this only for a watch-only (xpub) wallet: it hands us the commit's
+   * unsigned PSBT, we open the export/paste modal, and resolve with the
+   * user's signed PSBT (base64 or hex). Injected browser wallets never call
+   * it, so passing it unconditionally is safe. The SDK finalizes +
+   * broadcasts whatever comes back.
+   */
+  private readonly psbtPrompt = (unsigned: { base64: string; hex: string }): Observable<string> => {
+    this.psbtUnsigned.set(unsigned);
+    this.psbtSignedInput.set('');
+    const ref = this.modalService.open(this.psbtSignTemplate(), {
+      centered: true,
+      backdrop: 'static',
+      keyboard: false,
+      ariaLabelledBy: 'watch-only-sign-title',
+    });
+    this.psbtModalRef = ref;
+    return from(ref.result).pipe(
+      map((signed) => (typeof signed === 'string' ? signed.trim() : '')),
+      // Dismiss (Cancel / X) rejects the modal result; turn that into a
+      // clean cancel error instead of leaking an ng-bootstrap reason.
+      catchError(() => throwError(() => new Error('Watch-only signing was cancelled.'))),
+      finalize(() => { this.psbtModalRef = undefined; this.psbtUnsigned.set(null); }),
+    );
+  };
+
+  submitSignedPsbt() {
+    const signed = this.psbtSignedInput().trim();
+    if (!signed) return;
+    this.psbtModalRef?.close(signed);
+  }
+
+  cancelSignedPsbt() {
+    this.psbtModalRef?.dismiss();
+  }
+
+  setSignedPsbtInput(value: string) {
+    this.psbtSignedInput.set(value);
+  }
+
+  copyUnsignedPsbt() {
+    const unsigned = this.psbtUnsigned();
+    if (!unsigned || typeof navigator === 'undefined' || !navigator.clipboard) return;
+    navigator.clipboard.writeText(unsigned.base64).catch(() => {/* ignore */});
+  }
+
+  downloadUnsignedPsbt() {
+    const unsigned = this.psbtUnsigned();
+    if (!unsigned || typeof document === 'undefined') return;
+    // Decode the base64 PSBT to its raw bytes so the download is a real
+    // binary .psbt file (what Sparrow / Electrum "Open PSBT file" expect).
+    const bytes = Uint8Array.from(atob(unsigned.base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'cube-inscribe-unsigned.psbt';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   async mint() {
     if (!this.canMint()) return;
     const wallet = this.connectedWallet();
@@ -678,7 +750,7 @@ export class StartComponent {
     });
 
     try {
-      const result = await firstValueFrom(this.orchestrator.mint());
+      const result = await firstValueFrom(this.orchestrator.mint(this.psbtPrompt));
       const form = this.mintFormData();
       const inscriptionIds = INSCRIPTION_ID_FIELDS.map((k) => form[k]);
       this.pastMints.record(result.commitTxId, result.revealTxId, inscriptionIds);

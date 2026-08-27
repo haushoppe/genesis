@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NgbModal, NgbModalRef, NgbPopover, NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
 import {
   KnownOrdinalWallets, KnownOrdinalWalletType, WalletCapability, WalletPlatform,
-  walletInAppBrowserDeepLink, walletsSupporting,
+  WatchOnlyScriptType, walletInAppBrowserDeepLink, walletsSupporting,
 } from 'ordpool-sdk/core';
 // WalletService is an Angular @Injectable and lives only in the main
 // (Angular) entry, not in /core. The matrix symbols above are pure and
@@ -11,7 +11,10 @@ import {
 // both entries, so comparisons against a WalletService-sourced
 // `wallet.type` stay correct.
 import { WalletService } from 'ordpool-sdk';
+
+import { environment } from '../../../environments/environment';
 import { buildPickerRows } from './wallet-picker-rows';
+import { makeElectrsUtxoProbe } from './watch-only-probe';
 
 /**
  * Where this browser can reach a wallet provider. Desktop is the
@@ -109,6 +112,18 @@ export class WalletConnectComponent {
   protected readonly connectButtonDisabled = signal(false);
   protected readonly connectError = signal<string | null>(null);
 
+  // --- Watch-only (xpub) paste-connect state ------------------------------
+  /** True while the paste-xpub form is expanded inside the connect modal. */
+  protected readonly xpubOpen = signal(false);
+  /** The pasted account extended public key. */
+  protected readonly xpubInput = signal('');
+  /** True once the SDK reports the key is script-type-ambiguous (plain
+   *  xpub/tpub), which is when the account-type <select> is shown. */
+  protected readonly xpubNeedsScriptType = signal(false);
+  protected readonly xpubScriptType = signal<WatchOnlyScriptType>('p2tr');
+  protected readonly xpubError = signal<string | null>(null);
+  protected readonly xpubConnecting = signal(false);
+
   private readonly connectTemplate = viewChild.required<TemplateRef<unknown>>('connectModal');
   private modalRef: NgbModalRef | undefined;
 
@@ -137,6 +152,7 @@ export class WalletConnectComponent {
     if (this.modalRef) return; // already open: remote-trigger no-op
     this.connectButtonDisabled.set(false);
     this.connectError.set(null);
+    this.xpubOpen.set(false);
     this.modalRef = this.modalService.open(this.connectTemplate(), {
       ariaLabelledBy: 'wallet-connect-title',
       centered: true,
@@ -171,6 +187,74 @@ export class WalletConnectComponent {
         error: (err) => {
           this.connectError.set(err instanceof Error ? err.message : String(err));
           this.connectButtonDisabled.set(false);
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  /** Expand the paste-xpub form (from the watch-only row's Connect button). */
+  openXpubForm(): void {
+    this.xpubOpen.set(true);
+    this.xpubInput.set('');
+    this.xpubNeedsScriptType.set(false);
+    this.xpubScriptType.set('p2tr');
+    this.xpubError.set(null);
+    this.xpubConnecting.set(false);
+  }
+
+  cancelXpubForm(): void {
+    this.xpubOpen.set(false);
+    this.xpubError.set(null);
+  }
+
+  setXpubInput(value: string): void {
+    this.xpubInput.set(value);
+  }
+
+  setXpubScriptType(value: string): void {
+    this.xpubScriptType.set(value as WatchOnlyScriptType);
+  }
+
+  /**
+   * Connect a watch-only wallet from the pasted account extended public key.
+   * Composes the SDK's `connectXpub` (derive + scan + auto-pick) with an
+   * electrs probe wired to this app's mempool API. On the SDK's
+   * `script-type-ambiguous` error (a plain xpub/tpub), reveal the
+   * account-type picker and let the user retry — mirroring the cat21 sites.
+   */
+  connectXpub(): void {
+    const extendedPublicKey = this.xpubInput().trim();
+    if (!extendedPublicKey) {
+      this.xpubError.set('Paste your account extended public key (xpub / ypub / zpub / tpub) first.');
+      return;
+    }
+    this.xpubError.set(null);
+    this.xpubConnecting.set(true);
+    // Only forward scriptType once the SDK has told us the key is
+    // ambiguous: a SLIP-132 prefix (ypub/zpub/…) implies the type, and
+    // passing a conflicting one throws.
+    const scriptType = this.xpubNeedsScriptType() ? this.xpubScriptType() : undefined;
+    this.walletService.connectXpub({
+      extendedPublicKey,
+      scriptType,
+      probe: makeElectrsUtxoProbe(environment.mempoolApiUrl),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.xpubConnecting.set(false);
+          // connectedWallet$ fires → the constructor effect closes the modal.
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.xpubConnecting.set(false);
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes('script-type-ambiguous')) {
+            this.xpubNeedsScriptType.set(true);
+            this.xpubError.set('This looks like a plain xpub/tpub. Pick the account type (Taproot is recommended for ordinals), then connect again.');
+          } else {
+            this.xpubError.set(msg);
+          }
           this.cdr.markForCheck();
         },
       });

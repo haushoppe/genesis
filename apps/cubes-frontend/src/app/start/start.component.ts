@@ -101,9 +101,11 @@ const mintFormSchema = schema<MintFormData>((path) => {
   pattern(path.inscriptionId6, INSCRIPTION_ID_PATTERN);
   required(path.feeRate);
   min(path.feeRate, 1);
-  // Reject Infinity (`1e999`) / NaN and cap at the SDK gate's 1000
-  // sat/vB ceiling so a fat-fingered rate can't sail past validation
-  // (Infinity <= 1000 and NaN <= 1000 both evaluate false).
+  // Cap at the SDK gate's 1000 sat/vB ceiling and reject Infinity (from a
+  // `1e999` input): max() flags value > 1000, and Infinity > 1000 is true.
+  // NaN can't reach here (a number input yields null, caught by required
+  // above); max()/min() treat NaN as valid, so this guards the fat-fingered
+  // huge rate, not NaN.
   max(path.feeRate, 1000);
 });
 
@@ -395,6 +397,10 @@ export class StartComponent {
     }))).pipe(
       debounceTime(150),
       map(({ feeRate, body, warn }): number | null => {
+        // Skip the 3-PSBT sim once a UTXO is selected: the template hides
+        // this pre-connect estimate behind `!selectedRow()`, and
+        // `totalSpendLabel` shows the exact per-UTXO cost instead.
+        if (this.selectedRow()) return null;
         // Reject non-finite rates (Infinity from a `1e999` input, NaN) so
         // the Cost line never renders "Infinity sat" / "NaN sat".
         if (warn || !Number.isFinite(feeRate) || feeRate <= 0) return null;

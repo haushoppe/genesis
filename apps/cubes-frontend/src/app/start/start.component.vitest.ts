@@ -41,7 +41,7 @@ import { StartComponent } from './start.component';
  * modal's submit closes with the trimmed pasted PSBT. The PSBT resolution
  * itself is unit-tested in watch-only-sign-bridge.
  */
-describe('StartComponent — watch-only mint wiring', () => {
+describe('StartComponent: watch-only mint wiring', () => {
   const VALID_ID = `${'a'.repeat(64)}i0`;
   const dummy = getDummyKeypair(toScureNetwork(Network.Regtest));
   const walletAddress = dummy.addressP2TR; // valid bcrt1p (regtest taproot)
@@ -134,5 +134,33 @@ describe('StartComponent — watch-only mint wiring', () => {
     component.submitSignedPsbt();
 
     expect(close).toHaveBeenCalledWith('cHNidP8BAHECpasted');
+  });
+
+  it('rejects a non-finite or over-ceiling feeRate (guards the SDK 1000 sat/vB gate)', () => {
+    const c = component as unknown as {
+      mintForm: () => { valid(): boolean };
+      mintFormData: { set(v: unknown): void };
+    };
+    const setFee = (feeRate: number) => c.mintFormData.set({
+      inscriptionId1: VALID_ID, inscriptionId2: VALID_ID, inscriptionId3: VALID_ID,
+      inscriptionId4: VALID_ID, inscriptionId5: VALID_ID, inscriptionId6: VALID_ID,
+      title: '', rotationSpeedX: '', rotationSpeedY: '', colorPane: '', bgColor1: '', bgColor2: '',
+      feeRate,
+    });
+    setFee(10);
+    expect(c.mintForm().valid()).toBe(true);
+    setFee(1001);
+    expect(c.mintForm().valid()).toBe(false);
+    setFee(Infinity);
+    expect(c.mintForm().valid()).toBe(false);
+  });
+
+  it('hides the pre-connect estimate once a UTXO is selected (selectedRow drives the gate)', () => {
+    const c = component as unknown as { selectedRow(): unknown };
+    // The orchestrator mock has a viable sim + selectedUtxo, so a row is selected.
+    expect(c.selectedRow()).not.toBeNull();
+    // With no selected UTXO the gate (`!selectedRow()`) would show the estimate again.
+    orchestrator.selectedUtxo.set(null);
+    expect(c.selectedRow()).toBeNull();
   });
 });

@@ -208,6 +208,11 @@ export class WalletConnectComponent {
 
   setXpubInput(value: string): void {
     this.xpubInput.set(value);
+    // A fresh key is re-evaluated from scratch: a SLIP-132 prefix (ypub /
+    // zpub) implies its type, so clear the ambiguity latch and any prior
+    // error instead of forwarding a scriptType chosen for a previous key.
+    this.xpubNeedsScriptType.set(false);
+    this.xpubError.set(null);
   }
 
   setXpubScriptType(value: string): void {
@@ -219,7 +224,7 @@ export class WalletConnectComponent {
    * Composes the SDK's `connectXpub` (derive + scan + auto-pick) with an
    * electrs probe wired to this app's mempool API. On the SDK's
    * `script-type-ambiguous` error (a plain xpub/tpub), reveal the
-   * account-type picker and let the user retry — mirroring the cat21 sites.
+   * account-type picker and let the user retry, mirroring the cat21 sites.
    */
   connectXpub(): void {
     const extendedPublicKey = this.xpubInput().trim();

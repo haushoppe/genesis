@@ -14,7 +14,7 @@ import { WalletConnectComponent } from './wallet-connect.component';
  * args handed to WalletService.connectXpub and the script-type-ambiguous
  * retry, per wallet-picker-watch-only-shared.md.
  */
-describe('WalletConnectComponent — watch-only connect', () => {
+describe('WalletConnectComponent: watch-only connect', () => {
   let connectXpub: ReturnType<typeof vi.fn>;
   let component: WalletConnectComponent;
 
@@ -41,7 +41,7 @@ describe('WalletConnectComponent — watch-only connect', () => {
     });
     // Construct the class in an injection context (so `inject()` /
     // `toSignal` / `effect` resolve) WITHOUT the injector instantiating a
-    // component — the latter would demand a resolved template, which this
+    // component; the latter would demand a resolved template, which this
     // template-compiler-free vitest setup does not provide.
     component = TestBed.runInInjectionContext(() => new WalletConnectComponent());
   });
@@ -92,13 +92,32 @@ describe('WalletConnectComponent — watch-only connect', () => {
     });
   });
 
+  it('re-evaluates a freshly pasted key: editing after an ambiguous xpub clears the script-type latch', () => {
+    component.setXpubInput('xpubEXAMPLE');
+    connectXpub.mockReturnValueOnce(throwError(() => new Error(
+      'Watch-only: this key prefix (xpub/tpub) is script-type-ambiguous; pass scriptType',
+    )));
+    component.connectXpub();
+    expect((component as unknown as { xpubNeedsScriptType(): boolean }).xpubNeedsScriptType()).toBe(true);
+
+    // Paste a SLIP-132 key next: the latch must reset so no scriptType is forced.
+    component.setXpubInput('zpubEXAMPLE');
+    expect((component as unknown as { xpubNeedsScriptType(): boolean }).xpubNeedsScriptType()).toBe(false);
+
+    connectXpub.mockReturnValueOnce(of({
+      type: KnownOrdinalWalletType.xpub, ordinalsAddress: 'a', paymentAddress: 'b',
+    }));
+    component.connectXpub();
+    expect(connectXpub).toHaveBeenLastCalledWith(expect.objectContaining({ scriptType: undefined }));
+  });
+
   it('guards an empty key: shows the paste hint and makes no wallet call', () => {
     component.setXpubInput('   ');
     component.connectXpub();
     expect((component as unknown as { xpubError(): string | null }).xpubError())
       .toBe('Paste your account extended public key (xpub / ypub / zpub / tpub) first.');
 
-    // A subsequent valid attempt is the FIRST real call — the guarded one
+    // A subsequent valid attempt is the FIRST real call; the guarded one
     // never reached the wallet (positive-equality on the call count).
     component.setXpubInput('zpubEXAMPLE');
     connectXpub.mockReturnValueOnce(of({

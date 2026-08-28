@@ -2,6 +2,12 @@
 // so `dist-core/` is never built; the main entry's checked-in dist resolves.
 import type { AddressProbe } from 'ordpool-sdk';
 
+// Every CAT-21 cat UTXO is pinned to 546 sats (ordpool-sdk HARD RULE
+// "cat UTXO is always 546 sats"), and 546 sats can't fund an inscription
+// anyway. electrs can't flag a cat UTXO, so this postage floor is the
+// cat/dust proxy that keeps funded/fundedSats to spendable value.
+const CAT21_POSTAGE_SATS = 546;
+
 /**
  * Builds the `probe` callback `WalletService.connectXpub` / `scanWatchOnly`
  * require. The SDK owns derive + rank; the consumer owns the on-chain I/O.
@@ -13,8 +19,10 @@ import type { AddressProbe } from 'ordpool-sdk';
  *
  * `hasCat` is deliberately omitted: cubes inscribes, it does not read cats,
  * so the scan's ordinals identity falls back to receive index 0 (the SDK's
- * documented default) while the payment identity is the highest-funded
- * address in the scanned window.
+ * documented default). For the PAYMENT identity, `funded`/`fundedSats`
+ * count only UTXOs above the CAT-21 postage floor, so a cat-bearing address
+ * is never auto-picked as the payment source (the AddressProbe contract
+ * defines these as spendable, non-cat value).
  */
 export function makeElectrsUtxoProbe(
   mempoolApiUrl: string,
@@ -25,7 +33,11 @@ export function makeElectrsUtxoProbe(
       throw new Error(`Watch-only scan: electrs returned HTTP ${res.status} for ${address}`);
     }
     const utxos = (await res.json()) as ReadonlyArray<{ value: number }>;
-    const fundedSats = utxos.reduce((sum, u) => sum + (u.value ?? 0), 0);
-    return { funded: utxos.length > 0, fundedSats };
+    // Exclude cat-postage / dust UTXOs so a cat-bearing address is not
+    // ranked as the best payment identity (AddressProbe.funded/fundedSats
+    // are spendable, non-cat value; electrs alone can't tell them apart).
+    const spendable = utxos.filter((u) => (u.value ?? 0) > CAT21_POSTAGE_SATS);
+    const fundedSats = spendable.reduce((sum, u) => sum + (u.value ?? 0), 0);
+    return { funded: spendable.length > 0, fundedSats };
   };
 }

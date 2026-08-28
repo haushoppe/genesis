@@ -101,7 +101,9 @@ function supportWording(status: WalletCapabilityStatus): { icon: string; wording
       // Proven, plus the caveat sentence when the matrix carries one.
       return { icon: '✓', wording: 'Verified end-to-end on our test network', caveat: status.caveat };
     case CapabilitySupport.Adapter:
-      return { icon: '○', wording: 'Supported, not yet verified end-to-end' };
+      // Forward the caveat too: no Adapter row carries one today, but the
+      // matrix is the source of truth, so a future one must not be dropped.
+      return { icon: '○', wording: 'Supported, not yet verified end-to-end', caveat: status.caveat };
     case CapabilitySupport.Unsupported:
       return { icon: '✕', wording: 'Not available with this wallet', caveat: status.caveat };
   }

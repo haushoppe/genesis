@@ -7,11 +7,12 @@ import { makeElectrsUtxoProbe } from './watch-only-probe';
  * funded/fundedSats reduction the SDK's auto-pick ranks on.
  */
 describe('makeElectrsUtxoProbe', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-  it('reports funded + summed sats and hits the electrs utxo URL', async () => {
+  it('counts only spendable UTXOs above the cat-postage floor, and hits the electrs utxo URL', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      // 1000 = spendable; 546 = CAT-21 postage (a bonus cat), must be excluded.
       json: async () => [{ value: 1000 }, { value: 546 }],
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -19,8 +20,21 @@ describe('makeElectrsUtxoProbe', () => {
     const probe = makeElectrsUtxoProbe('https://api.example.test');
     const result = await probe('bc1pexample');
 
-    expect(result).toEqual({ funded: true, fundedSats: 1546 });
+    expect(result).toEqual({ funded: true, fundedSats: 1000 });
     expect(fetchMock).toHaveBeenCalledWith('https://api.example.test/api/address/bc1pexample/utxo');
+  });
+
+  it('reports an address holding only cat-postage / dust UTXOs as not funded', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ value: 546 }, { value: 330 }],
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const probe = makeElectrsUtxoProbe('https://api.example.test');
+    const result = await probe('bc1ponlycats');
+
+    expect(result).toEqual({ funded: false, fundedSats: 0 });
   });
 
   it('builds a same-origin URL for the regtest empty base', async () => {

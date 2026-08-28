@@ -28,6 +28,7 @@ import {
 import { debounceTime, finalize, firstValueFrom, map, Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
+import { yearsOnChainLabel } from './years-on-chain';
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
 import { CubePreviewTitleComponent } from '../layout/cube-preview/cube-preview-title.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
@@ -219,6 +220,11 @@ export class StartComponent {
     params: () => ({ collection: this.collectionSymbol() }),
     stream: ({ params }) => this.cubeSuggestionService.getCubeSuggestion(params.collection),
   });
+
+  /** "Two" / "Three" / …: whole years the cubes have been on-chain,
+   *  derived from the 23 June 2023 genesis so the landing copy ticks
+   *  over on its own. */
+  protected readonly yearsOnChain = yearsOnChainLabel();
 
   // ---------- Wallet + orchestrator signals ----------
 

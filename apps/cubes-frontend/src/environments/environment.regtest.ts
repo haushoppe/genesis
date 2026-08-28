@@ -21,6 +21,9 @@ export const environment = {
   // (stripping the `/api` prefix, since electrs's Esplora endpoints
   // live at the root — /address/{}/utxo, /tx, /tx/{}/hex, etc.).
   mempoolApiUrl: '',
+  // No local cat21-ord in the regtest stack, so the probe falls back to the
+  // 546-sat postage floor (regtest funding UTXOs are plain BTC, not cats).
+  cat21OrdApiUrl: '',
   haushoppeTipAddress: 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk',
   haushoppeTipSats: 1000,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',

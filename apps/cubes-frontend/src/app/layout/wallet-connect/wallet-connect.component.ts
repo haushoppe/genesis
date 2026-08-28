@@ -241,7 +241,7 @@ export class WalletConnectComponent {
     this.walletService.connectXpub({
       extendedPublicKey,
       scriptType,
-      probe: makeElectrsUtxoProbe(environment.mempoolApiUrl),
+      probe: makeElectrsUtxoProbe(environment.mempoolApiUrl, environment.cat21OrdApiUrl),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

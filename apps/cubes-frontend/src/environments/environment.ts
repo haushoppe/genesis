@@ -12,6 +12,13 @@ export const environment = {
    */
   mempoolApiUrl: 'https://api.ordpool.space',
   /**
+   * cat21-ord, our authoritative CAT-21 index. The watch-only probe hits
+   * `${cat21OrdApiUrl}/output/<outpoint>` per UTXO to drop cat-bearing
+   * UTXOs from the spendable payment identity. Empty falls back to the
+   * 546-sat postage floor (see watch-only-probe.ts).
+   */
+  cat21OrdApiUrl: 'https://ord.cat21.space',
+  /**
    * HAUS HOPPE donation address baked as the silent reveal tip.
    * Regtest replaces this with a bcrt1p… address so the tip output
    * is spendable on the regtest chain.

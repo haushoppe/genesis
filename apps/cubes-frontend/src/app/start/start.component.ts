@@ -25,7 +25,7 @@ import {
   validateInscribeOperation,
   WalletService,
 } from 'ordpool-sdk';
-import { catchError, debounceTime, finalize, firstValueFrom, from, map, Observable, throwError } from 'rxjs';
+import { debounceTime, finalize, firstValueFrom, map, Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
@@ -39,6 +39,7 @@ import { InscriptionLookupService } from '../services/inscription-lookup.service
 import { PastMintsService } from '../services/past-mints.service';
 import { PriceService } from '../services/price.service';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
+import { bridgeSignedPsbt } from './watch-only-sign-bridge';
 
 /**
  * HAUS HOPPE donation address + amount — the reveal tx's optional
@@ -637,11 +638,9 @@ export class StartComponent {
       ariaLabelledBy: 'watch-only-sign-title',
     });
     this.psbtModalRef = ref;
-    return from(ref.result).pipe(
-      map((signed) => (typeof signed === 'string' ? signed.trim() : '')),
-      // Dismiss (Cancel / X) rejects the modal result; turn that into a
-      // clean cancel error instead of leaking an ng-bootstrap reason.
-      catchError(() => throwError(() => new Error('Watch-only signing was cancelled.'))),
+    // bridgeSignedPsbt maps the modal result → trimmed signed PSBT, or a
+    // clean cancel error on dismiss (unit-tested in watch-only-sign-bridge).
+    return bridgeSignedPsbt(ref.result).pipe(
       finalize(() => { this.psbtModalRef = undefined; this.psbtUnsigned.set(null); }),
     );
   };

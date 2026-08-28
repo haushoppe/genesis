@@ -1,16 +1,15 @@
 import { ChangeDetectorRef, Component, DestroyRef, TemplateRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NgbModal, NgbModalRef, NgbPopover, NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
+// All from the main entry, not `ordpool-sdk/core`: the genesis CI installs
+// with `npm ci --ignore-scripts`, so the SDK's prepare step never builds
+// `dist-core/` (what `/core` maps to, and which is not checked in). The main
+// entry's `dist/` (Angular fesm) is checked in and always resolves without a
+// build step, and it also carries WalletService (the Angular @Injectable).
 import {
   KnownOrdinalWallets, KnownOrdinalWalletType, WalletCapability, WalletPlatform,
-  WatchOnlyScriptType, walletInAppBrowserDeepLink, walletsSupporting,
-} from 'ordpool-sdk/core';
-// WalletService is an Angular @Injectable and lives only in the main
-// (Angular) entry, not in /core. The matrix symbols above are pure and
-// come from /core; the string-enum values are identity-equal across
-// both entries, so comparisons against a WalletService-sourced
-// `wallet.type` stay correct.
-import { WalletService } from 'ordpool-sdk';
+  WalletService, WatchOnlyScriptType, walletInAppBrowserDeepLink, walletsSupporting,
+} from 'ordpool-sdk';
 
 import { environment } from '../../../environments/environment';
 import { buildPickerRows } from './wallet-picker-rows';

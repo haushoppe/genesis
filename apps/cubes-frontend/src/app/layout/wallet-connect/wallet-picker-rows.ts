@@ -1,3 +1,8 @@
+// Imported from the main entry, not `ordpool-sdk/core`: the genesis CI
+// installs with `npm ci --ignore-scripts`, so the SDK's prepare step never
+// builds `dist-core/` (what `/core` maps to, and which is not checked in).
+// The main entry's `dist/` is checked in and always resolves without a build
+// step. These matrix symbols are pure data either way.
 import {
   CapabilitySupport,
   KnownOrdinalWallet,
@@ -7,7 +12,7 @@ import {
   WalletMatrixEntry,
   WalletPlatform,
   capabilityOf,
-} from 'ordpool-sdk/core';
+} from 'ordpool-sdk';
 
 /**
  * Presentation model that turns SDK capability-matrix rows into the

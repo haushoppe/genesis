@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   KnownOrdinalWallets, KnownOrdinalWalletType, WalletCapability, WalletPlatform, walletsSupporting,
-} from 'ordpool-sdk/core';
+} from 'ordpool-sdk';
 import { buildPickerRows } from './wallet-picker-rows';
 
 /**

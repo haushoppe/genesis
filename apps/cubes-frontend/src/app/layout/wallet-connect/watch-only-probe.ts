@@ -1,4 +1,6 @@
-import type { AddressProbe } from 'ordpool-sdk/core';
+// Main entry, not `/core`: the genesis CI installs with `--ignore-scripts`,
+// so `dist-core/` is never built; the main entry's checked-in dist resolves.
+import type { AddressProbe } from 'ordpool-sdk';
 
 /**
  * Builds the `probe` callback `WalletService.connectXpub` / `scanWatchOnly`

@@ -2,7 +2,6 @@ export const environment = {
   production: true,
   api: 'https://backend.haushoppe.art',
   mempoolApiUrl: 'https://api.ordpool.space',
-  cat21OrdApiUrl: 'https://ord.cat21.space',
   haushoppeTipAddress: '???',
   haushoppeTipSats: 1000,
   ordinalsExplorerIframe: 'https://ordinals.com/preview/',

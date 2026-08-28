@@ -6,6 +6,7 @@
 import {
   CapabilitySupport,
   KnownOrdinalWallet,
+  KnownOrdinalWallets,
   KnownOrdinalWalletType,
   WalletCapability,
   WalletCapabilityStatus,
@@ -37,17 +38,6 @@ const CAPABILITY_DISPLAY_NAMES: Record<WalletCapability, string> = {
   [WalletCapability.InscriptionParentChild]: 'Collections (parent/child)',
   [WalletCapability.SignMessage]: 'Sign a message',
 };
-
-/** Fixed display order for the "everything this wallet can do" list. */
-const CAPABILITY_ORDER: readonly WalletCapability[] = [
-  WalletCapability.Cat21Mint,
-  WalletCapability.Cat21Transfer,
-  WalletCapability.Cat21OfferCreate,
-  WalletCapability.Cat21OfferAccept,
-  WalletCapability.Inscription,
-  WalletCapability.InscriptionParentChild,
-  WalletCapability.SignMessage,
-];
 
 /** One capability line in the info popover. */
 export interface CapabilityLine {
@@ -86,10 +76,10 @@ export interface WalletRowVM {
   platforms: string[];
   /** "Signs in your browser" / "You sign in your own wallet …". */
   signingModeLine: string;
-  /** The current page action (Inscribe) status for this wallet. */
+  /** The current page action (Inscribe) status for this wallet. cubes is a
+   *  single-action site, so the popover shows only this, not the full
+   *  capability list (X-3: single-action → action capability). */
   actionCapability: CapabilityLine;
-  /** All seven capabilities, in display order. */
-  allCapabilities: CapabilityLine[];
   /** Wallet-level note, shown as the popover footer. */
   note?: string;
 }
@@ -119,8 +109,11 @@ function platformLabel(platform: WalletPlatform): string {
 }
 
 function signingModeLine(mode: WalletMatrixEntry['signingMode']): string {
+  // The watch-only wallet list comes from the SDK matrix (F2: single source
+  // of truth, `KnownOrdinalWallets[xpub].subLabel`), never a hardcoded string,
+  // so it cannot drift from the sister sites.
   return mode === 'watch-only'
-    ? 'You sign in your own wallet (Sparrow, Coldcard, Ledger, …)'
+    ? `You sign in your own wallet (${KnownOrdinalWallets[KnownOrdinalWalletType.xpub].subLabel})`
     : 'Signs in your browser';
 }
 
@@ -161,7 +154,6 @@ export function buildPickerRows(
       platforms: entry.platforms.map(platformLabel),
       signingModeLine: signingModeLine(entry.signingMode),
       actionCapability: capabilityLine(entry.wallet, action),
-      allCapabilities: CAPABILITY_ORDER.map((c) => capabilityLine(entry.wallet, c)),
       note: entry.note,
     };
   });

@@ -89,21 +89,6 @@
                 }
               </div>
 
-              <div class="mb-2">
-                <div class="fw-bold">Everything this wallet can do here</div>
-                <ul class="list-unstyled mb-0">
-                  @for (c of row.allCapabilities; track c.displayName) {
-                    <li class="cap-line">
-                      <span class="cap-icon">{{ c.icon }}</span>
-                      <span class="cap-name">{{ c.displayName }}</span>
-                      @if (c.caveat) {
-                        <span class="cap-caveat text-muted d-block">{{ c.caveat }}</span>
-                      }
-                    </li>
-                  }
-                </ul>
-              </div>
-
               @if (row.note) {
                 <div class="cap-note text-muted border-top pt-2">{{ row.note }}</div>
               }

@@ -7,13 +7,13 @@ import { NgbModal, NgbModalRef, NgbPopover, NgbPopoverModule } from '@ng-bootstr
 // entry's `dist/` (Angular fesm) is checked in and always resolves without a
 // build step, and it also carries WalletService (the Angular @Injectable).
 import {
-  KnownOrdinalWallets, KnownOrdinalWalletType, WalletCapability, WalletPlatform,
-  WalletService, WatchOnlyScriptType, walletInAppBrowserDeepLink, walletsSupporting,
+  cat21Config, KnownOrdinalWallets, KnownOrdinalWalletType, makeWatchOnlyProbe,
+  WalletCapability, WalletPlatform, WalletService, WatchOnlyScriptType,
+  walletInAppBrowserDeepLink, walletsSupporting,
 } from 'ordpool-sdk';
 
 import { environment } from '../../../environments/environment';
 import { buildPickerRows } from './wallet-picker-rows';
-import { makeElectrsUtxoProbe } from './watch-only-probe';
 
 /**
  * Where this browser can reach a wallet provider. Desktop is the
@@ -52,6 +52,7 @@ function detectPlatform(): WalletPlatform {
 })
 export class WalletConnectComponent {
   private readonly walletService = inject(WalletService);
+  private readonly sdkConfig = inject(cat21Config);
   private readonly modalService = inject(NgbModal);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
@@ -65,10 +66,15 @@ export class WalletConnectComponent {
    *  doesn't change), so a plain field is enough. */
   protected readonly platform = detectPlatform();
 
-  /** Wallet types with a provider detected in this browser right now. */
-  private readonly installedTypes = computed(
-    () => new Set(this.wallets().installedWallets.map((w) => w.type)),
-  );
+  /** Wallet types with a provider detected in this browser right now.
+   *  X-1: read the UNFILTERED getInstalledWallets(), not wallets$, which
+   *  strips hiddenFromPicker on every platform: a detected Phantom/Binance
+   *  in a mobile in-app browser must show Connect, not Get-wallet. wallets$
+   *  stays only the re-emit trigger; the matrix `platforms` governs rows. */
+  private readonly installedTypes = computed(() => {
+    this.wallets(); // re-emit trigger: recompute when runtime detection changes
+    return new Set(this.walletService.getInstalledWallets().installedWallets.map((w) => w.type));
+  });
 
   /**
    * A wallet's in-app-browser deep link for the current page, or null.
@@ -241,7 +247,13 @@ export class WalletConnectComponent {
     this.walletService.connectXpub({
       extendedPublicKey,
       scriptType,
-      probe: makeElectrsUtxoProbe(environment.mempoolApiUrl, environment.cat21OrdApiUrl),
+      probe: makeWatchOnlyProbe({
+        // esplora lives behind the `/api` prefix on our backend (electrs);
+        // makeWatchOnlyProbe hits `${esploraApiUrl}/address/:a/utxo`.
+        esploraApiUrl: `${environment.mempoolApiUrl}/api`,
+        ordApiUrl: this.sdkConfig.ordApiUrl,             // full ord: inscriptions, runes, rare sats
+        cat21OrdApiUrl: this.sdkConfig.cat21OrdApiUrl,   // cat21-ord: cats
+      }),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

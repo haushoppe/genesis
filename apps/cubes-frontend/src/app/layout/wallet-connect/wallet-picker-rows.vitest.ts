@@ -32,19 +32,18 @@ describe('buildPickerRows (Inscription, Desktop)', () => {
     expect(xpub?.signingModeLine).toBe('You sign in your own wallet (Sparrow, Coldcard, Ledger, …)');
   });
 
-  it('lists all seven capabilities per row', () => {
+  it('shows only the action capability in the popover (X-3: single-action site, no 7-list)', () => {
     const cat21 = rows([]).find((r) => r.type === KnownOrdinalWalletType.cat21wallet);
-    expect(cat21?.allCapabilities.length).toBe(7);
+    expect(cat21?.actionCapability.displayName).toBe('Inscribe');
+    // cubes is single-action, so the row carries no full capability list.
+    expect((cat21 as unknown as { allCapabilities?: unknown }).allCapabilities).toBeUndefined();
   });
 
-  it('renders the shared-spec wording: Alby inscribes (proven) but cannot create offers (unsupported + caveat)', () => {
+  it('renders the shared-spec wording for the action capability: Alby inscribes (proven ✓)', () => {
     const alby = rows([]).find((r) => r.type === KnownOrdinalWalletType.alby);
+    expect(alby?.actionCapability.displayName).toBe('Inscribe');
     expect(alby?.actionCapability.icon).toBe('✓');
     expect(alby?.actionCapability.wording).toBe('Verified end-to-end on our test network');
-    const offer = alby?.allCapabilities.find((c) => c.displayName === 'Sell (create an offer)');
-    expect(offer?.icon).toBe('✕');
-    expect(offer?.wording).toBe('Not available with this wallet');
-    expect(offer?.caveat).toContain('cannot create offers');
   });
 
   it('tags a not-detected injected wallet with an available deep link as deep-link, others as download', () => {

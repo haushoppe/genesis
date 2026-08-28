@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { KnownOrdinalWalletType, WalletService } from 'ordpool-sdk';
+import { cat21Config, KnownOrdinalWalletType, WalletService } from 'ordpool-sdk';
 import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -32,11 +32,13 @@ describe('WalletConnectComponent: watch-only connect', () => {
             networkMismatch$: new BehaviorSubject(false),
             expectedNetworkGroup: 'mainnet',
             walletConnectRequested$: new Subject<void>(),
+            getInstalledWallets: () => ({ installedWallets: [], notInstalledWallets: [] }),
             connectXpub,
           },
         },
         { provide: NgbModal, useValue: {} },
         { provide: ChangeDetectorRef, useValue: { markForCheck: () => {} } },
+        { provide: cat21Config, useValue: { ordApiUrl: 'https://ord.example.test', cat21OrdApiUrl: 'https://cat21.example.test' } },
       ],
     });
     // Construct the class in an injection context (so `inject()` /

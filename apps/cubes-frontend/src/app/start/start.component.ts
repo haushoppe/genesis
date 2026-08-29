@@ -795,8 +795,12 @@ export class StartComponent {
       case 'testnet': return Network.Testnet3;
       // Fail loudly if the SDK's AddressNetworkGroup union ever widens
       // (e.g. a distinct signet/testnet4) instead of leaking undefined
-      // into toScureNetwork / the signing path.
-      default: throw new Error(`Unhandled address network group: ${group}`);
+      // into toScureNetwork / the signing path. The `never` assignment makes
+      // a widened union a COMPILE error, not just a runtime throw.
+      default: {
+        const unhandled: never = group;
+        throw new Error(`Unhandled address network group: ${String(unhandled)}`);
+      }
     }
   }
 

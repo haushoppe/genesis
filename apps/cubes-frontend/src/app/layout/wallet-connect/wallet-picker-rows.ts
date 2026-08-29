@@ -96,11 +96,14 @@ function supportWording(status: WalletCapabilityStatus): { icon: string; wording
       return { icon: '○', wording: 'Supported, not yet verified end-to-end', caveat: status.caveat };
     case CapabilitySupport.Unsupported:
       return { icon: '✕', wording: 'Not available with this wallet', caveat: status.caveat };
-    // Fail loudly if the SDK widens CapabilitySupport, instead of returning
-    // undefined and letting capabilityLine spread `undefined.icon`. Same guard
-    // as deriveNetwork() for a union the SDK owns.
-    default:
-      throw new Error(`Unhandled CapabilitySupport: ${status.support}`);
+    // Fail loudly if the SDK widens CapabilitySupport. The `never` assignment
+    // makes an unhandled member a COMPILE error (not just a runtime throw), so a
+    // bundled SDK bump that adds a support tier can't silently spread
+    // `undefined.icon` into capabilityLine.
+    default: {
+      const unhandled: never = status.support;
+      throw new Error(`Unhandled CapabilitySupport: ${String(unhandled)}`);
+    }
   }
 }
 

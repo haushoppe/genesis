@@ -31,7 +31,12 @@ jobs:
         cache-dependency-path: apps/cubes-frontend/package-lock.json
 
     - run: npm ci
+    # ng test (tsconfig.spec.json → *.spec.ts) and the vitest suite
+    # (vitest.config.ts → *.vitest.ts) cover disjoint file sets, so CI runs
+    # BOTH. Without the second line the nine *.vitest.ts specs never execute
+    # in CI.
     - run: npm test --if-present
+    - run: npm run test:vitest
     - name: Build (with HAUSHOPPE_TIP_ADDRESS injected)
       env:
         # Real mainnet P2TR address baked into the prod bundle at build

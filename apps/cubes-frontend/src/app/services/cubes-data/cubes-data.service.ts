@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, ReplaySubject, defer, map, of, share, switchMap, throwError } from 'rxjs';
+import { Observable, ReplaySubject, map, of, share, switchMap, throwError } from 'rxjs';
 
 import {
-  CubeSuggestion,
   InscriptionExtended,
   InscriptionExtendedPaginatedResult,
   InscriptionExtendedSingleResult,

@@ -1,11 +1,11 @@
 import { ChangeDetectorRef, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { cat21Config, KnownOrdinalWalletType, WalletService } from 'ordpool-sdk';
+import { cat21Config, KnownOrdinalWalletType, WalletPlatform, WalletService } from 'ordpool-sdk';
 import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WalletConnectComponent } from './wallet-connect.component';
+import { detectPlatform, WalletConnectComponent } from './wallet-connect.component';
 
 /**
  * Exercises the real component logic without rendering its template:
@@ -128,5 +128,45 @@ describe('WalletConnectComponent: watch-only connect', () => {
     component.connectXpub();
     expect(connectXpub).toHaveBeenCalledTimes(1);
     expect(connectXpub).toHaveBeenNthCalledWith(1, expect.objectContaining({ extendedPublicKey: 'zpubEXAMPLE' }));
+  });
+});
+
+/**
+ * detectPlatform() picks the wallet set (Desktop extensions vs Mobile in-app
+ * deep-links). iPadOS Safari sends a desktop "Macintosh" UA, so the
+ * maxTouchPoints tiebreak is what keeps iPads on the Mobile set.
+ */
+describe('detectPlatform', () => {
+  const MAC_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 Safari/604.1';
+  const original = { ua: navigator.userAgent, touch: navigator.maxTouchPoints };
+
+  function setNavigator(userAgent: string, maxTouchPoints: number): void {
+    Object.defineProperty(navigator, 'userAgent', { value: userAgent, configurable: true });
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: maxTouchPoints, configurable: true });
+  }
+
+  afterEach(() => {
+    Object.defineProperty(navigator, 'userAgent', { value: original.ua, configurable: true });
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: original.touch, configurable: true });
+  });
+
+  it('classifies an iPad (Macintosh UA + touch points) as Mobile', () => {
+    setNavigator(MAC_UA, 5);
+    expect(detectPlatform()).toBe(WalletPlatform.Mobile);
+  });
+
+  it('classifies a real Mac (Macintosh UA, no touch) as Desktop', () => {
+    setNavigator(MAC_UA, 0);
+    expect(detectPlatform()).toBe(WalletPlatform.Desktop);
+  });
+
+  it('classifies an iPhone as Mobile via the UA token', () => {
+    setNavigator('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1', 5);
+    expect(detectPlatform()).toBe(WalletPlatform.Mobile);
+  });
+
+  it('classifies desktop Chrome on Windows as Desktop', () => {
+    setNavigator('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36', 0);
+    expect(detectPlatform()).toBe(WalletPlatform.Desktop);
   });
 });

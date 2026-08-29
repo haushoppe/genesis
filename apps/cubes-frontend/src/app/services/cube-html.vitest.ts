@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { parseCube } from '../../shared/ordinals/parse-cube';
 import {
-  CUBE_HTML_WARNING_SENTINEL,
   escapeCubeTitle,
   getCubeHtml,
   isCubeWarningHtml,

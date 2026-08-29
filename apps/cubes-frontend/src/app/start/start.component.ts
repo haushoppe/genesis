@@ -400,13 +400,18 @@ export class StartComponent {
       feeRate: this.mintFormData().feeRate,
       body: this.cubeBody(),
       warn: isCubeWarningHtml(this.cubeHtml()),
+      // Track selection reactively. A non-null -> null transition (wallet
+      // disconnect / orchestrator reset) must re-emit so the pre-connect
+      // estimate reappears; reading selectedRow() inside the untracked map
+      // below would miss that transition and leave the cost line blank.
+      hasSelection: this.selectedRow() !== null,
     }))).pipe(
       debounceTime(150),
-      map(({ feeRate, body, warn }): number | null => {
-        // Skip the 3-PSBT sim once a UTXO is selected: the template hides
+      map(({ feeRate, body, warn, hasSelection }): number | null => {
+        // Skip the 3-PSBT sim while a UTXO is selected: the template hides
         // this pre-connect estimate behind `!selectedRow()`, and
         // `totalSpendLabel` shows the exact per-UTXO cost instead.
-        if (this.selectedRow()) return null;
+        if (hasSelection) return null;
         // Reject non-finite rates (Infinity from a `1e999` input, NaN) so
         // the Cost line never renders "Infinity sat" / "NaN sat".
         if (warn || !Number.isFinite(feeRate) || feeRate <= 0) return null;
@@ -653,7 +658,11 @@ export class StartComponent {
     // bridgeSignedPsbt maps the modal result → trimmed signed PSBT, or a
     // clean cancel error on dismiss (unit-tested in watch-only-sign-bridge).
     return bridgeSignedPsbt(ref.result).pipe(
-      finalize(() => { this.psbtModalRef = undefined; this.psbtUnsigned.set(null); }),
+      // Dismiss the modal on any teardown, not just user submit/cancel: if the
+      // SDK mint pipeline unsubscribes or errors while this modal is still open,
+      // nulling the ref alone would strand a `backdrop:'static' keyboard:false`
+      // modal with dead buttons. `dismiss()` is a no-op once already closed.
+      finalize(() => { ref.dismiss(); this.psbtModalRef = undefined; this.psbtUnsigned.set(null); }),
     );
   };
 

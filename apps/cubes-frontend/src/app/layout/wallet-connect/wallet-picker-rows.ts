@@ -96,6 +96,11 @@ function supportWording(status: WalletCapabilityStatus): { icon: string; wording
       return { icon: '○', wording: 'Supported, not yet verified end-to-end', caveat: status.caveat };
     case CapabilitySupport.Unsupported:
       return { icon: '✕', wording: 'Not available with this wallet', caveat: status.caveat };
+    // Fail loudly if the SDK widens CapabilitySupport, instead of returning
+    // undefined and letting capabilityLine spread `undefined.icon`. Same guard
+    // as deriveNetwork() for a union the SDK owns.
+    default:
+      throw new Error(`Unhandled CapabilitySupport: ${status.support}`);
   }
 }
 

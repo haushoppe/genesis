@@ -22,9 +22,18 @@ import { buildPickerRows } from './wallet-picker-rows';
  * identical. A mobile plain browser has no injected provider: its rows
  * fall through to the not-detected state.
  */
-function detectPlatform(): WalletPlatform {
+export function detectPlatform(): WalletPlatform {
   if (typeof navigator === 'undefined') return WalletPlatform.Desktop;
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+  const ua = navigator.userAgent;
+  // iPadOS 13+ Safari reports a desktop "Macintosh" UA with no iPad/Mobile
+  // token. A real Mac reports maxTouchPoints 0; an iPad reports > 1. That
+  // pair is the documented way to tell an iPad from a Mac, so an iPad still
+  // gets the Mobile wallet set (in-app-browser deep links) instead of the
+  // desktop extension set with no reachable connect path.
+  const isIpadOs = /Macintosh/i.test(ua)
+    && typeof navigator.maxTouchPoints === 'number'
+    && navigator.maxTouchPoints > 1;
+  return isIpadOs || /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
     ? WalletPlatform.Mobile
     : WalletPlatform.Desktop;
 }

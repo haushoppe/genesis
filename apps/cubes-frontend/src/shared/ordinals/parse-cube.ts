@@ -18,7 +18,7 @@ export function parseCube(cubeHtmlRaw: string): { trait_type: string; value: str
   const regexFull = /^<html><!--cubes\.haushoppe\.art-->(<head><title>([^<>]*)<\/title><\/head>)?<body><script>t='([^']*)'<\/script><script src=\/content\/([^>]*)><\/script>$/;
   const matchFull = cubeHtmlRaw.match(regexFull);
 
-  var knownVersions = [
+  const knownVersions = [
     '9475aa8df559d569f7284ce59e97014f28be758e832e212fdbba0202699dd035i0', // v1
     '4c5b32a1bd0dc43b3540097bf0135de6b0389f55fe6fe06910e5393bf6591a42i0', // v2
     'fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0'  // v3

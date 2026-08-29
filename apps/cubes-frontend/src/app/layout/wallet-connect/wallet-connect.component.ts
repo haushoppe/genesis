@@ -273,8 +273,12 @@ export class WalletConnectComponent {
         },
         error: (err) => {
           this.xpubConnecting.set(false);
+          // Branch on the SDK's stable WatchOnlyDeriveError.code, not the
+          // human-readable message (free to change). `code` is a plain string
+          // field, cross-realm safe, so no instanceof is needed.
+          const code = (err as { code?: string } | null)?.code;
           const msg = err instanceof Error ? err.message : String(err);
-          if (msg.includes('script-type-ambiguous')) {
+          if (code === 'script-type-ambiguous') {
             this.xpubNeedsScriptType.set(true);
             this.xpubError.set('This looks like a plain xpub/tpub. Pick the account type (Taproot is recommended for ordinals), then connect again.');
           } else {

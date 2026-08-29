@@ -68,8 +68,11 @@ describe('WalletConnectComponent: watch-only connect', () => {
   it('reveals the account-type picker on an ambiguous key, then retries with the chosen scriptType', () => {
     component.setXpubInput('xpubEXAMPLE');
 
-    connectXpub.mockReturnValueOnce(throwError(() => new Error(
-      'Watch-only: this key prefix (xpub/tpub) is script-type-ambiguous; pass scriptType',
+    connectXpub.mockReturnValueOnce(throwError(() => Object.assign(
+      new Error('Watch-only: this key prefix (xpub/tpub) is script-type-ambiguous; pass scriptType'),
+      // The SDK throws WatchOnlyDeriveError carrying a stable `code`; the
+      // component branches on it, not on the (free-to-change) message.
+      { code: 'script-type-ambiguous' },
     )));
     component.connectXpub();
 
@@ -96,8 +99,11 @@ describe('WalletConnectComponent: watch-only connect', () => {
 
   it('re-evaluates a freshly pasted key: editing after an ambiguous xpub clears the script-type latch', () => {
     component.setXpubInput('xpubEXAMPLE');
-    connectXpub.mockReturnValueOnce(throwError(() => new Error(
-      'Watch-only: this key prefix (xpub/tpub) is script-type-ambiguous; pass scriptType',
+    connectXpub.mockReturnValueOnce(throwError(() => Object.assign(
+      new Error('Watch-only: this key prefix (xpub/tpub) is script-type-ambiguous; pass scriptType'),
+      // The SDK throws WatchOnlyDeriveError carrying a stable `code`; the
+      // component branches on it, not on the (free-to-change) message.
+      { code: 'script-type-ambiguous' },
     )));
     component.connectXpub();
     expect((component as unknown as { xpubNeedsScriptType(): boolean }).xpubNeedsScriptType()).toBe(true);

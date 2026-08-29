@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { NgbModal, NgbModalRef, NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 import {
   AUTO_SCAN_MAX_VALUE_SAT,
+  BITCOIN_MIN_RELAY_FEE_SAT_PER_VBYTE,
   bucketOf,
   findAutoPickCandidate,
   getAddressNetwork,
@@ -101,7 +102,10 @@ const mintFormSchema = schema<MintFormData>((path) => {
   required(path.inscriptionId6);
   pattern(path.inscriptionId6, INSCRIPTION_ID_PATTERN);
   required(path.feeRate);
-  min(path.feeRate, 1);
+  // Floor at Bitcoin Core's relay minimum. The SDK constant carries the sourced
+  // value + version (Core `DEFAULT_MIN_RELAY_TX_FEE`, 0.1 sat/vB since v29.1);
+  // below it a tx won't relay on a default-config node.
+  min(path.feeRate, BITCOIN_MIN_RELAY_FEE_SAT_PER_VBYTE);
   // Cap at the SDK gate's 1000 sat/vB ceiling and reject Infinity (from a
   // `1e999` input): max() flags value > 1000, and Infinity > 1000 is true.
   // NaN can't reach here (a number input yields null, caught by required

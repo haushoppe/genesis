@@ -8,10 +8,14 @@ import {
   AUTO_SCAN_MAX_VALUE_SAT,
   BITCOIN_MIN_RELAY_FEE_SAT_PER_VBYTE,
   bucketOf,
+  Cat21Service,
+  classifyOutpoint,
   getAddressNetwork,
   getDummyKeypair,
   getMinimumUtxoSize,
   InscribeMintOrchestrator,
+  InscribeSnapshot,
+  InscribeWalletContext,
   Network,
   prepareInscribeFundingInput,
   RecommendedFees,
@@ -172,8 +176,8 @@ export class StartComponent {
   readonly collectionSymbol = input<string>('');
 
   protected readonly walletService = inject(WalletService);
-  protected readonly orchestrator = inject(InscribeMintOrchestrator);
   protected readonly pastMints = inject(PastMintsService);
+  private readonly cat21 = inject(Cat21Service);
   private readonly scanner = inject(UtxoContentScanner);
   private readonly cubesData = inject(CubesDataService);
   private readonly cubeSuggestionService = inject(CubeSuggestionService);
@@ -181,6 +185,28 @@ export class StartComponent {
   private readonly priceService = inject(PriceService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(NgbModal);
+
+  /**
+   * The SDK's framework-agnostic inscribe orchestrator (plain class, no
+   * Angular). We construct it with our I/O ports and mirror its snapshot into
+   * a signal; the SDK owns the select -> fee -> build -> sign -> broadcast flow.
+   * The scan port wires the SDK's `classifyOutpoint` (ord + cat21-ord content
+   * check) into the mandatory `ContentScanPort` — `UtxoContentScanner` has no
+   * one-shot `classify`, so it stays a UI-display concern (per-row buckets).
+   */
+  private readonly orch = new InscribeMintOrchestrator({
+    getUtxos: (address) => firstValueFrom(this.cat21.getUtxos(address)),
+    scan: {
+      classify: async (outpoint) =>
+        (await classifyOutpoint(outpoint, {
+          ordApiUrl: environment.ordApiUrl,
+          cat21OrdApiUrl: environment.cat21OrdApiUrl,
+        })).clean ? 'clean' : 'has-assets',
+    },
+    broadcast: (signedTxHex) => firstValueFrom(this.cat21.postTransaction(signedTxHex)),
+    network: this.deriveNetwork(),
+  });
+  private readonly snap = signal<InscribeSnapshot>(this.orch.getSnapshot());
 
   protected readonly autoScanThreshold = AUTO_SCAN_MAX_VALUE_SAT;
   protected readonly feeTiers = FEE_TIERS;
@@ -232,11 +258,20 @@ export class StartComponent {
   // ---------- Wallet + orchestrator signals ----------
 
   protected readonly connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
-  protected readonly simulations = toSignal(this.orchestrator.simulations$, { initialValue: [] });
+  /** The orchestrator's per-UTXO fee simulations, off the snapshot. */
+  protected readonly simulations = computed(() => this.snap().simulations);
   protected readonly scanStates = toSignal(this.scanner.states$, {
     initialValue: new Map<string, UtxoScanState>() as ReadonlyMap<string, UtxoScanState>,
   });
-  protected readonly recommendedFees = toSignal(this.orchestrator.recommendedFees$, { initialValue: null });
+  /** Live mempool fee tiers — a supporting `Cat21Service` concern, not the orchestrator's. */
+  protected readonly recommendedFees = toSignal(this.cat21.recommendedFees$, { initialValue: null });
+  /** Orchestrator state-machine phase, off the snapshot (template branches on it). */
+  protected readonly mintState = computed(() => this.snap().state);
+  /** The user's explicit funding pick (expert mode), off the snapshot. */
+  protected readonly selectedUtxo = computed(() => this.snap().selectedUtxo);
+  /** Orchestrator error message + success result, off the snapshot. */
+  protected readonly mintError = computed(() => this.snap().errorMessage);
+  protected readonly mintSuccess = computed(() => this.snap().successResult);
 
   // ---------- Form ----------
 
@@ -284,9 +319,7 @@ export class StartComponent {
    * (the invisible comfortable default); `expert-required` = only asset-bearing
    * coins cover, so the SDK refuses to auto-spend and the UI surfaces the picker.
    */
-  protected readonly fundingRecommendation = toSignal(this.orchestrator.fundingRecommendation$, {
-    initialValue: { status: 'scanning' as const, recommended: null, candidates: [] },
-  });
+  protected readonly fundingRecommendation = computed(() => this.snap().fundingRecommendation);
 
   /**
    * The coin that will actually fund the mint: the user's explicit pick (expert
@@ -295,7 +328,7 @@ export class StartComponent {
    * the user consciously mints on an asset-carrying coin.
    */
   protected readonly effectiveFundingUtxo = computed<TxnOutput | null>(() => {
-    const manual = this.orchestrator.selectedUtxo();
+    const manual = this.selectedUtxo();
     if (manual) return manual;
     const rec = this.fundingRecommendation();
     return rec.status === 'auto' ? rec.recommended : null;
@@ -315,7 +348,7 @@ export class StartComponent {
   });
 
   protected readonly canMint = computed(() =>
-    this.orchestrator.state() === 'ready' &&
+    this.mintState() === 'ready' &&
     this.mintForm().valid() &&
     this.effectiveFundingUtxo() !== null,
   );
@@ -327,7 +360,7 @@ export class StartComponent {
    */
   protected readonly hasInsufficientFunds = computed(() =>
     this.viableRows().length === 0 &&
-    this.orchestrator.state() === 'ready' &&
+    this.mintState() === 'ready' &&
     this.simulations().length > 0,
   );
 
@@ -501,6 +534,28 @@ export class StartComponent {
     }, 5 * 60 * 1000);
     this.destroyRef.onDestroy(() => clearInterval(priceIntervalId));
 
+    // Mirror the orchestrator's snapshot into `snap`. subscribe() fires
+    // immediately + on every change; the returned unsubscribe fn ties to the
+    // component lifetime.
+    this.destroyRef.onDestroy(this.orch.subscribe((s) => this.snap.set(s)));
+
+    // Push the connected wallet into the orchestrator. The plain-class
+    // orchestrator has no WalletService dep, so the consumer drives it:
+    // setWallet fetches the payment address's UTXOs and (re)computes the
+    // funding simulations. Null on disconnect returns it to idle.
+    effect(() => {
+      const w = this.connectedWallet();
+      const context: InscribeWalletContext | null = w
+        ? {
+            type: w.type,
+            ordinalsAddress: w.ordinalsAddress,
+            paymentAddress: w.paymentAddress,
+            paymentPublicKey: w.paymentPublicKey,
+          }
+        : null;
+      void this.orch.setWallet(context);
+    });
+
     // Reset the scanner's cache when the wallet changes.
     effect(() => {
       const addr = this.connectedWallet()?.ordinalsAddress ?? null;
@@ -528,13 +583,13 @@ export class StartComponent {
       );
     });
 
-    // Funding auto-pick is the SDK orchestrator's job (`fundingRecommendation$`),
-    // NOT ours. It force-scans covering candidates regardless of size and never
-    // auto-selects an unscanned/asset coin. We leave `selectedUtxo` unset unless
-    // the user deliberately picks one (expert override); the orchestrator then
-    // mints on its content-clean recommendation. A consumer-side
-    // `findAutoPickCandidate` here would auto-spend a large unscanned coin the
-    // scan threshold skipped.
+    // Funding auto-pick is the SDK orchestrator's job (its snapshot's
+    // `fundingRecommendation`), NOT ours. It force-scans covering candidates
+    // regardless of size and never auto-selects an unscanned/asset coin. We
+    // leave the pick unset unless the user deliberately picks one (expert
+    // override); the orchestrator then mints on its content-clean
+    // recommendation. A consumer-side raw pre-pick here would auto-spend a
+    // large unscanned coin the scan threshold skipped.
 
     // Form → orchestrator: fee rate + inscription-body HTML on the same
     // 150 ms tick. `takeUntilDestroyed` ties the subscription to the
@@ -546,9 +601,9 @@ export class StartComponent {
         // make every UTXO's fundingRequirementSats Infinity, tripping a false
         // "insufficient funds" alert. The form's max(1000) validator disables
         // Mint for such a rate; this keeps the orchestrator sim clean too.
-        if (Number.isFinite(v.feeRate) && v.feeRate > 0) this.orchestrator.setFeeRate(v.feeRate);
+        if (Number.isFinite(v.feeRate) && v.feeRate > 0) this.orch.setFeeRate(v.feeRate);
         if (!this.mintForm().valid()) return;
-        this.orchestrator.setContent({
+        this.orch.setContent({
           body: this.cubeBody(),
           contentType: 'text/html;charset=utf-8',
           tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
@@ -577,7 +632,7 @@ export class StartComponent {
         }
       });
 
-    this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
+    this.orch.setFeeRate(INITIAL_MINT_FORM.feeRate);
 
     // Fresh suggestion from the resource → patch its 6 ids into the
     // form. Angular's signal semantics only fire the effect when
@@ -790,14 +845,17 @@ export class StartComponent {
     }
     this.mintGateError.set(null);
 
-    this.orchestrator.setContent({
+    this.orch.setContent({
       body,
       contentType: 'text/html;charset=utf-8',
       tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
     });
 
     try {
-      const result = await firstValueFrom(this.orchestrator.mint(this.psbtPrompt));
+      // The orchestrator's mint() is async and takes a Promise-returning prompt;
+      // our `psbtPrompt` bridges the watch-only modal as an Observable, so adapt
+      // it via firstValueFrom. Injected wallets never invoke the prompt.
+      const result = await this.orch.mint((unsigned) => firstValueFrom(this.psbtPrompt(unsigned)));
       const form = this.mintFormData();
       const inscriptionIds = INSCRIPTION_ID_FIELDS.map((k) => form[k]);
       this.pastMints.record(result.commitTxId, result.revealTxId, inscriptionIds);
@@ -837,13 +895,18 @@ export class StartComponent {
       .subscribe();
   }
 
+  /** Expert-mode manual funding pick from the picker. */
+  pickUtxo(utxo: TxnOutput) {
+    this.orch.setSelectedUtxo(utxo);
+  }
+
   setFeePreset(rate: number) {
     // Two writes on purpose: mintFormData for form-value consistency
     // (drives the preview + validity + rendered fee-rate input) and
     // an immediate orchestrator.setFeeRate call so the summary
     // recomputes right away rather than after the 150 ms form debounce.
     this.mintFormData.update((v) => ({ ...v, feeRate: rate }));
-    this.orchestrator.setFeeRate(rate);
+    this.orch.setFeeRate(rate);
   }
 
   bucketLabel(bucket: UtxoScanBucket): string {
@@ -857,9 +920,9 @@ export class StartComponent {
   }
 
   mintAnother() {
-    this.orchestrator.reset();
+    this.orch.reset();
     this.mintFormData.set(INITIAL_MINT_FORM);
-    this.orchestrator.setFeeRate(INITIAL_MINT_FORM.feeRate);
+    this.orch.setFeeRate(INITIAL_MINT_FORM.feeRate);
     this.checkoutOpen.set(false);
     // Actively pull a fresh cube. The just-minted IDs are already in
     // PastMintsService and the CubeSuggestionService unions them into

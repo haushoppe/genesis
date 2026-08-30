@@ -155,11 +155,11 @@
       </p>
 
       <!-- Loading / empty / insufficient states. -->
-      @if (orchestrator.state() === 'loading-utxos') {
+      @if (mintState() === 'loading-utxos') {
         <p class="text-muted" data-testid="mint-loading-utxos">Checking your wallet…</p>
       }
 
-      @if (viableRows().length === 0 && orchestrator.state() === 'ready') {
+      @if (viableRows().length === 0 && mintState() === 'ready') {
         @if (simulations().length === 0) {
           <p class="text-muted" data-testid="mint-no-utxos">
             Send some BTC to <code>{{ wallet.paymentAddress }}</code> to continue.
@@ -229,7 +229,7 @@
                   <span data-testid="mint-found-funds-miner-fee">commit {{ selRow.simulation.commitFeeSats }} + reveal {{ selRow.simulation.revealFeeSats }} = <strong>{{ selRow.simulation.totalFeeSats }}</strong> sat</span>
                 </div>
               }
-              @if (orchestrator.selectedUtxo()) {
+              @if (selectedUtxo()) {
                 <p class="mb-0 mt-2 text-muted small">✓ You picked this funding coin.</p>
               } @else {
                 <p class="mb-0 mt-2 text-muted small">✓ Best content-clean UTXO auto-picked. Larger coins are content-checked too, so a coin carrying an inscription, rune, cat or rare sat is never auto-spent.</p>
@@ -266,7 +266,7 @@
                         {{ bucketLabel(row.bucket) }}
                       </span>
                       @if (effectiveFundingUtxo()?.txid === row.utxo.txid && effectiveFundingUtxo()?.vout === row.utxo.vout) {
-                        <span class="badge bg-secondary ms-2">{{ orchestrator.selectedUtxo() ? 'Selected' : 'Auto-picked' }}</span>
+                        <span class="badge bg-secondary ms-2">{{ selectedUtxo() ? 'Selected' : 'Auto-picked' }}</span>
                       }
                     </div>
                     <div class="text-nowrap">
@@ -279,7 +279,7 @@
                               [attr.data-testid]="'mint-expert-pick-' + idx"
                               [class.btn-outline-primary]="row.bucket !== 'assets'"
                               [class.btn-outline-danger]="row.bucket === 'assets'"
-                              (click)="orchestrator.setSelectedUtxo(row.utxo)">
+                              (click)="pickUtxo(row.utxo)">
                         {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
                       </button>
                     </div>
@@ -291,9 +291,9 @@
         </div>
       </details>
 
-      @if (orchestrator.state() === 'error' && orchestrator.errorMessage()) {
+      @if (mintState() === 'error' && mintError()) {
         <div class="alert alert-danger" role="alert" data-testid="mint-error">
-          <span data-testid="mint-error-message">❌ {{ orchestrator.errorMessage() }}</span>
+          <span data-testid="mint-error-message">❌ {{ mintError() }}</span>
         </div>
       }
       @if (mintGateError(); as msg) {
@@ -307,9 +307,9 @@
                 data-testid="mint-btn"
                 class="btn btn-primary btn-lg text-nowrap"
                 (click)="mint()"
-                [disabled]="!canMint() || orchestrator.state() === 'minting'"
-                [attr.aria-busy]="orchestrator.state() === 'minting'">
-          @if (orchestrator.state() === 'minting') {
+                [disabled]="!canMint() || mintState() === 'minting'"
+                [attr.aria-busy]="mintState() === 'minting'">
+          @if (mintState() === 'minting') {
             Waiting for your wallet to confirm…
           } @else if (totalSpendSats()) {
             Mint for {{ totalSpendLabel() }}
@@ -324,7 +324,7 @@
 }
 
 
-@if (orchestrator.successResult(); as res) {
+@if (mintSuccess(); as res) {
   <div class="alert alert-success mt-4" data-testid="mint-success">
     <h3 class="h5 mb-2">🎉 Your cube is being stored on Bitcoin</h3>
     <p class="mb-2">

@@ -9,7 +9,6 @@ import {
   BITCOIN_MIN_RELAY_FEE_SAT_PER_VBYTE,
   bucketOf,
   Cat21Service,
-  classifyOutpoint,
   getAddressNetwork,
   getDummyKeypair,
   getMinimumUtxoSize,
@@ -190,19 +189,14 @@ export class StartComponent {
    * The SDK's framework-agnostic inscribe orchestrator (plain class, no
    * Angular). We construct it with our I/O ports and mirror its snapshot into
    * a signal; the SDK owns the select -> fee -> build -> sign -> broadcast flow.
-   * The scan port wires the SDK's `classifyOutpoint` (ord + cat21-ord content
-   * check) into the mandatory `ContentScanPort` — `UtxoContentScanner` has no
-   * one-shot `classify`, so it stays a UI-display concern (per-row buckets).
+   * `UtxoContentScanner` implements `ContentScanPort`, so it IS the scan port:
+   * its `classify` is fail-closed (scan-failed -> has-assets, the safety map
+   * lives in the SDK) and reuses the scanner's dedup+cache, so the force-scan
+   * shares the picker's per-row buckets (one scan per outpoint).
    */
   private readonly orch = new InscribeMintOrchestrator({
     getUtxos: (address) => firstValueFrom(this.cat21.getUtxos(address)),
-    scan: {
-      classify: async (outpoint) =>
-        (await classifyOutpoint(outpoint, {
-          ordApiUrl: environment.ordApiUrl,
-          cat21OrdApiUrl: environment.cat21OrdApiUrl,
-        })).clean ? 'clean' : 'has-assets',
-    },
+    scan: this.scanner,
     broadcast: (signedTxHex) => firstValueFrom(this.cat21.postTransaction(signedTxHex)),
     network: this.deriveNetwork(),
   });

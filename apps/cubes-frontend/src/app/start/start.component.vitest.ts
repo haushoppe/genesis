@@ -117,7 +117,7 @@ describe('StartComponent: watch-only mint wiring', () => {
           useValue: { connectedWallet$: new BehaviorSubject<unknown>(wallet), requestWalletConnect: vi.fn() },
         },
         { provide: Cat21Service, useValue: cat21 },
-        { provide: UtxoContentScanner, useValue: { states$: new BehaviorSubject(new Map()), autoScan: vi.fn(), reset: vi.fn(), scan: vi.fn(() => of(undefined)) } },
+        { provide: UtxoContentScanner, useValue: { states$: new BehaviorSubject(new Map()), autoScan: vi.fn(), reset: vi.fn(), scan: vi.fn(() => of(undefined)), classify: vi.fn(() => Promise.resolve('clean')) } },
         { provide: CubesDataService, useValue: { getCursor: () => of({}), getInscriptions: () => of({ inscriptions: [], totalInscriptions: 0, currentPage: 1, itemsPerPage: 12 }) } },
         { provide: CubeSuggestionService, useValue: { getCubeSuggestion: () => of(null) } },
         { provide: InscriptionLookupService, useValue: { lookupById: () => of(null) } },

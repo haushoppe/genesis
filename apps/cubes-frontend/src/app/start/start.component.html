@@ -172,8 +172,10 @@
         }
       }
 
-      <!-- Primary summary: cost on one line, no jargon. -->
-      @if (viableRows().length > 0 && orchestrator.selectedUtxo()) {
+      <!-- Primary summary: cost on one line, no jargon. Shown once the SDK has a
+           safe funding coin (its content-clean auto-pick or the user's manual
+           pick). Hidden on `expert-required` — the picker is surfaced instead. -->
+      @if (effectiveFundingUtxo()) {
         <div class="mint-summary p-3 border rounded mb-3 bg-body" data-testid="mint-found-funds">
           <div class="d-flex justify-content-between align-items-center">
             <span>Cost</span>
@@ -210,7 +212,7 @@
             }
           </div>
 
-          @if (viableRows().length > 0 && orchestrator.selectedUtxo(); as sel) {
+          @if (effectiveFundingUtxo(); as sel) {
             <div class="p-3 border rounded mb-3 bg-body">
               <p class="fw-bold small mb-2">Breakdown</p>
               <div class="d-flex justify-content-between">
@@ -227,12 +229,26 @@
                   <span data-testid="mint-found-funds-miner-fee">commit {{ selRow.simulation.commitFeeSats }} + reveal {{ selRow.simulation.revealFeeSats }} = <strong>{{ selRow.simulation.totalFeeSats }}</strong> sat</span>
                 </div>
               }
-              <p class="mb-0 mt-2 text-muted small">✓ Best available UTXO auto-picked.</p>
+              @if (orchestrator.selectedUtxo()) {
+                <p class="mb-0 mt-2 text-muted small">✓ You picked this funding coin.</p>
+              } @else {
+                <p class="mb-0 mt-2 text-muted small">✓ Best content-clean UTXO auto-picked. Larger coins are content-checked too, so a coin carrying an inscription, rune, cat or rare sat is never auto-spent.</p>
+              }
+            </div>
+          }
+
+          @if (fundingExpertRequired()) {
+            <div class="alert alert-warning py-2 px-3 small" role="alert" data-testid="mint-expert-required">
+              None of your spendable coins are verified clear of ordinal-bound
+              assets, so the safe auto-pick won't spend one for you. Choose a
+              funding coin below. A coin marked
+              <span class="badge bg-danger">assets on this UTXO</span> WILL be spent
+              (and its inscription / cat / rare sat moved) if you pick it.
             </div>
           }
 
           @if (viableRows().length > 0) {
-            <details class="mb-0" data-testid="mint-expert-details">
+            <details class="mb-0" data-testid="mint-expert-details" [attr.open]="fundingExpertRequired() ? '' : null">
               <summary class="text-muted small" style="cursor: pointer">Choose a different funding UTXO</summary>
               <div class="mt-2">
                 @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
@@ -249,8 +265,8 @@
                             [class.bg-warning]="row.bucket === 'failed'">
                         {{ bucketLabel(row.bucket) }}
                       </span>
-                      @if (orchestrator.selectedUtxo()?.txid === row.utxo.txid && orchestrator.selectedUtxo()?.vout === row.utxo.vout) {
-                        <span class="badge bg-secondary ms-2">Selected</span>
+                      @if (effectiveFundingUtxo()?.txid === row.utxo.txid && effectiveFundingUtxo()?.vout === row.utxo.vout) {
+                        <span class="badge bg-secondary ms-2">{{ orchestrator.selectedUtxo() ? 'Selected' : 'Auto-picked' }}</span>
                       }
                     </div>
                     <div class="text-nowrap">

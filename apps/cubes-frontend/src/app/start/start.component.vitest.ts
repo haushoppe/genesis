@@ -50,6 +50,7 @@ describe('StartComponent: watch-only mint wiring', () => {
   let orchestrator: {
     simulations$: BehaviorSubject<unknown[]>;
     recommendedFees$: BehaviorSubject<unknown>;
+    fundingRecommendation$: BehaviorSubject<unknown>;
     selectedUtxo: ReturnType<typeof signal>;
     state: ReturnType<typeof signal>;
     setFeeRate: ReturnType<typeof vi.fn>;
@@ -69,6 +70,7 @@ describe('StartComponent: watch-only mint wiring', () => {
         { utxo: fakeUtxo, simulation: { fundingRequirementSats: 3000 }, insufficient: false },
       ]),
       recommendedFees$: new BehaviorSubject<unknown>(null),
+      fundingRecommendation$: new BehaviorSubject<unknown>({ status: 'auto', recommended: fakeUtxo, candidates: [fakeUtxo] }),
       selectedUtxo: signal<unknown>(fakeUtxo),
       state: signal<string>('ready'),
       setFeeRate: vi.fn(),
@@ -155,12 +157,21 @@ describe('StartComponent: watch-only mint wiring', () => {
     expect(c.mintForm().valid()).toBe(false);
   });
 
-  it('hides the pre-connect estimate once a UTXO is selected (selectedRow drives the gate)', () => {
+  it('drives the gate off the EFFECTIVE funding coin: manual pick, then the safe auto-pick fallback', () => {
     const c = component as unknown as { selectedRow(): unknown };
-    // The orchestrator mock has a viable sim + selectedUtxo, so a row is selected.
+    // The orchestrator mock has a viable sim + a manual selectedUtxo → a row is selected.
     expect(c.selectedRow()).not.toBeNull();
-    // With no selected UTXO the gate (`!selectedRow()`) would show the estimate again.
+
+    // Clearing the manual pick does NOT reopen the estimate: the funding
+    // recommendation still auto-picks a content-clean coin, so the effective
+    // coin (and its row) stays resolved. This is the footgun fix in action.
     orchestrator.selectedUtxo.set(null);
+    expect(c.selectedRow()).not.toBeNull();
+
+    // Only when there's no manual pick AND nothing safe to auto-pick
+    // (recommendation is expert-required: solely asset-bearing coins cover)
+    // does the row clear, so the pre-connect estimate reappears.
+    orchestrator.fundingRecommendation$.next({ status: 'expert-required', recommended: null, candidates: [fakeUtxo] });
     expect(c.selectedRow()).toBeNull();
   });
 });

@@ -8,7 +8,6 @@ import {
   AUTO_SCAN_MAX_VALUE_SAT,
   BITCOIN_MIN_RELAY_FEE_SAT_PER_VBYTE,
   bucketOf,
-  findAutoPickCandidate,
   getAddressNetwork,
   getDummyKeypair,
   getMinimumUtxoSize,
@@ -277,19 +276,48 @@ export class StartComponent {
       });
   });
 
+  /**
+   * The SDK's safe funding recommendation. Its `FundingRecommendationService`
+   * FORCE-scans the covering candidates for content REGARDLESS of size, so a
+   * large coin above the local scan threshold can no longer slip through as
+   * "probably clean": `auto` = a content-clean covering coin was auto-picked
+   * (the invisible comfortable default); `expert-required` = only asset-bearing
+   * coins cover, so the SDK refuses to auto-spend and the UI surfaces the picker.
+   */
+  protected readonly fundingRecommendation = toSignal(this.orchestrator.fundingRecommendation$, {
+    initialValue: { status: 'scanning' as const, recommended: null, candidates: [] },
+  });
+
+  /**
+   * The coin that will actually fund the mint: the user's explicit pick (expert
+   * mode) or, when unset, the SDK's content-clean auto-recommendation. Null when
+   * only asset coins cover (`expert-required`) — the picker must be surfaced so
+   * the user consciously mints on an asset-carrying coin.
+   */
+  protected readonly effectiveFundingUtxo = computed<TxnOutput | null>(() => {
+    const manual = this.orchestrator.selectedUtxo();
+    if (manual) return manual;
+    const rec = this.fundingRecommendation();
+    return rec.status === 'auto' ? rec.recommended : null;
+  });
+
+  /** True when only asset-bearing coins cover the cost. Surfaces the picker. */
+  protected readonly fundingExpertRequired = computed(() => this.fundingRecommendation().status === 'expert-required');
+
+  /** The viable-row for the effective funding coin (manual pick or auto pick),
+   *  for the cost breakdown. */
   protected readonly selectedRow = computed<ViableInscribeSimulation | null>(() => {
-    const sel = this.orchestrator.selectedUtxo();
-    if (!sel) return null;
+    const eff = this.effectiveFundingUtxo();
+    if (!eff) return null;
     return this.viableRows().find(
-      (r) => r.utxo.txid === sel.txid && r.utxo.vout === sel.vout,
+      (r) => r.utxo.txid === eff.txid && r.utxo.vout === eff.vout,
     ) ?? null;
   });
 
   protected readonly canMint = computed(() =>
-    this.viableRows().length > 0 &&
-    this.orchestrator.selectedUtxo() !== null &&
     this.orchestrator.state() === 'ready' &&
-    this.mintForm().valid(),
+    this.mintForm().valid() &&
+    this.effectiveFundingUtxo() !== null,
   );
 
   /**
@@ -500,18 +528,13 @@ export class StartComponent {
       );
     });
 
-    // Auto-pick the safest viable UTXO. Priority lives in the SDK.
-    effect(() => {
-      const rows = this.viableRows();
-      if (rows.length === 0) return;
-      const current = untracked(() => this.orchestrator.selectedUtxo());
-      const stillThere = current && rows.find(
-        (r) => r.utxo.txid === current.txid && r.utxo.vout === current.vout,
-      );
-      if (stillThere) return;
-      const pick = findAutoPickCandidate(rows);
-      this.orchestrator.setSelectedUtxo(pick ? pick.utxo : null);
-    });
+    // Funding auto-pick is the SDK orchestrator's job (`fundingRecommendation$`),
+    // NOT ours. It force-scans covering candidates regardless of size and never
+    // auto-selects an unscanned/asset coin. We leave `selectedUtxo` unset unless
+    // the user deliberately picks one (expert override); the orchestrator then
+    // mints on its content-clean recommendation. A consumer-side
+    // `findAutoPickCandidate` here would auto-spend a large unscanned coin the
+    // scan threshold skipped.
 
     // Form → orchestrator: fee rate + inscription-body HTML on the same
     // 150 ms tick. `takeUntilDestroyed` ties the subscription to the

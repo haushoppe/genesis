@@ -39,11 +39,16 @@ export const appConfig: ApplicationConfig = {
     // from environment.ts so regtest e2e can point at local electrs
     // (localhost:3000) instead of api.ordpool.space. The workspace
     // HARD RULE bans direct mempool.space calls; nothing here hits it.
+    // The two ord URLs feed the SDK's UtxoContentScanner (funding-safety
+    // content scan: `${ordApiUrl}/output/<op>` + `${cat21OrdApiUrl}/output/<op>`).
+    // Sourced from environment.ts so regtest e2e can point them at a local
+    // ord/stub that resolves regtest outpoints; prod/dev keep ord.ordpool.space
+    // + ord.cat21.space.
     { provide: cat21Config, useValue: {
       mempoolApiUrl: environment.mempoolApiUrl,
       cat21ApiUrl: 'https://backend2.cat21.space',
-      ordApiUrl: 'https://ord.ordpool.space',
-      cat21OrdApiUrl: 'https://ord.cat21.space',
+      ordApiUrl: environment.ordApiUrl,
+      cat21OrdApiUrl: environment.cat21OrdApiUrl,
     } },
     provideRouter(
       ORDINAL_ROUTES,

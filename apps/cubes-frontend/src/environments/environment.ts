@@ -12,6 +12,14 @@ export const environment = {
    */
   mempoolApiUrl: 'https://api.ordpool.space',
   /**
+   * The SDK UtxoContentScanner's two ord `/output` sources (funding-safety
+   * content scan). Dev + prod hit our ord instances; regtest replaces this
+   * file with environment.regtest.ts pointing both at a local ord/stub that
+   * resolves regtest outpoints.
+   */
+  ordApiUrl: 'https://ord.ordpool.space',
+  cat21OrdApiUrl: 'https://ord.cat21.space',
+  /**
    * HAUS HOPPE donation address baked as the silent reveal tip.
    * Regtest replaces this with a bcrt1p… address so the tip output
    * is spendable on the regtest chain.

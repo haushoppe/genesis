@@ -100,6 +100,15 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: git clone --depth 1 --branch index-cat21 https://github.com/ordpool-space/cat21-ord _cat21-ord
 
+      # OUR electrs. docker-compose.regtest.yml builds the electrs service
+      # from the ordpool-electrs fork (not the upstream mempool/electrs
+      # image); ELECTRS_SRC points its build context at this checkout.
+      # Same anonymous-clone reasoning as cat21-ord above (the job token
+      # can't reach a sibling org repo). Branch is `ordpool`.
+      - name: Clone ordpool-electrs for the electrs image build
+        working-directory: ${{ github.workspace }}
+        run: git clone --depth 1 --branch ordpool https://github.com/ordpool-space/ordpool-electrs _ordpool-electrs
+
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -276,10 +285,11 @@ jobs:
         # ord-stock which uses the same mainline ord binary
         # without --index-cat21). Only bring up what we hit.
         env:
-          # Point docker-compose at the cat21-ord checkout above.
-          # Absolute path so relative-path drama between compose file
-          # location + build context doesn't creep in.
+          # Point docker-compose at the checkouts above. Absolute paths so
+          # relative-path drama between compose file location + build
+          # context doesn't creep in.
           CAT21_ORD_SRC: ${{ github.workspace }}/_cat21-ord
+          ELECTRS_SRC: ${{ github.workspace }}/_ordpool-electrs
         run: docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock up -d --build bitcoind electrs ord-stock
 
       - name: Mine 101 blocks + create funding wallet

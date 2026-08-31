@@ -66,6 +66,15 @@
               "fileReplacements": [
                 { "replace": "src/environments/environment.ts", "with": "src/environments/environment.regtest.ts" }
               ]
+            },
+            "central": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
+              "fileReplacements": [
+                { "replace": "src/environments/environment.ts", "with": "src/environments/environment.central.ts" }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -86,6 +95,11 @@
             "regtest": {
               "buildTarget": "cubes-frontend:build:regtest",
               "proxyConfig": "src/proxy.conf.regtest.json"
+            },
+            "central": {
+              "buildTarget": "cubes-frontend:build:central",
+              "proxyConfig": "src/proxy.conf.central.json",
+              "host": "0.0.0.0"
             }
           },
           "defaultConfiguration": "development"

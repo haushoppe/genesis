@@ -1,0 +1,20 @@
+{
+  "//": "Cubes frontend against the SHARED workspace regtest stack (regtest/).",
+  "//api": "electrs + mempool API via the ordpool-backend on :8999 (NOT :3000 directly - that host port is shadowed; the backend proxies /api/* to electrs).",
+  "/api": {
+    "target": "http://localhost:8999",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "//content": "The cube renderer inscription is a mainnet inscription; load it from ordinals.com even while minting on regtest.",
+  "/content": {
+    "target": "https://ordinals.com/",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/r": {
+    "target": "https://ordinals.com/",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

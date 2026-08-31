@@ -18,7 +18,7 @@ Three independent projects + contracts. **No root `npm install`** — each proje
 ```
 apps/
   backend/            # NestJS API (Node 18). Standalone Nest CLI project.
-  cubes-frontend/     # Angular 16 SPA (the LIVE product). Standalone Angular CLI project.
+  cubes-frontend/     # Angular 22 SPA, zoneless + signal-first (the LIVE product). Standalone Angular CLI project.
   genesis-frontend/   # Angular 16 SPA (INACTIVE, ERC-721 minting). Standalone Angular CLI project.
 contracts/            # Solidity ERC721A smart contracts + Hardhat setup.
 ```
@@ -76,12 +76,9 @@ The backend serves the **ERC-721 side only**. **cubes-frontend does not call the
 
 ## apps/cubes-frontend (the live product)
 
-Angular 16 standalone-components app. No NgModules — uses `provideRouter()`, `provideStore()`, etc.
+Angular 22 standalone-components app, zoneless and signal-first. No NgModules, no NgRx.
 
-**State management:** NgRx with three feature stores:
-- `mint` — inscription list, order state, pricing, cube suggestions, inscription ID cache
-- `wallet` — connected Bitcoin wallet (Xverse via Sats-Connect)
-- `past` — order/inscription history, synced to localStorage with `cube_` prefix
+**State management:** `signal()` / `computed()` / `linkedSignal()`, with `rxResourceFixed()` for async data and localStorage-backed signals (`cube_` prefix) for persisted mint history. Wallet connection is `ordpool-sdk`'s `WalletService` (any ordinals-aware wallet, not Xverse-only). The authoritative frontend conventions live in `apps/cubes-frontend/CLAUDE.md`.
 
 **Key routes** (`ordinal.routes.ts`):
 - `/` — StartComponent with the mint form + past mints
@@ -131,5 +128,4 @@ See `ordpool/deploy-happyserver/haushoppe-backend.env.example`. Required vars:
 - Prettier: single quotes (`"singleQuote": true`)
 - EditorConfig: 2-space indent, LF line endings, UTF-8
 - ESLint: per-project standalone configs (`apps/*/.eslintrc.json`) using `eslint:recommended` + `@typescript-eslint/recommended`. No `@nx/enforce-module-boundaries` anymore.
-- Angular: standalone components, SCSS styles
-- NgRx: `createFeature()` pattern with facade services
+- Angular: standalone components, SCSS styles. cubes-frontend is signal-first (Angular 22, no NgRx); only the inactive genesis-frontend still uses NgRx (`createFeature()` + facade services).

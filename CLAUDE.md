@@ -61,16 +61,14 @@ The root `package.json` is intentionally a tiny stub with just convenience short
 **No database** — everything is in-memory or fetched from external APIs.
 
 **Live endpoints:**
-- `POST /ordinals/createHtmlInscriptionOrder` — creates inscription via OrdinalsBot API
-- `GET /ordinals/getOrderStatus/:id` — polls OrdinalsBot for payment status
-- `GET /ordinals/getPrice/:fee/:size/:code?` — pricing in sats + USD (validates referral code for bonus)
-- `GET /api/...` (12 routes on `ApiController`) — ERC-721 metadata for genesis-frontend (mint tickets, owners, allowlist, token images)
+- `GET /` + `GET /robots.txt` (`AppController`)
+- `POST /api/mintTicket` + the `GET /api/...` token routes (`ApiController`) — ERC-721 mint tickets, token metadata, owners, allowlist, and token images for the (inactive) genesis-frontend.
 
-**External APIs:** OrdinalsBot (orders, pricing), api.ordpool.space (BTC/USD fxrate replacement for OrdinalsBot's broken /fxrate, mempool fees). Old Hiro/Magic Eden/cube-suggestion/cube-list integrations are gone — cubes-frontend reads those datasets directly from static GitHub Pages sources now.
+The backend serves the **ERC-721 side only**. **cubes-frontend does not call the backend**: it mints via `ordpool-sdk` (commit + reveal transactions signed by the connected ordinals-aware wallet, broadcast directly) and reads its datasets (cube suggestions, collection lists) from static GitHub Pages sources.
+
+**External APIs:** the ERC-721 routes read Ethereum on-chain state via Alchemy (see the env section). Cubes minting needs no server-side API.
 
 **HTTP client:** native `fetch` only. **axios is forbidden** (supply-chain risk).
-
-**Caching:** NodeCache with TTLs — 2h for hosted file content fetched during order polling, 60s for price cache.
 
 **Swagger/OpenAPI:** Available at `/open-api` (UI) and `/open-api-json` (spec).
 
@@ -86,18 +84,12 @@ Angular 16 standalone-components app. No NgModules — uses `provideRouter()`, `
 - `past` — order/inscription history, synced to localStorage with `cube_` prefix
 
 **Key routes** (`ordinal.routes.ts`):
-- `/` — StartComponent with mint form + past orders
-- `/mint/:collectionSymbol` — StartComponent with pre-selected collection for suggestions
-- `/inscription/:inscriptionId` — Single inscription detail
-- `/order/:orderId` — Traditional order tracking (OrdinalsBot payment QR codes)
-- `/order-connect/:txId` — Xverse/Sats-Connect order tracking (mempool polling)
+- `/` — StartComponent with the mint form + past mints
+- `/mint/:collectionSymbol` — StartComponent with a pre-selected collection for suggestions
+- `/inscription/:inscriptionId` — single inscription detail
 - `/faq`, `/presskit`
 
-**Effects use route-driven patterns** — `ofRoute()` operator triggers data loading based on navigation. Polling (every 3.5s) runs on order pages until payment/confirmation detected.
-
-**Two minting flows:**
-1. **Traditional (OrdinalsBot):** User enters receive address → backend creates order → user pays via on-chain BTC or Lightning → polling until `file.sent` is set
-2. **Xverse/Sats-Connect:** Wallet signs PSBT directly → polls mempool.space for confirmation
+**Minting flow (ordpool-sdk commit + reveal):** connect an ordinals-aware wallet → enter six inscription IDs → "Mint my cube!" → the wallet signs a **commit** transaction, then the **reveal** (carrying the cube HTML) follows automatically → when the reveal confirms, the cube is on-chain on the wallet's ordinals address. The wallet pays both transactions from its funded payment address; there is no invoice, no server-side order, and no intermediary. Built on `InscribeMintOrchestrator` from `ordpool-sdk`. Every cube mint also inscribes two CAT-21 cats as a side effect (commit + reveal both carry `nLockTime=21`).
 
 **Cube HTML format:** `<html><!--cubes.haushoppe.art--><head><title>TITLE</title></head><body><script>t='id1|id2|id3|id4|id5|id6|...'</script><script src=/content/CUBE_RENDERER_INSCRIPTION></script>`
 

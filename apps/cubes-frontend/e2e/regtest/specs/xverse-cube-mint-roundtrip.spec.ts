@@ -15,7 +15,7 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-popup';
+import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
 
 /**
  * Full user-flow proof for the Xverse wallet: the actual cubes-frontend

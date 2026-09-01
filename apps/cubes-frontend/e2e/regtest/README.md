@@ -6,28 +6,22 @@ produces an ord-indexed HTML inscription. Not "the button works" —
 Mint → wallet signs → txs broadcast → ord indexes the cube HTML byte-
 for-byte".
 
-## Status (2026-07-07)
+## Building blocks
 
-Infrastructure copied from `ordpool-space/ordpool-sdk` e2e/. Adapted
-container names to `cubes-e2e-*` for local-dev isolation. **Specs not
-yet written.**
+The e2e infrastructure is sourced from `ordpool-space/ordpool-sdk` at
+CI time. The workflow's "Lift SDK e2e helpers" step copies
+`node_modules/ordpool-sdk/e2e/playwright/*.ts` into `sdk-lib/`
+(gitignored) so Playwright can transpile them — Node 24 won't
+strip-types `.ts` under `node_modules`. Specs import the shared wallet
+onboarders (`onboard-<wallet>`) and `approval-popup` from `../sdk-lib/`.
 
-| Piece | State |
-|---|---|
-| `docker-compose.regtest.yml` (bitcoind + electrs + ord + ord-stock) | copied, renamed containers |
-| `regtest-bootstrap.sh` (deterministic BIP-39 wallet, 101 blocks) | copied |
-| `regtest-helpers.ts` (rpc / mineBlocks / postTx / getOrdInscription / SIGHASH_ALL) | copied |
-| `playwright-bootstrap.sh` (fetches wallet .crx from private releases) | copied |
-| `playwright.config.ts` (headed Chromium, xvfb-friendly, cubes-frontend as webServer) | new |
-| `global-setup.ts` (Xverse seed hydration) | copied, paths adjusted |
-| `wait-helpers.ts` + `approval-popup.ts` + `cat21wallet-sign-popup.ts` | copied |
-| `onboard-okx.ts` + `onboard-phantom.ts` | copied |
-| `onboard-leather.ts` / `onboard-unisat.ts` / `onboard-alby.ts` | **TODO** (extract from SDK per-wallet specs) |
-| `specs/xverse-cube-mint-roundtrip.spec.ts` | **TODO** — the reference spec |
-| Other 7 wallet specs | **TODO** — templated from xverse |
-| `honest-wallet-coverage.spec.ts` (audit gate) | **TODO** |
-| `.github/workflows/e2e-cubes-regtest.yml` | **TODO** |
-| Environment: `environment.regtest.ts` + angular.json `regtest` config | **TODO** — `mempoolApiUrl` must point at `http://localhost:3000` and the tip address must be a regtest bcrt1p... |
+Kept local to this suite (genesis-specific, not sourced from the SDK):
+`regtest-helpers.ts` (carries the cubes-only `openDetails` helper),
+`global-setup.ts` (Xverse seed hydration), `wait-helpers.ts`,
+`docker-compose.regtest.yml` (containers renamed `cubes-e2e-*` for
+local-dev isolation), `playwright.config.ts`, and the `*-bootstrap.sh`
+scripts. `playwright-bootstrap.sh <wallet>` fetches the wallet `.crx`
+from private `ordpool-sdk` releases (needs `GH_TOKEN`).
 
 ## The mint round-trip a spec must exercise
 
@@ -68,28 +62,14 @@ the binaries live in private releases on
 
 ## CI
 
-`.github/workflows/e2e-cubes-regtest.yml` (TODO) mirrors
-`ordpool-sdk`'s `e2e-playwright.yml`: ubuntu-latest + xvfb + docker
-compose. Wallet .crx cached per version. Timeout ~45 min. Runs the
-whole suite on every push to `main` + on PRs that touch
-`apps/cubes-frontend/**`.
+`.github/workflows/e2e-cubes-regtest.yml` mirrors `ordpool-sdk`'s
+Playwright job: ubuntu-latest + xvfb + docker compose. Wallet .crx
+cached per version. Timeout ~45 min. Runs the whole wallet matrix on
+every push to `main` + on PRs that touch `apps/cubes-frontend/**`.
 
-## What's next
+## Coverage
 
-Priority order for the follow-up work:
-
-1. **Environment.regtest.ts + angular.json config** — swap
-   `mempoolApiUrl` + tip address at build time so the spec's dev
-   server hits the local stack.
-2. **xverse-cube-mint-roundtrip.spec.ts** — the reference spec.
-   Everything else templates off it.
-3. **CI workflow** — get the empty scaffold running on GitHub Actions
-   so failure surfaces are visible even before every wallet is
-   covered.
-4. **Fan out to the other 6 wallets**: Leather, Unisat, OKX, Phantom,
-   CAT-21 Wallet, xpub. Each needs its own onboarding module +
-   spec. (Oyl was removed 2026-08-06 after vendor decommissioned
-   its backend infra; re-add if a new release or successor ships.)
-5. **Audit gate** — a Jest / Playwright spec that verifies every entry
-   in `KnownOrdinalWalletType` has a matching
-   `<wallet>-cube-mint-roundtrip.spec.ts`.
+One `<wallet>-cube-mint-roundtrip.spec.ts` per supported wallet:
+Xverse, Leather, Unisat, Wizz, OKX, CAT-21 Wallet, Alby. (Oyl was
+removed 2026-08-06 after its vendor decommissioned the backend infra;
+re-add if a successor ships.)

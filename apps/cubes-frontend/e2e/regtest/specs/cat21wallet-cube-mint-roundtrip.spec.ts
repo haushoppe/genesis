@@ -15,7 +15,8 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-popup';
+import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
+import { onboardCat21Wallet } from '../sdk-lib/onboard-cat21wallet';
 
 /**
  * Full user-flow proof for the CAT-21 wallet — cubes.haushoppe.art
@@ -56,8 +57,6 @@ import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-p
 const EXT_PATH = path.resolve(__dirname, '../extensions/cat21wallet');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
 const CUBES_URL = 'http://localhost:4203/';
-const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-const TEST_PASSWORD = 'correct-horse-battery-staple-Tr0ub4dor-9876';
 
 /** Same 0.002 BTC budget as the Xverse spec — comfortably covers
  *  commit + reveal fees + postage + tip at 5 sat/vB. */
@@ -83,35 +82,6 @@ async function shot(p: Page, name: string): Promise<void> {
     path: path.resolve(RESULTS_DIR, `cat21wallet-cube-mint-${name}.png`),
     fullPage: true,
   }).catch(() => undefined);
-}
-
-/**
- * Onboard the wallet from a mnemonic. Cat21-wallet is a Leather
- * fork; the onboard sequence + testids are identical.
- */
-async function onboardCat21Wallet(page: Page): Promise<void> {
-  await page.goto(`chrome-extension://${extensionId}/index.html`, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByTestId('sign-in-link')).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId('sign-in-link').click();
-
-  const inputs = page.locator('input[type="text"], input[type="password"]');
-  await expect(inputs.first()).toBeVisible({ timeout: 15_000 });
-  const words = TEST_MNEMONIC.split(' ');
-  for (let i = 0; i < 12; i++) {
-    await inputs.nth(i).fill(words[i]);
-  }
-  await page.getByRole('button', { name: /continue|sign in|restore|confirm/i }).first().click();
-
-  const pwInput = page.getByTestId('set-or-enter-password-input');
-  await expect(pwInput).toBeVisible({ timeout: 15_000 });
-  await pwInput.click();
-  await pwInput.pressSequentially(TEST_PASSWORD, { delay: 15 });
-  await page.getByTestId('set-password-btn').click();
-
-  await page.waitForFunction(() => {
-    const t = (document.body.innerText || '').toLowerCase();
-    return t.includes('send') || t.includes('receive') || t.includes('balance') || t.includes('bitcoin');
-  }, undefined, { timeout: 30_000, polling: 250 });
 }
 
 /**
@@ -163,7 +133,7 @@ test.beforeAll(async () => {
   // Onboard once for the whole suite (only one test today; sets the
   // shape for future tests to inherit the connected wallet).
   const primer = await context.newPage();
-  await onboardCat21Wallet(primer);
+  await onboardCat21Wallet(primer, extensionId);
   await shot(primer, '00-onboarded');
   await primer.close();
 });

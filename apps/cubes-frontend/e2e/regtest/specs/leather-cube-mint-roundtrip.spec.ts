@@ -15,7 +15,8 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-popup';
+import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
+import { onboardLeather } from '../sdk-lib/onboard-leather';
 
 /**
  * Full user-flow proof for the Leather wallet — cubes.haushoppe.art
@@ -53,8 +54,6 @@ import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-p
 const EXT_PATH = path.resolve(__dirname, '../extensions/leather');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
 const CUBES_URL = 'http://localhost:4203/';
-const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-const TEST_PASSWORD = 'correct-horse-battery-staple-Tr0ub4dor-9876';
 
 /** Same 0.002 BTC budget as the other cubes specs — covers commit +
  *  reveal fees + postage + tip at 5 sat/vB. */
@@ -80,35 +79,6 @@ async function shot(p: Page, name: string): Promise<void> {
     path: path.resolve(RESULTS_DIR, `leather-cube-mint-${name}.png`),
     fullPage: true,
   }).catch(() => undefined);
-}
-
-/**
- * Onboard Leather from a mnemonic. Same testids as cat21-wallet
- * (cat21-wallet forked from Leather; both share this DOM).
- */
-async function onboardLeather(page: Page): Promise<void> {
-  await page.goto(`chrome-extension://${extensionId}/index.html`, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByTestId('sign-in-link')).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId('sign-in-link').click();
-
-  const inputs = page.locator('input[type="text"], input[type="password"]');
-  await expect(inputs.first()).toBeVisible({ timeout: 15_000 });
-  const words = TEST_MNEMONIC.split(' ');
-  for (let i = 0; i < 12; i++) {
-    await inputs.nth(i).fill(words[i]);
-  }
-  await page.getByRole('button', { name: /continue|sign in|restore|confirm/i }).first().click();
-
-  const pwInput = page.getByTestId('set-or-enter-password-input');
-  await expect(pwInput).toBeVisible({ timeout: 15_000 });
-  await pwInput.click();
-  await pwInput.pressSequentially(TEST_PASSWORD, { delay: 15 });
-  await page.getByTestId('set-password-btn').click();
-
-  await page.waitForFunction(() => {
-    const t = (document.body.innerText || '').toLowerCase();
-    return t.includes('send') || t.includes('receive') || t.includes('balance') || t.includes('bitcoin');
-  }, undefined, { timeout: 30_000, polling: 250 });
 }
 
 /**
@@ -156,7 +126,7 @@ test.beforeAll(async () => {
   extensionId = worker.url().split('/')[2];
 
   const primer = await context.newPage();
-  await onboardLeather(primer);
+  await onboardLeather(primer, extensionId);
   await shot(primer, '00-onboarded');
   await primer.close();
 });

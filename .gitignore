@@ -58,6 +58,10 @@ apps/*/playwright-report*
 apps/*/test-results*
 apps/*/.playwright
 
+# CI-generated: SDK e2e helpers copied out of node_modules/ordpool-sdk for the
+# regtest specs (Playwright / Node 24 won't transpile .ts under node_modules).
+apps/cubes-frontend/e2e/regtest/sdk-lib/
+
 # Build-time env-injected environment file (produced by
 # apps/cubes-frontend/scripts/inject-env.mjs from HAUSHOPPE_TIP_ADDRESS
 # and consumed by angular.json production fileReplacements).

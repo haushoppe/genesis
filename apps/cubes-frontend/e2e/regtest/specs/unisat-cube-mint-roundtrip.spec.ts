@@ -15,7 +15,8 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-popup';
+import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
+import { onboardUnisat } from '../sdk-lib/onboard-unisat';
 
 /**
  * Full user-flow proof for Unisat — cubes.haushoppe.art end-to-end on
@@ -48,9 +49,6 @@ import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../approval-p
 const EXT_PATH = path.resolve(__dirname, '../extensions/unisat');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
 const CUBES_URL = 'http://localhost:4203/';
-const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-const TEST_MNEMONIC_WORDS = TEST_MNEMONIC.split(' ');
-const TEST_PASSWORD = 'correct-horse-battery-staple-Tr0ub4dor-9876';
 
 const FUND_AMOUNT_BTC = 0.002;
 
@@ -71,49 +69,6 @@ async function shot(p: Page, name: string): Promise<void> {
     path: path.resolve(RESULTS_DIR, `unisat-cube-mint-${name}.png`),
     fullPage: true,
   }).catch(() => undefined);
-}
-
-/**
- * Onboard Unisat from a mnemonic. Testids match the SDK's
- * `unisat-mint-roundtrip.spec.ts` reference — Unisat ships them on
- * every onboarding element, so no text-anchored waits needed.
- */
-async function onboardUnisat(page: Page): Promise<void> {
-  await page.setViewportSize({ width: 400, height: 800 });
-  await page.goto(`chrome-extension://${extensionId}/index.html`, { waitUntil: 'domcontentloaded' });
-
-  await expect(page.getByTestId('welcome-title')).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId('import-wallet-button').click();
-
-  await expect(page.getByTestId('create-password-input')).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId('create-password-input').fill(TEST_PASSWORD);
-  await page.getByTestId('create-password-confirm-input').fill(TEST_PASSWORD);
-  await page.getByTestId('create-password-continue-button').click();
-
-  await expect(page.getByTestId('restore-wallet-type-option-0')).toBeVisible({ timeout: 10_000 });
-  await page.getByTestId('restore-wallet-type-option-0').click();
-
-  await expect(page.getByTestId('mnemonic-import-word-0')).toBeVisible({ timeout: 15_000 });
-  for (let i = 0; i < TEST_MNEMONIC_WORDS.length; i++) {
-    await page.getByTestId(`mnemonic-import-word-${i}`).fill(TEST_MNEMONIC_WORDS[i]);
-  }
-  await page.getByTestId('mnemonic-import-continue-button').click();
-
-  const addressTypeContinue = page.getByTestId('address-type-continue-button');
-  if (await addressTypeContinue.isVisible({ timeout: 10_000 }).catch(() => false)) {
-    await addressTypeContinue.click();
-  }
-
-  const noticeCheckbox = page.getByTestId('notice-checkbox-1');
-  if (await noticeCheckbox.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await noticeCheckbox.click();
-    const noticeOk = page.getByTestId('notice-ok-button');
-    if (await noticeOk.isEnabled({ timeout: 3_000 }).catch(() => false)) {
-      await noticeOk.click();
-    }
-  }
-
-  await expect(page.getByTestId('tab-home')).toBeVisible({ timeout: 30_000 });
 }
 
 test.beforeAll(async () => {
@@ -149,7 +104,7 @@ test.beforeAll(async () => {
   extensionId = worker.url().split('/')[2];
 
   const primer = await context.newPage();
-  await onboardUnisat(primer);
+  await onboardUnisat(primer, extensionId, { password: 'correct-horse-battery-staple-Tr0ub4dor-9876' });
   await shot(primer, '00-onboarded');
   await primer.close();
 });

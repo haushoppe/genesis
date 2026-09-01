@@ -15,8 +15,7 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
-import { onboardCat21Wallet } from '../sdk-lib/onboard-cat21wallet';
+import { closeLeftoverExtensionPages, onboardCat21Wallet, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 
 /**
  * Full user-flow proof for the CAT-21 wallet — cubes.haushoppe.art

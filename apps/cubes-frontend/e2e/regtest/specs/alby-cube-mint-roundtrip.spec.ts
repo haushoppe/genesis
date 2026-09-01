@@ -15,7 +15,7 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { seedAlbyAccount } from '../sdk-lib/onboard-alby';
+import { seedAlbyAccount } from 'ordpool-sdk/e2e';
 
 /**
  * Full user-flow proof for Alby — cubes.haushoppe.art end-to-end on

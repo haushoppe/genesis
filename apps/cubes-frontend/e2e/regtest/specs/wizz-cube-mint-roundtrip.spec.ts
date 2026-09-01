@@ -15,8 +15,7 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
-import { onboardWizz } from '../sdk-lib/onboard-wizz';
+import { closeLeftoverExtensionPages, onboardWizz, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 
 /**
  * Full user-flow proof for Wizz — cubes.haushoppe.art end-to-end on

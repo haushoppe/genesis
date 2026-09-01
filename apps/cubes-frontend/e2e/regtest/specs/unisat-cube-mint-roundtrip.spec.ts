@@ -15,8 +15,7 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
-import { onboardUnisat } from '../sdk-lib/onboard-unisat';
+import { closeLeftoverExtensionPages, onboardUnisat, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 
 /**
  * Full user-flow proof for Unisat — cubes.haushoppe.art end-to-end on

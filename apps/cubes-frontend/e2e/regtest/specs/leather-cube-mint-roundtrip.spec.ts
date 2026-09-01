@@ -15,8 +15,7 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
-import { onboardLeather } from '../sdk-lib/onboard-leather';
+import { closeLeftoverExtensionPages, onboardLeather, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 
 /**
  * Full user-flow proof for the Leather wallet — cubes.haushoppe.art

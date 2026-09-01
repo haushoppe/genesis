@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import { waitForChromeStorageKey, waitForSingletonLockGone } from './wait-helpers';
-import { onboardXverse, primeAndSwitchToRegtest, overrideRegtestElectrsUrl } from './sdk-lib/onboard-xverse';
+import { onboardXverse, primeAndSwitchToRegtest, overrideRegtestElectrsUrl } from 'ordpool-sdk/e2e';
 
 // iter 52: no-op edit to re-trigger Playwright workflow (path-filtered).
 /**

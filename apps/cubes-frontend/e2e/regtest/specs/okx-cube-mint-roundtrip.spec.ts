@@ -15,8 +15,7 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, waitForApprovalPopup } from '../sdk-lib/approval-popup';
-import { onboardOkx } from '../sdk-lib/onboard-okx';
+import { closeLeftoverExtensionPages, onboardOkx, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 
 /**
  * Full user-flow proof for OKX — cubes.haushoppe.art end-to-end on

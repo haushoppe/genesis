@@ -124,12 +124,6 @@ jobs:
       # install actually needs no build step).
       - run: npm ci --ignore-scripts
 
-      - name: Lift SDK e2e helpers out of node_modules (Node 24 strip-types refuses .ts there)
-        run: |
-          mkdir -p e2e/regtest/sdk-lib
-          cp node_modules/ordpool-sdk/e2e/playwright/*.ts e2e/regtest/sdk-lib/
-          ls -la e2e/regtest/sdk-lib/
-
       - name: Install Playwright chromium + system deps
         run: ./node_modules/.bin/playwright install --with-deps chromium
 

@@ -8,12 +8,14 @@ for-byte".
 
 ## Building blocks
 
-The e2e infrastructure is sourced from `ordpool-space/ordpool-sdk` at
-CI time. The workflow's "Lift SDK e2e helpers" step copies
-`node_modules/ordpool-sdk/e2e/playwright/*.ts` into `sdk-lib/`
-(gitignored) so Playwright can transpile them — Node 24 won't
-strip-types `.ts` under `node_modules`. Specs import the shared wallet
-onboarders (`onboard-<wallet>`) and `approval-popup` from `../sdk-lib/`.
+The e2e infrastructure is sourced from `ordpool-space/ordpool-sdk`.
+Specs import the shared wallet onboarders (`onboardXverse`,
+`onboardUnisat`, `seedAlbyAccount`, …) and `approval-popup` helpers
+(`waitForApprovalPopup`, `closeLeftoverExtensionPages`) from the
+compiled `ordpool-sdk/e2e` subpath barrel: pre-built CommonJS that
+Playwright loads without a transpile step. `global-setup.ts` pulls the
+Xverse onboarder (`onboardXverse`, `primeAndSwitchToRegtest`,
+`overrideRegtestElectrsUrl`) from the same barrel.
 
 Kept local to this suite (genesis-specific, not sourced from the SDK):
 `regtest-helpers.ts` (carries the cubes-only `openDetails` helper),

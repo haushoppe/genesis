@@ -109,6 +109,24 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: git clone --depth 1 --branch ordpool https://github.com/ordpool-space/ordpool-electrs _ordpool-electrs
 
+      # buildx gha cache: reuse the compiled electrs + cat21-ord images
+      # across runs instead of recompiling Rust every run. A docker-container
+      # builder + the Actions runtime env make type=gha work; the
+      # .dockerignore excludes each clone's volatile .git/ so the COPY layer
+      # (and the compile beneath it) is stable and cache-hits. Absolute
+      # $GITHUB_WORKSPACE paths: the job default working-directory is
+      # apps/cubes-frontend, but the clones land at the workspace root.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Export GitHub Actions runtime for the gha cache backend
+        uses: crazy-max/ghaction-github-runtime@v3
+
+      - name: Stabilise the build contexts for layer caching
+        run: |
+          printf '.git\ntarget\n' > "$GITHUB_WORKSPACE/_ordpool-electrs/.dockerignore"
+          printf '.git\ntarget\n' > "$GITHUB_WORKSPACE/_cat21-ord/.dockerignore"
+
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -290,7 +308,13 @@ jobs:
           # context doesn't creep in.
           CAT21_ORD_SRC: ${{ github.workspace }}/_cat21-ord
           ELECTRS_SRC: ${{ github.workspace }}/_ordpool-electrs
-        run: docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock up -d --build bitcoind electrs ord-stock
+          COMPOSE_BAKE: "true"
+        # Build electrs + ord-stock via buildx bake so the gha overlay's
+        # cache_from/to take effect; bake loads the images (they have an
+        # `image:` name) for the following --no-build up.
+        run: |
+          docker compose -f e2e/regtest/docker-compose.regtest.yml -f e2e/regtest/docker-compose.gha-cache.yml --profile ord-stock build electrs ord-stock
+          docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock up -d --no-build bitcoind electrs ord-stock
 
       - name: Mine 101 blocks + create funding wallet
         env:

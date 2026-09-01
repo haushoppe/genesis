@@ -1,0 +1,31 @@
+# CI-ONLY overlay that routes the cold Rust image builds (electrs +
+# cat21-ord/ord-stock) through the GitHub Actions cache backend. On a run
+# whose source tree is unchanged (electrs + cat21-ord are cloned at a fixed
+# branch), buildx restores the previously compiled image instead of
+# recompiling Rust + RocksDB from scratch (~10 min electrs, several more for
+# cat21-ord).
+#
+# NEVER pass this file to a local `docker compose`: type=gha needs the
+# Actions runtime token (ACTIONS_RUNTIME_TOKEN + cache URLs) that only
+# exists inside a GitHub Actions job, and buildx errors without it. Local
+# dev uses the base compose only.
+#
+# Applied in CI on top of docker-compose.regtest.yml with COMPOSE_BAKE=true
+# + a buildx docker-container builder. This repo has its own gha cache
+# namespace (gha cache is per-repo), so it writes both scopes itself.
+# ord-stock is the cat21-ord build this workflow actually runs, so it owns
+# the scope=cat21-ord writer.
+services:
+  electrs:
+    build:
+      cache_from:
+        - type=gha,scope=electrs
+      cache_to:
+        - type=gha,scope=electrs,mode=max
+
+  ord-stock:
+    build:
+      cache_from:
+        - type=gha,scope=cat21-ord
+      cache_to:
+        - type=gha,scope=cat21-ord,mode=max

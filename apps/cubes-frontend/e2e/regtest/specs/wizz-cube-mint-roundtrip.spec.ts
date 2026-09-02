@@ -176,22 +176,46 @@ test.beforeAll(async () => {
     const u = route.request().url();
     return route.fulfill(okJson(
       u.includes('listscripthash')
-        // Reverse-engineered from the Wizz bundle (ui.js): the balance panel
-        // reads `response.global.height.toLocaleString()` (height MUST be a
-        // number, else that throws) and the "Network not match" guard only
-        // fires when `global.atomical_count` is truthy, so 0 skips it. Wizz's
-        // network is "mainnet" (the regtest connector-shim keeps it
-        // mainnet-side). This is Atomicals display data, NOT the Sign-button
-        // gate — that gate is `B.height`, sourced from the mempool
-        // `blocks/tip/height` call stubbed below.
+        // Reverse-engineered from the Wizz bundle (ui.js). The sign popup's
+        // balance is the Atomicals loader `g`, whose result feeds the panel:
+        //   height   = response.global.height   → this IS the `B.height` that
+        //              gates the Sign button (empty `global` throws on
+        //              `.toLocaleString()`), so it MUST be a number;
+        //   utxos    = response.utxos           → `y.utxos.sort()` needs an array;
+        //   atomicals= response.atomicals       → iterated as array-or-object.
+        // The ElectrumX-proxy client unwraps `.response` when `success` is true
+        // (`if (e.success) return e.response; throw e`), so this whole object
+        // becomes `y`. The "Network not match" guard only fires when
+        // `global.atomical_count` is truthy, so 0 skips it; Wizz's network is
+        // "mainnet" (the regtest connector-shim keeps it mainnet-side).
         ? { success: true, response: { global: { height: 900000, network: 'mainnet', atomical_count: 0 }, atomicals: {}, utxos: [] } }
         : { success: true, response: {} },
     ));
   });
-  // ordx.wizz.cash — Wizz runes indexer (runes/decode/psbt, runes/outputs,
-  // …): no runes. Permissive envelope covering list/total/outputs access.
-  await context.route('**/ordx.wizz.cash/**', route =>
-    route.fulfill(okJson({ code: 0, msg: 'ok', data: { list: [], total: 0, outputs: [] } })));
+  // ordx.wizz.cash — Wizz runes indexer. Crucially it uses the ElectrumX-proxy
+  // envelope `{ success, response }`, NOT Unisat's `{ code, msg, data }`. The
+  // balance loader's runes step (`de`→`fe` in ui.js) does
+  // `if (!n.success) throw new Error(n.message)` then reads `response.runes`
+  // (array) + `response.outputs` (one entry PER queried outpoint, else
+  // `throw "Invalid output"`). A `{ code, msg, data }` body has no `success`,
+  // so it threw and rejected the whole balance → "Failed to load balance",
+  // which disabled the Sign button. The PSBT-decode step instead does
+  // `if (m.success) { … }`, so `success:false` cleanly skips it (our cube-mint
+  // PSBT carries no runes).
+  await context.route('**/ordx.wizz.cash/**', (route) => {
+    if (route.request().url().includes('/runes/outputs')) {
+      // POST body is the JSON array of outpoints being queried; hand back one
+      // empty rune-map per outpoint so the per-index loop finds every entry.
+      let outpoints: unknown[] = [];
+      try {
+        const body = JSON.parse(route.request().postData() || '[]');
+        outpoints = Array.isArray(body) ? body : (body.data || body.outputs || []);
+      } catch { /* no/blank body → no outpoints */ }
+      return route.fulfill(okJson({ success: true, response: { runes: [], outputs: outpoints.map(() => ({})) } }));
+    }
+    // runes/decode/psbt + anything else: success:false → the runes-decode block skips.
+    return route.fulfill(okJson({ success: false, response: {} }));
+  });
   // api.rgbpp.io — RGB++ assets ([]) + balance ({address, xudt}). Empty.
   await context.route('**/api.rgbpp.io/**', (route) => {
     const u = route.request().url();
@@ -223,16 +247,13 @@ test.beforeAll(async () => {
     // brc20 lists, inscriptions, everything else: empty list.
     return route.fulfill(okJson({ code: 0, msg: 'ok', data: { list: [], total: 0 } }));
   });
-  // mempool.space — the Wizz balance loader (`be()` in ui.js) fires four
-  // parallel mempool calls and rejects the WHOLE balance (→ "Failed to load
-  // balance", which disables the Sign button) if ANY returns non-200, because
-  // its `_fetch` does `if (200 != status) throw`. All four are stubbed:
-  //   getBlockHeight → blocks/tip/height   (this IS `B.height`, the Sign gate;
-  //                                          a bare numeric body, Number()'d)
-  //   getUTXOs       → address/:addr/utxo  (confirmed UTXOs — empty here)
-  //   listTxs        → address/:addr/txs   (recent/unconfirmed txs — empty)
-  //   getPrices      → v1/historical-price (fiat price — empty)
-  // Live mempool.space flakes run-to-run in CI, so intercept all four.
+  // mempool.space — the sign popup's Atomicals loader (`g`) reads only the
+  // address tx history here (`listTxs` → address/:addr/txs); the block height
+  // it needs comes from the ElectrumX `listscripthash.global.height` above, not
+  // from mempool. The other three are for Wizz's MAIN wallet-view balance
+  // (`be()`), stubbed too so no live-mempool flake can leak into the run. Every
+  // mempool client throws on a non-200 (`if (200 != status) throw`), so any
+  // endpoint left live is a flake source.
   await context.route('**/mempool.space/api/blocks/tip/height**', route =>
     route.fulfill({ status: 200, contentType: 'text/plain', headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' }, body: '900000' }));
   await context.route('**/mempool.space/api/address/*/utxo**', route => route.fulfill(okJson([])));

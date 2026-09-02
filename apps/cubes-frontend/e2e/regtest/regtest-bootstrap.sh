@@ -9,8 +9,20 @@
 
 set -euo pipefail
 
-COMPOSE="docker compose -f $(dirname "$0")/docker-compose.regtest.yml"
-RPC="docker exec cubes-e2e-bitcoind bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+
+# The regtest stack is the SDK's shipped compose (single source of truth;
+# this repo no longer keeps a copy). Parametrize it for the cubes stack:
+# E2E_PREFIX keeps the container names this script + the specs expect
+# (cubes-e2e-*); ELECTRS_SRC / CAT21_ORD_SRC point the build contexts at
+# the fork checkouts. CI sets all three itself; for a standalone local run
+# they default to the workspace-sibling checkouts under /Work/ordpool/.
+export E2E_PREFIX="${E2E_PREFIX:-cubes-e2e}"
+export ELECTRS_SRC="${ELECTRS_SRC:-$(cd "$HERE/../../../../.." && pwd)/ordpool-electrs}"
+export CAT21_ORD_SRC="${CAT21_ORD_SRC:-$(cd "$HERE/../../../../.." && pwd)/cat21-ord}"
+
+COMPOSE="docker compose -f $HERE/../../node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml"
+RPC="docker exec ${E2E_PREFIX}-bitcoind bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool"
 
 # --- bring containers up if not already running ---
 if ! docker ps --format '{{.Names}}' | grep -q 'cubes-e2e-bitcoind'; then

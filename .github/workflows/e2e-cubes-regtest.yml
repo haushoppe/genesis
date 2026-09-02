@@ -77,6 +77,16 @@ jobs:
           # infra back up.
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Reuse the SDK's shipped regtest compose from node_modules instead of
+    # a local copy. These env vars parametrize it for the cubes stack:
+    # E2E_PREFIX keeps the container names the specs / helpers / bootstrap
+    # expect (cubes-e2e-*); ELECTRS_SRC / CAT21_ORD_SRC point the build
+    # contexts at this job's checkouts. Job-level so both the bring-up and
+    # the teardown resolve the same container names.
+    env:
+      E2E_PREFIX: cubes-e2e
+      ELECTRS_SRC: ${{ github.workspace }}/_ordpool-electrs
+      CAT21_ORD_SRC: ${{ github.workspace }}/_cat21-ord
     defaults:
       run:
         working-directory: apps/cubes-frontend
@@ -303,18 +313,15 @@ jobs:
         # ord-stock which uses the same mainline ord binary
         # without --index-cat21). Only bring up what we hit.
         env:
-          # Point docker-compose at the checkouts above. Absolute paths so
-          # relative-path drama between compose file location + build
-          # context doesn't creep in.
-          CAT21_ORD_SRC: ${{ github.workspace }}/_cat21-ord
-          ELECTRS_SRC: ${{ github.workspace }}/_ordpool-electrs
           COMPOSE_BAKE: "true"
-        # Build electrs + ord-stock via buildx bake so the gha overlay's
-        # cache_from/to take effect; bake loads the images (they have an
-        # `image:` name) for the following --no-build up.
+        # Build electrs + ord-stock via buildx bake against the SDK's
+        # shipped compose + gha-cache overlay (from node_modules) so the
+        # overlay's cache_from/to take effect; bake loads the images (they
+        # have an `image:` name) for the following --no-build up. The
+        # E2E_PREFIX / ELECTRS_SRC / CAT21_ORD_SRC env is set job-level.
         run: |
-          docker compose -f e2e/regtest/docker-compose.regtest.yml -f e2e/regtest/docker-compose.gha-cache.yml --profile ord-stock build electrs ord-stock
-          docker compose -f e2e/regtest/docker-compose.regtest.yml --profile ord-stock up -d --no-build bitcoind electrs ord-stock
+          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml -f node_modules/ordpool-sdk/e2e/docker-compose.gha-cache.yml --profile ord-stock build electrs ord-stock
+          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml --profile ord-stock up -d --no-build bitcoind electrs ord-stock
 
       - name: Mine 101 blocks + create funding wallet
         env:
@@ -376,4 +383,4 @@ jobs:
 
       - name: Tear down regtest stack
         if: always()
-        run: docker compose -f e2e/regtest/docker-compose.regtest.yml down -v
+        run: docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml down -v

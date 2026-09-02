@@ -20,10 +20,17 @@ Xverse onboarder (`onboardXverse`, `primeAndSwitchToRegtest`,
 Kept local to this suite (genesis-specific, not sourced from the SDK):
 `regtest-helpers.ts` (carries the cubes-only `openDetails` helper),
 `global-setup.ts` (Xverse seed hydration), `wait-helpers.ts`,
-`docker-compose.regtest.yml` (containers renamed `cubes-e2e-*` for
-local-dev isolation), `playwright.config.ts`, and the `*-bootstrap.sh`
-scripts. `playwright-bootstrap.sh <wallet>` fetches the wallet `.crx`
-from private `ordpool-sdk` releases (needs `GH_TOKEN`).
+`playwright.config.ts`, and the `*-bootstrap.sh` scripts.
+`playwright-bootstrap.sh <wallet>` fetches the wallet `.crx` from private
+`ordpool-sdk` releases (needs `GH_TOKEN`).
+
+The regtest Docker stack (bitcoind + electrs + ord-stock) is the SDK's
+shipped `docker-compose.regtest.yml`, loaded from
+`node_modules/ordpool-sdk/e2e/` — no local copy. It is parametrized via
+`E2E_PREFIX=cubes-e2e` (keeps the `cubes-e2e-*` container names this
+suite's helpers expect) plus `ELECTRS_SRC` / `CAT21_ORD_SRC` (build
+contexts). The `regtest-bootstrap.sh` script sets those defaults for a
+standalone local run; CI sets them at the job level.
 
 ## The mint round-trip a spec must exercise
 

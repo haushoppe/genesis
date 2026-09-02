@@ -92,6 +92,16 @@ async function approveWizzSignPopup(ctx: BrowserContext, knownPages: Set<Page>):
     },
   });
   await shot(approval, '05a-sign-popup');
+  // TEMP instrumentation: surface the popup's own JS errors so we can see
+  // exactly which field/line the balance-load throws on (instead of guessing
+  // stub shapes against a minified bundle).
+  approval.on('console', (m) => {
+    if (m.type() === 'error') console.log(`[wizz-sign-popup console.error] ${m.text()}`);
+  });
+  approval.on('pageerror', (e) => {
+    console.log(`[wizz-sign-popup pageerror] ${e.message}\n${(e.stack || '').slice(0, 600)}`);
+  });
+  await approval.waitForTimeout(4000); // let the balance-load fire + throw
   // Sign button carries a spinner overlay + custom braille chars in
   // textContent while Wizz analyses the PSBT — atomically match +
   // click inside page.evaluate to sidestep the pointer-events race.

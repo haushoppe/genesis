@@ -176,7 +176,14 @@ test.beforeAll(async () => {
     const u = route.request().url();
     return route.fulfill(okJson(
       u.includes('listscripthash')
-        ? { success: true, response: { global: {}, atomicals: {}, utxos: [] } }
+        // Reverse-engineered from the Wizz bundle (ui.js): it reads
+        // `response.global.height.toLocaleString()` (so height MUST be a
+        // number — an empty `global` threw and produced "Failed to load
+        // balance"), the balance panel's gating `B.height` derives from it,
+        // and the "Network not match" guard only fires when
+        // `global.atomical_count` is truthy, so 0 skips it. Wizz's network
+        // is "mainnet" (the regtest connector-shim keeps it mainnet-side).
+        ? { success: true, response: { global: { height: 900000, network: 'mainnet', atomical_count: 0 }, atomicals: {}, utxos: [] } }
         : { success: true, response: {} },
     ));
   });

@@ -170,7 +170,12 @@ jobs:
           key: xverse-extension-v2.3.2
 
       - name: Fetch Xverse .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'xverse' && steps.xverse-cache.outputs.cache-hit != 'true'
+        # Not gated on cache-hit: the bootstrap re-reads the cached
+        # manifest version and only re-downloads on a mismatch (else it
+        # exits in <1s). So a VERSION bump in the script self-heals even if
+        # the cache key below wasn't bumped — a stale key costs a re-fetch,
+        # never a wrong build.
+        if: matrix.wallet == 'xverse'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh xverse
@@ -242,7 +247,7 @@ jobs:
           key: leather-extension-v6.102.0
 
       - name: Fetch Leather .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'leather' && steps.leather-cache.outputs.cache-hit != 'true'
+        if: matrix.wallet == 'leather'   # not cache-gated: bootstrap self-heals on version mismatch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh leather
@@ -257,7 +262,7 @@ jobs:
           key: unisat-extension-v1.7.15
 
       - name: Fetch Unisat .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'unisat' && steps.unisat-cache.outputs.cache-hit != 'true'
+        if: matrix.wallet == 'unisat'   # not cache-gated: bootstrap self-heals on version mismatch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh unisat
@@ -272,7 +277,7 @@ jobs:
           key: wizz-extension-v2.13.4
 
       - name: Fetch Wizz .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'wizz' && steps.wizz-cache.outputs.cache-hit != 'true'
+        if: matrix.wallet == 'wizz'   # not cache-gated: bootstrap self-heals on version mismatch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh wizz
@@ -287,7 +292,7 @@ jobs:
           key: okx-extension-v4.1.0
 
       - name: Fetch OKX .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'okx' && steps.okx-cache.outputs.cache-hit != 'true'
+        if: matrix.wallet == 'okx'   # not cache-gated: bootstrap self-heals on version mismatch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh okx
@@ -302,7 +307,7 @@ jobs:
           key: alby-extension-v3.14.2
 
       - name: Fetch Alby .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'alby' && steps.alby-cache.outputs.cache-hit != 'true'
+        if: matrix.wallet == 'alby'   # not cache-gated: bootstrap self-heals on version mismatch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh alby
@@ -363,9 +368,12 @@ jobs:
       - name: Dump docker logs on failure
         if: failure()
         run: |
-          echo "=== bitcoind ==="; docker logs cubes-e2e-bitcoind 2>&1 | tail -100
-          echo "=== electrs ==="; docker logs cubes-e2e-electrs 2>&1 | tail -100
-          echo "=== ord-stock ==="; docker logs cubes-e2e-ord-stock 2>&1 | tail -100
+          # `|| true` on each: under bash -eo pipefail a failed `docker logs`
+          # (e.g. a container that never started) would abort the step and
+          # hide the later dumps — exactly when you need all of them.
+          echo "=== bitcoind ==="; docker logs cubes-e2e-bitcoind 2>&1 | tail -100 || true
+          echo "=== electrs ==="; docker logs cubes-e2e-electrs 2>&1 | tail -100 || true
+          echo "=== ord-stock ==="; docker logs cubes-e2e-ord-stock 2>&1 | tail -100 || true
 
       - name: Upload Playwright artifacts
         # Only upload on failure, and only keep for 1 day. Success

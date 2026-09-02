@@ -191,10 +191,34 @@ test.beforeAll(async () => {
       ? okJson([])
       : okJson({ address: '', xudt: [] }));
   });
-  // Unisat inscriptions list — flaky in CI; none. (multi-assets + decode2
-  // answer reliably, so those stay live.)
-  await context.route('**/wallet-api.unisat.io/v5/address/inscriptions**', route =>
-    route.fulfill(okJson({ code: 0, msg: 'ok', data: { list: [], total: 0 } })));
+  // wallet-api.unisat.io — the Unisat wallet API Wizz inherits. The balance
+  // aggregates multi-assets + brc20 + inscriptions here; ALL of them flake
+  // in CI (observed 503/-1 run-to-run), so intercept the whole host.
+  const UNISAT_ZERO_ASSET = {
+    totalSatoshis: 0, btcSatoshis: 0, assetSatoshis: 0, inscriptionCount: 0,
+    atomicalsCount: 0, brc20Count: 0, brc20Count5Byte: 0, brc20Count6Byte: 0,
+    arc20Count: 0, runesCount: 0,
+  };
+  await context.route('**/wallet-api.unisat.io/**', (route) => {
+    const u = route.request().url();
+    if (u.includes('/address/multi-assets')) {
+      // one zero-asset object per queried address (the array length must match).
+      const addrs = (new URL(u).searchParams.get('addresses') || '').split(',').filter(Boolean);
+      return route.fulfill(okJson({ code: 0, msg: 'ok', data: addrs.map(() => UNISAT_ZERO_ASSET) }));
+    }
+    if (u.includes('/default/check-website')) {
+      return route.fulfill(okJson({ code: 0, msg: 'ok', data: { isScammer: false, warning: '', allowQuickMultiSign: false } }));
+    }
+    // tx/decode2 (per-input PSBT decode) has an input-specific shape we can't
+    // fabricate; leave it live (it answers reliably and isn't the balance gate).
+    if (u.includes('/tx/decode')) return route.continue();
+    // brc20 lists, inscriptions, everything else: empty list.
+    return route.fulfill(okJson({ code: 0, msg: 'ok', data: { list: [], total: 0 } }));
+  });
+  // mempool.space — tx history (balance panel) + fiat price, both flaky here.
+  await context.route('**/mempool.space/api/address/*/txs**', route => route.fulfill(okJson([])));
+  await context.route('**/mempool.space/api/v1/historical-price**', route =>
+    route.fulfill(okJson({ prices: [], exchangeRates: {} })));
   // Wizz marketplace aggregator — not needed for signing, 503s in CI.
   await context.route('**/mkt.wizz.cash/**', route => route.abort());
 

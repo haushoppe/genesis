@@ -147,36 +147,55 @@ test.beforeAll(async () => {
   // to configs.wizz.cash on GHA runners).
   await context.route('**/configs.wizz.cash/**', route => route.abort());
 
-  // The sign popup will NOT enable its Sign button until it has loaded
-  // the account balance AND analysed the PSBT for atomicals/runes. Wizz
-  // does both against its OWN production backend (ep.wizz.cash,
-  // ordx.wizz.cash), which returns 503 to GitHub runner IPs — the popup
-  // then shows "Failed to load balance" and the Sign button stays
-  // disabled forever (see the 05a/test-failed screenshots). Nothing here
-  // is on-chain-real on regtest: the account holds no atomicals, no
-  // runes, and the cube PSBT carries none either. So we fulfil these with
-  // empty "nothing found" results, which is the truthful answer and makes
-  // the popup stop depending on Wizz's live (CI-hostile) backend. Shapes
-  // are reconstructed from the atomicals-electrumx proxy wrapper
-  // ({success, response}) and Wizz's unisat-fork JSON envelope
-  // ({code, msg, data}).
+  // ── Make the sign popup hermetic ──────────────────────────────────
+  // The sign popup will NOT enable its Sign button until it has loaded the
+  // account balance AND analysed the PSBT for atomicals/runes. Wizz (a
+  // Unisat fork) does that against a fleet of LIVE third-party backends —
+  // its own ep.wizz.cash (Atomicals ElectrumX proxy) + ordx.wizz.cash
+  // (runes indexer), plus wallet-api.unisat.io, api.rgbpp.io. If ANY of
+  // them throws, the popup shows "Failed to load balance" and Sign stays
+  // disabled forever. In CI they are flaky, and when Wizz's own backend is
+  // down they 503 for everyone. Nothing here is real on regtest (no
+  // atomicals, no runes, no rgbpp assets), so intercept EVERY one of these
+  // hosts and return the truthful "empty" result — the test then depends
+  // only on the local regtest stack, not on Wizz's server uptime.
+  //
+  // Shapes: the ep.wizz.cash envelope is {success, response} (verified
+  // against WizzWallet/elex-proxy `R::ok`); the unisat + rgbpp envelopes
+  // are copied verbatim from real 200 responses captured in the CI trace.
   const okJson = (body: unknown) => ({
     status: 200,
     contentType: 'application/json',
     headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' },
     body: JSON.stringify(body),
   });
-  // Atomicals on the address (feeds the balance panel) — none.
-  await context.route('**/ep.wizz.cash/proxy/blockchain.atomicals.listscripthash**', route =>
-    route.fulfill(okJson({ success: true, response: { global: null, atomicals: {}, utxos: [] } })));
-  // Atomicals decode of the PSBT — none.
-  await context.route('**/ep.wizz.cash/proxy/blockchain.atomicals.decode_psbt**', route =>
-    route.fulfill(okJson({ success: true, response: {} })));
-  // Runes decode of the PSBT — none.
-  await context.route('**/ordx.wizz.cash/runes/decode/psbt**', route =>
-    route.fulfill(okJson({ code: 0, msg: 'ok', data: null })));
-  // Wizz marketplace aggregator (challenge / channels) — not needed for
-  // signing, 503s in CI; abort so it never stalls a retry loop.
+  // ep.wizz.cash — Atomicals ElectrumX proxy. listscripthash feeds the
+  // balance panel (needs an object `global` + arrays it can iterate);
+  // decode_psbt feeds the PSBT preview. Both: nothing found.
+  await context.route('**/ep.wizz.cash/**', (route) => {
+    const u = route.request().url();
+    return route.fulfill(okJson(
+      u.includes('listscripthash')
+        ? { success: true, response: { global: {}, atomicals: {}, utxos: [] } }
+        : { success: true, response: {} },
+    ));
+  });
+  // ordx.wizz.cash — Wizz runes indexer (runes/decode/psbt, runes/outputs,
+  // …): no runes. Permissive envelope covering list/total/outputs access.
+  await context.route('**/ordx.wizz.cash/**', route =>
+    route.fulfill(okJson({ code: 0, msg: 'ok', data: { list: [], total: 0, outputs: [] } })));
+  // api.rgbpp.io — RGB++ assets ([]) + balance ({address, xudt}). Empty.
+  await context.route('**/api.rgbpp.io/**', (route) => {
+    const u = route.request().url();
+    return route.fulfill(u.includes('/assets')
+      ? okJson([])
+      : okJson({ address: '', xudt: [] }));
+  });
+  // Unisat inscriptions list — flaky in CI; none. (multi-assets + decode2
+  // answer reliably, so those stay live.)
+  await context.route('**/wallet-api.unisat.io/v5/address/inscriptions**', route =>
+    route.fulfill(okJson({ code: 0, msg: 'ok', data: { list: [], total: 0 } })));
+  // Wizz marketplace aggregator — not needed for signing, 503s in CI.
   await context.route('**/mkt.wizz.cash/**', route => route.abort());
 
   let [worker] = context.serviceWorkers();

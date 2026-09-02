@@ -97,8 +97,11 @@ async function approveWizzSignPopup(ctx: BrowserContext, knownPages: Set<Page>):
   // click inside page.evaluate to sidestep the pointer-events race.
   await approval.waitForFunction(() => {
     const isSignButton = (el: Element) => {
-      const text = (el.textContent || '').trim();
-      return /^\s*[⠀-⣿•●]?\s*Sign\s*$/i.test(text);
+      // Strip any spinner glyphs (braille/bullets, one OR many) before
+      // matching, so we find the button whatever its loading overlay
+      // renders in textContent.
+      const text = (el.textContent || '').replace(/[^\x20-\x7E]/g, '').trim();
+      return /^Sign$/i.test(text);
     };
     const els = Array.from(document.querySelectorAll<HTMLElement>('button, [role="button"], div'));
     const candidate = els.find(isSignButton);
@@ -108,7 +111,7 @@ async function approveWizzSignPopup(ctx: BrowserContext, knownPages: Set<Page>):
     if (parseFloat(style.opacity) < 0.7) return null;
     candidate.click();
     return { text: candidate.textContent };
-  }, undefined, { timeout: 60_000, polling: 250 });
+  }, undefined, { timeout: 90_000, polling: 250 });
   console.log('[wizz-mint] clicked sign-button (popup may have closed)');
 }
 
@@ -143,6 +146,38 @@ test.beforeAll(async () => {
   // Block Wizz's remote-config fetch that hangs in CI (no outbound
   // to configs.wizz.cash on GHA runners).
   await context.route('**/configs.wizz.cash/**', route => route.abort());
+
+  // The sign popup will NOT enable its Sign button until it has loaded
+  // the account balance AND analysed the PSBT for atomicals/runes. Wizz
+  // does both against its OWN production backend (ep.wizz.cash,
+  // ordx.wizz.cash), which returns 503 to GitHub runner IPs — the popup
+  // then shows "Failed to load balance" and the Sign button stays
+  // disabled forever (see the 05a/test-failed screenshots). Nothing here
+  // is on-chain-real on regtest: the account holds no atomicals, no
+  // runes, and the cube PSBT carries none either. So we fulfil these with
+  // empty "nothing found" results, which is the truthful answer and makes
+  // the popup stop depending on Wizz's live (CI-hostile) backend. Shapes
+  // are reconstructed from the atomicals-electrumx proxy wrapper
+  // ({success, response}) and Wizz's unisat-fork JSON envelope
+  // ({code, msg, data}).
+  const okJson = (body: unknown) => ({
+    status: 200,
+    contentType: 'application/json',
+    headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' },
+    body: JSON.stringify(body),
+  });
+  // Atomicals on the address (feeds the balance panel) — none.
+  await context.route('**/ep.wizz.cash/proxy/blockchain.atomicals.listscripthash**', route =>
+    route.fulfill(okJson({ success: true, response: { global: null, atomicals: {}, utxos: [] } })));
+  // Atomicals decode of the PSBT — none.
+  await context.route('**/ep.wizz.cash/proxy/blockchain.atomicals.decode_psbt**', route =>
+    route.fulfill(okJson({ success: true, response: {} })));
+  // Runes decode of the PSBT — none.
+  await context.route('**/ordx.wizz.cash/runes/decode/psbt**', route =>
+    route.fulfill(okJson({ code: 0, msg: 'ok', data: null })));
+  // Wizz marketplace aggregator (challenge / channels) — not needed for
+  // signing, 503s in CI; abort so it never stalls a retry loop.
+  await context.route('**/mkt.wizz.cash/**', route => route.abort());
 
   let [worker] = context.serviceWorkers();
   if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });

@@ -59,9 +59,9 @@ standalone local run; CI sets them at the job level.
 ## Commands
 
 ```bash
-npm run test:e2e:regtest:up      # bring up bitcoind + electrs + ord
-npm run test:e2e:regtest         # run the Playwright suite (needs :up first)
-npm run test:e2e:regtest:down    # stop + wipe the stack
+npm run e2e:regtest:up      # bring up bitcoind + electrs + ord-stock, mine 101 blocks
+npm run e2e:regtest         # run the Playwright suite (needs :up first)
+npm run e2e:regtest:down    # stop + wipe the stack
 ```
 
 `playwright-bootstrap.sh <wallet>` downloads and unpacks the .crx into

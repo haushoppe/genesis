@@ -5,7 +5,6 @@ import * as fs from 'node:fs';
 import { waitForChromeStorageKey, waitForSingletonLockGone } from './wait-helpers';
 import { onboardXverse, primeAndSwitchToRegtest, overrideRegtestElectrsUrl } from 'ordpool-sdk/e2e';
 
-// iter 52: no-op edit to re-trigger Playwright workflow (path-filtered).
 /**
  * Playwright globalSetup — runs ONCE before any spec.
  *
@@ -13,14 +12,14 @@ import { onboardXverse, primeAndSwitchToRegtest, overrideRegtestElectrsUrl } fro
  * See `/Work/ordpool/WALLETS.md` → "HARD RULE: The Xverse pattern is
  * the gold standard" for the full mental model. The TL;DR: this file
  * runs the FULL onboarding click-through once and caches the result;
- * downstream specs (matrix × 4, mint-roundtrip) clone the seed dir
- * for fresh contexts in <2s instead of repeating 25s of UI clicks.
+ * the per-wallet cube-mint-roundtrip specs clone the seed dir for fresh
+ * contexts in <2s instead of repeating 25s of UI clicks.
  *
- * The companion *source-of-truth* layer is `specs/xverse-onboard.spec.ts`,
- * which runs the same click-through against every CI push so wallet
- * version bumps that break selectors fail loudly. DO NOT delete the
- * onboard spec thinking this globalSetup covers it — the seed cache
- * regenerates silently and would mask broken onboarding.
+ * This click-through IS the source-of-truth for onboarding here: each CI
+ * run is a fresh machine with no persisted seed cache, so globalSetup
+ * re-runs the real onboarding every push and a wallet version bump that
+ * breaks a selector fails it loudly. Locally the seed cache persists on
+ * disk, so delete it to re-exercise onboarding after a wallet bump.
  *
  * Drives the full Xverse onboarding (BIP-39 test seed + password)
  * and switches the wallet to Bitcoin Regtest mode, then dumps the

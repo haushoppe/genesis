@@ -4,7 +4,7 @@
 # locally (we don't run unverified browser-extension code on dev
 # machines). The repo never commits the build output.
 #
-# Source-of-truth: private GitHub releases on ordpool-space/ordpool-sdk
+# Source-of-truth: public GitHub releases on ordpool-space/ordpool-sdk
 # hold the published .crx files as assets. We mirror them ourselves
 # because:
 #   - Chrome Web Store update endpoint returns 404 for non-Chrome
@@ -15,7 +15,7 @@
 #
 # Usage: bash playwright-bootstrap.sh <wallet>
 #
-# Supported wallets: xverse, unisat, leather.
+# Supported wallets: xverse, unisat, leather, okx, phantom, wizz, alby, cat21wallet.
 # To bump a version: edit the per-wallet block below, then create a
 # new release tagged <wallet>-extension-v<version> with the .crx
 # attached on ordpool-space/ordpool-sdk.

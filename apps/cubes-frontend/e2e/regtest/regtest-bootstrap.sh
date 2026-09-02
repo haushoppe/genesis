@@ -25,8 +25,11 @@ COMPOSE="docker compose -f $HERE/../../node_modules/ordpool-sdk/e2e/docker-compo
 RPC="docker exec ${E2E_PREFIX}-bitcoind bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool"
 
 # --- bring containers up if not already running ---
-if ! docker ps --format '{{.Names}}' | grep -q 'cubes-e2e-bitcoind'; then
-  $COMPOSE up -d >&2
+# The cube specs verify inscriptions against ord-stock (:8081), so bring it
+# up alongside bitcoind + electrs — the same set the CI workflow starts. (In
+# CI the workflow already started them, so this branch is skipped.)
+if ! docker ps --format '{{.Names}}' | grep -q "${E2E_PREFIX}-bitcoind"; then
+  $COMPOSE --profile ord-stock up -d bitcoind electrs ord-stock >&2
 fi
 
 # --- wait for bitcoind RPC to respond ---

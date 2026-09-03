@@ -1,11 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
-import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
+import { ApplicationConfig, inject, provideZonelessChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
-import { bitcoinNetwork, cat21Config, Network, StorageLike, storage } from 'ordpool-sdk';
+import { Cat21Service, Network, StorageLike, UtxoContentScanner, WalletService } from 'ordpool-sdk';
 
 import { environment } from '../environments/environment';
 import { ORDINAL_ROUTES } from './ordinal.routes';
+import { bitcoinNetwork, cat21Config } from './shared/sdk-tokens';
 
 /**
  * Thin adapter over the browser's localStorage that satisfies the
@@ -25,11 +26,10 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     provideAnimationsAsync(),
 
-    // ordpool-sdk DI tokens. Bridges the SDK's framework-agnostic
-    // interfaces to cubes-frontend's concrete environment. WalletService
-    // + InscribeMintOrchestrator resolve providedIn:'root' — only the
-    // tokens need explicit wiring here.
-    { provide: storage, useValue: browserLocalStorage },
+    // The SDK is framework-agnostic — its services are plain classes taking
+    // config in the constructor. These app-local tokens carry cubes-frontend's
+    // concrete config; the useFactory providers below construct the SDK
+    // classes as root singletons, so call sites keep injecting the class.
     // Regtest env sets mempoolApiUrl to '' (same-origin proxied);
     // mainnet/prod use https://api.ordpool.space. Empty string is
     // the regtest fingerprint.
@@ -50,6 +50,11 @@ export const appConfig: ApplicationConfig = {
       ordApiUrl: environment.ordApiUrl,
       cat21OrdApiUrl: environment.cat21OrdApiUrl,
     } },
+    // The SDK's stateful classes are plain (no @Injectable) — registered here
+    // as root singletons, constructed from the tokens above.
+    { provide: Cat21Service, useFactory: () => new Cat21Service(inject(cat21Config), inject(bitcoinNetwork)) },
+    { provide: UtxoContentScanner, useFactory: () => new UtxoContentScanner(inject(cat21Config)) },
+    { provide: WalletService, useFactory: () => new WalletService({ storage: browserLocalStorage, network: inject(bitcoinNetwork) }) },
     provideRouter(
       ORDINAL_ROUTES,
       withComponentInputBinding(),

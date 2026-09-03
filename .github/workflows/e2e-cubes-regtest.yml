@@ -143,14 +143,12 @@ jobs:
           cache: 'npm'
           cache-dependency-path: apps/cubes-frontend/package-lock.json
 
-      # The workspace CLAUDE.md pins `ignore-scripts=true` locally
-      # to mitigate Shai-Hulud-style supply-chain worms. On CI
-      # ephemeral runners the argument is weaker, but we keep the
-      # posture consistent: install with --ignore-scripts and then
-      # manually build the one dep that needs it (ordpool-sdk's
-      # ng-packagr dist is pre-built + checked in, so its npm
-      # install actually needs no build step).
-      - run: npm ci --ignore-scripts
+      # Scripts must run: ordpool-sdk builds its dist/ (ESM main entry) via
+      # its `prepare` hook at install time — it is not checked in. This
+      # matches build-cubes-frontend.yml (plain `npm ci`) and the workspace
+      # .npmrc (`ignore-scripts=false`, the supply-chain posture is lockfile
+      # discipline, not script-blocking).
+      - run: npm ci
 
       - name: Install Playwright chromium + system deps
         run: ./node_modules/.bin/playwright install --with-deps chromium

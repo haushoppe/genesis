@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { cat21Config } from 'ordpool-sdk';
+import { cat21Config } from '../shared/sdk-tokens';
 import { catchError, map, Observable, of } from 'rxjs';
 
 interface OrdInscriptionResponse {

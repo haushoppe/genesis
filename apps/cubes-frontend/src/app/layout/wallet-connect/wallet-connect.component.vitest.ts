@@ -1,7 +1,9 @@
 import { ChangeDetectorRef, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { cat21Config, KnownOrdinalWalletType, WalletPlatform, WalletService } from 'ordpool-sdk';
+import { KnownOrdinalWalletType, WalletPlatform, WalletService } from 'ordpool-sdk';
+
+import { cat21Config } from '../../shared/sdk-tokens';
 import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

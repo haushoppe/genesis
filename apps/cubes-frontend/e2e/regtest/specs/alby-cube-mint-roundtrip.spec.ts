@@ -15,43 +15,29 @@ import {
   getStockOrdContent,
   openDetails,
 } from '../regtest-helpers';
-import { seedAlbyAccount } from 'ordpool-sdk/e2e';
+import { installAlbyAutoApprove, seedAlbyAccount } from 'ordpool-sdk/e2e';
 
 /**
  * Full user-flow proof for Alby — cubes.haushoppe.art end-to-end on
- * regtest. Alby's cubes CI path has ONE Alby-side obstacle: the
- * wallet's React `ConfirmSignPsbt` popup's `confirm()` never resolves
- * in headless CI (verified iter 105+ in the SDK's own alby-mint spec,
- * `ordpool-sdk/.../alby-mint-roundtrip.spec.ts:338-348`). Same obstacle
- * the SDK spec sidesteps by bypassing the popup: `webbtc/signPsbt` is
- * dispatched directly to Alby's SW via `chrome.runtime.sendMessage`
- * from an extension-origin `seedPage`. That's the SAME internal route
- * Alby's own popup would call after the user clicked Confirm — no
- * wallet-side crypto is bypassed, only the hung UI Promise.
+ * regtest, through the REAL signing path: cubes' orchestrator calls the
+ * SDK's albySigner, which calls alby.enable() + alby.webbtc.signPsbt()
+ * in-page; Alby opens its real ConfirmSignPsbt popup and the state-based
+ * auto-approver (installAlbyAutoApprove from ordpool-sdk/e2e) clicks it
+ * the way a user would. Nothing about signing is bypassed or patched.
  *
- * We adopt the same standard here. Cubes' full orchestrator path
- * (PSBT build → signer call → broadcast → ord byte-for-byte) IS
- * exercised end-to-end. The only thing bypassed is the UI popup
- * Promise that upstream Alby is currently broken on.
- *
- * Implementation: after cubes loads, monkey-patch
- * `window.alby.webbtc.signPsbt` to proxy through a Playwright-exposed
- * function that fires the SW-message from seedPage. Cubes' code
- * doesn't know or care — `alby.webbtc.signPsbt(hex)` returns
- * `{signed: <wire-tx-hex>}` transparently.
+ * (The one-time SW-message account SEED stays: Alby's real onboarding
+ * needs an OAuth/NWC backend CI cannot provide. Seeding is test setup,
+ * not a signing path.)
  *
  * Alby specifics:
  *   - Single-address wallet (BIP-86 Taproot only via `m/86'/1'/0'/0/0`
  *     with `bitcoinNetwork:'regtest'`). Payment + ordinals slots are
  *     the same address. Cubes' self-send gate skip (from f8d80e4)
  *     applies — cubes doesn't set `ownPaymentAddress`.
- *   - Onboarding uses SW-message bypass too (setPassword →
- *     addAccount{bitcoinNetwork:'regtest',connector:'lndhub',config:
- *     dummy} → setMnemonic). Alby's real UI onboarding needs
- *     OAuth/NWC that can't run in CI.
- *   - `alby.enable()` + `webbtc.getAddress()` MAY open permission
- *     popups on first call. Auto-click Connect/Allow/Confirm via
- *     context.on('page') — cheap insurance.
+ *   - On regtest Alby shows an error toast (dummy lndhub balance fetch
+ *     fails) that transiently occludes popup buttons, and hydrates its
+ *     React handlers after first paint. The auto-approver waits both
+ *     out by STATE (trial-click actionability + retry-until-closed).
  */
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/alby');
@@ -76,9 +62,7 @@ const CUBE_SIDE_IDS = [
 
 let context: BrowserContext;
 let extensionId: string;
-// Long-lived extension-origin page kept open after the seed step;
-// used to fire chrome.runtime.sendMessage at Alby's SW internal
-// routes (webbtc/signPsbt) — same technique the SDK spec uses.
+// Extension-origin page used ONLY for the account seed.
 let seedPage: Page;
 
 async function shot(p: Page, name: string): Promise<void> {
@@ -86,31 +70,6 @@ async function shot(p: Page, name: string): Promise<void> {
     path: path.resolve(RESULTS_DIR, `alby-cube-mint-${name}.png`),
     fullPage: true,
   }).catch(() => undefined);
-}
-
-/**
- * Fire Alby's `webbtc/signPsbt` SW route directly from the seed page
- * (extension origin). Returns Alby's finalized wire-tx hex.
- * Same code path Alby's own popup would call after the user clicks
- * Confirm — no wallet crypto bypassed, only the hung UI Promise.
- */
-async function albySignViaSw(psbtHex: string): Promise<string> {
-  const resp = await seedPage.evaluate(async (hex) => {
-    const c = (globalThis as unknown as { chrome: { runtime: {
-      sendMessage: (msg: unknown) => Promise<unknown>;
-    } } }).chrome;
-    return await c.runtime.sendMessage({
-      application: 'LBE',
-      prompt: true,
-      action: 'webbtc/signPsbt',
-      args: { psbt: hex },
-      origin: { internal: true },
-    }) as { data?: { signed: string }; error?: string };
-  }, psbtHex);
-  if (resp.error || !resp.data?.signed) {
-    throw new Error(`Alby webbtc/signPsbt failed: ${JSON.stringify(resp).slice(0, 400)}`);
-  }
-  return resp.data.signed;
 }
 
 test.beforeAll(async () => {
@@ -165,39 +124,22 @@ test.beforeAll(async () => {
 
   await seedAlbyAccount(seedPage);
   await shot(seedPage, '00-after-seed').catch(() => undefined);
-  // Keep seedPage OPEN — the mint test uses it to talk to the SW directly.
+  // Seeding done — signing goes through the in-page provider + real popup.
+  await seedPage.close();
 });
 
 test.afterAll(async () => {
   await context?.close();
 });
 
-test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast → ord indexes the HTML byte-for-byte', async () => {
+test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadcast → ord indexes the HTML byte-for-byte', async () => {
   test.setTimeout(360_000);
 
   const cubes = await context.newPage();
 
-  // Auto-click Connect/Allow/Confirm on any Alby permission popup
-  // (alby.enable() + webbtc.getAddress() open these on first call).
-  // Same pattern as SDK spec's popup listener.
-  let popupCount = 0;
-  context.on('page', async (popup) => {
-    if (popup === cubes || popup === seedPage) return;
-    const idx = ++popupCount;
-    try {
-      await popup.waitForLoadState('domcontentloaded', { timeout: 10_000 });
-      if (!popup.url().startsWith('chrome-extension://')) return;
-      // Wait past Alby's error toast that transiently covers Connect
-      // (dummy lndhub config triggers a balance-fetch failure).
-      await popup.waitForTimeout(6_000);
-      const btn = popup.locator('button', { hasText: /^(connect|allow|confirm|approve|sign)$/i }).first();
-      await btn.waitFor({ state: 'visible', timeout: 5_000 });
-      await btn.click({ timeout: 5_000 });
-      console.log(`[alby-mint] auto-clicked popup #${idx}: ${popup.url().slice(0, 80)}`);
-    } catch (e) {
-      console.log(`[alby-mint] popup #${idx} auto-click skipped: ${String(e).slice(0, 200)}`);
-    }
-  });
+  // Auto-approve every Alby popup (enable permission + the REAL
+  // ConfirmSignPsbt at mint time) with the shared state-based handler.
+  installAlbyAutoApprove(context);
 
   const browserErrors: string[] = [];
   const IGNORED_CONSOLE: RegExp[] = [
@@ -231,51 +173,6 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
     });
   });
 
-  // Expose the SW-bypass to the cubes page BEFORE navigation.
-  // Only signPsbt is bypassed; Alby's real inpage provides
-  // enable() + webbtc.getAddress() through its public API (proven
-  // in the SDK's own Alby spec).
-  await cubes.exposeFunction('__albyBypassSignPsbt', async (psbtHex: string) => {
-    return await albySignViaSw(psbtHex);
-  });
-
-  // Selectively bypass ONLY alby.webbtc.signPsbt via addInitScript.
-  // Alby's real inpage script provides enable() + webbtc.getAddress()
-  // — those work through Alby's public API (proven in the SDK's own
-  // alby-mint spec, which auto-clicks Alby's Connect popup).
-  // signPsbt's popup React confirm() never resolves in headless CI
-  // (SDK spec iter 105+ verified); we replace it with a proxy that
-  // fires the SAME SW route Alby's own popup would call after the
-  // user clicked Confirm — no wallet-side crypto bypassed.
-  //
-  // Patching pattern: wait until Alby's real inpage sets
-  // `window.alby.webbtc.signPsbt`, then wrap it. Polls until
-  // Alby lands (or 30s cap). Idempotent via a marker property.
-  await cubes.addInitScript(() => {
-    const win = window as unknown as {
-      alby?: { webbtc?: { signPsbt?: (hex: string, opts?: unknown) => Promise<{ signed: string }> } };
-      __albyBypassSignPsbt?: (hex: string) => Promise<string>;
-    };
-    const patch = () => {
-      const wb = win.alby?.webbtc;
-      if (!wb?.signPsbt) return false;
-      const original = wb.signPsbt as unknown as { __cubesBypassed?: boolean };
-      if (original.__cubesBypassed) return true;
-      wb.signPsbt = async (hex: string, _opts?: unknown) => {
-        if (!win.__albyBypassSignPsbt) throw new Error('__albyBypassSignPsbt not exposed');
-        const signed = await win.__albyBypassSignPsbt(hex);
-        return { signed };
-      };
-      (wb.signPsbt as unknown as { __cubesBypassed?: boolean }).__cubesBypassed = true;
-      // eslint-disable-next-line no-console
-      console.log('[alby-mint] patched alby.webbtc.signPsbt with SW-bypass proxy');
-      return true;
-    };
-    if (patch()) return;
-    const id = setInterval(() => { if (patch()) clearInterval(id); }, 50);
-    setTimeout(() => clearInterval(id), 30_000);
-  });
-
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
@@ -292,16 +189,6 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
   console.log('[alby-mint] window.alby present; reloading cubes for fresh wallet detection');
   await cubes.reload({ waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
-  // Confirm the signPsbt patch armed on the new page load.
-  await cubes.waitForFunction(
-    () => {
-      const wb = (window as unknown as { alby?: { webbtc?: { signPsbt?: { __cubesBypassed?: boolean } } } }).alby?.webbtc;
-      return Boolean(wb?.signPsbt && (wb.signPsbt as { __cubesBypassed?: boolean }).__cubesBypassed);
-    },
-    undefined,
-    { timeout: 30_000, polling: 100 },
-  );
-  console.log('[alby-mint] alby.webbtc.signPsbt is patched');
 
   await openDetails(cubes, 'configurator-advanced');
   for (let i = 0; i < 6; i++) {
@@ -376,9 +263,9 @@ test('mint a cube via Alby: fill form → sign via Alby SW-bypass → broadcast 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
   await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
   await mintBtn.click();
-  // Sign step: cubes' orchestrator calls SDK Alby signer →
-  // alby.webbtc.signPsbt(hex) → our patched proxy → SW-message →
-  // wire-tx hex returned → cubes broadcasts.
+  // Sign step: cubes' orchestrator calls the SDK Alby signer →
+  // alby.webbtc.signPsbt(hex) → Alby's REAL ConfirmSignPsbt popup →
+  // auto-approved state-based → wire-tx hex returned → cubes broadcasts.
 
   const errLocator = cubes.locator('[data-testid="mint-error-message"]');
   await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);

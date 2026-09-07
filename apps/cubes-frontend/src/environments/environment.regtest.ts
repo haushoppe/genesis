@@ -21,16 +21,15 @@ export const environment = {
   // (stripping the `/api` prefix, since electrs's Esplora endpoints
   // live at the root — /address/{}/utxo, /tx, /tx/{}/hex, etc.).
   mempoolApiUrl: '',
-  // Both ord `/output` sources for the SDK UtxoContentScanner's funding-safety
-  // scan point at the local clean-`/output` stub (`e2e/regtest/ord-output-stub.mjs`,
-  // started by Playwright on :8082). The stub returns an empty-asset body for
-  // every outpoint so a fresh regtest funding coin classifies `clean` -> the
-  // orchestrator auto-picks it. This decouples the scan gate from regtest sat
-  // provenance (a coinbase-derived coin can carry an "uncommon" block-first-sat
-  // that a real --index-sats ord would flag). The real cube inscription is still
-  // verified against the actual ord-stock (:8081) via ordinalsExplorer* below.
-  ordApiUrl: 'http://localhost:8082',
-  cat21OrdApiUrl: 'http://localhost:8082',
+  // The SDK UtxoContentScanner's funding-safety scan hits both real regtest ord
+  // instances the docker stack brings up: ordApiUrl -> stock ord (:8081,
+  // --index-sats; inscriptions/runes/rare-sats) and cat21OrdApiUrl -> cat21-ord
+  // (:8080, --index-cat21; cats). A funding coin auto-picks only when BOTH report
+  // no inscription, rune, cat, or rare sat. The specs fund via `fundCommonSats`
+  // so the payment lands on common mid-block sats: a raw coinbase's block-first
+  // sat reads as an "uncommon" rare sat, which would (correctly) force expert-mode.
+  ordApiUrl: 'http://localhost:8081',
+  cat21OrdApiUrl: 'http://localhost:8080',
   haushoppeTipAddress: 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk',
   haushoppeTipSats: 1000,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',

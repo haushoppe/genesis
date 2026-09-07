@@ -51,6 +51,50 @@ export function mineBlocks(n: number): number {
   return Number(rpc('getblockcount'));
 }
 
+/**
+ * Fund `paymentAddr` with `amountBtc` on COMMON (mid-block) sats, then wait until
+ * electrs and BOTH ord instances have indexed the coin, so the mint-time
+ * funding-safety scan classifies it `clean` and the orchestrator auto-picks it.
+ *
+ * ord assigns a tx's input sats to its outputs FIFO by output order, and a regtest
+ * coinbase's first sat is the block-first sat, which ord's rarity model reads as
+ * `uncommon`. `fundrawtransaction` with `changePosition: 0` forces change to vout 0,
+ * so that boundary sat is absorbed by change and the payment at vout 1 inherits
+ * later, common sats. A plain `sendtoaddress` randomizes the change position and
+ * drops the boundary sat onto the payment ~50% of the time -> `uncommon` ->
+ * `expert-required` -> no auto-pick -> the mint stalls at a disabled button.
+ *
+ * A single explicit coinbase input (the largest mature coin) is selected so exactly
+ * one boundary sat exists and the vout-0 change fully absorbs it.
+ */
+export async function fundCommonSats(paymentAddr: string, amountBtc: number): Promise<void> {
+  const unspent = JSON.parse(
+    rpc('-rpcwallet=cubes-e2e', 'listunspent', '100'),
+  ) as Array<{ txid: string; vout: number; amount: number }>;
+  const coin = [...unspent].sort((a, b) => b.amount - a.amount)[0];
+  if (!coin) throw new Error('fundCommonSats: no mature coin to fund from');
+  const raw = rpc(
+    'createrawtransaction',
+    JSON.stringify([{ txid: coin.txid, vout: coin.vout }]),
+    JSON.stringify([{ [paymentAddr]: amountBtc }]),
+  );
+  const funded = JSON.parse(
+    rpc('-rpcwallet=cubes-e2e', 'fundrawtransaction', raw, JSON.stringify({ changePosition: 0 })),
+  ) as { hex: string };
+  const signed = JSON.parse(
+    rpc('-rpcwallet=cubes-e2e', 'signrawtransactionwithwallet', funded.hex),
+  ) as { hex: string };
+  rpc('-rpcwallet=cubes-e2e', 'sendrawtransaction', signed.hex);
+
+  const tip = mineBlocks(1);
+  await waitForElectrsSync(tip);
+  await waitForUtxoAt(paymentAddr, Math.round(amountBtc * 1e8));
+  // Both ord instances must have indexed the funding block before the mint-time
+  // content scan, or /output 404s -> scan-failed -> expert-required -> no auto-pick.
+  await waitForOrdStockSync(tip);
+  await waitForOrdSync(tip);
+}
+
 /** Wait until electrs has indexed up to (at least) the given height. */
 export async function waitForElectrsSync(targetHeight: number, timeoutMs = 15_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;

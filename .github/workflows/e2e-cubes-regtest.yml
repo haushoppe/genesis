@@ -310,21 +310,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh alby
 
-      - name: Bring up bitcoind + electrs + ord-stock
-        # cat21-ord isn't needed for cube inscribes (cubes are
-        # regular HTML inscriptions, not CAT-21 cats — bounced off
-        # ord-stock which uses the same mainline ord binary
-        # without --index-cat21). Only bring up what we hit.
+      - name: Bring up bitcoind + electrs + ord-stock + cat21-ord
+        # The funding-safety scan hits BOTH ord instances (same binary/image,
+        # different runtime flags): ord-stock (--index-sats, no --index-cat21)
+        # serves inscription content + the inscriptions/runes/rare-sats half of
+        # the scan; cat21-ord (--index-cat21) serves the cats half. Both are
+        # queried by the SDK UtxoContentScanner at mint time.
         env:
           COMPOSE_BAKE: "true"
-        # Build electrs + ord-stock via buildx bake against the SDK's
-        # shipped compose + gha-cache overlay (from node_modules) so the
-        # overlay's cache_from/to take effect; bake loads the images (they
-        # have an `image:` name) for the following --no-build up. The
+        # Build electrs + the shared ord image via buildx bake against the SDK's
+        # shipped compose + gha-cache overlay (from node_modules) so the overlay's
+        # cache_from/to take effect; bake loads the image (it has an `image:` name)
+        # for the following --no-build up. ord + ord-stock share ONE image, so the
+        # build produces it once and both containers start from it. The
         # E2E_PREFIX / ELECTRS_SRC / CAT21_ORD_SRC env is set job-level.
         run: |
-          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml -f node_modules/ordpool-sdk/e2e/docker-compose.gha-cache.yml --profile ord-stock build electrs ord-stock
-          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml --profile ord-stock up -d --no-build bitcoind electrs ord-stock
+          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml -f node_modules/ordpool-sdk/e2e/docker-compose.gha-cache.yml --profile ord-stock --profile cat21-ord build electrs ord-stock ord
+          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml --profile ord-stock --profile cat21-ord up -d --no-build bitcoind electrs ord-stock ord
 
       - name: Mine 101 blocks + create funding wallet
         env:
@@ -356,6 +358,18 @@ jobs:
           echo "ord-stock /status did not respond within 180s" >&2
           exit 1
 
+      - name: Wait for cat21-ord /status
+        run: |
+          for i in {1..180}; do
+            if curl -fsS http://localhost:8080/status >/dev/null 2>&1; then
+              echo "cat21-ord ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "cat21-ord /status did not respond within 180s" >&2
+          exit 1
+
       - name: Run ${{ matrix.wallet }} cube-mint roundtrip under xvfb
         # Playwright wants a real X server for headed Chromium.
         # xvfb-run supplies a virtual one.
@@ -372,6 +386,7 @@ jobs:
           echo "=== bitcoind ==="; docker logs cubes-e2e-bitcoind 2>&1 | tail -100 || true
           echo "=== electrs ==="; docker logs cubes-e2e-electrs 2>&1 | tail -100 || true
           echo "=== ord-stock ==="; docker logs cubes-e2e-ord-stock 2>&1 | tail -100 || true
+          echo "=== cat21-ord ==="; docker logs cubes-e2e-cat21-ord 2>&1 | tail -100 || true
 
       - name: Upload Playwright artifacts
         # Only upload on failure, and only keep for 1 day. Success

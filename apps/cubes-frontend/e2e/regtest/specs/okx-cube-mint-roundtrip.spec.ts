@@ -7,7 +7,7 @@ import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   waitForElectrsSync,
-  waitForUtxoAt,
+  fundCommonSats,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -255,9 +255,7 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   console.log(`[okx-mint] payment address: ${paymentAddr}`);
   await cubes.locator('[data-testid="wallet-connected-btn"]').click();
 
-  rpc('-rpcwallet=cubes-e2e', 'sendtoaddress', paymentAddr, String(FUND_AMOUNT_BTC));
-  await waitForElectrsSync(mineBlocks(1));
-  await waitForUtxoAt(paymentAddr, Math.round(FUND_AMOUNT_BTC * 1e8));
+  await fundCommonSats(paymentAddr, FUND_AMOUNT_BTC);
 
   await cubes.reload({ waitUntil: 'domcontentloaded' });
 

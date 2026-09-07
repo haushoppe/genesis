@@ -44,10 +44,11 @@ export default defineConfig({
     ['html', { open: 'never', outputFolder: path.resolve(__dirname, '../../playwright-report-regtest') }],
   ],
 
-  // The specs drive the cubes-frontend UI, so we need it up. Playwright
-  // spawns `npm start` (Angular dev server on :4203) plus the clean-`/output`
-  // stub the funding-safety content scan hits (:8082). CI reuses a server if
-  // it's already running.
+  // The specs drive the cubes-frontend UI, so we need it up. Playwright spawns
+  // `npm start` (Angular dev server on :4203, regtest env). The funding-safety
+  // content scan hits the REAL ord instances the docker stack brings up
+  // (:8081 stock ord, :8080 cat21-ord), not a stub. CI reuses a server if it's
+  // already running.
   webServer: [
     {
       // Regtest-configured dev server. Swaps environment.ts →
@@ -58,16 +59,6 @@ export default defineConfig({
       port: 4203,
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
-    },
-    {
-      // Clean-`/output` stub for the SDK UtxoContentScanner (environment.regtest.ts
-      // points ordApiUrl + cat21OrdApiUrl here). Answers every outpoint clean so
-      // a fresh regtest funding coin auto-picks. See ord-output-stub.mjs.
-      command: 'node e2e/regtest/ord-output-stub.mjs',
-      cwd: path.resolve(__dirname, '../..'),
-      port: 8082,
-      reuseExistingServer: !process.env.CI,
-      timeout: 30_000,
     },
   ],
 });

@@ -6,7 +6,7 @@ import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   waitForElectrsSync,
-  waitForUtxoAt,
+  fundCommonSats,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -389,9 +389,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   console.log(`[cube-mint] payment address: ${paymentAddr}`);
 
   // ─── Step 3: fund the payment address on regtest ───────────────
-  rpc('-rpcwallet=cubes-e2e', 'sendtoaddress', paymentAddr, String(FUND_AMOUNT_BTC));
-  await waitForElectrsSync(mineBlocks(1));
-  await waitForUtxoAt(paymentAddr, Math.round(FUND_AMOUNT_BTC * 1e8));
+  await fundCommonSats(paymentAddr, FUND_AMOUNT_BTC);
 
   // ─── Step 4: set fee rate inside the already-open drawer ──────
   // Fee-rate + tier presets + UTXO breakdown all moved behind the
@@ -484,9 +482,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   console.log(`[cube-mint] payment address after reload: ${paymentAddrAfterReload}`);
   if (paymentAddrAfterReload !== paymentAddr) {
     console.log(`[cube-mint] address changed across reload: ${paymentAddr} -> ${paymentAddrAfterReload}, refunding`);
-    rpc('-rpcwallet=cubes-e2e', 'sendtoaddress', paymentAddrAfterReload, String(FUND_AMOUNT_BTC));
-    await waitForElectrsSync(mineBlocks(1));
-    await waitForUtxoAt(paymentAddrAfterReload, Math.round(FUND_AMOUNT_BTC * 1e8));
+    await fundCommonSats(paymentAddrAfterReload, FUND_AMOUNT_BTC);
     const knownPagesBefore2nd = new Set(context.pages());
     await cubes.reload({ waitUntil: 'domcontentloaded' });
     const reapprove2 = await waitForApprovalPopup({
@@ -517,7 +513,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   }
 
   // ─── Step 5d: probe the ELECTRS query surface both ways so the
-  //   next failure tells us which side lies. `waitForUtxoAt` above
+  //   next failure tells us which side lies. `fundCommonSats` above
   //   proved electrs (direct) sees the funded UTXO before the reload.
   //   Post-reload the orchestrator reports noUtxos=true. That can
   //   only happen if the SAME URL through the browser's fetch (via

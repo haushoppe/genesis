@@ -7,7 +7,7 @@
 import type { Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 
-const ELECTRS_URL = process.env.REGTEST_ELECTRS_URL ?? 'http://localhost:3000';
+const ELECTRS_URL = process.env.REGTEST_ELECTRS_URL ?? 'http://localhost:3010';
 const ORD_URL = process.env.REGTEST_ORD_URL ?? 'http://localhost:8080';
 // Stock ord (no --index-cat21 flag) — service `ord-stock` in the SDK's
 // docker-compose.regtest.yml (node_modules/ordpool-sdk/e2e/). Used by the

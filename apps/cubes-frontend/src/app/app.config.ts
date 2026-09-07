@@ -37,7 +37,7 @@ export const appConfig: ApplicationConfig = {
     // cat21ApiUrl is unused by the inscribe flow but the config token
     // is required by Cat21Service's constructor. mempoolApiUrl comes
     // from environment.ts so regtest e2e can point at local electrs
-    // (localhost:3000) instead of api.ordpool.space. The workspace
+    // (localhost:3010) instead of api.ordpool.space. The workspace
     // HARD RULE bans direct mempool.space calls; nothing here hits it.
     // The two ord URLs feed the SDK's UtxoContentScanner (funding-safety
     // content scan: `${ordApiUrl}/output/<op>` + `${cat21OrdApiUrl}/output/<op>`).

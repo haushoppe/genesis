@@ -17,7 +17,7 @@ export const environment = {
   production: false,
   api: 'http://localhost:3333',
   // Same-origin so the dev-server proxy handles CORS + path rewrites:
-  // `proxy.conf.regtest.json` maps `/api/*` → `http://localhost:3000/*`
+  // `proxy.conf.regtest.json` maps `/api/*` → `http://localhost:3010/*`
   // (stripping the `/api` prefix, since electrs's Esplora endpoints
   // live at the root — /address/{}/utxo, /tx, /tx/{}/hex, etc.).
   mempoolApiUrl: '',

@@ -68,7 +68,7 @@ fi
 # --- wait for electrs to catch up to bitcoind's tip ---
 TIP=$($RPC getblockcount)
 for _ in $(seq 1 30); do
-  if [ "$(curl -s http://localhost:3000/blocks/tip/height || echo 0)" -ge "$TIP" ]; then break; fi
+  if [ "$(curl -s http://localhost:3010/blocks/tip/height || echo 0)" -ge "$TIP" ]; then break; fi
   sleep 1
 done
 

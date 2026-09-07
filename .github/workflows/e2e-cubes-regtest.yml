@@ -330,13 +330,13 @@ jobs:
 
       - name: Mine 101 blocks + create funding wallet
         env:
-          REGTEST_ELECTRS_URL: http://localhost:3000
+          REGTEST_ELECTRS_URL: http://localhost:3010
         run: bash e2e/regtest/regtest-bootstrap.sh > /tmp/regtest-bootstrap.json
 
       - name: Wait for electrs to sync tip
         run: |
           for i in {1..60}; do
-            tip=$(curl -fsS http://localhost:3000/blocks/tip/height 2>/dev/null || echo 0)
+            tip=$(curl -fsS http://localhost:3010/blocks/tip/height 2>/dev/null || echo 0)
             if [ "$tip" -ge "101" ]; then
               echo "electrs at height $tip"
               exit 0

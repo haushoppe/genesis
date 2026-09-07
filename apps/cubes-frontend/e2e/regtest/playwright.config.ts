@@ -52,7 +52,7 @@ export default defineConfig({
   webServer: [
     {
       // Regtest-configured dev server. Swaps environment.ts →
-      // environment.regtest.ts so mempoolApiUrl hits localhost:3000 +
+      // environment.regtest.ts so mempoolApiUrl hits localhost:3010 +
       // the tip address is a regtest bcrt1p…
       command: 'npm run start:regtest',
       cwd: path.resolve(__dirname, '../..'),

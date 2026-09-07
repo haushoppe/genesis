@@ -26,7 +26,11 @@ describe('AllowlistService', () => {
 
   beforeAll(async () => {
     service = new AllowlistService(new CacheService());
-    service.allowlistFolder = path.resolve(__dirname + '../../../assets/data/');
+    // Read from a committed dummy fixture, not the live bundled allowlist_*.csv,
+    // so the file-read tests below assert against known data deterministically
+    // (the real allowlist changes over time; pinning it makes the test brittle
+    // and leaks real mint-wallet addresses into a spec).
+    service.allowlistFolder = path.resolve(__dirname, 'test-fixtures');
   });
 
   it('should parse directly a string to AllowlistEntry[]"', () => {

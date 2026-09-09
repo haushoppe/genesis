@@ -194,4 +194,29 @@ describe('StartComponent: watch-only mint wiring', () => {
     setSnap({ selectedUtxo: null, fundingRecommendation: { status: 'expert-required', recommended: null, candidates: [fakeUtxo] } as unknown as InscribeSnapshot['fundingRecommendation'] });
     expect(c.selectedRow()).toBeNull();
   });
+
+  it('a fees-endpoint error degrades recommendedFees to null and never breaks the checkout total', () => {
+    // Regression guard for the money-screen footgun surfaced on the round's last
+    // capture: `recommendedFees` is a toSignal of the SDK fees stream, read in the
+    // checkout template. On regtest electrs has no /api/v1/fees/recommended (and a
+    // prod hiccup does the same), the stream errors, and WITHOUT a catchError
+    // toSignal RE-THROWS on read — taking down the whole checkout's change
+    // detection so the cost/breakdown/Mint button stop rendering. The fee tiers are
+    // a convenience (the fee-rate input works without them), so this must degrade
+    // to null, never to a dead screen.
+    const c = component as unknown as { recommendedFees(): unknown; totalSpendSats(): number | null };
+
+    // A viable snapshot → the checkout total resolves (funding 3000; change clears dust).
+    setSnap({ state: 'ready', selectedUtxo: null });
+    expect(c.totalSpendSats()).toBe(3000);
+
+    // The fees stream errors.
+    cat21.recommendedFees$.error(new Error('endpoint does not exist "/v1/fees/recommended"'));
+
+    // It must degrade to null, not re-throw (the throw is what killed the checkout).
+    expect(() => c.recommendedFees()).not.toThrow();
+    expect(c.recommendedFees()).toBeNull();
+    // And the cost total still renders — it does not depend on the fee tiers.
+    expect(c.totalSpendSats()).toBe(3000);
+  });
 });

@@ -28,7 +28,7 @@ import {
   validateInscribeOperation,
   WalletService,
 } from 'ordpool-sdk';
-import { debounceTime, finalize, firstValueFrom, map, Observable } from 'rxjs';
+import { catchError, debounceTime, finalize, firstValueFrom, map, Observable, of } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { yearsOnChainLabel } from './years-on-chain';
@@ -257,8 +257,17 @@ export class StartComponent {
   protected readonly scanStates = toSignal(this.scanner.states$, {
     initialValue: new Map<string, UtxoScanState>() as ReadonlyMap<string, UtxoScanState>,
   });
-  /** Live mempool fee tiers — a supporting `Cat21Service` concern, not the orchestrator's. */
-  protected readonly recommendedFees = toSignal(this.cat21.recommendedFees$, { initialValue: null });
+  /** Live mempool fee tiers — a supporting `Cat21Service` concern, not the orchestrator's.
+   *  The tiers are a convenience (the fee-rate input works without them), so a fees-endpoint
+   *  failure degrades to null and the `@if (recommendedFees())` simply skips the preset
+   *  buttons. Without the `catchError`, `toSignal` RE-THROWS the source error on read, and
+   *  because the checkout template reads this signal, that throw takes down the whole
+   *  checkout's change detection — the cost, breakdown and Mint button stop rendering. This
+   *  is a money screen; a nice-to-have must degrade to absence, never to a dead screen. */
+  protected readonly recommendedFees = toSignal(
+    this.cat21.recommendedFees$.pipe(catchError(() => of(null))),
+    { initialValue: null },
+  );
   /** Orchestrator state-machine phase, off the snapshot (template branches on it). */
   protected readonly mintState = computed(() => this.snap().state);
   /** The user's explicit funding pick (expert mode), off the snapshot. */

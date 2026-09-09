@@ -8,92 +8,57 @@
       <p class="alert alert-danger py-2 px-3 mb-3 small" role="alert">Connection failed: {{ err }}</p>
     }
 
-    <p class="fw-bold small mb-2" data-testid="wallet-picker-detected">Wallets that can inscribe:</p>
+    <p class="small mb-3" data-testid="wallet-picker-detected" ngbAutofocus tabindex="-1">Connect a wallet to mint your cube.</p>
     <ul class="list-unstyled mb-0" data-testid="wallet-picker-list">
-      @for (row of rows(); track row.type) {
+      @for (row of rows(); track row.wallet) {
         <li class="wallet-row d-flex align-items-center gap-2 mb-2">
           <img class="wallet-logo" [src]="row.logo" alt="" width="22" height="22">
-          <span class="wallet-name text-truncate">
-            {{ row.label }}
-            @if (row.subLabel) {
-              <small class="text-muted d-block">{{ row.subLabel }}</small>
-            }
-          </span>
-
-          <button type="button"
-                  class="info-btn btn btn-link p-0 lh-1"
-                  [ngbPopover]="infoContent"
-                  [popoverTitle]="row.label"
-                  triggers="click"
-                  [autoClose]="'outside'"
-                  popoverClass="wallet-info-popover"
-                  [attr.data-testid]="'wallet-info-' + row.type"
-                  [attr.aria-label]="'What does ' + row.label + ' support?'">
-            <i class="bi bi-info-circle" aria-hidden="true"></i>
-          </button>
+          <span class="wallet-name text-truncate">{{ row.label }}</span>
 
           <span class="ms-auto flex-shrink-0">
-            @switch (row.kind) {
+            @switch (row.action) {
               @case ('connect') {
+                <!-- Button ranking: SOLID for the actions that work right
+                     now in this browser (connect an installed wallet, or
+                     connect watch-only via xpub — no install needed), so the
+                     eye lands on what the person can actually do. OUTLINE for
+                     the actions that send them away (install / open-in-app).
+                     Both obviously enabled; only the emphasis differs. In the
+                     empty state watch-only is the one solid button, because
+                     it is the only row that works without installing. -->
                 <button type="button"
-                        class="btn btn-sm btn-outline-light text-nowrap"
-                        [attr.data-testid]="'wallet-connect-' + row.type"
+                        class="btn btn-sm btn-light text-nowrap"
+                        [attr.data-testid]="'wallet-connect-' + row.wallet"
                         [disabled]="connectButtonDisabled()"
-                        (click)="connectWallet(row.type)">
-                  Connect
+                        (click)="connectWallet(row.wallet)">
+                  {{ row.actionLabel }}
                 </button>
               }
-              @case ('deep-link') {
+              @case ('open-in-app') {
                 <a class="btn btn-sm btn-outline-light text-nowrap"
                    [href]="row.deepLink"
                    rel="noopener">
-                  Open in {{ row.label }}
+                  {{ row.actionLabel }}
                 </a>
               }
-              @case ('download') {
-                <a class="btn btn-sm btn-outline-secondary text-nowrap"
-                   [href]="row.downloadLink"
+              @case ('install') {
+                <a class="btn btn-sm btn-outline-light text-nowrap"
+                   [href]="row.installUrl"
                    target="_blank"
                    rel="noopener">
-                  Get wallet
+                  {{ row.actionLabel }}
                 </a>
               }
-              @case ('watch-only') {
+              @case ('connect-xpub') {
                 <button type="button"
-                        class="btn btn-sm btn-outline-light text-nowrap"
-                        [attr.data-testid]="'wallet-connect-' + row.type"
+                        class="btn btn-sm btn-light text-nowrap"
+                        [attr.data-testid]="'wallet-connect-' + row.wallet"
                         (click)="openXpubForm()">
-                  Connect (xpub)
+                  {{ row.actionLabel }}
                 </button>
               }
             }
           </span>
-
-          <ng-template #infoContent>
-            <div class="wallet-info small">
-              <div class="mb-2">
-                @for (p of row.platforms; track p) {
-                  <span class="badge text-bg-secondary me-1">{{ p }}</span>
-                }
-                <div class="text-muted mt-1">{{ row.signingModeLine }}</div>
-              </div>
-
-              <div class="mb-2">
-                <div class="fw-bold">What this action needs</div>
-                <div>
-                  <span class="cap-icon">{{ row.actionCapability.icon }}</span>
-                  {{ row.actionCapability.wording }}
-                </div>
-                @if (row.actionCapability.caveat) {
-                  <div class="cap-caveat text-muted">{{ row.actionCapability.caveat }}</div>
-                }
-              </div>
-
-              @if (row.note) {
-                <div class="cap-note text-muted border-top pt-2">{{ row.note }}</div>
-              }
-            </div>
-          </ng-template>
         </li>
       }
     </ul>
@@ -153,8 +118,7 @@
 
     @if (noneInstalled()) {
       <p class="text-muted small mb-0 mt-3" data-testid="wallet-picker-empty">
-        No wallet detected in this browser. Install one above, or open this page inside
-        your wallet's in-app browser.
+        No wallet detected in this browser.
       </p>
     }
   </div>

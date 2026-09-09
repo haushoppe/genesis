@@ -1,13 +1,13 @@
 import { ChangeDetectorRef, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { KnownOrdinalWalletType, WalletPlatform, WalletService } from 'ordpool-sdk';
+import { detectWalletPlatform, KnownOrdinalWalletType, WalletPlatform, WalletService } from 'ordpool-sdk';
 
 import { cat21Config } from '../../shared/sdk-tokens';
 import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { detectPlatform, WalletConnectComponent } from './wallet-connect.component';
+import { WalletConnectComponent } from './wallet-connect.component';
 
 /**
  * Exercises the real component logic without rendering its template:
@@ -140,41 +140,32 @@ describe('WalletConnectComponent: watch-only connect', () => {
 });
 
 /**
- * detectPlatform() picks the wallet set (Desktop extensions vs Mobile in-app
- * deep-links). iPadOS Safari sends a desktop "Macintosh" UA, so the
- * maxTouchPoints tiebreak is what keeps iPads on the Mobile set.
+ * The SDK's detectWalletPlatform() picks the wallet set (Desktop extensions
+ * vs Mobile in-app deep-links) AND, in this component, which empty-state
+ * footer copy shows. iPadOS Safari sends a desktop "Macintosh" UA, so the
+ * maxTouchPoints tiebreak is what keeps iPads on the Mobile set. Pinned at
+ * the cubes boundary because the footer's platform branch depends on it.
  */
-describe('detectPlatform', () => {
+describe('detectWalletPlatform', () => {
+  const winWith = (userAgent: string, maxTouchPoints: number) =>
+    ({ navigator: { userAgent, maxTouchPoints } }) as unknown as Window;
   const MAC_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 Safari/604.1';
-  const original = { ua: navigator.userAgent, touch: navigator.maxTouchPoints };
-
-  function setNavigator(userAgent: string, maxTouchPoints: number): void {
-    Object.defineProperty(navigator, 'userAgent', { value: userAgent, configurable: true });
-    Object.defineProperty(navigator, 'maxTouchPoints', { value: maxTouchPoints, configurable: true });
-  }
-
-  afterEach(() => {
-    Object.defineProperty(navigator, 'userAgent', { value: original.ua, configurable: true });
-    Object.defineProperty(navigator, 'maxTouchPoints', { value: original.touch, configurable: true });
-  });
 
   it('classifies an iPad (Macintosh UA + touch points) as Mobile', () => {
-    setNavigator(MAC_UA, 5);
-    expect(detectPlatform()).toBe(WalletPlatform.Mobile);
+    expect(detectWalletPlatform(winWith(MAC_UA, 5))).toBe(WalletPlatform.Mobile);
   });
 
   it('classifies a real Mac (Macintosh UA, no touch) as Desktop', () => {
-    setNavigator(MAC_UA, 0);
-    expect(detectPlatform()).toBe(WalletPlatform.Desktop);
+    expect(detectWalletPlatform(winWith(MAC_UA, 0))).toBe(WalletPlatform.Desktop);
   });
 
   it('classifies an iPhone as Mobile via the UA token', () => {
-    setNavigator('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1', 5);
-    expect(detectPlatform()).toBe(WalletPlatform.Mobile);
+    expect(detectWalletPlatform(winWith('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1', 5)))
+      .toBe(WalletPlatform.Mobile);
   });
 
   it('classifies desktop Chrome on Windows as Desktop', () => {
-    setNavigator('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36', 0);
-    expect(detectPlatform()).toBe(WalletPlatform.Desktop);
+    expect(detectWalletPlatform(winWith('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36', 0)))
+      .toBe(WalletPlatform.Desktop);
   });
 });

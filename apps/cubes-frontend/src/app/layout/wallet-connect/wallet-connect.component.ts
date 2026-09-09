@@ -6,48 +6,25 @@ import { NgbModal, NgbModalRef, NgbPopover, NgbPopoverModule } from '@ng-bootstr
 // Both dist outputs are built by the SDK's prepare hook at install time.
 import {
   KnownOrdinalWallets, KnownOrdinalWalletType, makeWatchOnlyProbe,
-  WalletCapability, WalletPlatform, WalletService, WatchOnlyScriptType,
-  walletInAppBrowserDeepLink, walletsSupporting,
+  WalletCapability, WalletPickerRow, walletPickerRows, WalletService,
+  WatchOnlyScriptType,
 } from 'ordpool-sdk';
 
 import { cat21Config } from '../../shared/sdk-tokens';
 
 import { environment } from '../../../environments/environment';
-import { buildPickerRows } from './wallet-picker-rows';
-
-/**
- * Where this browser can reach a wallet provider. Desktop is the
- * extension case; Mobile is a wallet's in-app dApp browser (Xverse /
- * OKX), which injects the same provider so the connect path is
- * identical. A mobile plain browser has no injected provider: its rows
- * fall through to the not-detected state.
- */
-export function detectPlatform(): WalletPlatform {
-  if (typeof navigator === 'undefined') return WalletPlatform.Desktop;
-  const ua = navigator.userAgent;
-  // iPadOS 13+ Safari reports a desktop "Macintosh" UA with no iPad/Mobile
-  // token. A real Mac reports maxTouchPoints 0; an iPad reports > 1. That
-  // pair is the documented way to tell an iPad from a Mac, so an iPad still
-  // gets the Mobile wallet set (in-app-browser deep links) instead of the
-  // desktop extension set with no reachable connect path.
-  const isIpadOs = /Macintosh/i.test(ua)
-    && typeof navigator.maxTouchPoints === 'number'
-    && navigator.maxTouchPoints > 1;
-  return isIpadOs || /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
-    ? WalletPlatform.Mobile
-    : WalletPlatform.Desktop;
-}
 
 /**
  * Always-visible wallet-connect widget for the app-shell header.
  * NgbModal for the picker, NgbPopover for the connected-state menu.
  *
- * The picker is driven by the SDK capability matrix: it offers exactly
- * the wallets that can inscribe on the current platform
- * (`walletsSupporting(Inscription, {platform})`), cross-referenced with
- * runtime provider detection to mark each Connect vs Get-extension.
- * Every row carries an info popover sourced from the matrix, per the
- * binding wallet-picker-ux-shared.md spec.
+ * The picker is the SDK's `walletPickerRows()` verbatim: it offers
+ * exactly the wallets that can inscribe on this device (platform is a
+ * filter, never a badge), each as one row of logo + name + one button,
+ * with the button label owned by the SDK so the three sites cannot
+ * drift. A row carries no capability detail before connect — the
+ * single-action list already excludes anything that can't inscribe, so
+ * there is nothing to warn about at login.
  *
  * Extra vs cat21-indexer: subscribes to `walletConnectRequested$` so
  * any consumer (e.g. the Mint CTA in start.component) can trigger the
@@ -71,49 +48,28 @@ export class WalletConnectComponent {
     initialValue: { installedWallets: [], notInstalledWallets: [] },
   });
 
-  /** Which platform's wallet set to offer. Fixed per session (the UA
-   *  doesn't change), so a plain field is enough. */
-  protected readonly platform = detectPlatform();
-
-  /** Wallet types with a provider detected in this browser right now.
-   *  X-1: read the UNFILTERED getInstalledWallets(), not wallets$, which
-   *  strips hiddenFromPicker on every platform: a detected Phantom/Binance
-   *  in a mobile in-app browser must show Connect, not Get-wallet. wallets$
-   *  stays only the re-emit trigger; the matrix `platforms` governs rows. */
-  private readonly installedTypes = computed(() => {
+  /**
+   * The picker rows straight from the SDK: inscription-capable wallets
+   * reachable on this device, in matrix order, each tagged
+   * connect / install / open-in-app / connect-xpub with its button
+   * label. `walletPickerRows` runs its own provider detection over
+   * `window`; reading `this.wallets()` here is the recompute trigger so
+   * the rows re-evaluate while `wallets$` polls detection during the
+   * first seconds after load (a wallet extension can inject late).
+   */
+  protected readonly rows = computed<WalletPickerRow[]>(() => {
     this.wallets(); // re-emit trigger: recompute when runtime detection changes
-    return new Set(this.walletService.getInstalledWallets().installedWallets.map((w) => w.type));
+    return walletPickerRows({
+      win: typeof window !== 'undefined' ? window : undefined,
+      capability: WalletCapability.Inscription,
+      currentUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+    });
   });
-
-  /**
-   * A wallet's in-app-browser deep link for the current page, or null.
-   * Only on mobile: on desktop the in-app browser is not the reachable
-   * surface, so a not-detected wallet is a Get-wallet, never an Open-in.
-   */
-  private readonly deepLinkFor = (wallet: KnownOrdinalWalletType): string | null =>
-    this.platform === WalletPlatform.Mobile && typeof window !== 'undefined'
-      ? walletInAppBrowserDeepLink(wallet, window.location.href)
-      : null;
-
-  /**
-   * The picker rows: inscription-capable wallets for this platform, in
-   * matrix order, each tagged Connect / Open-in / Get-wallet / Watch-only
-   * and carrying its info-popover data.
-   */
-  protected readonly rows = computed(() =>
-    buildPickerRows(
-      walletsSupporting(WalletCapability.Inscription, { platform: this.platform }),
-      this.installedTypes(),
-      WalletCapability.Inscription,
-      KnownOrdinalWallets,
-      this.deepLinkFor,
-    ),
-  );
 
   /** True when no offered wallet has a provider detected. Drives the
    *  "no wallet detected" hint under the list. */
   protected readonly noneInstalled = computed(
-    () => !this.rows().some((r) => r.kind === 'connect'),
+    () => !this.rows().some((r) => r.action === 'connect'),
   );
 
   /** True when the connected wallet's address prefix doesn't match

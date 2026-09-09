@@ -1,7 +1,7 @@
 import { computed, effect, inject, Injectable, Signal, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { WalletService } from 'ordpool-sdk';
-import { catchError, map, of } from 'rxjs';
+import { catchError, map, of, retry } from 'rxjs';
 
 import { CubesDataService } from './cubes-data/cubes-data.service';
 import { InscriptionExtended } from './cubes-data/types';
@@ -98,13 +98,19 @@ export class PastMintsService {
   // Wrap emissions so the template can distinguish "index still
   // loading" from "index loaded, wallet owns zero cubes" — critical
   // for the empty-state message that would otherwise mislead a user
-  // whose 3 mints are already in cubes.json but hasn't landed yet.
-  // catchError → toSignal never re-throws; UI treats an errored
-  // load as "loaded with empty index" so the retry surface stays in
-  // rxResourceFixed consumers instead of here.
+  // whose mints are already in cubes.json.
+  //
+  // `retry` recovers a transient cubes.json blip: on error it re-subscribes
+  // to the shared `all$`, whose `resetOnError` share re-triggers a fresh
+  // fetch. Only once the retries exhaust does `catchError` fall back to an
+  // empty index (UI then reads "loaded, empty"). Without the retry, the first
+  // error completes this subscription and caches an empty owned-cubes index
+  // for the whole session — a user's index-owned cubes stay hidden until a
+  // full page reload.
   private readonly allCubesSource = toSignal(
     this.cubesData.getAllCubes().pipe(
       map((cubes) => ({ loaded: true, cubes })),
+      retry({ count: 3, delay: 2_000 }),
       catchError(() => of({ loaded: true, cubes: [] as InscriptionExtended[] })),
     ),
     { initialValue: { loaded: false, cubes: [] as InscriptionExtended[] } },

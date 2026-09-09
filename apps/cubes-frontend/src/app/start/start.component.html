@@ -182,7 +182,7 @@
             <strong data-testid="mint-total-cost">{{ totalSpendLabel() }}</strong>
           </div>
           <p class="mb-0 mt-2 text-muted small">
-            Debited from your wallet on Mint. Includes the tiny inscription output that stays as your cube.
+            Comes out of your wallet when you mint. Includes the tiny bit of Bitcoin that becomes your cube.
           </p>
         </div>
       }
@@ -326,13 +326,15 @@
 
 @if (mintSuccess(); as res) {
   <div class="alert alert-success mt-4" data-testid="mint-success">
-    <h3 class="h5 mb-2">🎉 Your cube is being stored on Bitcoin</h3>
+    <h3 class="h5 mb-2">🎉 Your cube is on its way</h3>
     <p class="mb-2">
-      In about 10 minutes it will appear in <em>Your past mints</em> below and in the
-      <em>Minted cubes</em> grid. Nothing more to do: the transaction is on its way.
+      It's signed and sent to Bitcoin, so there's nothing more to do. As soon as
+      a miner includes it, your cube shows up in <em>Your past mints</em> below
+      and in the <em>Minted cubes</em> grid. That's usually quick; if you chose a
+      low fee it can take a while, but it will arrive, so no need to mint again.
     </p>
     <p class="small text-muted mb-3">
-      Follow it live on
+      Track it anytime on
       <a [href]="'https://ordpool.space/tx/' + res.revealTxId" target="_blank" rel="noopener"><code data-testid="mint-reveal-txid" [attr.aria-label]="res.revealTxId">{{ res.revealTxId.slice(0, 12) }}…</code></a>
       (opens ordpool.space).
     </p>
@@ -343,7 +345,7 @@
          a hidden test hook. -->
     <span data-testid="mint-commit-txid" hidden>{{ res.commitTxId }}</span>
     <p class="small mb-3">
-      Bonus: you also minted <strong>2 free CAT-21 cats</strong> as a side effect.
+      Bonus: you also minted <strong>2 free CAT-21 cats</strong> along the way.
       Claim them at <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.
     </p>
     <button type="button" class="btn btn-primary text-nowrap" (click)="mintAnother()">Mint another cube</button>
@@ -465,7 +467,7 @@
     <button type="button" class="btn-close" aria-label="Close" (click)="cancelSignedPsbt()"></button>
   </div>
   <div class="modal-body">
-    <p class="small text-muted mb-3">
+    <p class="small text-muted mb-3" ngbAutofocus tabindex="-1" style="outline: none">
       Nothing is signed in your browser. Download or copy this unsigned PSBT, open it in
       your wallet (Sparrow, Electrum, Coldcard, Ledger, Trezor, …), sign it, then paste the
       signed PSBT back here. We finalize and broadcast it.

@@ -223,16 +223,16 @@ describe('StartComponent: watch-only mint wiring', () => {
   });
 
   it('shows the cube-worded single-address custody caveat only when the wallet uses one address', () => {
-    // Round-3 §7. Detection is ground truth (usesSingleAddress compares the two
-    // addresses actually returned), never a hardcoded list.
+    // Detection is ground truth (usesSingleAddress compares the two addresses
+    // actually returned), never a hardcoded list.
     const c = component as unknown as { custodyCaveat(): string | null };
 
     // The default mock wallet returns ONE address for both roles → caveat fires,
     // and it is cube-worded (not the SDK's 'cats' default).
     const caveat = c.custodyCaveat();
-    expect(caveat).toContain('your cubes on one address');
+    expect(caveat).toContain('your cubes at one address');
     expect(caveat).toContain('cubes.haushoppe.art');
-    expect(caveat).not.toContain('your cats on one address');
+    expect(caveat).not.toContain('your cats at one address');
 
     // A wallet that hands out DISTINCT payment + ordinals addresses clears it.
     walletSubject.next({

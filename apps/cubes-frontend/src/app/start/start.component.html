@@ -57,12 +57,15 @@
           </div>
         }
 
-        <!-- Round-3 §7: single-address custody caveat. Fires at connection-
-             resolve (§7.3), above the mint entry point so it's seen before the
-             cube lands; amber not error-red (§7.4); never disables Mint (§7.5). -->
+        <!-- Single-address custody caveat: a quiet info note beside the Mint
+             button, shown when the connected wallet shares one address for
+             payment and ordinals. Info register (bg-info-subtle), full-contrast
+             body text, no icon, no role="alert" — a fact to know before the cube
+             lands, never a warning and never blocking. -->
         @if (custodyCaveat(); as caveat) {
-          <div class="alert alert-warning small mb-0" role="alert" data-testid="mint-custody-caveat">
-            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>{{ caveat }}
+          <div class="rounded border border-info-subtle bg-info-subtle text-body small p-2 mb-0"
+               data-testid="mint-custody-caveat">
+            {{ caveat }}
           </div>
         }
 

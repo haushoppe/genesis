@@ -265,15 +265,14 @@ export class StartComponent {
   protected readonly connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
 
   /**
-   * Single-address custody caveat (round-3 §7). Non-null when the connected
-   * wallet hands out ONE address for both payment and ordinals (UniSat, Wizz,
-   * OKX, Alby) — detected by comparing the two addresses actually returned
-   * (`usesSingleAddress`, ground truth), never a hardcoded list. The cube then
-   * lands on an address a later payment made elsewhere could spend as a fee.
-   * Cube-worded via `singleAddressCaveat('cubes')`; the mechanism is the SDK's.
-   * Shown from connection-resolve (§7.3: before the asset lands, not at the
-   * mint), amber (§7.4), never blocking (§7.5). The per-wallet acknowledgement
-   * + compact persistent state (§7.6) waits on cat21.space's shared spec.
+   * Single-address custody caveat. Non-null when the connected wallet hands out
+   * ONE address for both payment and ordinals (UniSat, Wizz, OKX, Alby) —
+   * detected by comparing the two addresses actually returned (`usesSingleAddress`,
+   * ground truth), never a hardcoded list. The cube then lands on an address a
+   * later payment made elsewhere could spend as a fee. Cube-worded via
+   * `singleAddressCaveat('cubes')`; the mechanism is the SDK's. Rendered as a
+   * quiet info note beside the Mint button (a fact to know before the asset lands,
+   * not a warning): no icon, no `role="alert"`, never blocking, no acknowledgement.
    */
   protected readonly custodyCaveat = computed<string | null>(() => {
     const wallet = this.connectedWallet();

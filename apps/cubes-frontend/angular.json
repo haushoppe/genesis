@@ -28,8 +28,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/assets",
-              "src/_redirects",
-              "src/_headers"
+              "src/_redirects"
             ],
             "styles": [
               "node_modules/@fontsource/yantramanav/300.css",
@@ -84,8 +83,7 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "port": 4203,
-            "proxyConfig": "src/proxy.conf.json",
-            "headers": { "Access-Control-Allow-Origin": "*" }
+            "proxyConfig": "src/proxy.conf.json"
           },
           "configurations": {
             "production": {

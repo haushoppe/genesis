@@ -28,10 +28,9 @@
 
     <!--
       Warm the browser cache for the two cube-scene scripts every cube
-      iframe fetches. srcdoc iframes carry `<base href=ordinals.com>`
-      (see `withDarkColorScheme`) so their relative /content/* URLs
-      resolve directly to ordinals.com; matching preloads target the
-      same origin so the cache-lookup hits.
+      iframe fetches. A cube's relative /content/* URLs resolve to the
+      `/content/* -> ordinals.com` redirect, landing at ordinals.com;
+      these preloads target that final origin so the cache-lookup hits.
       - renderer: referenced by every generated cube (cube-html.ts)
       - helper: fetched by the renderer at runtime
     -->

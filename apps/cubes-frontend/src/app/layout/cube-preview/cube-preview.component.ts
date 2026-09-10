@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 
 import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { CubeDetails, getCubeHtml } from '../../services/cube-html';
-import { withDarkColorScheme } from '../../shared/utils/with-dark-color-scheme';
+import { withPreviewDarkCanvas } from '../../shared/utils/preview-dark-canvas';
 
 const DEFAULT_CUBE_DETAILS: CubeDetails = {
   inscriptionIds: {
@@ -31,7 +31,12 @@ export class CubePreviewComponent {
   // the page renders it separately via <app-cube-preview-title>.
   readonly cubeDetails = input<CubeDetails>(DEFAULT_CUBE_DETAILS);
 
+  // Live preview of an un-inscribed cube. The exact bytes we would mint are
+  // `getCubeHtml(...)`; here we add a DISPLAY-ONLY dark-canvas meta so the
+  // iframe does not flash white on each keystroke. The minted body
+  // (start.component `cubeBody`) uses `getCubeHtml` directly and stays
+  // pristine.
   protected readonly cubeSrcdoc = computed(() =>
-    withDarkColorScheme(getCubeHtml({ ...this.cubeDetails(), title: '' })),
+    withPreviewDarkCanvas(getCubeHtml({ ...this.cubeDetails(), title: '' })),
   );
 }

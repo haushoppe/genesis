@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 
 import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { getCubeHtml } from '../../services/cube-html';
-import { withDarkColorScheme } from '../../shared/utils/with-dark-color-scheme';
+import { withPreviewDarkCanvas } from '../../shared/utils/preview-dark-canvas';
 
 // Six sides of the featured cube 00ef588330b…, hardcoded so the
 // header renders with zero fetches.
@@ -15,7 +15,7 @@ const BANNER_CUBE_SIDES = [
   'b53e29d74eb41d7720760cb9c1b93eb9be0eaadbcf086aea0172672f6cce82aei0',
 ];
 
-const BANNER_SRCDOC = withDarkColorScheme(getCubeHtml({
+const BANNER_SRCDOC = withPreviewDarkCanvas(getCubeHtml({
   inscriptionIds: {
     inscriptionId1: BANNER_CUBE_SIDES[0],
     inscriptionId2: BANNER_CUBE_SIDES[1],

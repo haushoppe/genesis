@@ -38,30 +38,25 @@ const CUBE_RENDERER_INSCRIPTION_ID = 'fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb16
 const TEMPLATE_TAIL = `'</script><script src=/content/${CUBE_RENDERER_INSCRIPTION_ID}></script>`;
 
 /**
- * Substring unique to a preview-fallback side path. The on-chain cube
- * renderer prefixes every side with `/content/`, so a side of
- * `../assets/…side.svg` becomes `/content/../assets/…side.svg`, which
- * the browser normalises to `/assets/…side.svg` — our own served asset,
- * as long as the iframe base stays the app origin. `withDarkColorScheme`
- * keys its base-href decision on this marker; a real cube's data never
- * contains it.
- */
-export const PREVIEW_FALLBACK_SIDE_MARKER = '../assets/';
-
-/**
- * Preview-only fallbacks — when the user hasn't picked a real
- * inscription for a side yet, the mint form renders a coloured
- * "side #" SVG. These IDs are asset paths, NOT valid inscription IDs,
- * so they never land on-chain (the mint gate rejects any cube whose
- * IDs don't all pass `isValidInscriptionId`).
+ * Preview-only fallback faces — the digits 1-6 shown on a cube side the
+ * user hasn't filled yet. These are real on-chain inscriptions (the
+ * BitcoinOneZero collection, plain white digit on black, image/png), so a
+ * placeholder side loads through `/content/<id>` exactly like any real
+ * face: nothing app-hosted, no CORS header or base-href special-casing.
+ *
+ * They ARE valid inscription IDs, so they intentionally do not gate
+ * minting. The mint gate is the form validator: every side field is
+ * `required`, so a cube with any unfilled side cannot be minted
+ * (`canMint` and `mint()` both require `mintForm().valid()`). These IDs
+ * only ever populate the preview render.
  */
 const PREVIEW_FALLBACK_SIDES = [
-  '../assets/_______________________________________________side1.svg',
-  '../assets/_______________________________________________side2.svg',
-  '../assets/_______________________________________________side3.svg',
-  '../assets/_______________________________________________side4.svg',
-  '../assets/_______________________________________________side5.svg',
-  '../assets/_______________________________________________side6.svg',
+  'df58fbb44dbb2a9b17405f944c8ff966fd120cccda87873f3206f012ea239bebi0', // 1
+  'ad8d751046787e22a0ef89a15b7f0e5eedae927a488a8ecc7e30711a7692fb11i0', // 2
+  'fe4e588430b19d6e8b81005a3515a0f634fb3cd3b3bdf372bc7b12b50e302acci0', // 3
+  '9825f7f09818f0adb7d3b20a4db6aa92f9af850bd4e0597db6b7ade3790b0f5bi0', // 4
+  '412cb15b19496075ef9afbd07fbabe6d6e08461c30845fafe4ece083fd20d84fi0', // 5
+  '81c64b1c7dfa8ce4e9e32dbcf68fbb51e004fb56be5b2253c880cd833ae74bcai0', // 6
 ];
 
 /**

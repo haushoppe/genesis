@@ -42,6 +42,7 @@ import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { formatSats } from '../services/format-sats';
 import { InscriptionLookupService } from '../services/inscription-lookup.service';
+import { inscriptionNumberFromInput } from './inscription-number-input';
 import { PastMintsService } from '../services/past-mints.service';
 import { PriceService } from '../services/price.service';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
@@ -631,9 +632,11 @@ export class StartComponent {
         });
       });
 
-    // #12345-style inscription-number lookup — one shared 1 s debounce
-    // that snapshots all six id fields and only looks up the ones that
-    // changed to a plain numeric string since the last snapshot.
+    // Inscription-number lookup — one shared 1 s debounce that snapshots
+    // all six id fields and only looks up the ones that changed to a
+    // number (`#12345` or bare `12345`, both per the field hint) since the
+    // last snapshot. A full `txid+i+index` id normalises to null and is
+    // left as typed.
     const lastSeen: Record<string, string> = {};
     toObservable(this.mintFormData)
       .pipe(debounceTime(1000), takeUntilDestroyed(this.destroyRef))
@@ -642,9 +645,9 @@ export class StartComponent {
           const value = v[key];
           if (value === lastSeen[key]) continue;
           lastSeen[key] = value;
-          const trimmed = value.trim();
-          if (!trimmed || !/^\d+$/.test(trimmed)) continue;
-          this.inscriptionLookup.lookupById(trimmed)
+          const num = inscriptionNumberFromInput(value);
+          if (!num) continue;
+          this.inscriptionLookup.lookupById(num)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((id) => {
               if (!id) return;

@@ -38,6 +38,17 @@ const CUBE_RENDERER_INSCRIPTION_ID = 'fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb16
 const TEMPLATE_TAIL = `'</script><script src=/content/${CUBE_RENDERER_INSCRIPTION_ID}></script>`;
 
 /**
+ * Substring unique to a preview-fallback side path. The on-chain cube
+ * renderer prefixes every side with `/content/`, so a side of
+ * `../assets/…side.svg` becomes `/content/../assets/…side.svg`, which
+ * the browser normalises to `/assets/…side.svg` — our own served asset,
+ * as long as the iframe base stays the app origin. `withDarkColorScheme`
+ * keys its base-href decision on this marker; a real cube's data never
+ * contains it.
+ */
+export const PREVIEW_FALLBACK_SIDE_MARKER = '../assets/';
+
+/**
  * Preview-only fallbacks — when the user hasn't picked a real
  * inscription for a side yet, the mint form renders a coloured
  * "side #" SVG. These IDs are asset paths, NOT valid inscription IDs,

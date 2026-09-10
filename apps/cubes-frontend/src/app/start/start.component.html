@@ -57,6 +57,15 @@
           </div>
         }
 
+        <!-- Round-3 §7: single-address custody caveat. Fires at connection-
+             resolve (§7.3), above the mint entry point so it's seen before the
+             cube lands; amber not error-red (§7.4); never disables Mint (§7.5). -->
+        @if (custodyCaveat(); as caveat) {
+          <div class="alert alert-warning small mb-0" role="alert" data-testid="mint-custody-caveat">
+            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>{{ caveat }}
+          </div>
+        }
+
         <button type="submit"
                 class="btn btn-primary btn-lg text-nowrap"
                 data-testid="mint-cta"

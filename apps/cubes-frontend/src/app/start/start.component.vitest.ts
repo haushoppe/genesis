@@ -74,6 +74,7 @@ describe('StartComponent: watch-only mint wiring', () => {
   };
   let pastMintsRecord: ReturnType<typeof vi.fn>;
   let component: StartComponent;
+  let walletSubject: BehaviorSubject<unknown>;
 
   /** The component's constructed orchestrator instance. */
   function orch(): {
@@ -107,6 +108,7 @@ describe('StartComponent: watch-only mint wiring', () => {
       paymentAddress: walletAddress,
       paymentPublicKey: hex.encode(dummy.dummyPublicKey),
     };
+    walletSubject = new BehaviorSubject<unknown>(wallet);
 
     TestBed.configureTestingModule({
       providers: [
@@ -114,7 +116,7 @@ describe('StartComponent: watch-only mint wiring', () => {
         { provide: NgbModal, useValue: { open: vi.fn() } },
         {
           provide: WalletService,
-          useValue: { connectedWallet$: new BehaviorSubject<unknown>(wallet), requestWalletConnect: vi.fn() },
+          useValue: { connectedWallet$: walletSubject, requestWalletConnect: vi.fn() },
         },
         { provide: Cat21Service, useValue: cat21 },
         { provide: UtxoContentScanner, useValue: { states$: new BehaviorSubject(new Map()), autoScan: vi.fn(), reset: vi.fn(), scan: vi.fn(() => of(undefined)), classify: vi.fn(() => Promise.resolve('clean')) } },
@@ -218,5 +220,26 @@ describe('StartComponent: watch-only mint wiring', () => {
     expect(c.recommendedFees()).toBeNull();
     // And the cost total still renders — it does not depend on the fee tiers.
     expect(c.totalSpendSats()).toBe(3000);
+  });
+
+  it('shows the cube-worded single-address custody caveat only when the wallet uses one address', () => {
+    // Round-3 §7. Detection is ground truth (usesSingleAddress compares the two
+    // addresses actually returned), never a hardcoded list.
+    const c = component as unknown as { custodyCaveat(): string | null };
+
+    // The default mock wallet returns ONE address for both roles → caveat fires,
+    // and it is cube-worded (not the SDK's 'cats' default).
+    const caveat = c.custodyCaveat();
+    expect(caveat).toContain('your cubes on one address');
+    expect(caveat).toContain('cubes.haushoppe.art');
+    expect(caveat).not.toContain('your cats on one address');
+
+    // A wallet that hands out DISTINCT payment + ordinals addresses clears it.
+    walletSubject.next({
+      type: KnownOrdinalWalletType.xverse,
+      ordinalsAddress: 'bcrt1p_ordinals_side_distinct_from_payment',
+      paymentAddress: 'bcrt1q_payment_side_distinct_from_ordinals',
+    });
+    expect(c.custodyCaveat()).toBeNull();
   });
 });

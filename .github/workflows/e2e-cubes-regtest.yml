@@ -150,6 +150,12 @@ jobs:
           # of the COPY layer so the image's own npm install + build are stable.
           printf '.git\nnode_modules\ndist\npackage\n' > "$GITHUB_WORKSPACE/_ordpool/backend/.dockerignore"
           printf '.git\ntarget\n' > "$GITHUB_WORKSPACE/_ordpool/rust/.dockerignore"
+          # The backend Dockerfile's runtime stage does COPY /build/GeoIP, but
+          # nothing in the build creates it (GeoIP = MaxMind geolocation, which
+          # the /content + /preview witness routes never touch). Provide an
+          # empty GeoIP dir in the docker/backend context so that COPY resolves.
+          mkdir -p "$GITHUB_WORKSPACE/_ordpool/docker/backend/GeoIP"
+          touch "$GITHUB_WORKSPACE/_ordpool/docker/backend/GeoIP/.gitkeep"
 
       - uses: actions/setup-node@v4
         with:

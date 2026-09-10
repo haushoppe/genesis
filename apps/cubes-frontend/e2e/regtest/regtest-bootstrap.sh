@@ -24,6 +24,10 @@ export CAT21_ORD_SRC="${CAT21_ORD_SRC:-$(cd "$HERE/../../../../.." && pwd)/cat21
 # just-minted cube from the mempool before confirmation. Build context is
 # the ordpool checkout (backend/ + rust/); CI sets ORDPOOL_SRC itself.
 export ORDPOOL_SRC="${ORDPOOL_SRC:-$(cd "$HERE/../../../../.." && pwd)/ordpool}"
+# The backend Dockerfile's runtime stage COPYs /build/GeoIP, which nothing in
+# the build creates (GeoIP = MaxMind geolocation, unused by /content+/preview).
+# Provide an empty dir in the docker/backend build context so the COPY resolves.
+mkdir -p "$ORDPOOL_SRC/docker/backend/GeoIP" 2>/dev/null || true
 
 COMPOSE="docker compose -f $HERE/../../node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml"
 RPC="docker exec ${E2E_PREFIX}-bitcoind bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool"

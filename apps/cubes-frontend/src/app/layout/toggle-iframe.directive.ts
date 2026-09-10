@@ -26,6 +26,12 @@ export class ToggleIframeDirective {
 
   readonly toggleInscriptionId = input('');
 
+  /** Preview base to frame from. Defaults to the public confirmed explorer
+   *  (ordinals.com). The mint success panel + "My cubes" pass the
+   *  witness-capable base (ordpool-backend) so a still-unconfirmed cube
+   *  renders from the mempool. Must end with `/preview/`. */
+  readonly previewBase = input<string>('');
+
   private readonly element = inject<ElementRef<HTMLIFrameElement>>(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
   private intersectionObserver: IntersectionObserver | undefined;
@@ -72,6 +78,6 @@ export class ToggleIframeDirective {
     if (this.appliedId === inscriptionId) return;
     this.appliedId = inscriptionId;
     el.style.opacity = '0';
-    el.src = `${PREVIEW_BASE}${inscriptionId}`;
+    el.src = `${this.previewBase() || PREVIEW_BASE}${inscriptionId}`;
   }
 }

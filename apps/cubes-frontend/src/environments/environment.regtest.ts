@@ -33,6 +33,12 @@ export const environment = {
   haushoppeTipAddress: 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk',
   haushoppeTipSats: 1000,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',
+  // Witness-capable preview = the real ordpool-backend in the regtest stack
+  // (docker-compose.regtest.yml, `ordpool-backend` profile, port 8999). It
+  // renders a cube from the mempool witness before any block is mined, the
+  // same path prod's api.ordpool.space/preview uses. stock-ord (:8081 above)
+  // only serves confirmed inscriptions, so the mempool preview needs this.
+  ownPreviewIframe: 'http://127.0.0.1:8999/preview/',
   ordinalsExplorerDetails: 'http://localhost:8081/inscription/',
   satflowMarketplace: 'https://www.satflow.com/ordinal/',
   ordNetMarketplace: 'https://ord.net/inscription/'

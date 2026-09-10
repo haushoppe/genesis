@@ -334,8 +334,34 @@
 
 
 @if (mintSuccess(); as res) {
+  @let ss = mintStatus.statusOf(res.revealTxId)();
   <div class="alert alert-success mt-4" data-testid="mint-success">
     <h3 class="h5 mb-2">🎉 Your cube is on its way</h3>
+
+    <!-- Live preview straight from our own node: ordpool renders the cube
+         from the tx witness the instant it hits our mempool, so it shows
+         well before confirmation. Id is withheld until the tx is actually
+         visible (status leaves 'unknown') so we never frame a 404. -->
+    <div class="ratio ratio-1x1 mb-2 rounded overflow-hidden" style="max-width: 320px;">
+      <iframe
+        appToggleIframe
+        [previewBase]="ownPreviewIframe"
+        [toggleInscriptionId]="ss.state !== 'unknown' ? res.revealTxId + 'i0' : ''"
+        sandbox="allow-scripts"
+        data-testid="mint-success-preview"
+        style="border: 0;"
+      ></iframe>
+    </div>
+    <p class="mb-2" data-testid="mint-status-badge" aria-live="polite">
+      @if (ss.state === 'confirmed') {
+        <span class="badge text-bg-success">✅ Confirmed@if (ss.blockHeight) { · block {{ ss.blockHeight }}}</span>
+      } @else if (ss.state === 'mempool') {
+        <span class="badge text-bg-warning">⏳ In the mempool — your cube is rendering above</span>
+      } @else {
+        <span class="badge text-bg-secondary">📡 Sent to Bitcoin — your cube appears in a moment…</span>
+      }
+    </p>
+
     <p class="mb-2">
       It's signed and sent to Bitcoin, so there's nothing more to do. As soon as
       a miner includes it, your cube shows up in <em>Your past mints</em> below
@@ -383,14 +409,36 @@
 } @else {
   <ul class="list-unstyled" data-testid="my-cubes-list">
     @for (m of mine; track m.revealTxId) {
-      <li class="mb-2">
+      <li class="mb-3 d-flex align-items-center gap-3">
         @if (m.source === 'index') {
-          <a [routerLink]="['/inscription', m.inscriptionId]"><strong>Cube #{{ m.inscriptionNumber }}</strong></a>,
-          cube tx <a [href]="'https://ordpool.space/tx/' + m.revealTxId" target="_blank" rel="noopener"><code>{{ m.revealTxId.slice(0, 12) }}…</code></a>
+          <div class="ratio ratio-1x1 rounded overflow-hidden flex-shrink-0" style="width: 96px;">
+            <iframe appToggleIframe [previewBase]="ownPreviewIframe"
+                    [toggleInscriptionId]="m.inscriptionId" sandbox="allow-scripts"
+                    style="border: 0;"></iframe>
+          </div>
+          <div>
+            <a [routerLink]="['/inscription', m.inscriptionId]"><strong>Cube #{{ m.inscriptionNumber }}</strong></a><br>
+            <span class="badge text-bg-success" data-testid="my-cube-badge-confirmed">✅ Confirmed@if (m.blockHeight) { · block {{ m.blockHeight }}}</span>
+            <a class="ms-1 small" [href]="'https://ordpool.space/tx/' + m.revealTxId" target="_blank" rel="noopener"><code>{{ m.revealTxId.slice(0, 12) }}…</code></a>
+          </div>
         } @else {
-          <small class="text-muted">{{ m.createdAt | slice:0:10 }}</small>,
-          cube tx <a [href]="'https://ordpool.space/tx/' + m.revealTxId" target="_blank" rel="noopener"><code>{{ m.revealTxId.slice(0, 12) }}…</code></a>
-          <span class="badge text-bg-secondary ms-1" title="Waiting for the hourly index to catch up">indexing…</span>
+          @let ls = mintStatus.statusOf(m.revealTxId)();
+          <div class="ratio ratio-1x1 rounded overflow-hidden flex-shrink-0" style="width: 96px;">
+            <iframe appToggleIframe [previewBase]="ownPreviewIframe"
+                    [toggleInscriptionId]="ls.state !== 'unknown' ? m.revealTxId + 'i0' : ''" sandbox="allow-scripts"
+                    style="border: 0;"></iframe>
+          </div>
+          <div>
+            <small class="text-muted">{{ m.createdAt | slice:0:10 }}</small><br>
+            @if (ls.state === 'confirmed') {
+              <span class="badge text-bg-success" data-testid="my-cube-badge-confirmed">✅ Confirmed@if (ls.blockHeight) { · block {{ ls.blockHeight }}}</span>
+            } @else if (ls.state === 'mempool') {
+              <span class="badge text-bg-warning" data-testid="my-cube-badge-mempool">⏳ In the mempool</span>
+            } @else {
+              <span class="badge text-bg-secondary" data-testid="my-cube-badge-pending">📡 Broadcasting…</span>
+            }
+            <a class="ms-1 small" [href]="'https://ordpool.space/tx/' + m.revealTxId" target="_blank" rel="noopener"><code>{{ m.revealTxId.slice(0, 12) }}…</code></a>
+          </div>
         }
       </li>
     }

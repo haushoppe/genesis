@@ -37,11 +37,13 @@ import { yearsOnChainLabel } from './years-on-chain';
 import { CubePreviewComponent } from '../layout/cube-preview/cube-preview.component';
 import { CubePreviewTitleComponent } from '../layout/cube-preview/cube-preview-title.component';
 import { InscriptionListItemComponent } from '../layout/inscription-list-item/inscription-list-item.component';
+import { ToggleIframeDirective } from '../layout/toggle-iframe.directive';
 import { getCubeHtml, isCubeWarningHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { formatSats } from '../services/format-sats';
 import { InscriptionLookupService } from '../services/inscription-lookup.service';
+import { MintStatusService, MintTxStatus } from '../services/mint-status.service';
 import { inscriptionNumberFromInput } from './inscription-number-input';
 import { PastMintsService } from '../services/past-mints.service';
 import { PriceService } from '../services/price.service';
@@ -160,6 +162,7 @@ const FEE_TIERS: readonly FeeTier[] = [
     InscriptionListItemComponent,
     CubePreviewComponent,
     CubePreviewTitleComponent,
+    ToggleIframeDirective,
     NgbPagination,
     RouterLink,
     FormField,
@@ -184,7 +187,12 @@ export class StartComponent {
   private readonly cubesData = inject(CubesDataService);
   private readonly cubeSuggestionService = inject(CubeSuggestionService);
   private readonly inscriptionLookup = inject(InscriptionLookupService);
+  protected readonly mintStatus = inject(MintStatusService);
   private readonly priceService = inject(PriceService);
+
+  /** Witness-capable preview base (ordpool-backend) for the success panel +
+   *  "My cubes": renders a cube from the mempool before it confirms. */
+  protected readonly ownPreviewIframe = environment.ownPreviewIframe;
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(NgbModal);
 

@@ -29,6 +29,9 @@ export const environment = {
   // /preview load from ordinals.com even while the MINT happens on regtest
   // (see proxy.conf.central.json). Detail links point at the central full ord.
   ordinalsExplorerIframe: `http://${host}:3838/preview/`,
+  // Witness-capable preview (ordpool-backend, port 8999) for the mint success
+  // panel + "My cubes": renders from the mempool witness before confirmation.
+  ownPreviewIframe: `http://${host}:8999/preview/`,
   ordinalsExplorerDetails: `http://${host}:3838/inscription/`,
   satflowMarketplace: 'https://www.satflow.com/ordinal/',
   ordNetMarketplace: 'https://ord.net/inscription/',

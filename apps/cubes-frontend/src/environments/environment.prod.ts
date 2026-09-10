@@ -8,6 +8,10 @@ export const environment = {
   haushoppeTipAddress: '???',
   haushoppeTipSats: 1000,
   ordinalsExplorerIframe: 'https://ordinals.com/preview/',
+  // Our own witness-capable preview (ordpool-backend). Renders an inscription
+  // from the tx witness the moment it hits our mempool, so a just-minted cube
+  // shows before confirmation. Used for the mint success panel + "My cubes".
+  ownPreviewIframe: 'https://api.ordpool.space/preview/',
   ordinalsExplorerDetails: 'https://ordinals.com/inscription/',
   // Both marketplaces render every inscription (whether listed or not).
   // Satflow uses the inscription ID at /ordinal/; ord.net uses the

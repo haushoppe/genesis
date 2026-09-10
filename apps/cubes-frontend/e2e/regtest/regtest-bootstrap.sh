@@ -20,6 +20,10 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 export E2E_PREFIX="${E2E_PREFIX:-cubes-e2e}"
 export ELECTRS_SRC="${ELECTRS_SRC:-$(cd "$HERE/../../../../.." && pwd)/ordpool-electrs}"
 export CAT21_ORD_SRC="${CAT21_ORD_SRC:-$(cd "$HERE/../../../../.." && pwd)/cat21-ord}"
+# The mempool-witness renderer (real ordpool-backend) that serves the
+# just-minted cube from the mempool before confirmation. Build context is
+# the ordpool checkout (backend/ + rust/); CI sets ORDPOOL_SRC itself.
+export ORDPOOL_SRC="${ORDPOOL_SRC:-$(cd "$HERE/../../../../.." && pwd)/ordpool}"
 
 COMPOSE="docker compose -f $HERE/../../node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml"
 RPC="docker exec ${E2E_PREFIX}-bitcoind bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool"
@@ -30,7 +34,8 @@ RPC="docker exec ${E2E_PREFIX}-bitcoind bitcoin-cli -regtest -rpcuser=ordpool -r
 # instances up alongside bitcoind + electrs — the same set the CI workflow
 # starts. (In CI the workflow already started them, so this branch is skipped.)
 if ! docker ps --format '{{.Names}}' | grep -q "${E2E_PREFIX}-bitcoind"; then
-  $COMPOSE --profile ord-stock --profile cat21-ord up -d bitcoind electrs ord-stock ord >&2
+  $COMPOSE --profile ord-stock --profile cat21-ord --profile ordpool-backend \
+    up -d bitcoind electrs ord-stock ord ordpool-backend >&2
 fi
 
 # --- wait for bitcoind RPC to respond ---
@@ -70,6 +75,14 @@ TIP=$($RPC getblockcount)
 for _ in $(seq 1 30); do
   if [ "$(curl -s http://localhost:3010/blocks/tip/height || echo 0)" -ge "$TIP" ]; then break; fi
   sleep 1
+done
+
+# --- wait for ordpool-backend to accept connections (mempool witness renderer) ---
+# `curl -s` (no -f) exits 0 as soon as the server responds with any status,
+# so this waits for the port to be live regardless of the route's code.
+for _ in $(seq 1 90); do
+  if curl -s -o /dev/null "http://localhost:8999/api/v1/backend-info" 2>/dev/null; then break; fi
+  sleep 2
 done
 
 # --- emit the credentials as JSON ---

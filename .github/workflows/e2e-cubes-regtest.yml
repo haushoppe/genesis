@@ -87,6 +87,9 @@ jobs:
       E2E_PREFIX: cubes-e2e
       ELECTRS_SRC: ${{ github.workspace }}/_ordpool-electrs
       CAT21_ORD_SRC: ${{ github.workspace }}/_cat21-ord
+      # Build context for the real ordpool-backend (mempool-witness renderer)
+      # that serves the just-minted cube before confirmation.
+      ORDPOOL_SRC: ${{ github.workspace }}/_ordpool
     defaults:
       run:
         working-directory: apps/cubes-frontend
@@ -119,6 +122,13 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: git clone --depth 1 --branch ordpool https://github.com/ordpool-space/ordpool-electrs _ordpool-electrs
 
+      # OUR backend, built for the ordpool-backend service (mempool-witness
+      # renderer): its build context is _ordpool/backend + _ordpool/rust.
+      # Same anonymous-clone reasoning as the forks above. Branch is `main`.
+      - name: Clone ordpool for the ordpool-backend image build
+        working-directory: ${{ github.workspace }}
+        run: git clone --depth 1 --branch main https://github.com/ordpool-space/ordpool _ordpool
+
       # buildx gha cache: reuse the compiled electrs + cat21-ord images
       # across runs instead of recompiling Rust every run. A docker-container
       # builder + the Actions runtime env make type=gha work; the
@@ -136,6 +146,10 @@ jobs:
         run: |
           printf '.git\ntarget\n' > "$GITHUB_WORKSPACE/_ordpool-electrs/.dockerignore"
           printf '.git\ntarget\n' > "$GITHUB_WORKSPACE/_cat21-ord/.dockerignore"
+          # ordpool-backend build context: keep host node_modules/dist/.git out
+          # of the COPY layer so the image's own npm install + build are stable.
+          printf '.git\nnode_modules\ndist\npackage\n' > "$GITHUB_WORKSPACE/_ordpool/backend/.dockerignore"
+          printf '.git\ntarget\n' > "$GITHUB_WORKSPACE/_ordpool/rust/.dockerignore"
 
       - uses: actions/setup-node@v4
         with:
@@ -310,7 +324,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh alby
 
-      - name: Bring up bitcoind + electrs + ord-stock + cat21-ord
+      - name: Bring up bitcoind + electrs + ord-stock + cat21-ord + ordpool-backend
         # The funding-safety scan hits BOTH ord instances (same binary/image,
         # different runtime flags): ord-stock (--index-sats, no --index-cat21)
         # serves inscription content + the inscriptions/runes/rare-sats half of
@@ -325,8 +339,8 @@ jobs:
         # build produces it once and both containers start from it. The
         # E2E_PREFIX / ELECTRS_SRC / CAT21_ORD_SRC env is set job-level.
         run: |
-          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml -f node_modules/ordpool-sdk/e2e/docker-compose.gha-cache.yml --profile ord-stock --profile cat21-ord build electrs ord-stock ord
-          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml --profile ord-stock --profile cat21-ord up -d --no-build bitcoind electrs ord-stock ord
+          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml -f node_modules/ordpool-sdk/e2e/docker-compose.gha-cache.yml --profile ord-stock --profile cat21-ord --profile ordpool-backend build electrs ord-stock ord ordpool-backend
+          docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml --profile ord-stock --profile cat21-ord --profile ordpool-backend up -d --no-build bitcoind electrs ord-stock ord ordpool-backend
 
       - name: Mine 101 blocks + create funding wallet
         env:

@@ -18,6 +18,23 @@ import {
 import { closeLeftoverExtensionPages, onboardUnisat, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 
 /**
+ * Poll the real ordpool-backend for an inscription's rendered bytes. It
+ * decodes the inscription from the parent tx's witness over bitcoind RPC and
+ * reads the mempool first, so this returns for an UNCONFIRMED tx. A short
+ * retry covers the moment between broadcast and bitcoind holding the tx.
+ */
+async function pollForOrdpoolContent(url: string): Promise<string> {
+  let lastStatus = 'no response';
+  for (let i = 0; i < 30; i++) {
+    const res = await fetch(url).catch(() => null);
+    if (res?.ok) return res.text();
+    lastStatus = res ? `HTTP ${res.status}` : 'no response';
+    await new Promise((r) => setTimeout(r, 1_000));
+  }
+  throw new Error(`ordpool-backend did not render ${url} within 30s (last: ${lastStatus})`);
+}
+
+/**
  * Full user-flow proof for Unisat — cubes.haushoppe.art end-to-end on
  * regtest. Same SDK regtest shim as Leather (ordpool-sdk 586bde5)
  * takes care of the mainnet→bcrt address rewrite; the interesting
@@ -296,14 +313,30 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   expect(revealTxId).toMatch(/^[0-9a-f]{64}$/);
   console.log(`[unisat-mint] commit=${commitTxId.slice(0, 12)}… reveal=${revealTxId.slice(0, 12)}…`);
 
+  const inscriptionId = `${revealTxId}i0`;
+
+  // --- PROOF: the cube renders from the MEMPOOL, before any block is mined ---
+  // The real ordpool-backend (:8999) decodes the inscription from the still-
+  // unconfirmed reveal tx's witness — the whole anti-waiting feature. Its bytes
+  // must equal exactly what we minted, and the success panel must reflect it.
+  const mempoolHtml = await pollForOrdpoolContent(`http://localhost:8999/content/${inscriptionId}`);
+  expect(mempoolHtml).toBe(expectedCubeHtml);
+  await expect(cubes.locator('[data-testid="mint-status-badge"]')).toContainText(/mempool/i, { timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="mint-success-preview"]'))
+    .toHaveAttribute('src', new RegExp(`:8999/preview/${inscriptionId}$`), { timeout: 30_000 });
+  console.log('[unisat-mint] ordpool-backend rendered the cube from the mempool (pre-confirmation) ✓');
+
   await waitForElectrsSync(mineBlocks(1));
   await waitForTxConfirmed(commitTxId);
   await waitForElectrsSync(mineBlocks(1));
   const revealTx = await waitForTxConfirmed(revealTxId);
   expect(revealTx.status.block_hash).toBeTruthy();
 
+  // --- PROOF: once mined, the status badge flips to "confirmed" ---
+  await expect(cubes.locator('[data-testid="mint-status-badge"]')).toContainText(/confirmed/i, { timeout: 30_000 });
+  console.log('[unisat-mint] status badge flipped to confirmed after mining ✓');
+
   await waitForOrdStockSync(Number(rpc('getblockcount').trim()));
-  const inscriptionId = `${revealTxId}i0`;
   const { bytes: onChainBytes, contentType } = await getStockOrdContent(inscriptionId);
   expect(contentType).toBe('text/html;charset=utf-8');
 

@@ -754,9 +754,11 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   const myList = cubes.getByTestId('my-cubes-list');
   await expect(myList).toBeVisible({ timeout: 30_000 });
   await expect(myList).toContainText(revealTxId.slice(0, 12));
-  // Pending items carry the "indexing…" badge; indexed items don't.
-  await expect(myList.locator('li').filter({ hasText: revealTxId.slice(0, 12) }).locator('.badge'))
-    .toContainText(/indexing/i);
+  // A just-minted, not-yet-mined item carries the live mempool badge
+  // ("⏳ In the mempool"); it flips to "confirmed" once mined.
+  await expect(myList.locator('li').filter({ hasText: revealTxId.slice(0, 12) })
+      .locator('[data-testid^="my-cube-badge"]'))
+    .toContainText(/mempool/i);
 
   // ─── Step 7: mine both txs into blocks ─────────────────────────
   await waitForElectrsSync(mineBlocks(1));

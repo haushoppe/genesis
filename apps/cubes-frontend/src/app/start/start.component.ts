@@ -437,7 +437,7 @@ export class StartComponent {
     return change < changeMin ? utxoValue : funding;
   });
 
-  /** Human-friendly cost line — `"3,000 sat (~$1.85)"` or just `"3,000 sat"`. */
+  /** Human-friendly cost line — `"3 000 sat (~$1.85)"` or just `"3 000 sat"`. */
   protected readonly totalSpendLabel = computed<string>(() => {
     const sats = this.totalSpendSats();
     if (sats == null) return '';

@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { formatSats } from './format-sats';
 
 describe('formatSats', () => {
-  it('formats sats without USD when price is null', () => {
-    expect(formatSats(3000, null)).toBe('3,000 sat');
+  it('space-groups the sat count (the SDK / family Bitcoin-amount grouping)', () => {
+    expect(formatSats(3000, null)).toBe('3 000 sat');
     expect(formatSats(0, null)).toBe('0 sat');
-    expect(formatSats(1_234_567, null)).toBe('1,234,567 sat');
+    expect(formatSats(1_234_567, null)).toBe('1 234 567 sat');
   });
 
   it('appends USD equivalent when price is provided', () => {
     // At 65000 USD/BTC, 3000 sat = 0.00003 BTC = 1.95 USD
-    expect(formatSats(3000, 65000)).toBe('3,000 sat (~$1.95)');
+    expect(formatSats(3000, 65000)).toBe('3 000 sat (~$1.95)');
     // 546 sat postage at 65000 = 0.3549 USD → 0.35
     expect(formatSats(546, 65000)).toBe('546 sat (~$0.35)');
   });
@@ -25,10 +25,10 @@ describe('formatSats', () => {
     expect(formatSats(0, 65000)).toBe('0 sat ($0.00)');
   });
 
-  it('groups thousand separators in the USD amount', () => {
-    // 1 BTC at 100k USD/BTC = 100,000
-    expect(formatSats(100_000_000, 100_000)).toBe('100,000,000 sat (~$100,000.00)');
+  it('space-groups the sat count but keeps the USD amount comma-grouped (fiat convention)', () => {
+    // 1 BTC at 100k USD/BTC = 100,000 — sat side spaces, dollar side commas
+    expect(formatSats(100_000_000, 100_000)).toBe('100 000 000 sat (~$100,000.00)');
     // 10k sats at 65000 = 6.50 USD
-    expect(formatSats(10_000, 65000)).toBe('10,000 sat (~$6.50)');
+    expect(formatSats(10_000, 65000)).toBe('10 000 sat (~$6.50)');
   });
 });

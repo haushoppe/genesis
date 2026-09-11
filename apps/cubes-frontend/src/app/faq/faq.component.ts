@@ -36,13 +36,18 @@ export class FaqComponent {
       answer: `This project allows anyone to create art on the Bitcoin blockchain. The artistic process consists of selecting suitable images that are already present on the chain.<br><br>Additionally this project seeks to fully utilize the technical possibilities around Ordinals and Inscriptions. Normally, collections are pre-generated, and all digital artifacts are known from the start. The buyer acquires one of the artifacts without any possibility of intervening in the process. We want to reverse this process - the art collector becomes the curator and chooses the images to be added to the cube. <strong>It's a bit like fx(params), but for Bitcoin!</strong> Furthermore, the cube artifacts have been generated with the maximum possible technical compression. Each individual inscription stores data with exactly <strong>557 bytes</strong> in size, making it incredibly efficient. This efficiency is made possible through the use of recursive inscriptions.`,
     },
     {
+      question: 'Why permissionless?',
+      answer:
+        'Every user mints their own cube. There is no middleman. You can use this website to create a cube, but this is not required (multiple cubes have been minted via alternative tools in the past). Cubes are indexed by this website, and if they are technically valid (see <a href="https://github.com/ordpool-space/ordinal-cubes-index" target="_blank" rel="noopener">the indexer</a>), then they are added to the gallery. This is true permissionless minting.',
+    },
+    {
       question: 'Where can I find suitable inscriptions with images?',
       answer: `The mint page already suggests a curated collection by default and pre-fills the six sides for you. Just mint what you like, or click "Craft another cube" to reshuffle. If you'd rather pick your own, open the Customize panel and paste six inscription-ids. Any ordinals explorer works to browse for images, e.g. <a href="https://ordpool.space/" target="_blank" rel="noopener">ordpool.space</a> (our own) or <a href="https://ordinals.com/" target="_blank" rel="noopener">ordinals.com</a>. <strong>Avoid black sides at all costs</strong>: a broken or missing inscription renders as a black face and ruins the cube. Only the first frame of animated GIFs is shown.`,
     },
     {
       question: 'How do I create a cube?',
       answer:
-        'Click <strong>Connect wallet</strong> and pick your ordinals-aware Bitcoin wallet, then enter six Inscription IDs into the form (or use the pre-filled suggestion) and click <strong>"Mint my cube!"</strong>. Each cube displays the image of one inscription on each of its six sides. Your wallet prompts you to sign a commit transaction; a reveal transaction follows automatically. When the reveal confirms, your cube is live on-chain and lands on your ordinals address.',
+        'Click <strong>Connect</strong> and pick your ordinals-aware Bitcoin wallet, then enter six Inscription IDs into the form (or use the pre-filled suggestion) and click <strong>"Mint my cube!"</strong>. Each cube displays the image of one inscription on each of its six sides. Your wallet prompts you to sign a commit transaction; a reveal transaction follows automatically. When the reveal confirms, your cube is live on-chain and lands on your ordinals address.',
     },
     {
       question: 'What is the TXIDiN format?',
@@ -67,7 +72,7 @@ export class FaqComponent {
     {
       question: 'Which wallet should I use to manage my Ordinals?',
       answer:
-        'Click <strong>Connect wallet</strong> at the top-right to see every wallet we support. All are non-custodial: you keep full control of your funds. If you\'re not sure which one to pick, <a href="https://www.xverse.app/" target="_blank" rel="noopener">Xverse</a> is a safe default.',
+        'Click <strong>Connect</strong> at the top-right to see every wallet we support. All are non-custodial: you keep full control of your funds. If you\'re not sure which one to pick, <a href="https://www.xverse.app/" target="_blank" rel="noopener">Xverse</a> is a safe default.',
     },
     {
       question: 'Do I get anything extra when I mint a cube?',

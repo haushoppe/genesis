@@ -56,7 +56,7 @@ email: johannes@haushoppe.art
 collection_name: Ordinal Cubes by HAUS HOPPE
 symbol: ordinal-cubes-by-haus-hoppe
 description: The world's smallest onchain gallery, visualized as a 3D cube. 🟧 Mint your own personalized cube now! Permissionless. Immutable. Forever existing.
-twitter: https://twitter.com/DummyUser4
+twitter: https://x.com/HausHoppe
 discord: https://discord.gg/F25NEDuyEb
 website: https://cubes.haushoppe.art/
 supply: 10000

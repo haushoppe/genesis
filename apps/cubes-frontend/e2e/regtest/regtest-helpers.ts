@@ -684,3 +684,23 @@ export async function openDetails(page: Page, testId: string): Promise<void> {
     (el: HTMLDetailsElement) => { el.open = true; },
   );
 }
+
+/**
+ * Six mainnet inscriptions that render as images (the BitcoinOneZero digits
+ * 1 to 6, image/png), for the sides of the cube the specs mint. The mint
+ * form loads every side as an <img> from mainnet content before it enables
+ * Mint (`environment.sideImageProbeBase`), so the sides must be real
+ * renderable inscriptions, not placeholder ids; the cube body itself is
+ * still minted on regtest.
+ */
+export const RENDERABLE_SIDE_IDS = [
+  'df58fbb44dbb2a9b17405f944c8ff966fd120cccda87873f3206f012ea239bebi0',
+  'ad8d751046787e22a0ef89a15b7f0e5eedae927a488a8ecc7e30711a7692fb11i0',
+  'fe4e588430b19d6e8b81005a3515a0f634fb3cd3b3bdf372bc7b12b50e302acci0',
+  '9825f7f09818f0adb7d3b20a4db6aa92f9af850bd4e0597db6b7ade3790b0f5bi0',
+  '412cb15b19496075ef9afbd07fbabe6d6e08461c30845fafe4ece083fd20d84fi0',
+  '81c64b1c7dfa8ce4e9e32dbcf68fbb51e004fb56be5b2253c880cd833ae74bcai0',
+];
+
+/** A mainnet inscription whose body is JSON: loads with 200, never decodes as an image. */
+export const NON_IMAGE_SIDE_ID = 'a1aff8c3dc8ff01c775d3de7400ec6734b5fd289e8cff33b3fed8cd7da422fafi1';

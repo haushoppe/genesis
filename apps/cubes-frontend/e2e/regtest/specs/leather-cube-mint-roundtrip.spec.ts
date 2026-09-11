@@ -14,6 +14,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   openDetails,
+  RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
 import { closeLeftoverExtensionPages, onboardLeather, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 
@@ -61,14 +62,7 @@ const FUND_AMOUNT_BTC = 0.002;
 /** Six valid-format inscription IDs; the ord cube-parser doesn't
  *  dereference `/content/<id>` while walking, so unresolvable IDs
  *  are fine as long as they pass `isValidInscriptionId`. */
-const CUBE_SIDE_IDS = [
-  'a'.repeat(64) + 'i0',
-  'b'.repeat(64) + 'i0',
-  'c'.repeat(64) + 'i0',
-  'd'.repeat(64) + 'i0',
-  'e'.repeat(64) + 'i0',
-  'f'.repeat(64) + 'i0',
-];
+const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
 
 let context: BrowserContext;
 let extensionId: string;

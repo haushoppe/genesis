@@ -19,6 +19,9 @@ export const environment = {
   api: `http://${host}:3333`,
   // Same-origin; proxied to ordpool-backend :8999 -> electrs (avoids :3000).
   mempoolApiUrl: '',
+  // Cube sides are mainnet inscriptions even when the mint happens on regtest,
+  // so the mint form's black-face check loads them from mainnet content.
+  sideImageProbeBase: 'https://api.ordpool.space',
   // Full ord (= ord.ordpool.space) = the central ord-stock container.
   ordApiUrl: `http://${host}:3838`,
   // cat21-ord (= ord.cat21.space).

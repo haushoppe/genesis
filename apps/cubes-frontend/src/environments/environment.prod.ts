@@ -2,6 +2,10 @@ export const environment = {
   production: true,
   api: 'https://backend.haushoppe.art',
   mempoolApiUrl: 'https://api.ordpool.space',
+  // Where the mint form loads each side as an <img> before enabling Mint
+  // (side-image-check.ts). The cubes index probes the same host, so form and
+  // rarity score agree on which sides render.
+  sideImageProbeBase: 'https://api.ordpool.space',
   // SDK UtxoContentScanner's two ord `/output` sources (funding-safety scan).
   ordApiUrl: 'https://ord.ordpool.space',
   cat21OrdApiUrl: 'https://ord.cat21.space',

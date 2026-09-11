@@ -87,8 +87,7 @@
         </div>
         <div class="text-truncate" style="width: 70vw" data-testid="details-rarity-collection">
           <span class="d-inline-block" style="width: 160px">Collection:</span>
-          @if (r.cube.collection; as collection) {
-            {{ collection }}
+          @if (r.cube.collection; as collection) {<strong>{{ collection }}</strong>
             <span class="text-muted ms-2">shown by {{ r.cube.popularity }} scored cubes</span>
           } @else {
             <span class="text-muted">mixed, no collection points</span>

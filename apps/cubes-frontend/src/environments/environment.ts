@@ -12,6 +12,12 @@ export const environment = {
    */
   mempoolApiUrl: 'https://api.ordpool.space',
   /**
+   * Where the mint form loads each side as an <img> before enabling Mint
+   * (side-image-check.ts). The cubes index probes the same host, so form
+   * and rarity score agree on which sides render.
+   */
+  sideImageProbeBase: 'https://api.ordpool.space',
+  /**
    * The SDK UtxoContentScanner's two ord `/output` sources (funding-safety
    * content scan). Dev + prod hit our ord instances; regtest replaces this
    * file with environment.regtest.ts pointing both at a local ord/stub that

@@ -21,6 +21,10 @@ export const environment = {
   // (stripping the `/api` prefix, since electrs's Esplora endpoints
   // live at the root — /address/{}/utxo, /tx, /tx/{}/hex, etc.).
   mempoolApiUrl: '',
+  // The side ids the specs mint with are mainnet inscriptions (like the cube
+  // renderer itself), so the mint form's black-face check loads them from
+  // mainnet content, the same host prod probes.
+  sideImageProbeBase: 'https://api.ordpool.space',
   // The SDK UtxoContentScanner's funding-safety scan hits both real regtest ord
   // instances the docker stack brings up: ordApiUrl -> stock ord (:8081,
   // --index-sats; inscriptions/runes/rare-sats) and cat21OrdApiUrl -> cat21-ord

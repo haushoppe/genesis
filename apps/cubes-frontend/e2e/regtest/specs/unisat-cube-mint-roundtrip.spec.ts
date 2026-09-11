@@ -14,6 +14,8 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   openDetails,
+  RENDERABLE_SIDE_IDS,
+  NON_IMAGE_SIDE_ID,
 } from '../regtest-helpers';
 import { closeLeftoverExtensionPages, onboardUnisat, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 
@@ -68,14 +70,7 @@ const CUBES_URL = 'http://localhost:4203/';
 
 const FUND_AMOUNT_BTC = 0.002;
 
-const CUBE_SIDE_IDS = [
-  'a'.repeat(64) + 'i0',
-  'b'.repeat(64) + 'i0',
-  'c'.repeat(64) + 'i0',
-  'd'.repeat(64) + 'i0',
-  'e'.repeat(64) + 'i0',
-  'f'.repeat(64) + 'i0',
-];
+const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
 
 let context: BrowserContext;
 let extensionId: string;
@@ -180,6 +175,17 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
 
   const mintCta = cubes.locator('[data-testid="mint-cta"]');
   await expect(mintCta).toBeEnabled({ timeout: 10_000 });
+
+  // The black-face check: a side that is JSON on chain loads with 200 but
+  // never decodes as an image; the form names the face and keeps Mint off
+  // until the side is replaced.
+  await cubes.locator('[data-testid="cube-side-2"]').fill(NON_IMAGE_SIDE_ID);
+  await expect(cubes.locator('[data-testid="mint-black-faces"]')).toContainText('Side 2 does not render as an image', { timeout: 10_000 });
+  await expect(mintCta).toBeDisabled();
+  await cubes.locator('[data-testid="cube-side-2"]').fill(CUBE_SIDE_IDS[1]);
+  await expect(cubes.locator('[data-testid="mint-black-faces"]')).toHaveCount(0, { timeout: 10_000 });
+  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
+
   await mintCta.click();
 
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });

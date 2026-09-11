@@ -77,11 +77,11 @@ export class FaqComponent {
     {
       question: 'Do I get anything extra when I mint a cube?',
       answer:
-        'Yes. Every cube mint also inscribes two <a href="https://cat21.space/" target="_blank" rel="noopener">CAT-21</a> cats as a side effect: the commit and the reveal transactions both carry <code>nLockTime=21</code>, which is the CAT-21 protocol marker. Two free cats per cube, on the house. Claim them at <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.',
+        'Yes. Every cube mint also inscribes two <a href="https://cat21.space/" target="_blank" rel="noopener">CAT-21</a> cats as a side effect: the commit and the reveal transactions both carry <code>nLockTime=21</code>, which is the CAT-21 protocol marker. Two free cats per cube, on the house. You can adore them on <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.',
     },
     {
       question: 'What is the "utility" of this project?',
-      answer: 'There is no utility. This is a digital art experiment!',
+      answer: 'There is no utility. This is a digital art experiment!<br>And you get two cute cats, if you create the cubes on this website.',
     },
     {
       question: 'Positioning of the cube in the world space',

@@ -1,6 +1,6 @@
 <ng-template #connectModal let-modal>
   <div class="modal-header">
-    <h4 class="modal-title" id="wallet-connect-title">Connect wallet</h4>
+    <h4 class="modal-title" id="wallet-connect-title">{{ connectPanelHeading }}</h4>
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body">
@@ -193,11 +193,15 @@
   </ng-template>
 }
 @else {
+  <!-- Wallet icon + the bare verb; the panel it opens says "Connect a wallet"
+       in full. The accessible name restores the noun the icon carries visually,
+       so the icon itself is decorative. -->
   <button type="button"
           class="btn btn-outline-light btn-sm text-nowrap"
           data-testid="wallet-connect-btn"
+          [attr.aria-label]="connectButtonAccessibleName"
           (click)="open()">
-    <i class="bi bi-wallet2 me-1"></i>
-    Connect wallet
+    <i class="bi bi-wallet2 me-1" aria-hidden="true"></i>
+    {{ connectButtonLabel }}
   </button>
 }

@@ -1,7 +1,10 @@
 import { ChangeDetectorRef, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { detectWalletPlatform, KnownOrdinalWalletType, WalletPlatform, WalletService } from 'ordpool-sdk';
+import {
+  CONNECT_BUTTON_ACCESSIBLE_NAME, CONNECT_BUTTON_LABEL, CONNECT_PANEL_HEADING,
+  detectWalletPlatform, KnownOrdinalWalletType, WalletPlatform, WalletService,
+} from 'ordpool-sdk';
 
 import { cat21Config } from '../../shared/sdk-tokens';
 import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
@@ -119,6 +122,16 @@ describe('WalletConnectComponent: watch-only connect', () => {
     }));
     component.connectXpub();
     expect(connectXpub).toHaveBeenLastCalledWith(expect.objectContaining({ scriptType: undefined }));
+  });
+
+  it('takes the connect strings from the SDK and keeps label and accessible name distinct', () => {
+    const c = component as unknown as { connectButtonLabel: string; connectButtonAccessibleName: string; connectPanelHeading: string };
+    // Button: the bare verb (the icon carries the noun). Panel: the noun in full.
+    expect(c.connectButtonLabel).toBe(CONNECT_BUTTON_LABEL);
+    expect(c.connectPanelHeading).toBe(CONNECT_PANEL_HEADING);
+    // A screen reader gets no icon, so the accessible name restores the noun.
+    expect(c.connectButtonAccessibleName).toBe(CONNECT_BUTTON_ACCESSIBLE_NAME);
+    expect(c.connectButtonAccessibleName).not.toBe(c.connectButtonLabel);
   });
 
   it('guards an empty key: shows the paste hint and makes no wallet call', () => {

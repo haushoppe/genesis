@@ -5,6 +5,7 @@ import { NgbModal, NgbModalRef, NgbPopover, NgbPopoverModule } from '@ng-bootstr
 // class (the `/core` subpath ships only the pure helpers + orchestrators).
 // Both dist outputs are built by the SDK's prepare hook at install time.
 import {
+  CONNECT_BUTTON_ACCESSIBLE_NAME, CONNECT_BUTTON_LABEL, CONNECT_PANEL_HEADING,
   KnownOrdinalWallets, KnownOrdinalWalletType, makeWatchOnlyProbe,
   WalletCapability, WalletPickerRow, walletPickerRows, WalletService,
   WatchOnlyScriptType,
@@ -42,6 +43,17 @@ export class WalletConnectComponent {
   private readonly modalService = inject(NgbModal);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * The connect control's strings, identical on every family site (SDK):
+   * the button shows a wallet icon + the bare verb, the panel it opens says
+   * the noun in full, and the button's accessible name carries the noun too
+   * because a screen reader never sees the icon. Label and accessible name
+   * are deliberately different; the icon is cubes' own.
+   */
+  protected readonly connectButtonLabel = CONNECT_BUTTON_LABEL;
+  protected readonly connectButtonAccessibleName = CONNECT_BUTTON_ACCESSIBLE_NAME;
+  protected readonly connectPanelHeading = CONNECT_PANEL_HEADING;
 
   protected readonly connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
   protected readonly wallets = toSignal(this.walletService.wallets$, {

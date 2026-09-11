@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ORDPOOL_FAMILY, ORDPOOL_FAMILY_HEADING, ordpoolFamilyLede } from 'ordpool-sdk';
+import { ORDPOOL_FAMILY, ORDPOOL_FAMILY_HEADING } from 'ordpool-sdk';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { FooterComponent } from './footer.component';
@@ -38,11 +38,4 @@ describe('FooterComponent: Ordpool family contract', () => {
     expect(component.familyHeading).toBe(ORDPOOL_FAMILY_HEADING);
   });
 
-  it('wires the cubes-specific lede and carries no coin-check warning', () => {
-    // The maintainer removed the coin-check clause from the footer; cubes' lede
-    // names what the visitor is looking at. Both facts are load-bearing.
-    expect(component.familyLede).toBe(ordpoolFamilyLede('cubes'));
-    expect(component.familyLede).toContain('an artsy rotating cube');
-    expect(component.familyLede).not.toContain('checks what a coin is carrying');
-  });
 });

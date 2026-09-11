@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ORDPOOL_FAMILY, ORDPOOL_FAMILY_HEADING, ordpoolFamilyLede } from 'ordpool-sdk';
+import { ORDPOOL_FAMILY, ORDPOOL_FAMILY_HEADING } from 'ordpool-sdk';
 
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
@@ -14,9 +14,8 @@ export class FooterComponent {
    *  truth so cubes' footer cannot drift from cat21.space and ordpool.space). */
   protected readonly family = ORDPOOL_FAMILY;
   protected readonly familyHeading = ORDPOOL_FAMILY_HEADING;
-  /** cubes' own lede tail ("an artsy rotating cube"), from the SDK. Carries no
-   *  safety claim: the coin-check warning lives at the action in the caveat. */
-  protected readonly familyLede = ordpoolFamilyLede('cubes');
+  // The lede (the site's own tagline) is written in the template: each site
+  // owns and formats its own, two lines, the second naming what it renders.
 
   /** This site's key. Its own row renders as the current site (not a link),
    *  so the reader sees the whole set of four from here. */

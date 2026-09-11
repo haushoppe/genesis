@@ -5,10 +5,25 @@
 }
 
 // Symmetric spacer opposite the wallet-connect widget so the logo
-// stays visually centred on desktop.
+// stays visually centred on desktop. The width applies from md up only:
+// on a phone there is no spacer, and a fixed width here would push the
+// connect box past the viewport edge.
 .header-side {
   flex: 0 0 auto;
-  min-width: 12rem;
+}
+
+@media (min-width: 768px) {
+  .header-side {
+    min-width: 12rem;
+  }
+
+  // Desktop: the connect button lines up with the logo wordmark (48px
+  // tall, starting at the bar's 0.5rem top padding), not with the middle
+  // of the taller logo + "presents" stack.
+  .header-connect {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+  }
 }
 
 // X-Small devices (portrait phones)

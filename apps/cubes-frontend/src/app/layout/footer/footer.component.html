@@ -1,3 +1,42 @@
+<!-- The Ordpool family strip: mirrors the ordpool.space lead structure
+     (centered header + lede, four member cards, dashed self-row with a
+     "You're here" chip) in cubes' own dark ground and sharp-cornered rhythm.
+     Copy is the SDK's ORDPOOL_FAMILY constant, never retyped here. -->
+<section class="family-footer" aria-labelledby="family-footer-heading" data-testid="ordpool-family">
+  <div class="family-inner">
+
+    <header class="family-head">
+      <h2 id="family-footer-heading" class="family-heading">
+        <span class="family-mark" aria-hidden="true">🟧</span>
+        {{ familyHeading }}
+      </h2>
+      <p class="family-lede">{{ familyLede }}</p>
+    </header>
+
+    <ul class="family-grid">
+      @for (member of family; track member.key) {
+        <li class="family-member"
+            [class.is-current]="member.key === currentKey"
+            [attr.data-testid]="'family-member-' + member.key">
+          @if (member.key === currentKey) {
+            <span class="member-name" data-testid="family-current-site">
+              {{ member.name }}
+              <span class="you-are-here">You're here</span>
+            </span>
+            <span class="member-line">{{ member.line }}</span>
+          } @else {
+            <a class="member-name" [href]="member.url" target="_blank" rel="noopener">
+              {{ member.name }}<span class="member-go" aria-hidden="true">→</span>
+            </a>
+            <span class="member-line">{{ member.line }}</span>
+          }
+        </li>
+      }
+    </ul>
+
+  </div>
+</section>
+
 <p class="text-center text-muted mt-5">
   By HAUS HOPPE |
   <a routerLink="/presskit" class="text-decoration-none"> Presskit</a> |

@@ -1,3 +1,167 @@
 a {
   white-space: nowrap;
 }
+
+// Cubes' ground: flat dark, Bitcoin-orange accent, sharp corners
+// ($enable-rounded:false is cubes' identity, so cards and the chip stay
+// square where the ordpool lead rounds them). Spacing rhythm copied from the
+// lead's family-footer.reference.scss; only the token values are cubes'.
+.family-footer {
+  --fam-bg: #1f1f1f;
+  --fam-fg: #f8f9fa;
+  --fam-orange: #ff9900;
+  --fam-box-bg: #282828;
+  --fam-border: rgba(255, 255, 255, 0.14);
+
+  background-color: var(--fam-bg);
+  border-top: 1px solid var(--fam-border);
+  padding: 40px 0 4px;
+}
+
+.family-inner {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.family-head {
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.family-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  // cubes' global h1-h4 paint a silver gradient via
+  // -webkit-text-fill-color: transparent; override to a solid foreground so
+  // the family heading is measurably legible, matching the lead's solid heading.
+  background: none;
+  color: var(--fam-fg);
+  -webkit-text-fill-color: var(--fam-fg);
+}
+
+.family-mark {
+  display: inline-block;
+  margin-top: -2px;
+  font-size: 1.1rem;
+  line-height: 1;
+  -webkit-text-fill-color: initial; // let the emoji keep its own colours
+}
+
+.family-lede {
+  max-width: 620px;
+  margin: 0 auto;
+  color: var(--fam-fg);
+  opacity: 0.82;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.family-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+// Each member is a card so the strip reads as four invitations, not a nav row.
+.family-member {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  background-color: var(--fam-box-bg);
+  border: 1px solid var(--fam-border);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.member-name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--fam-orange);
+  text-decoration: none;
+}
+
+.member-go {
+  transition: transform 0.15s ease;
+}
+
+// The claim line is the invitation, full body colour, not fine print.
+.member-line {
+  color: var(--fam-fg);
+  opacity: 0.9;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+// Hover lifts a linkable card and nudges its arrow, so the whole card reads
+// as clickable, not just the name.
+.family-member:not(.is-current):hover {
+  border-color: var(--fam-orange);
+  transform: translateY(-2px);
+
+  a.member-name {
+    text-decoration: underline;
+  }
+
+  .member-go {
+    transform: translateX(3px);
+  }
+}
+
+// The self-row is the current site: a dashed border and the name in plain
+// foreground (the brightest text in the block, not dimmed), so "current"
+// never reads as "disabled".
+.family-member.is-current {
+  border-style: dashed;
+
+  .member-name {
+    color: var(--fam-fg);
+  }
+}
+
+.you-are-here {
+  align-self: center;
+  padding: 2px 8px;
+  background: var(--fam-orange);
+  color: var(--fam-bg);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+// Two columns on tablets, one on phones; cards tighten so four stacked
+// members are a brief lead-in to the real footer, not a scroll tax.
+@media (max-width: 991px) {
+  .family-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 575px) {
+  .family-footer {
+    padding-top: 32px;
+  }
+
+  .family-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .family-member {
+    padding: 12px 14px;
+  }
+}

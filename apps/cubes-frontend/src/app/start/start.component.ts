@@ -4,7 +4,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { form, max, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { NgbModal, NgbModalRef, NgbPagination } from '@ng-bootstrap/ng-bootstrap';
-import {
+import { formatSatsWithUsd,
   AUTO_SCAN_MAX_VALUE_SAT,
   BITCOIN_MIN_RELAY_FEE_SAT_PER_VBYTE,
   bucketOf,
@@ -41,7 +41,6 @@ import { ToggleIframeDirective } from '../layout/toggle-iframe.directive';
 import { getCubeHtml, isCubeWarningHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
-import { formatSats } from '../services/format-sats';
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
 import { InscriptionLookupService } from '../services/inscription-lookup.service';
 import { MintStatusService, MintTxStatus } from '../services/mint-status.service';
@@ -454,7 +453,7 @@ export class StartComponent {
   protected readonly totalSpendLabel = computed<string>(() => {
     const sats = this.totalSpendSats();
     if (sats == null) return '';
-    return formatSats(sats, this.btcUsdResource.value() ?? null);
+    return formatSatsWithUsd(sats, this.btcUsdResource.value() ?? null);
   });
 
   /** The cube HTML for the current form, memoised so the parseCube
@@ -547,7 +546,7 @@ export class StartComponent {
   protected readonly preConnectMintLabel = computed<string>(() => {
     const sats = this.preConnectMintSats();
     if (sats == null) return '';
-    return formatSats(sats, this.btcUsdResource.value() ?? null);
+    return formatSatsWithUsd(sats, this.btcUsdResource.value() ?? null);
   });
 
   /** Short middle-ellipsis form of the connected payment address. */

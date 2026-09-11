@@ -30,8 +30,10 @@
               <span class="member-line">{{ member.line }}</span>
             </div>
           } @else {
-            <!-- The whole card is the link, not only the name. -->
-            <a class="member-card" [href]="member.url" target="_blank" rel="noopener">
+            <!-- The whole card is the link, not only the name. Same tab: within
+                 the family we link directly, so clicking through does not pile
+                 up tabs. -->
+            <a class="member-card" [href]="member.url">
               <span class="member-name">{{ member.name }}<span class="member-go" aria-hidden="true">→</span></span>
               <span class="member-line">{{ member.line }}</span>
             </a>

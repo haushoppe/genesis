@@ -22,6 +22,7 @@
               "browser": ""
             },
             "index": "src/index.html",
+            "deployUrl": "/",
             "browser": "src/main.ts",
             "polyfills": ["src/polyfills.ts"],
             "tsConfig": "tsconfig.app.json",

@@ -305,6 +305,25 @@ Run: `npx vitest run` from `apps/cubes-frontend/`.
   reads in `params`.
 - Setting signals inside `computed()` is a bug — use `effect()`.
 
+## Build: `deployUrl` is `/` so the preload hint survives deep links
+
+`angular.json` sets `"deployUrl": "/"` on the build, which makes every
+resource URL Angular writes into `index.html` root-absolute (`/main-XXXX.js`,
+`/chunk-XXXX.js`). Why that matters: Angular emits the start chunk's preload
+hint relative (`<link rel="modulepreload" href="chunk-XXXX.js">`), and
+Cloudflare Pages turns the page's preload links into an HTTP header
+(`link: <chunk-XXXX.js>; rel="modulepreload"`, observed on production on every
+route). A relative `Link` header target is resolved against the REQUEST URL,
+not the document's `<base href="/">`, so on a nested route
+(`/inscription/<id>`) the browser preloads `/inscription/chunk-XXXX.js`, the
+SPA fallback answers with index.html, and the console shows "Failed to load
+module script … MIME type of text/html" on every deep link. The chunk itself
+still loads through `main.js`'s own import, so only the hint misfires; `/faq`
+never showed it because a relative name under a top-level route resolves to
+the root. A plain static server sends no such header, which is why this does
+not reproduce locally: verify on production. Keep the option; the
+alternative, `index.preloadInitial: false`, would drop the hint altogether.
+
 ## `native-fetch` only
 
 - No `axios`, no `xhr`.

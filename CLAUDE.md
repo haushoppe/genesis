@@ -82,6 +82,8 @@ Angular 22 standalone-components app, zoneless and signal-first. No NgModules, n
 
 **Cube iframes (do not refactor):** every on-chain cube (gallery, details, mint preview) renders through `ToggleIframeDirective` + `src/app/shared/utils/cube-srcdoc.ts`: the bytes are fetched and shown as `srcdoc` with an in-document dark colour-scheme meta and the renderer's stage reproduced as CSS, and a dark stage placeholder off-screen. This is the measured, final answer to the white flash and stage flicker; `apps/cubes-frontend/CLAUDE.md` carries the HARD RULE with the proof, the approaches that already failed, and the measurement any replacement has to pass.
 
+**Build (`deployUrl: "/"`):** cubes-frontend sets `deployUrl` so every resource URL in `index.html` is root-absolute. Cloudflare Pages turns the page's `modulepreload` hint into an HTTP `Link` header, and a relative target resolves against the request URL, which on a nested route (`/inscription/<id>`) preloads a path the SPA fallback answers with HTML ("Failed to load module script … text/html" on every deep link). Details in `apps/cubes-frontend/CLAUDE.md`. cubes is the only app here that emits the hint (application builder); genesis-frontend and the other family sites do not, and only inherit the trap if they move to that builder.
+
 **Key routes** (`ordinal.routes.ts`):
 - `/` — StartComponent with the mint form + past mints
 - `/mint/:collectionSymbol` — StartComponent with a pre-selected collection for suggestions

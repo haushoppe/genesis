@@ -20,6 +20,14 @@ const PREVIEW_BASE = environment.ordinalsExplorerIframe;
  * dark ↔ dark. Re-fetches on `toggleInscriptionId` change so a reused iframe
  * (details prev/next) shows the new cube.
  *
+ * Every document after the first is shown in a FRESH iframe element that
+ * replaces the current one, never by re-navigating the element in place.
+ * Chrome does not paint a new srcdoc document in an iframe whose current
+ * document still runs a WebGL scene (the details page after prev/next or the
+ * arrow keys stayed a flat dark rectangle; a new element with the identical
+ * srcdoc painted at once). A fresh element also guarantees the old scene is
+ * torn down.
+ *
  * This is the measured, final mechanism for the white-flash problem; see
  * CLAUDE.md "HARD RULE: Cube iframes render via srcdoc + dark canvas" before
  * changing how the iframe is loaded, unloaded or made visible.
@@ -42,14 +50,18 @@ export class ToggleIframeDirective {
   private readonly destroyRef = inject(DestroyRef);
   private intersectionObserver: IntersectionObserver | undefined;
   private isIntersecting = false;
+  /** The iframe element currently in the DOM: Angular's host at first, then
+   *  the fresh element of the latest document swap. */
+  private current: HTMLIFrameElement;
   /** The id currently applied (or being fetched); '' while showing the placeholder. */
   private appliedId = '';
   /** The fetch whose result may still be applied; a stale one must not overwrite. */
   private currentFetch: Promise<string> | null = null;
 
   constructor() {
-    const el = this.element.nativeElement;
-    el.srcdoc = DARK_PLACEHOLDER_SRCDOC;
+    const host = this.element.nativeElement;
+    this.current = host;
+    host.srcdoc = DARK_PLACEHOLDER_SRCDOC;
 
     this.intersectionObserver = new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -57,8 +69,12 @@ export class ToggleIframeDirective {
         this.reconcile();
       }
     });
-    this.intersectionObserver.observe(el);
-    this.destroyRef.onDestroy(() => this.intersectionObserver?.disconnect());
+    this.intersectionObserver.observe(host);
+    this.destroyRef.onDestroy(() => {
+      this.intersectionObserver?.disconnect();
+      // Angular removes its own host; a replacement element is ours to remove.
+      if (this.current !== host) this.current.remove();
+    });
 
     // Re-point when the input signal changes while the iframe stays visible.
     effect(() => {
@@ -69,31 +85,50 @@ export class ToggleIframeDirective {
   }
 
   private reconcile(): void {
-    const el = this.element.nativeElement;
     const inscriptionId = this.toggleInscriptionId();
     if (!this.isIntersecting || !inscriptionId) {
       if (this.appliedId !== '') {
         this.appliedId = '';
         this.currentFetch = null;
-        el.srcdoc = DARK_PLACEHOLDER_SRCDOC;
+        this.show(DARK_PLACEHOLDER_SRCDOC);
       }
       return;
     }
     if (this.appliedId === inscriptionId) return;
     this.appliedId = inscriptionId;
     // Placeholder first, so the tile is never blank while the fetch is in flight.
-    el.srcdoc = DARK_PLACEHOLDER_SRCDOC;
+    this.show(DARK_PLACEHOLDER_SRCDOC);
     const thisFetch = fetchCubeSrcdoc(inscriptionId, this.previewBase() || PREVIEW_BASE);
     this.currentFetch = thisFetch;
     thisFetch
       .then((srcdoc) => {
         // A newer id, or a scroll-out, superseded this fetch: leave it be.
         if (this.currentFetch !== thisFetch) return;
-        el.srcdoc = srcdoc;
+        this.show(srcdoc);
       })
       .catch(() => {
         // The placeholder stays; the id is released so a later intersect retries.
         if (this.currentFetch === thisFetch) this.appliedId = '';
       });
+  }
+
+  /**
+   * Shows `srcdoc` in a fresh iframe element (same attributes) that replaces
+   * the current one. The very first document, set before the host is in the
+   * DOM, stays in place; so does a swap to the document already shown.
+   */
+  private show(srcdoc: string): void {
+    const old = this.current;
+    if (old.srcdoc === srcdoc) return;
+    if (!old.isConnected) {
+      old.srcdoc = srcdoc;
+      return;
+    }
+    const fresh = old.cloneNode(false) as HTMLIFrameElement;
+    fresh.srcdoc = srcdoc;
+    old.replaceWith(fresh);
+    this.intersectionObserver?.unobserve(old);
+    this.intersectionObserver?.observe(fresh);
+    this.current = fresh;
   }
 }

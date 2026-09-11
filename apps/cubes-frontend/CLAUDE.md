@@ -132,6 +132,19 @@ just declared the problem solved.**
    while a fetch is in flight, the iframe shows `DARK_PLACEHOLDER_SRCDOC`, the
    default stage with nothing on it. `about:blank` is white.
 
+5. **Every document after the first goes into a FRESH iframe element.** The
+   directive never re-navigates an element in place: `show()` clones the
+   current iframe (same attributes), sets the new `srcdoc` on the clone,
+   swaps it into the DOM, moves the `IntersectionObserver` over and removes
+   the clone on destroy. Chrome does not paint a new srcdoc document in an
+   iframe whose current document still runs a WebGL scene: on the details
+   page, prev/next and the arrow keys (same component, same element, new
+   id) left a flat dark rectangle although the document loaded and fetched
+   its renderer and all six sides; a placeholder in between, a second of
+   waiting, or a scroll-out/in did not recover it; a new element with the
+   identical srcdoc painted at once. The gallery tiles never showed it only
+   because their swap to the placeholder happens off-screen.
+
 Around that: a stale-fetch guard (a fetch superseded by a scroll-out or a new
 id never overwrites the newer state), an LRU cache keyed by source and id (the
 bytes are immutable), and lazy load / unload via `IntersectionObserver`, which
@@ -190,6 +203,14 @@ and compute the mean luminance, plus the column profile. Pass: no sample near
 in the sky rows and stays within a few steps in the floor rows. Repeat after a
 scroll-out (placeholder) and a second scroll-in. Then ship, and run the same
 measurement against production.
+
+Then the SPA paths, which a direct page load never exercises: on a details
+page press ArrowRight / click "Next Cube" and screenshot after a few seconds
+(the new cube must be visible; measured with the fresh-element swap: iframe
+region mean luminance 41 and 36 in the two screenshots right after the swap,
+never white), and on the gallery scroll the tiles out and back in (every
+tile renders again). Also check the DOM holds exactly one iframe per tile
+after the swaps (no leaked elements).
 
 Pitfalls that produced wrong conclusions while building this, each of which
 cost real time:

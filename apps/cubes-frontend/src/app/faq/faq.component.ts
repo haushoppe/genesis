@@ -42,7 +42,7 @@ export class FaqComponent {
     },
     {
       question: 'Where can I find suitable inscriptions with images?',
-      answer: `The mint page already suggests a curated collection by default and pre-fills the six sides for you. Just mint what you like, or click "Craft another cube" to reshuffle. If you'd rather pick your own, open the Customize panel and paste six inscription-ids. Any ordinals explorer works to browse for images, e.g. <a href="https://ordpool.space/" target="_blank" rel="noopener">ordpool.space</a> (our own) or <a href="https://ordinals.com/" target="_blank" rel="noopener">ordinals.com</a>. <strong>Avoid black sides at all costs</strong>: a broken or missing inscription renders as a black face and ruins the cube. Only the first frame of animated GIFs is shown.`,
+      answer: `The mint page already suggests a curated collection by default and pre-fills the six sides for you. Just mint what you like, or click "Craft another cube" to reshuffle. If you'd rather pick your own, open the Customize panel and paste six inscription-ids. Any ordinals explorer works to browse for images, e.g. <a href="https://ordpool.space/">ordpool.space</a> (our own) or <a href="https://ordinals.com/" target="_blank" rel="noopener">ordinals.com</a>. <strong>Avoid black sides at all costs</strong>: a broken or missing inscription renders as a black face and ruins the cube. Only the first frame of animated GIFs is shown.`,
     },
     {
       question: 'How do I create a cube?',
@@ -77,7 +77,7 @@ export class FaqComponent {
     {
       question: 'Do I get anything extra when I mint a cube?',
       answer:
-        'Yes. Every cube mint also inscribes two <a href="https://cat21.space/" target="_blank" rel="noopener">CAT-21</a> cats as a side effect: the commit and the reveal transactions both carry <code>nLockTime=21</code>, which is the CAT-21 protocol marker. Two free cats per cube, on the house. You can adore them on <a href="https://cat21.space/" target="_blank" rel="noopener">cat21.space</a>.',
+        'Yes. Every cube mint also inscribes two <a href="https://cat21.space/">CAT-21</a> cats as a side effect: the commit and the reveal transactions both carry <code>nLockTime=21</code>, which is the CAT-21 protocol marker. Two free cats per cube, on the house. You can adore them on <a href="https://cat21.space/">cat21.space</a>.',
     },
     {
       question: 'What is the "utility" of this project?',

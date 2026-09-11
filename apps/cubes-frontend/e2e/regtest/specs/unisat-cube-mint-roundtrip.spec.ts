@@ -326,8 +326,15 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   const mempoolHtml = await pollForOrdpoolContent(`http://localhost:8999/content/${inscriptionId}`);
   expect(mempoolHtml).toBe(expectedCubeHtml);
   await expect(cubes.locator('[data-testid="mint-status-badge"]')).toContainText(/mempool/i, { timeout: 30_000 });
-  await expect(cubes.locator('[data-testid="mint-success-preview"]'))
-    .toHaveAttribute('src', new RegExp(`:8999/preview/${inscriptionId}$`), { timeout: 30_000 });
+  // The success preview shows the cube's bytes as srcdoc (dark canvas from the
+  // first frame), fetched from the ordpool-backend's /content. The minted body
+  // must land in the iframe byte-for-byte, wrapped only with the display-only
+  // dark meta and a base at the :8999 ord root.
+  const preview = cubes.locator('[data-testid="mint-success-preview"]');
+  await expect(preview).toHaveAttribute('srcdoc', /<meta name="color-scheme" content="dark">/, { timeout: 30_000 });
+  const previewSrcdoc = (await preview.getAttribute('srcdoc')) ?? '';
+  expect(previewSrcdoc).toMatch(/<base href="http:\/\/[^"]+:8999\/">/);
+  expect(previewSrcdoc.endsWith(expectedCubeHtml.slice(expectedCubeHtml.indexOf('<body>')))).toBe(true);
   console.log('[unisat-mint] ordpool-backend rendered the cube from the mempool (pre-confirmation) ✓');
 
   await waitForElectrsSync(mineBlocks(1));

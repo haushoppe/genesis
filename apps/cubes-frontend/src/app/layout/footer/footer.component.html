@@ -19,16 +19,19 @@
             [class.is-current]="member.key === currentKey"
             [attr.data-testid]="'family-member-' + member.key">
           @if (member.key === currentKey) {
-            <span class="member-name" data-testid="family-current-site">
-              {{ member.name }}
-              <span class="you-are-here">You're here</span>
-            </span>
-            <span class="member-line">{{ member.line }}</span>
+            <div class="member-card">
+              <span class="member-name" data-testid="family-current-site">
+                {{ member.name }}
+                <span class="you-are-here">You're here</span>
+              </span>
+              <span class="member-line">{{ member.line }}</span>
+            </div>
           } @else {
-            <a class="member-name" [href]="member.url" target="_blank" rel="noopener">
-              {{ member.name }}<span class="member-go" aria-hidden="true">→</span>
+            <!-- The whole card is the link, not only the name. -->
+            <a class="member-card" [href]="member.url" target="_blank" rel="noopener">
+              <span class="member-name">{{ member.name }}<span class="member-go" aria-hidden="true">→</span></span>
+              <span class="member-line">{{ member.line }}</span>
             </a>
-            <span class="member-line">{{ member.line }}</span>
           }
         </li>
       }

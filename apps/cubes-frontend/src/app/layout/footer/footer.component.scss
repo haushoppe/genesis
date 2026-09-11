@@ -70,15 +70,27 @@ a {
   gap: 16px;
 }
 
-// Each member is a card so the strip reads as four invitations, not a nav row.
+// Each member is a card so the strip reads as four invitations, not a nav
+// row. The card surface (border, ground, lift) lives on the list item; the
+// content, and for a linked member the whole click target, is .member-card.
 .family-member {
+  display: flex;
+  background-color: var(--fam-box-bg);
+  border: 1px solid var(--fam-border);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+// The whole card is the link (an <a> for the other members, a <div> for the
+// current site), filling the list item so there is no dead area.
+.member-card {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 16px 18px;
-  background-color: var(--fam-box-bg);
-  border: 1px solid var(--fam-border);
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  color: inherit;
+  text-decoration: none;
+  white-space: normal;
 }
 
 .member-name {
@@ -89,7 +101,6 @@ a {
   font-size: 1rem;
   font-weight: 700;
   color: var(--fam-orange);
-  text-decoration: none;
 }
 
 .member-go {
@@ -102,16 +113,15 @@ a {
   opacity: 0.9;
   font-size: 0.875rem;
   line-height: 1.45;
-  white-space: normal;
 }
 
-// Hover lifts a linkable card and nudges its arrow, so the whole card reads
-// as clickable, not just the name.
+// Hover lifts a linkable card, underlines the name and nudges its arrow, so
+// the whole card reads as clickable, which it is.
 .family-member:not(.is-current):hover {
   border-color: var(--fam-orange);
   transform: translateY(-2px);
 
-  a.member-name {
+  .member-name {
     text-decoration: underline;
   }
 
@@ -161,7 +171,7 @@ a {
     gap: 10px;
   }
 
-  .family-member {
+  .member-card {
     padding: 12px 14px;
   }
 }

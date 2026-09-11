@@ -222,6 +222,19 @@ describe('StartComponent: watch-only mint wiring', () => {
     expect(c.totalSpendSats()).toBe(3000);
   });
 
+  it('craftAnotherCube keeps the six sides in place until the next suggestion lands (no empty interlude)', () => {
+    const c = component as unknown as {
+      mintFormData: { (): Record<string, string>; update(fn: (v: Record<string, string>) => Record<string, string>): void };
+      craftAnotherCube(): void;
+    };
+    const sides = { inscriptionId1: 'a', inscriptionId2: 'b', inscriptionId3: 'c', inscriptionId4: 'd', inscriptionId5: 'e', inscriptionId6: 'f' };
+    c.mintFormData.update((v) => ({ ...v, ...sides }));
+    c.craftAnotherCube();
+    // The old cube stays previewable while the suggestion reloads; the
+    // suggestion effect replaces exactly this snapshot when it resolves.
+    for (const [k, v] of Object.entries(sides)) expect(c.mintFormData()[k]).toBe(v);
+  });
+
   it('shows the cube-worded single-address custody caveat only when the wallet uses one address', () => {
     // Detection is ground truth (usesSingleAddress compares the two addresses
     // actually returned), never a hardcoded list.

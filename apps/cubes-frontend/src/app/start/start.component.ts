@@ -42,6 +42,7 @@ import { getCubeHtml, isCubeWarningHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { formatSats } from '../services/format-sats';
+import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
 import { InscriptionLookupService } from '../services/inscription-lookup.service';
 import { MintStatusService, MintTxStatus } from '../services/mint-status.service';
 import { inscriptionNumberFromInput } from './inscription-number-input';
@@ -121,14 +122,7 @@ const mintFormSchema = schema<MintFormData>((path) => {
   max(path.feeRate, 1000);
 });
 
-const INSCRIPTION_ID_FIELDS = [
-  'inscriptionId1',
-  'inscriptionId2',
-  'inscriptionId3',
-  'inscriptionId4',
-  'inscriptionId5',
-  'inscriptionId6',
-] as const;
+const INSCRIPTION_ID_FIELDS = SIDE_KEYS;
 
 const DEFAULT_ITEMS_PER_PAGE = 12;
 
@@ -321,6 +315,25 @@ export class StartComponent {
       ...rest,
     };
   });
+
+  /** Whether the Customize panel is open: the one place a side may be left
+   *  empty on purpose, so the preview may show the numbered placeholder faces
+   *  there (they say which side is which). Closed, an incomplete cube is never
+   *  previewed: before the first suggestion lands, the stage is shown empty. */
+  protected readonly customizeOpen = signal(false);
+
+  /** What the preview renders: the cube once all six sides are set, or while
+   *  the user is customizing; otherwise null (empty stage), so a page load or a
+   *  reset never flashes the placeholder digits. */
+  protected readonly previewDetails = computed(() => {
+    const details = this.cubeDetails();
+    return this.customizeOpen() || allSidesFilled(details.inscriptionIds) ? details : null;
+  });
+
+  /** The six sides as they were when "Craft another cube" was clicked: the
+   *  suggestion answering that click may replace exactly these, nothing typed
+   *  since. null when no craft is pending. */
+  private craftedFrom: SideValues | null = null;
 
   // ---------- Derived state ----------
 
@@ -672,18 +685,20 @@ export class StartComponent {
     // Two guards, both via untracked() so the effect only re-runs when
     // the suggestion itself changes:
     //  - checkoutOpen: don't clobber the cube the user is about to mint
-    //  - anyFilled: don't clobber user-entered inscription IDs. This is
-    //    the race the alby E2E hit — page-load slower than usual, so
-    //    suggestion resolved DURING the test's fill sequence and
-    //    overwrote already-typed sides. Suggestions apply only to a
-    //    still-blank form; craftAnotherCube() clears the form first.
+    //  - suggestionMayReplace: don't clobber user-entered inscription IDs
+    //    (the race the alby E2E hit: a slow page load let the suggestion
+    //    resolve DURING the test's fill sequence and overwrite typed sides).
+    //    A suggestion applies to a blank form, or to the sides a "Craft
+    //    another cube" click snapshotted and nothing touched since; those
+    //    stay in place until it lands, so the preview never empties.
     effect(() => {
       const suggestion = this.suggestionResource.value();
       if (!suggestion) return;
       if (untracked(() => this.checkoutOpen())) return;
       const current = untracked(() => this.mintFormData());
-      const anyFilled = INSCRIPTION_ID_FIELDS.some((k) => current[k]);
-      if (anyFilled) return;
+      const mayReplace = suggestionMayReplace(current, this.craftedFrom);
+      this.craftedFrom = null;
+      if (!mayReplace) return;
       this.mintFormData.update((v) => ({
         ...v,
         inscriptionId1: suggestion.inscriptionId1,
@@ -727,22 +742,15 @@ export class StartComponent {
   }
 
   craftAnotherCube() {
-    // Close the drawer + clear the six sides so the suggestion-effect
-    // guard sees an empty form and applies the new suggestion when
-    // reload() resolves. Without the clear the anyFilled guard would
-    // skip forever after the first suggestion. Also the click handler
-    // for the shuffle anchors — their routerLink navigates + fragment
-    // holds viewport; this reload re-emits for the new collection.
+    // Close the drawer and remember the current six sides: the suggestion
+    // that answers this click may replace exactly these (see
+    // suggestionMayReplace), while they stay in place until it lands, so the
+    // preview goes straight from this cube to the next one with no empty or
+    // placeholder-digit interlude. Also the click handler for the shuffle
+    // anchors: their routerLink navigates + fragment holds viewport; this
+    // reload re-emits for the new collection.
     this.checkoutOpen.set(false);
-    this.mintFormData.update((v) => ({
-      ...v,
-      inscriptionId1: '',
-      inscriptionId2: '',
-      inscriptionId3: '',
-      inscriptionId4: '',
-      inscriptionId5: '',
-      inscriptionId6: '',
-    }));
+    this.craftedFrom = pickSides(this.mintFormData());
     this.suggestionResource.reload();
   }
 

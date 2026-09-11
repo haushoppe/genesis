@@ -71,6 +71,52 @@
     <a [href]="environment.ordNetMarketplace + insc.inscriptionNumber" target="_blank" rel="noopener">on ord.net</a>
   </div>
 
+  <h4 class="mt-4">Rarity</h4>
+
+  @if (rarityResource.value(); as r) {
+    @switch (r.cube.status) {
+      @case ('scored') {
+        <div class="text-truncate" style="width: 70vw" data-testid="details-rarity-rank">
+          <span class="d-inline-block" style="width: 160px">Rank:</span>
+          <strong>#{{ r.cube.rank }}</strong> of {{ r.scoredCubes }} scored cubes
+        </div>
+        <div class="text-truncate" style="width: 70vw" data-testid="details-rarity-score">
+          <span class="d-inline-block" style="width: 160px">Score:</span>
+          <strong>{{ r.cube.score }}</strong>
+          <span class="text-muted ms-2">tier {{ r.cube.tier }} bonus {{ r.cube.tierBonus }} + collection {{ r.cube.popularityPoints }}</span>
+        </div>
+        <div class="text-truncate" style="width: 70vw" data-testid="details-rarity-collection">
+          <span class="d-inline-block" style="width: 160px">Collection:</span>
+          @if (r.cube.collection; as collection) {
+            {{ collection }}
+            <span class="text-muted ms-2">shown by {{ r.cube.popularity }} scored cubes</span>
+          } @else {
+            <span class="text-muted">mixed, no collection points</span>
+          }
+        </div>
+      }
+      @case ('cursed') {
+        <div style="width: 70vw" data-testid="details-rarity-cursed">
+          <span class="d-inline-block align-top" style="width: 160px">Cursed:</span>
+          <span class="d-inline-block" style="max-width: calc(70vw - 170px)">no score, because {{ curseLabel(r.cube) }}.</span>
+        </div>
+      }
+      @case ('after-close') {
+        <div data-testid="details-rarity-after-close">
+          <span class="d-inline-block" style="width: 160px">Rank:</span>
+          <span class="text-muted">minted after the experiment closed; not scored.</span>
+        </div>
+      }
+    }
+    <p class="text-muted small mt-1 mb-0">The score moves with every new cube. <a routerLink="/faq">How rarity works</a></p>
+  } @else if (rarityResource.isLoading()) {
+    <p class="text-muted small">Loading rarity…</p>
+  } @else {
+    <p class="text-muted small" data-testid="details-rarity-unavailable">
+      @if (rarityResource.error()) { Rarity is unavailable right now. } @else { This cube is not in the rarity index yet. }
+    </p>
+  }
+
   <h4 class="mt-4">Attributes</h4>
 
   <table>

@@ -42,6 +42,9 @@ import { getCubeHtml, isCubeWarningHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
+import { allSidesRender, blackFaces } from './side-image-check';
+import { SideImageProbeService } from './side-image-probe.service';
+import { blackFacesLabel } from '../services/cubes-data/rarity-labels';
 import { InscriptionLookupService } from '../services/inscription-lookup.service';
 import { MintStatusService, MintTxStatus } from '../services/mint-status.service';
 import { inscriptionNumberFromInput } from './inscription-number-input';
@@ -334,6 +337,42 @@ export class StartComponent {
    *  since. null when no craft is pending. */
   private craftedFrom: SideValues | null = null;
 
+  // ---------- Side image check ----------
+
+  private readonly sideImageProbe = inject(SideImageProbeService);
+
+  /** The six side values in face order. */
+  private readonly sideValues = computed(() => SIDE_KEYS.map((key) => this.mintFormData()[key]));
+
+  /** The sides worth asking the browser about (set, canonical id shape), as
+   *  one string so the probe re-runs only when a side actually changes. */
+  private readonly probeKey = computed(() =>
+    this.sideValues().filter((id) => INSCRIPTION_ID_PATTERN.test(id)).join('|'),
+  );
+
+  /**
+   * Whether every side renders as an image, asked of the browser the way the
+   * renderer asks it (`side-image-check.ts`). A black face makes the cube
+   * cursed in the rarity score, so the mint gates wait for this. The cubes
+   * index runs the same probe against the same host, so a cube that passes
+   * here is not cursed for a black face there.
+   */
+  protected readonly sideImageResource = rxResourceFixed({
+    params: () => ({ key: this.probeKey() }),
+    stream: ({ params }) => this.sideImageProbe.probe(params.key ? params.key.split('|') : []),
+  });
+
+  /** 1-based faces whose side is known not to render. */
+  protected readonly blackFaces = computed(() => blackFaces(this.sideValues(), this.sideImageResource.value()));
+
+  /** The warning under the Mint button, null while every side renders. */
+  protected readonly blackFacesLabel = computed(() => blackFacesLabel(this.blackFaces()));
+
+  /** All six sides set and each decoded as an image; false while a probe is in flight. */
+  protected readonly sidesRender = computed(() =>
+    !this.sideImageResource.isLoading() && allSidesRender(this.sideValues(), this.sideImageResource.value()),
+  );
+
   // ---------- Derived state ----------
 
   protected readonly viableRows = computed<ViableInscribeSimulation[]>(() => {
@@ -391,6 +430,7 @@ export class StartComponent {
   protected readonly canMint = computed(() =>
     this.mintState() === 'ready' &&
     this.mintForm().valid() &&
+    this.sidesRender() &&
     this.effectiveFundingUtxo() !== null,
   );
 
@@ -408,7 +448,7 @@ export class StartComponent {
   // ---------- Checkout state ----------
 
   protected readonly checkoutOpen = signal(false);
-  protected readonly canOpenCheckout = computed(() => this.mintForm().valid());
+  protected readonly canOpenCheckout = computed(() => this.mintForm().valid() && this.sidesRender());
 
   /**
    * Populated when mint() bails on either the Warning-HTML sentinel

@@ -6,6 +6,9 @@ import { environment } from '../../environments/environment';
 import { ShortenAddressPipe } from '../layout/shorten-address.pipe';
 import { ToggleIframeDirective } from '../layout/toggle-iframe.directive';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
+import { curseLabel } from '../services/cubes-data/rarity-labels';
+import { RarityService } from '../services/cubes-data/rarity.service';
+import { CubeRarity } from '../services/cubes-data/types';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
 
 @Component({
@@ -37,6 +40,18 @@ export class DetailsComponent {
     params: () => ({ id: this.inscriptionId() }),
     stream: ({ params }) => this.cubesData.getSingleInscription(params.id),
   });
+
+  private readonly rarity = inject(RarityService);
+
+  /** This cube's row in the index's rarity score, with the scored total it ranks against. */
+  protected readonly rarityResource = rxResourceFixed({
+    params: () => ({ id: this.inscriptionId() }),
+    stream: ({ params }) => this.rarity.getRarity(params.id),
+  });
+
+  protected curseLabel(cube: CubeRarity): string {
+    return curseLabel(cube);
+  }
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;

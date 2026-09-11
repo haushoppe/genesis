@@ -339,5 +339,14 @@ alternative, `index.preloadInitial: false`, would drop the hint altogether.
   footer, header, cube-preview, inscription-list-item, loading-
   indicator).
 - `src/app/services/` — thin HTTP wrappers.
+- `src/app/services/cubes-data/rarity.service.ts` — `rarity.json` from the
+  cubes index (rank, score, cursed reasons per cube; rules in the
+  `ordinal-cubes-index` README under "Rarity"); wording in `rarity-labels.ts`.
+- `src/app/start/side-image-check.ts` + `side-image-probe.service.ts` — the
+  mint form's black-face check: every side is loaded as an `<img>` from
+  `api.ordpool.space/content/<id>`, the renderer's own load path, and the
+  Mint button stays off until all six decode. The cubes index probes the
+  same host in headless Chrome, so a cube that passes here is not cursed
+  for a black face there.
 - `src/app/shared/utils/rx-resource-fixed.ts` — the wrapper.
 - `src/environments/` — env-specific config.

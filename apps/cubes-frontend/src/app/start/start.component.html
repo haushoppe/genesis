@@ -85,7 +85,17 @@
           Craft another cube
         </button>
 
-        @if (!canOpenCheckout() && !suggestionResource.isLoading()) {
+        <!-- A side the browser cannot decode as an image renders as a black
+             face, and a black face curses the cube in the rarity score, so the
+             Mint button stays off until every side passes the same check the
+             renderer makes (side-image-check.ts). -->
+        @if (blackFacesLabel(); as label) {
+          <div class="alert alert-warning small mb-0" role="alert" data-testid="mint-black-faces">
+            {{ label }}: that face would be black and the cube cursed, with no rarity score. Pick another inscription.
+          </div>
+        }
+
+        @if (!canOpenCheckout() && !suggestionResource.isLoading() && !sideImageResource.isLoading() && !blackFacesLabel()) {
           @if (suggestionResource.error()) {
             <div class="alert alert-warning small text-center mb-0" role="alert" data-testid="suggestion-error">
               Couldn't load a suggestion.
@@ -497,9 +507,10 @@
 }
 
 
-<p class="mt-2 mb-3">
-  Curious how rarity will work, or have another question?
-  <a routerLink="/faq">Please refer to our FAQ section.</a>
+<p class="text-center text-muted mt-4 mb-5" data-testid="faq-pointer">
+  <i class="bi bi-question-circle me-1" aria-hidden="true"></i>
+  Curious how rarity works, or have another question?
+  <a routerLink="/faq" class="fw-bold">Please refer to our FAQ section.</a>
 </p>
 
 <!-- Watch-only (xpub) export/paste signing bridge. Opened by psbtPrompt

@@ -43,6 +43,40 @@ export interface InscriptionExtendedSingleResult {
   nextInscriptionId: string | null;
 }
 
+export type CubeRarityStatus = 'scored' | 'cursed' | 'after-close';
+export type CubeCurse = 'duplicate-side' | 'black-side' | 'reused-inscription';
+
+/** One row of `rarity.json` (see the cubes-index README, "Rarity"). */
+export interface CubeRarity {
+  inscriptionId: string;
+  position: number;
+  status: CubeRarityStatus;
+  cursed: CubeCurse[];
+  /** 1-based faces that do not render as an image. */
+  blackSides: number[];
+  /** 1-based faces whose inscription an earlier cube claimed first. */
+  reusedSides: number[];
+  /** The one collection all six sides come from, else null. */
+  collection: string | null;
+  collections: string[];
+  validOrdinal: number | null;
+  tier: number | null;
+  tierBonus: number | null;
+  popularity: number | null;
+  popularityPoints: number | null;
+  score: number | null;
+  rank: number | null;
+}
+
+export interface RarityIndex {
+  totalCubes: number;
+  scoredCubes: number;
+  cursedCubes: number;
+  afterCloseCubes: number;
+  collections: { symbol: string; cubes: number; points: number }[];
+  cubes: CubeRarity[];
+}
+
 export interface CubeSuggestion {
   inscriptionId1: string;
   inscriptionId2: string;

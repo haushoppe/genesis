@@ -42,7 +42,7 @@ export class FaqComponent {
     },
     {
       question: 'Where can I find suitable inscriptions with images?',
-      answer: `The mint page already suggests a curated collection by default and pre-fills the six sides for you. Just mint what you like, or click "Craft another cube" to reshuffle. If you'd rather pick your own, open the Customize panel and paste six inscription-ids. Any ordinals explorer works to browse for images, e.g. <a href="https://ordpool.space/">ordpool.space</a> (our own) or <a href="https://ordinals.com/" target="_blank" rel="noopener">ordinals.com</a>. <strong>Avoid black sides at all costs</strong>: a broken or missing inscription renders as a black face and ruins the cube. Only the first frame of animated GIFs is shown.`,
+      answer: `The mint page already suggests a curated collection by default and pre-fills the six sides for you. Just mint what you like, or click "Craft another cube" to reshuffle. If you'd rather pick your own, open the Customize panel and paste six inscription-ids. Any ordinals explorer works to browse for images, e.g. <a href="https://ordpool.space/">ordpool.space</a> (our own) or <a href="https://ordinals.com/" target="_blank" rel="noopener">ordinals.com</a>. <strong>Avoid black sides at all costs</strong>: a broken or missing inscription renders as a black face, ruins the cube and curses it in the rarity score. The mint form checks every side the way the cube renders it and will not mint a cube with a black face. Only the first frame of animated GIFs is shown.`,
     },
     {
       question: 'How do I create a cube?',
@@ -84,17 +84,16 @@ export class FaqComponent {
       answer: 'There is no utility. This is a digital art experiment!<br>And you get two cute cats, if you create the cubes on this website.',
     },
     {
-      question: 'How will rarity work?',
-      answer: `<p>Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities. However, the thrill of collecting intensifies when considering rarity. To highlight this, all cubes will receive a <strong>Rarity Score</strong> when the project has minted out.</p>
+      question: 'How does rarity work?',
+      answer: `<p>Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities. However, the thrill of collecting intensifies when considering rarity. So every cube carries a <strong>Rarity Score</strong>, shown on its page. Cubes are scored against each other, and the score moves with every new cube.</p>
 <ul>
-  <li>The first 100 cubes receive an elevated score. For subsequent tiers, the earlier you get in, the better.</li>
-  <li>Each side of a cube should display distinct inscriptions.</li>
-  <li>Cubes featuring inscriptions that have already been claimed by others won't receive a score and will be labeled "cursed".<br>In essence, <strong>each cube claims six inscriptions</strong>. First is first!</li>
-  <li>Cubes displaying a black side due to a loading error are labeled "cursed", too.</li>
-  <li>Cubes should present inscriptions all from the same collection.</li>
-  <li>Cubes should display popular collections.<br>Popularity is gauged by the number of cubes that display inscriptions from that specific collection.</li>
-  <li>The experiment draws to a close after 10,000 valid cubes have been minted.</li>
-</ul>`,
+  <li><strong>Cursed cubes get no score.</strong> A cube is cursed when two of its faces show the same inscription, when a face is black because its side does not render as an image, or when a side was already claimed by an earlier cube.<br>In essence, <strong>each cube claims six inscriptions</strong>, in mint order. First is first!</li>
+  <li><strong>Tiers.</strong> The first 100 scored cubes get a bonus of 100 points, cubes 101 to 1,000 get 50, cubes 1,001 to 5,000 get 25. The earlier you get in, the better.</li>
+  <li><strong>Collection points.</strong> A cube whose six sides all come from one collection earns up to 100 points. The more cubes show that collection, the more points: the most popular collection pays the full 100, the others in proportion. Mixed cubes earn none.</li>
+  <li><strong>Ties</strong> go to the older cube.</li>
+  <li>The experiment draws to a close after 10,000 scored cubes.</li>
+</ul>
+<p>Collections are read from our frozen <a href="https://github.com/ordpool-space/magic-eden-ordinals-archive">Magic Eden archive</a>, the same source the mint page draws its suggestions from. The full rules and the data behind every rank live in the <a href="https://github.com/ordpool-space/ordinal-cubes-index#rarity">ordinal-cubes-index</a>.</p>`,
     },
     {
       question: 'Positioning of the cube in the world space',

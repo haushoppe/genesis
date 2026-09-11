@@ -1,4 +1,5 @@
 import { provideZonelessChangeDetection } from '@angular/core';
+import { SideImageProbeService } from './side-image-probe.service';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject, of } from 'rxjs';
@@ -125,6 +126,15 @@ describe('StartComponent: watch-only mint wiring', () => {
         { provide: InscriptionLookupService, useValue: { lookupById: () => of(null) } },
         { provide: PriceService, useValue: { getBtcUsd: () => of(null) } },
         { provide: PastMintsService, useValue: { record: pastMintsRecord } },
+        // Stand-in for the browser image probe: any id ending in `i1` is a
+        // side that does not render, everything else does.
+        {
+          provide: SideImageProbeService,
+          useValue: {
+            probe: (ids: readonly string[]) =>
+              of(Object.fromEntries(ids.map((id) => [id, id.endsWith('i1') ? 'black' : 'ok']))),
+          },
+        },
       ],
     });
 
@@ -145,6 +155,21 @@ describe('StartComponent: watch-only mint wiring', () => {
       title: '', rotationSpeedX: '', rotationSpeedY: '', colorPane: '', bgColor1: '', bgColor2: '',
       feeRate: 10,
     });
+    // Flush effects so the side image probe (a resource) has answered.
+    TestBed.tick();
+  });
+
+  it('a side that does not render as an image blocks the mint and names the face', () => {
+    const blackId = VALID_ID.slice(0, 64) + 'i1';
+    (component as unknown as { mintFormData: { update(f: (v: Record<string, unknown>) => Record<string, unknown>): void } })
+      .mintFormData.update((v) => ({ ...v, inscriptionId2: blackId }));
+    TestBed.tick();
+    setSnap({ state: 'ready', selectedUtxo: null });
+
+    expect(component['blackFaces']()).toEqual([2]);
+    expect(component['blackFacesLabel']()).toBe('Side 2 does not render as an image');
+    expect(component['canOpenCheckout']()).toBe(false);
+    expect(component['canMint']()).toBe(false);
   });
 
   it('threads the psbtPrompt callback into InscribeMintOrchestrator.mint()', async () => {

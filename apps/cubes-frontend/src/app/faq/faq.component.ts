@@ -84,6 +84,19 @@ export class FaqComponent {
       answer: 'There is no utility. This is a digital art experiment!<br>And you get two cute cats, if you create the cubes on this website.',
     },
     {
+      question: 'How will rarity work?',
+      answer: `<p>Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities. However, the thrill of collecting intensifies when considering rarity. To highlight this, all cubes will receive a <strong>Rarity Score</strong> when the project has minted out.</p>
+<ul>
+  <li>The first 100 cubes receive an elevated score. For subsequent tiers, the earlier you get in, the better.</li>
+  <li>Each side of a cube should display distinct inscriptions.</li>
+  <li>Cubes featuring inscriptions that have already been claimed by others won't receive a score and will be labeled "cursed".<br>In essence, <strong>each cube claims six inscriptions</strong>. First is first!</li>
+  <li>Cubes displaying a black side due to a loading error are labeled "cursed", too.</li>
+  <li>Cubes should present inscriptions all from the same collection.</li>
+  <li>Cubes should display popular collections.<br>Popularity is gauged by the number of cubes that display inscriptions from that specific collection.</li>
+  <li>The experiment draws to a close after 10,000 valid cubes have been minted.</li>
+</ul>`,
+    },
+    {
       question: 'Positioning of the cube in the world space',
       answer: `<h4>What is the world space?</h4>
 <p>The world space is a global, fixed coordinate system in a 3D scene. The origin (0,0,0) of our world space is by default at the center of the scene.</p>

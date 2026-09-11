@@ -19,6 +19,10 @@ const PREVIEW_BASE = environment.ordinalsExplorerIframe;
  * scene renders). Out of view: back to the dark placeholder. Every swap is
  * dark ↔ dark. Re-fetches on `toggleInscriptionId` change so a reused iframe
  * (details prev/next) shows the new cube.
+ *
+ * This is the measured, final mechanism for the white-flash problem; see
+ * CLAUDE.md "HARD RULE: Cube iframes render via srcdoc + dark canvas" before
+ * changing how the iframe is loaded, unloaded or made visible.
  */
 @Directive({
   selector: '[appToggleIframe]',

@@ -1,39 +1,90 @@
 /**
- * On-chain cube display via `srcdoc`, so the iframe canvas is dark from its
- * very first frame.
+ * On-chain cube display via `srcdoc`, so the iframe shows the cube's stage
+ * from its very first frame and never a white or flat canvas.
  *
  * Why not a cross-origin `src` to `/preview/<id>`: a cube's HTML sets no body
  * background, and the browser paints a cross-origin document's canvas in its
  * OWN default colour (white in light mode, and measured white even when the
  * parent page is dark, because the parent's `color-scheme` never crosses the
- * document boundary). That white stays until the cube's WebGL scene paints,
- * a window of well over a second per tile, so every scroll-in is a white
- * flash. The only thing that darkens the canvas before the scene renders is a
- * `<meta name="color-scheme" content="dark">` INSIDE the iframe's own
- * document, which requires owning the document: fetch the bytes, wrap, srcdoc.
+ * document boundary). That white stays until the cube's script runs, a window
+ * of well over a second per tile, so every scroll-in is a white flash. Owning
+ * the document is the only way to paint it before the script runs: fetch the
+ * bytes, wrap, srcdoc.
+ *
+ * What the on-chain renderer paints, and what this replicates: the renderer
+ * injects a `<style>` giving the body a sky gradient (`t` at 20% to `u` at 80%,
+ * top to bottom), draws on a TRANSPARENT WebGL canvas, and adds a lit floor
+ * plane in `k` that forms the horizon. `t`, `u`, `k` default to black, #5a5a5a,
+ * #202020 and a cube may override them via fields 9, 10, 8 of its `t='…'`
+ * list. The stage CSS here reproduces that look (sky, horizon, floor) with the
+ * cube's own colours, so the document looks like the finished stage before the
+ * renderer has even loaded; only the cube itself appears when the scene paints.
  *
  * The wrapping is display-only. It never touches the minted body (which stays
  * the pristine canonical cube) and the fetched bytes are the real on-chain
  * bytes; only the display container gains a head.
+ *
+ * Measured and final: see CLAUDE.md "HARD RULE: Cube iframes render via srcdoc
+ * + dark canvas" for the proof, the approaches that already failed, and the
+ * measurement any replacement has to pass.
  */
 
 const COLOR_SCHEME_META = '<meta name="color-scheme" content="dark">';
 
+/** The renderer's stage defaults: sky top `t`, sky bottom `u`, floor `k`. All
+ *  three renderer versions (v1, v2, v3) paint this same stage, so the replica
+ *  applies to every cube. */
+export const STAGE_DEFAULTS = { t: '#000000', u: '#5a5a5a', k: '#202020' } as const;
+
+/** A colour the stage CSS accepts verbatim: hex, or a plain CSS colour name. */
+const SAFE_COLOR = /^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{1,30})$/;
+
+/**
+ * The stage as CSS: the renderer's own sky gradient, plus a floor replica from
+ * the horizon (52%) darkening into `k`, drawn on top of the sky. Declared
+ * `!important` because the renderer later injects its own `body { background }`
+ * (sky only); without the precedence the floor replica would vanish for the
+ * frames between that injection and the first WebGL paint of the real floor.
+ */
+export function stageCss(colors: { t: string; u: string; k: string } = STAGE_DEFAULTS): string {
+  const { t, u, k } = colors;
+  return (
+    'html,body{width:100%;height:100%;margin:0}' +
+    `body{background-color:${t}!important;background-image:` +
+    `linear-gradient(180deg,transparent 52%,${t} 52%,${k} 90%),` +
+    `linear-gradient(180deg,${t} 20%,${u} 80%)!important}`
+  );
+}
+
+/**
+ * The stage colours a cube's HTML asks the renderer for: fields 8 (floor `k`),
+ * 9 (sky top `t`), 10 (sky bottom `u`) of its `t='…'` list, each falling back
+ * to the renderer default when absent or not a plain colour.
+ */
+export function stageColorsOf(cubeHtml: string): { t: string; u: string; k: string } {
+  const m = cubeHtml.match(/<script>t='([^']*)'<\/script>/);
+  const w = m ? m[1].split('|') : [];
+  const pick = (i: number, fallback: string) => (w[i] && SAFE_COLOR.test(w[i]) ? w[i] : fallback);
+  return { k: pick(8, STAGE_DEFAULTS.k), t: pick(9, STAGE_DEFAULTS.t), u: pick(10, STAGE_DEFAULTS.u) };
+}
+
 /**
  * Wrap a cube's HTML for display as `srcdoc`.
  *
- * - `color-scheme: dark` meta: the canvas paints dark before the scene renders.
  * - `<base href>`: the on-chain cube script loads its renderer and every side
  *   via relative `/content/…`. Inside a srcdoc those would resolve against the
  *   app origin and bounce through the `/content/*` edge redirect once per
  *   resource; the base points them straight at the ord that serves the cube.
+ * - `color-scheme: dark` meta: the canvas defaults dark, not white.
+ * - the stage `<style>`, in the cube's own colours, so the document looks like
+ *   the finished stage before the renderer script has run.
  *
  * `rootHref` is the ord's root, e.g. `https://ordinals.com/`. Handles both
  * source shapes: a body that already has a `<head>` (titled cube) gets the
  * tags prepended inside it; a bare body gets a fresh `<head>`.
  */
 export function wrapCubeForSrcdoc(cubeHtml: string, rootHref: string): string {
-  const inject = `<base href="${rootHref}">${COLOR_SCHEME_META}`;
+  const inject = `<base href="${rootHref}">${COLOR_SCHEME_META}<style>${stageCss(stageColorsOf(cubeHtml))}</style>`;
   if (/<head\b[^>]*>/i.test(cubeHtml)) {
     return cubeHtml.replace(/<head\b[^>]*>/i, (m) => `${m}${inject}`);
   }
@@ -42,18 +93,11 @@ export function wrapCubeForSrcdoc(cubeHtml: string, rootHref: string): string {
 
 /**
  * The document an iframe shows while it is out of the viewport, or while its
- * cube fetch is still in flight. The body paints the same dark stage gradient
- * the cube renderer paints behind a cube, so swapping placeholder ↔ cube is
- * dark ↔ dark, never white. Carries the colour-scheme meta for the same
- * reason the cube does.
+ * cube fetch is still in flight: the default stage, nothing on it. Swapping
+ * placeholder ↔ cube is therefore stage ↔ stage; only the cube appears.
  */
 export const DARK_PLACEHOLDER_SRCDOC =
-  `<html><head>${COLOR_SCHEME_META}<style>` +
-  'html,body{width:100%;height:100%;margin:0}' +
-  'body{background-color:#000;background-image:' +
-  'linear-gradient(180deg,transparent 52%,black 52%,#212121 90%),' +
-  'linear-gradient(180deg,#000 20%,#5a5a5a 80%)}' +
-  '</style></head><body></body></html>';
+  `<html><head>${COLOR_SCHEME_META}<style>${stageCss()}</style></head><body></body></html>`;
 
 /** Root of the ord behind a `…/preview/` base, e.g. `https://ordinals.com/`. */
 export function ordRootOf(previewBase: string): string {

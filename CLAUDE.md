@@ -80,6 +80,8 @@ Angular 22 standalone-components app, zoneless and signal-first. No NgModules, n
 
 **State management:** `signal()` / `computed()` / `linkedSignal()`, with `rxResourceFixed()` for async data and localStorage-backed signals (`cube_` prefix) for persisted mint history. Wallet connection is `ordpool-sdk`'s `WalletService` (any ordinals-aware wallet, not Xverse-only). The authoritative frontend conventions live in `apps/cubes-frontend/CLAUDE.md`.
 
+**Cube iframes (do not refactor):** every on-chain cube (gallery, details, mint preview) renders through `ToggleIframeDirective` + `src/app/shared/utils/cube-srcdoc.ts`: the bytes are fetched and shown as `srcdoc` with an in-document dark colour-scheme meta and the renderer's stage reproduced as CSS, and a dark stage placeholder off-screen. This is the measured, final answer to the white flash and stage flicker; `apps/cubes-frontend/CLAUDE.md` carries the HARD RULE with the proof, the approaches that already failed, and the measurement any replacement has to pass.
+
 **Key routes** (`ordinal.routes.ts`):
 - `/` — StartComponent with the mint form + past mints
 - `/mint/:collectionSymbol` — StartComponent with a pre-selected collection for suggestions

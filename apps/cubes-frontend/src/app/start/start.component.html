@@ -460,7 +460,19 @@
 }
 
 
-<h2 class="mt-5" id="latest">Minted cubes</h2>
+<div class="d-flex align-items-baseline justify-content-between flex-wrap gap-2 mt-5">
+  <h2 class="mb-0" id="latest">Minted cubes</h2>
+  <div class="btn-group btn-group-sm" role="group" aria-label="Order of the cubes" data-testid="cubes-sort">
+    <button type="button" class="btn text-nowrap"
+            [class.btn-light]="cubeSort() === 'newest'" [class.btn-outline-light]="cubeSort() !== 'newest'"
+            [attr.aria-pressed]="cubeSort() === 'newest'"
+            data-testid="cubes-sort-newest" (click)="setSort('newest')">Newest first</button>
+    <button type="button" class="btn text-nowrap"
+            [class.btn-light]="cubeSort() === 'rarity'" [class.btn-outline-light]="cubeSort() !== 'rarity'"
+            [attr.aria-pressed]="cubeSort() === 'rarity'"
+            data-testid="cubes-sort-rarity" (click)="setSort('rarity')">Rarity</button>
+  </div>
+</div>
 
 @let inscriptionsList = inscriptionsResource.value();
 @if (inscriptionsList) {
@@ -478,7 +490,8 @@
   <div class="row" data-testid="minted-cubes-grid">
     @for (inscription of inscriptionsList.inscriptions; track inscription) {
       <div class="col-6 col-md-4 col-lg-3">
-        <app-inscription-list-item [inscription]="inscription"></app-inscription-list-item>
+        <app-inscription-list-item [inscription]="inscription"
+                                   [rarity]="inscriptionsList.rarity?.get(inscription.inscriptionId) ?? null"></app-inscription-list-item>
       </div>
     }
 

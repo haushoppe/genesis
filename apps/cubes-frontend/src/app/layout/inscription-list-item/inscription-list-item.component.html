@@ -12,8 +12,11 @@
         sandbox="allow-scripts"
       ></iframe>
     </div>
-    <div class="one-line fs-6 lh-sm mt-2 ps-1 pb-4 one-line">
+    <div class="one-line fs-6 lh-sm mt-2 ps-1" [class.pb-4]="!rarityLine()">
       {{ ins.meta.name }}
     </div>
+    @if (rarityLine(); as line) {
+      <div class="one-line small text-muted lh-sm ps-1 pb-4" data-testid="cube-tile-rarity">{{ line }}</div>
+    }
   </a>
 }

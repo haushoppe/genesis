@@ -363,6 +363,10 @@ alternative, `index.preloadInitial: false`, would drop the hint altogether.
 - `src/app/services/cubes-data/rarity.service.ts` — `rarity.json` from the
   cubes index (rank, score, cursed reasons per cube; rules in the
   `ordinal-cubes-index` README under "Rarity"); wording in `rarity-labels.ts`.
+- `src/app/services/cubes-data/cube-order.ts` — the order of the minted-cubes
+  list: newest first (default) or by rarity rank, unranked cubes after the
+  ranked ones. The sort is a plain signal on the start page, not a URL
+  parameter, because a query-param navigation scrolls the page to the top.
 - `src/app/start/side-image-check.ts` + `side-image-probe.service.ts` — the
   mint form's black-face check: every side is loaded as an `<img>` from
   `api.ordpool.space/content/<id>`, the renderer's own load path, and the

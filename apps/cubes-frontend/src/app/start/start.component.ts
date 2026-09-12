@@ -40,6 +40,7 @@ import { InscriptionListItemComponent } from '../layout/inscription-list-item/in
 import { ToggleIframeDirective } from '../layout/toggle-iframe.directive';
 import { getCubeHtml, isCubeWarningHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
+import { CubeSort, DEFAULT_CUBE_SORT } from '../services/cubes-data/cube-order';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
 import { allSidesRender, blackFaces } from './side-image-check';
@@ -234,14 +235,25 @@ export class StartComponent {
     stream: () => this.priceService.getBtcUsd(),
   });
 
-  /** Paginated cubes list. Reactive on itemsPerPage + currentPage. */
+  /** Paginated cubes list. Reactive on itemsPerPage + currentPage + sort. */
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = signal(DEFAULT_ITEMS_PER_PAGE);
+  /** Newest first (default) or by rarity rank. A plain signal, not a URL
+   *  parameter: a query-param navigation would scroll the page to the top
+   *  (`scrollPositionRestoration: 'enabled'`), away from the list. */
+  protected readonly cubeSort = signal<CubeSort>(DEFAULT_CUBE_SORT);
 
   protected readonly inscriptionsResource = rxResourceFixed({
-    params: () => ({ itemsPerPage: this.itemsPerPage(), page: this.currentPage() }),
-    stream: ({ params }) => this.cubesData.getInscriptions(params.itemsPerPage, params.page),
+    params: () => ({ itemsPerPage: this.itemsPerPage(), page: this.currentPage(), sort: this.cubeSort() }),
+    stream: ({ params }) => this.cubesData.getInscriptions(params.itemsPerPage, params.page, params.sort),
   });
+
+  /** Switches the list order and returns to its first page. */
+  setSort(sort: CubeSort): void {
+    if (sort === this.cubeSort()) return;
+    this.cubeSort.set(sort);
+    this.currentPage.set(1);
+  }
 
   /** Fresh cube suggestion — reactive on the route param (`/mint/:sym`).
    *  Reloading via `.reload()` gets a new pick from the same

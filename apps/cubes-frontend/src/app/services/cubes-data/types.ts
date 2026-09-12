@@ -35,6 +35,8 @@ export interface InscriptionExtendedPaginatedResult {
   totalInscriptions: number;
   itemsPerPage: number;
   currentPage: number;
+  /** The rarity rows of the listed cubes, present when the list is sorted by rarity. */
+  rarity?: Map<string, CubeRarity>;
 }
 
 export interface InscriptionExtendedSingleResult {

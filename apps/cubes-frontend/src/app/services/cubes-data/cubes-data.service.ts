@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, ReplaySubject, map, of, share, switchMap, throwError } from 'rxjs';
+import { Observable, ReplaySubject, combineLatest, map, of, share, switchMap, throwError } from 'rxjs';
 
+import { CubeSort, DEFAULT_CUBE_SORT, orderCubes, rarityById } from './cube-order';
+import { RarityService } from './rarity.service';
 import {
   InscriptionExtended,
   InscriptionExtendedPaginatedResult,
@@ -70,6 +72,8 @@ export class CubesDataService {
     }),
   );
 
+  private readonly rarity = inject(RarityService);
+
   constructor(private http: HttpClient) {}
 
   /** Every known cube, sorted by (blockHeight, inscriptionNumber). */
@@ -83,21 +87,26 @@ export class CubesDataService {
   }
 
   /**
-   * Paginated, latest-first. Matches the old `getInscriptions` response shape.
+   * Paginated list, latest-first by default or by rarity rank (see
+   * `orderCubes`). The rarity index is fetched only for the rarity sort and
+   * handed back keyed by id so the tiles can show rank and score.
    */
   getInscriptions(
     itemsPerPage: number,
     currentPage: number,
+    sort: CubeSort = DEFAULT_CUBE_SORT,
   ): Observable<InscriptionExtendedPaginatedResult> {
-    return this.all$.pipe(
-      map((all) => {
-        const reversed = [...all].reverse();
+    const rarity$ = sort === 'rarity' ? this.rarity.getIndex().pipe(map(rarityById)) : of(null);
+    return combineLatest([this.all$, rarity$]).pipe(
+      map(([all, rarity]) => {
+        const ordered = orderCubes(all, sort, rarity);
         const start = (currentPage - 1) * itemsPerPage;
         return {
-          inscriptions: reversed.slice(start, start + itemsPerPage),
-          totalInscriptions: reversed.length,
+          inscriptions: ordered.slice(start, start + itemsPerPage),
+          totalInscriptions: ordered.length,
           itemsPerPage,
           currentPage,
+          ...(rarity ? { rarity } : {}),
         };
       }),
     );

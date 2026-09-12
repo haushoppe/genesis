@@ -13,11 +13,17 @@
  * cubes (those render straight from ordinals.com). It only ever touches the
  * throwaway local preview copy.
  */
+import { TEXTURE_SHIM } from './cube-srcdoc';
+
 const COLOR_SCHEME_META = '<meta name="color-scheme" content="dark">';
 
 export function withPreviewDarkCanvas(cubeBodyHtml: string): string {
+  // The texture shim rides along so the preview shows exactly what the gallery
+  // shows: a side that Chrome refuses as a texture source (an SVG without an
+  // intrinsic size) is rasterised instead of leaving the face black.
+  const inject = `${COLOR_SCHEME_META}${TEXTURE_SHIM}`;
   if (/<head\b[^>]*>/i.test(cubeBodyHtml)) {
-    return cubeBodyHtml.replace(/<head\b[^>]*>/i, (m) => `${m}${COLOR_SCHEME_META}`);
+    return cubeBodyHtml.replace(/<head\b[^>]*>/i, (m) => `${m}${inject}`);
   }
-  return cubeBodyHtml.replace(/^<html\b[^>]*>/i, (m) => `${m}<head>${COLOR_SCHEME_META}</head>`);
+  return cubeBodyHtml.replace(/^<html\b[^>]*>/i, (m) => `${m}<head>${inject}</head>`);
 }

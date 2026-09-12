@@ -41,7 +41,20 @@ describe('wrapCubeForSrcdoc', () => {
   it('prepends inside an existing <head> for a titled cube, keeping the title', () => {
     const out = wrapCubeForSrcdoc(titled, 'https://ordinals.com/');
     expect(out).toContain(`<head><base href="https://ordinals.com/">${META}<style>`);
-    expect(out).toContain('</style><title>My cube</title></head>');
+    expect(out).toContain('<title>My cube</title></head>');
+  });
+
+  it('carries the texture shim: a failed image upload retries through a canvas', () => {
+    const out = wrapCubeForSrcdoc(pristine, 'https://ordinals.com/');
+    // The renderer hands sides to WebGL as <img>; both upload entry points are
+    // covered (WebGL2 takes the texSubImage2D path after texStorage2D).
+    expect(out).toContain("patch(WebGLRenderingContext.prototype,'texImage2D')");
+    expect(out).toContain("patch(WebGL2RenderingContext.prototype,'texSubImage2D')");
+    expect(out).toContain('INVALID_VALUE');
+    // Rasterising needs an origin-clean image.
+    expect(out).toContain("crossOrigin='anonymous'");
+    // The shim sits in the head, before the cube's own script tags.
+    expect(out.indexOf('texSubImage2D')).toBeLessThan(out.indexOf('<body>'));
   });
 
   it('is display-only: the wrapped cube is NOT a canonical (mintable) cube', () => {

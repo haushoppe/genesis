@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_CUBE_SORT, orderCubes, rarityById, toCubeSort } from './cube-order';
+import { cubeListQueryParams, DEFAULT_CUBE_SORT, orderCubes, rarityById, toCubePage, toCubeSort } from './cube-order';
 import { CubeRarity, InscriptionExtended, RarityIndex } from './types';
 
 function cube(n: number): InscriptionExtended {
@@ -33,6 +33,46 @@ describe('toCubeSort', () => {
 
   it('the list defaults to rarity', () => {
     expect(DEFAULT_CUBE_SORT).toBe('rarity');
+  });
+});
+
+describe('toCubePage', () => {
+  it('reads a page number from the URL', () => {
+    expect(toCubePage('3')).toBe(3);
+    expect(toCubePage(45)).toBe(45);
+  });
+
+  it('falls back to page 1 for anything that is not a page beyond the first', () => {
+    expect(toCubePage('1')).toBe(1);
+    expect(toCubePage('0')).toBe(1);
+    expect(toCubePage('-3')).toBe(1);
+    expect(toCubePage('abc')).toBe(1);
+    expect(toCubePage('')).toBe(1);
+    expect(toCubePage(null)).toBe(1);
+    expect(toCubePage(undefined)).toBe(1);
+    expect(toCubePage(Infinity)).toBe(1);
+  });
+
+  it('truncates a fractional page', () => {
+    expect(toCubePage('2.9')).toBe(2);
+  });
+});
+
+describe('cubeListQueryParams', () => {
+  it('drops both parameters for the default view', () => {
+    expect(cubeListQueryParams(DEFAULT_CUBE_SORT, 1)).toEqual({ sort: null, page: null });
+  });
+
+  it('writes only what differs from the default', () => {
+    expect(cubeListQueryParams('newest', 1)).toEqual({ sort: 'newest', page: null });
+    expect(cubeListQueryParams(DEFAULT_CUBE_SORT, 4)).toEqual({ sort: null, page: 4 });
+    expect(cubeListQueryParams('newest', 4)).toEqual({ sort: 'newest', page: 4 });
+  });
+
+  it('round-trips through the parsers', () => {
+    const params = cubeListQueryParams('newest', 7);
+    expect(toCubeSort(params.sort)).toBe('newest');
+    expect(toCubePage(params.page)).toBe(7);
   });
 });
 

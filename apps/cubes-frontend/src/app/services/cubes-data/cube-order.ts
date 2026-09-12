@@ -10,6 +10,24 @@ export function toCubeSort(value: string | null | undefined): CubeSort {
   return value === 'newest' ? 'newest' : DEFAULT_CUBE_SORT;
 }
 
+/** Turns an outside value into a page number: a whole number, never below 1. */
+export function toCubePage(value: string | number | null | undefined): number {
+  const page = Math.floor(Number(value));
+  return Number.isFinite(page) && page > 1 ? page : 1;
+}
+
+/**
+ * The list's state as query parameters. Defaults are `null`, which removes
+ * the parameter, so the plain URL stays plain and a link carries only what
+ * differs from the default view.
+ */
+export function cubeListQueryParams(sort: CubeSort, page: number): { sort: string | null; page: number | null } {
+  return {
+    sort: sort === DEFAULT_CUBE_SORT ? null : sort,
+    page: page > 1 ? page : null,
+  };
+}
+
 /** The rarity rows keyed by inscription id. */
 export function rarityById(index: RarityIndex | null | undefined): Map<string, CubeRarity> {
   const map = new Map<string, CubeRarity>();

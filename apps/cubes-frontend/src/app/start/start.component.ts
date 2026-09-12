@@ -2,7 +2,7 @@ import { DatePipe, DecimalPipe, SlicePipe } from '@angular/common';
 import { Component, computed, DestroyRef, effect, inject, input, signal, TemplateRef, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { form, max, min, pattern, required, schema, FormField } from '@angular/forms/signals';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgbModal, NgbModalRef, NgbPagination } from '@ng-bootstrap/ng-bootstrap';
 import { formatSatsWithUsd,
   AUTO_SCAN_MAX_VALUE_SAT,
@@ -40,7 +40,7 @@ import { InscriptionListItemComponent } from '../layout/inscription-list-item/in
 import { ToggleIframeDirective } from '../layout/toggle-iframe.directive';
 import { getCubeHtml, isCubeWarningHtml } from '../services/cube-html';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
-import { CubeSort, DEFAULT_CUBE_SORT } from '../services/cubes-data/cube-order';
+import { cubeListQueryParams, CubeSort, toCubePage, toCubeSort } from '../services/cubes-data/cube-order';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
 import { allSidesRender, blackFaces } from './side-image-check';
@@ -193,6 +193,8 @@ export class StartComponent {
   protected readonly ownPreviewIframe = environment.ownPreviewIframe;
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(NgbModal);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   /**
    * The SDK's framework-agnostic inscribe orchestrator (plain class, no
@@ -236,13 +238,19 @@ export class StartComponent {
     stream: () => this.priceService.getBtcUsd(),
   });
 
-  /** Paginated cubes list. Reactive on itemsPerPage + currentPage + sort. */
-  protected readonly currentPage = signal(1);
+  /**
+   * The list's order and page live in the query string (`?sort=newest&page=3`),
+   * bound to these inputs by `withComponentInputBinding()`, so a view is a
+   * link, Back returns to it, and a reload keeps it. Both parsers tolerate a
+   * missing or nonsensical value; the default view carries no parameters at
+   * all. `SmartScrollService` keeps these navigations from scrolling the page.
+   */
+  readonly sortParam = input<string | undefined>(undefined, { alias: 'sort' });
+  readonly pageParam = input<string | undefined>(undefined, { alias: 'page' });
+
+  protected readonly cubeSort = computed(() => toCubeSort(this.sortParam()));
+  protected readonly currentPage = computed(() => toCubePage(this.pageParam()));
   protected readonly itemsPerPage = signal(DEFAULT_ITEMS_PER_PAGE);
-  /** By rarity rank (default) or newest first. A plain signal, not a URL
-   *  parameter: a query-param navigation would scroll the page to the top
-   *  (`scrollPositionRestoration: 'enabled'`), away from the list. */
-  protected readonly cubeSort = signal<CubeSort>(DEFAULT_CUBE_SORT);
 
   protected readonly inscriptionsResource = rxResourceFixed({
     params: () => ({ itemsPerPage: this.itemsPerPage(), page: this.currentPage(), sort: this.cubeSort() }),
@@ -252,8 +260,16 @@ export class StartComponent {
   /** Switches the list order and returns to its first page. */
   setSort(sort: CubeSort): void {
     if (sort === this.cubeSort()) return;
-    this.cubeSort.set(sort);
-    this.currentPage.set(1);
+    this.goToList(sort, 1);
+  }
+
+  /** Writes order + page into the URL, keeping every other query parameter. */
+  private goToList(sort: CubeSort, page: number): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: cubeListQueryParams(sort, page),
+      queryParamsHandling: 'merge',
+    });
   }
 
   /** Fresh cube suggestion — reactive on the route param (`/mint/:sym`).
@@ -771,14 +787,14 @@ export class StartComponent {
     if (!list || !list.itemsPerPage) return;
     const lastPage = Math.ceil(list.totalInscriptions / list.itemsPerPage);
     if (event.key === 'ArrowLeft' && list.currentPage > 1) {
-      this.currentPage.set(list.currentPage - 1);
+      this.goToList(this.cubeSort(), list.currentPage - 1);
     } else if (event.key === 'ArrowRight' && list.currentPage < lastPage) {
-      this.currentPage.set(list.currentPage + 1);
+      this.goToList(this.cubeSort(), list.currentPage + 1);
     }
   }
 
   loadInscriptionsPage(page: number) {
-    this.currentPage.set(page);
+    this.goToList(this.cubeSort(), page);
   }
 
   startCheckout() {

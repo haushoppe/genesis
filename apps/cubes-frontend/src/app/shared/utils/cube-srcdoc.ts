@@ -31,6 +31,43 @@
 
 const COLOR_SCHEME_META = '<meta name="color-scheme" content="dark">';
 
+/**
+ * Keeps a face from going black when its side is an SVG without an intrinsic
+ * size (`width="100%"` and no height, or only a `viewBox`).
+ *
+ * The renderer hands every side straight to three.js as an `<img>`. Chrome
+ * gives such an SVG a placeholder size as an image, so it loads and decodes,
+ * but refuses it as a WebGL texture source: the upload fails with
+ * `INVALID_VALUE` ("bad image data") and the face stays black. Measured on
+ * ordinals.com's own preview too, so it is the browser and the on-chain
+ * renderer meeting, not this app; the cubes concerned rendered before Chrome
+ * tightened this.
+ *
+ * The shim gives the browser what it will accept: on a failed upload the same
+ * image is drawn onto a canvas and that canvas is uploaded instead. The bytes
+ * are the cube's own, nothing is substituted, and an upload that succeeds
+ * natively is untouched. Rasterising needs an origin-clean image, hence the
+ * `crossOrigin` on every `<img>` the document creates; both hosts that serve
+ * cube content (`ordinals.com`, `api.ordpool.space`) answer with
+ * `access-control-allow-origin: *`.
+ *
+ * The canvas keeps the image's own pixel size: in WebGL2 three.js allocates
+ * immutable storage from it (`texStorage2D`), and a differently sized upload
+ * would be rejected.
+ */
+export const TEXTURE_SHIM = `<script>(function(){
+var C=function(el,name){if(String(name).toLowerCase()==='img'){try{el.crossOrigin='anonymous'}catch(e){}}return el};
+var ns=Document.prototype.createElementNS;Document.prototype.createElementNS=function(u,n){return C(ns.apply(this,arguments),n)};
+var ce=Document.prototype.createElement;Document.prototype.createElement=function(n){return C(ce.apply(this,arguments),n)};
+function raster(img){var w=img.naturalWidth||300,h=img.naturalHeight||150;var c=ce.call(document,'canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);return c}
+function patch(p,n){if(!p||!p[n])return;var o=p[n];p[n]=function(){var a=Array.prototype.slice.call(arguments),i=a.length-1,s=a[i];
+if(typeof HTMLImageElement!=='undefined'&&s instanceof HTMLImageElement){while(this.getError()!==this.NO_ERROR){}o.apply(this,a);
+if(this.getError()===this.INVALID_VALUE){try{a[i]=raster(s);o.apply(this,a)}catch(e){}}return}
+return o.apply(this,a)}}
+if(typeof WebGLRenderingContext!=='undefined'){patch(WebGLRenderingContext.prototype,'texImage2D');patch(WebGLRenderingContext.prototype,'texSubImage2D')}
+if(typeof WebGL2RenderingContext!=='undefined'){patch(WebGL2RenderingContext.prototype,'texImage2D');patch(WebGL2RenderingContext.prototype,'texSubImage2D')}
+})();<\/script>`;
+
 /** The renderer's stage defaults: sky top `t`, sky bottom `u`, floor `k`. All
  *  three renderer versions (v1, v2, v3) paint this same stage, so the replica
  *  applies to every cube. */
@@ -78,13 +115,15 @@ export function stageColorsOf(cubeHtml: string): { t: string; u: string; k: stri
  * - `color-scheme: dark` meta: the canvas defaults dark, not white.
  * - the stage `<style>`, in the cube's own colours, so the document looks like
  *   the finished stage before the renderer script has run.
+ * - the texture shim, so a side that Chrome will not upload as a texture
+ *   (an SVG without an intrinsic size) still shows instead of going black.
  *
  * `rootHref` is the ord's root, e.g. `https://ordinals.com/`. Handles both
  * source shapes: a body that already has a `<head>` (titled cube) gets the
  * tags prepended inside it; a bare body gets a fresh `<head>`.
  */
 export function wrapCubeForSrcdoc(cubeHtml: string, rootHref: string): string {
-  const inject = `<base href="${rootHref}">${COLOR_SCHEME_META}<style>${stageCss(stageColorsOf(cubeHtml))}</style>`;
+  const inject = `<base href="${rootHref}">${COLOR_SCHEME_META}<style>${stageCss(stageColorsOf(cubeHtml))}</style>${TEXTURE_SHIM}`;
   if (/<head\b[^>]*>/i.test(cubeHtml)) {
     return cubeHtml.replace(/<head\b[^>]*>/i, (m) => `${m}${inject}`);
   }

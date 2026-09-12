@@ -25,10 +25,12 @@
     If it catches your eye, mint it! If not, let's craft a new cube
     <a [routerLink]="['/mint', suggestion.collectionSymbol]"
        fragment="mint"
+       queryParamsHandling="preserve"
        data-testid="suggestion-shuffle-same"
        (click)="craftAnotherCube()">from this collection</a> or
     <a [routerLink]="['/']"
        fragment="mint"
+       queryParamsHandling="preserve"
        data-testid="suggestion-shuffle-any"
        (click)="craftAnotherCube()">from another collection</a>.
   </p>

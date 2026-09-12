@@ -9,11 +9,12 @@ describe('withPreviewDarkCanvas', () => {
     expect(withPreviewDarkCanvas(CUBE)).toContain('<meta name="color-scheme" content="dark">');
   });
 
-  it('adds ONLY the meta — no base, no other injection', () => {
-    const out = withPreviewDarkCanvas(CUBE);
-    expect(out).not.toContain('<base');
-    // exactly one head, holding only the meta
-    expect(out).toContain('<head><meta name="color-scheme" content="dark"></head>');
+  it('adds the texture shim, so the preview renders what the gallery renders', () => {
+    expect(withPreviewDarkCanvas(CUBE)).toContain('texSubImage2D');
+  });
+
+  it('adds no base: the preview resolves its sides against the app origin', () => {
+    expect(withPreviewDarkCanvas(CUBE)).not.toContain('<base');
   });
 
   it('is display-only: the wrapped preview is NOT a canonical cube', () => {

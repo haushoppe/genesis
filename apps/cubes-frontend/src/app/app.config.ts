@@ -58,9 +58,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(
       ORDINAL_ROUTES,
       withComponentInputBinding(),
+      // Scrolling is CustomScrollService's job: the minted-cubes list keeps
+      // its order and page in the query string, and the router's own
+      // restoration would scroll to the top on every one of those navigations.
       withInMemoryScrolling({
-        scrollPositionRestoration: 'enabled',
-        anchorScrolling: 'enabled'
+        scrollPositionRestoration: 'disabled',
+        anchorScrolling: 'disabled'
       })
     ),
   ],

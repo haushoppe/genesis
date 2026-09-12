@@ -132,7 +132,25 @@ just declared the problem solved.**
    while a fetch is in flight, the iframe shows `DARK_PLACEHOLDER_SRCDOC`, the
    default stage with nothing on it. `about:blank` is white.
 
-5. **Every document after the first goes into a FRESH iframe element.** The
+5. **The texture shim, injected in the head before the cube's own scripts.**
+   The renderer hands every side to three.js as an `<img>`. Chrome refuses an
+   SVG **without an intrinsic size** (`width="100%"` and no height, or only a
+   `viewBox`) as a WebGL texture source: it loads and decodes as an image, but
+   the upload fails with `INVALID_VALUE` ("bad image data") and the face stays
+   black. Measured identically on ordinals.com's own `/preview/`, so it is the
+   browser and the on-chain renderer meeting; those cubes rendered before
+   Chrome tightened this. The shim patches `texImage2D` / `texSubImage2D` on
+   both WebGL contexts: when an upload of an `HTMLImageElement` fails, the same
+   image is drawn onto a canvas and that canvas is uploaded instead. Uploads
+   that succeed natively are untouched, the bytes are the cube's own, and the
+   canvas keeps the image's pixel size (WebGL2 allocates immutable storage from
+   it, so a different size would be rejected). Rasterising needs an
+   origin-clean image, hence `crossOrigin='anonymous'` on every `<img>` the
+   document creates; both content hosts answer with
+   `access-control-allow-origin: *` (verified). The six "bad image data"
+   warnings stay in the console: they are the first, native attempt that the
+   shim then retries.
+6. **Every document after the first goes into a FRESH iframe element.** The
    directive never re-navigates an element in place: `show()` clones the
    current iframe (same attributes), sets the new `srcdoc` on the clone,
    swaps it into the DOM, moves the `IntersectionObserver` over and removes
@@ -325,6 +343,27 @@ Run: `npx vitest run` from `apps/cubes-frontend/`.
 - Signals inside `resource.stream` are NOT tracked — put reactive
   reads in `params`.
 - Setting signals inside `computed()` is a bug — use `effect()`.
+
+## Routing: the list's order and page are query parameters
+
+`/?sort=newest&page=3`. Both are bound to `StartComponent` inputs by
+`withComponentInputBinding()` and parsed by `toCubeSort` / `toCubePage`, which
+tolerate a missing or nonsensical value; `cubeListQueryParams` writes only what
+differs from the default view, so the plain URL stays plain. A view is
+therefore a link, Back returns to it, and a reload keeps it.
+
+The catch this creates: picking a sort or a page is a **navigation**, and the
+router's own `withInMemoryScrolling` would scroll to the top on every one of
+them. So the router's scrolling is switched off in `app.config.ts` and
+`CustomScrollService` is the single authority: back / forward restores the
+stored position, an anchor is polled into view, a navigation that stays in the
+same component **holds** the viewport, and only a navigation to another
+component jumps to the top. The hold is active, not passive: the grid swaps all
+of its tiles at once, and while the new ones have no height the document is
+short enough for the browser to clamp the scroll to the top, so the position is
+re-asserted for 1.5 s. Verified in the browser: sort, page, Back, Back again
+all keep y=1556; opening a cube lands at the top; Back to the list restores
+y=1556; the `#mint` shuffle anchor lands on the heading.
 
 ## Build: `deployUrl` is `/` so the preload hint survives deep links
 

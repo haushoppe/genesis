@@ -1,4 +1,5 @@
 import { provideZonelessChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { SideImageProbeService } from './side-image-probe.service';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -114,6 +115,9 @@ describe('StartComponent: watch-only mint wiring', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        // The list's order and page are query parameters, so the component
+        // injects Router + ActivatedRoute.
+        provideRouter([]),
         { provide: NgbModal, useValue: { open: vi.fn() } },
         {
           provide: WalletService,

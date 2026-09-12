@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, ReplaySubject, combineLatest, map, of, share, switchMap, throwError } from 'rxjs';
+import { Observable, ReplaySubject, catchError, combineLatest, map, of, share, switchMap, throwError } from 'rxjs';
 
 import { CubeSort, DEFAULT_CUBE_SORT, orderCubes, rarityById } from './cube-order';
 import { RarityService } from './rarity.service';
@@ -88,15 +88,18 @@ export class CubesDataService {
 
   /**
    * Paginated list, latest-first by default or by rarity rank (see
-   * `orderCubes`). The rarity index is fetched only for the rarity sort and
-   * handed back keyed by id so the tiles can show rank and score.
+   * `orderCubes`). The rarity rows come along in either order, keyed by id:
+   * a cube's rank and its badges belong to the cube, not to the order the
+   * reader happens to be in.
    */
   getInscriptions(
     itemsPerPage: number,
     currentPage: number,
     sort: CubeSort = DEFAULT_CUBE_SORT,
   ): Observable<InscriptionExtendedPaginatedResult> {
-    const rarity$ = sort === 'rarity' ? this.rarity.getIndex().pipe(map(rarityById)) : of(null);
+    // A failed rarity fetch must not empty the gallery: the list then renders
+    // without ranks and badges, in the order it can still establish.
+    const rarity$ = this.rarity.getIndex().pipe(map(rarityById), catchError(() => of(null)));
     return combineLatest([this.all$, rarity$]).pipe(
       map(([all, rarity]) => {
         const ordered = orderCubes(all, sort, rarity);

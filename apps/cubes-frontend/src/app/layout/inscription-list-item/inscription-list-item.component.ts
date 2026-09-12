@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { CHROME_CURSE_LABEL } from '../../services/cubes-data/rarity-labels';
 import { CubeRarity, InscriptionExtended } from '../../services/cubes-data/types';
 import { ToggleIframeDirective } from '../toggle-iframe.directive';
 
@@ -24,4 +25,8 @@ export class InscriptionListItemComponent {
     if (r.status === 'cursed') return 'Cursed, no score';
     return 'Not scored';
   });
+
+  /** Marks a cube whose sides the browser refuses as a texture (see the details page). */
+  protected readonly chromeCursed = computed(() => (this.rarity()?.chromeSides?.length ?? 0) > 0);
+  protected readonly chromeCurseLabel = CHROME_CURSE_LABEL;
 }

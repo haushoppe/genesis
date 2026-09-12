@@ -107,6 +107,12 @@
         </div>
       }
     }
+    @if (chromeSides().length) {
+      <div class="chrome-curse mt-3" data-testid="details-chrome-curse">
+        <strong>{{ chromeCurseLabel }}</strong>
+        <p class="mb-0 mt-1 small">{{ chromeExplanation() }}</p>
+      </div>
+    }
     <p class="text-muted small mt-1 mb-0">The score moves with every new cube. <a routerLink="/faq">How rarity works</a></p>
   } @else if (rarityResource.isLoading()) {
     <p class="text-muted small">Loading rarity…</p>

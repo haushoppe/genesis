@@ -1,12 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { environment } from '../../environments/environment';
 import { ShortenAddressPipe } from '../layout/shorten-address.pipe';
 import { ToggleIframeDirective } from '../layout/toggle-iframe.directive';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
-import { curseLabel } from '../services/cubes-data/rarity-labels';
+import { CHROME_CURSE_LABEL, chromeCurseExplanation, curseLabel } from '../services/cubes-data/rarity-labels';
 import { RarityService } from '../services/cubes-data/rarity.service';
 import { CubeRarity } from '../services/cubes-data/types';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
@@ -52,6 +52,13 @@ export class DetailsComponent {
   protected curseLabel(cube: CubeRarity): string {
     return curseLabel(cube);
   }
+
+  protected readonly chromeCurseLabel = CHROME_CURSE_LABEL;
+
+  /** The faces this browser would leave black without the viewer's redraw. */
+  protected readonly chromeSides = computed(() => this.rarityResource.value()?.cube.chromeSides ?? []);
+
+  protected readonly chromeExplanation = computed(() => chromeCurseExplanation(this.chromeSides()));
 
   onKeydown(event: KeyboardEvent) {
     if (isTextInputTarget(event.target)) return;

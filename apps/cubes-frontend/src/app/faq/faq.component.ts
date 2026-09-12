@@ -41,7 +41,15 @@ export class FaqComponent {
   <li><strong>Ties</strong> go to the older cube.</li>
   <li>The experiment draws to a close after 10,000 scored cubes.</li>
 </ul>
+<p>One badge is not a curse and costs nothing: <strong>Cursed | Chrome f*cked us</strong> marks a cube the browser refuses to render although it once did. See the entry above.</p>
 <p>Collections are read from our frozen <a href="https://github.com/ordpool-space/magic-eden-ordinals-archive">Magic Eden archive</a>, the same source the mint page draws its suggestions from. The full rules and the data behind every rank live in the <a href="https://github.com/ordpool-space/ordinal-cubes-index#rarity">ordinal-cubes-index</a>.</p>`,
+    },
+    {
+      question: 'What does "Cursed | Chrome f*cked us" mean?',
+      answer: `<p>That badge marks a cube whose sides are SVGs <strong>without a fixed size</strong> (they carry only a <code>viewBox</code>, or a width in percent). Such a cube rendered perfectly when it was minted.</p>
+<p>Chrome has since stopped accepting an image like that as a 3D texture: it still loads and decodes, but the upload to the graphics card is refused, and the face turns black. Nothing on the blockchain changed. The bytes are the same bytes, the cube is intact, and an artwork that worked simply stopped working one browser release later. You can see it on <a href="https://ordinals.com/" target="_blank" rel="noopener">ordinals.com</a>, where those cubes are black squares today.</p>
+<p><strong>Here they still show.</strong> This site redraws such a side onto a canvas first and hands that to the renderer, which is the step the browser now wants. Same bytes, same picture, nothing substituted.</p>
+<p>The badge costs no rarity points. It names what was done to the cube, not a flaw in it.</p>`,
     },
     {
       question: 'What is the purpose of the "Ordinal Cubes" project?',

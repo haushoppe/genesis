@@ -10,6 +10,12 @@ a {
 }
 
 
+// A cube the browser refuses to texture; this viewer redraws it. Orange, the
+// accent the rest of the site reserves for something worth noticing.
+.chrome-curse-tile {
+  color: #ff9900;
+}
+
 .iframe-container {
   position: relative;
   width: 100%;

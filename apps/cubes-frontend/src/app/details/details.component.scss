@@ -32,3 +32,23 @@
 .table {
   table-layout: fixed;
 }
+
+// The badge for a cube whose sides the browser refuses as a texture. Same
+// register as the family footer: dark card surface, hairline border, sharp
+// corners, orange only as the accent that marks it.
+.chrome-curse {
+  max-width: 40rem;
+  background-color: #282828;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-left: 3px solid #ff9900;
+  padding: 0.65rem 0.9rem;
+
+  strong {
+    color: #ff9900;
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    color: rgba(248, 249, 250, 0.75);
+  }
+}

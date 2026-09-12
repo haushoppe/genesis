@@ -25,6 +25,20 @@ export function curseLabel(cube: Pick<CubeRarity, 'cursed' | 'blackSides' | 'reu
   return reasons.join('; ');
 }
 
+/**
+ * The badge for a cube whose sides the browser refuses as a texture source.
+ * The maintainer's wording; these cubes rendered when they were minted.
+ */
+export const CHROME_CURSE_LABEL = 'Cursed | Chrome f*cked us';
+
+/** The sentence under that badge, naming the faces it concerns. */
+export function chromeCurseExplanation(faces: readonly number[]): string {
+  const which = faces.length === 6
+    ? 'Every side of this cube is'
+    : `${facesLabel(faces).replace(/^f/, 'F')} ${faces.length === 1 ? 'is' : 'are'}`;
+  return `${which} an SVG without a fixed size. Cubes like this rendered when they were minted. Chrome no longer accepts such an image as a 3D texture, so the face turns black in other viewers. Here it is redrawn and shows as intended.`;
+}
+
 /** "Side 2 does not render as an image" / "Sides 2 and 5 do not render as images" */
 export function blackFacesLabel(faces: readonly number[]): string | null {
   if (faces.length === 0) return null;

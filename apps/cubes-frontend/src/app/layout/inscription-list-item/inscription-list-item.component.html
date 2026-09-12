@@ -16,7 +16,10 @@
       {{ ins.meta.name }}
     </div>
     @if (rarityLine(); as line) {
-      <div class="one-line small text-muted lh-sm ps-1 pb-4" data-testid="cube-tile-rarity">{{ line }}</div>
+      <div class="one-line small text-muted lh-sm ps-1" [class.pb-4]="!chromeCursed()" data-testid="cube-tile-rarity">{{ line }}</div>
+    }
+    @if (chromeCursed()) {
+      <div class="one-line small lh-sm ps-1 pb-4 chrome-curse-tile" data-testid="cube-tile-chrome-curse">{{ chromeCurseLabel }}</div>
     }
   </a>
 }

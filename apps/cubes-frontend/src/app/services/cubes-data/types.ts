@@ -58,6 +58,13 @@ export interface CubeRarity {
   blackSides: number[];
   /** 1-based faces whose inscription an earlier cube claimed first. */
   reusedSides: number[];
+  /**
+   * 1-based faces whose side the browser refuses as a WebGL texture source.
+   * They rendered when the cube was minted and go black in a viewer that hands
+   * them to WebGL unchanged; this one rasterises them back into view.
+   * Optional: older index payloads pre-date the fact.
+   */
+  chromeSides?: number[];
   /** The one collection all six sides come from, else null. */
   collection: string | null;
   collections: string[];
@@ -75,6 +82,8 @@ export interface RarityIndex {
   scoredCubes: number;
   cursedCubes: number;
   afterCloseCubes: number;
+  /** Cubes with at least one face the browser refuses as a texture. */
+  chromeCubes?: number;
   collections: { symbol: string; cubes: number; points: number }[];
   cubes: CubeRarity[];
 }

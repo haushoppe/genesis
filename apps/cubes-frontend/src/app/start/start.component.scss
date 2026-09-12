@@ -1,0 +1,48 @@
+// Segmented control for the order of the minted-cubes list. Same register as
+// the family footer: the dark card surface, a hairline border, sharp corners,
+// and orange only as the accent that marks the active segment.
+.cube-sort {
+  --sort-fg: #f8f9fa;
+  --sort-muted: rgba(248, 249, 250, 0.55);
+  --sort-bg: #282828;
+  --sort-active-bg: #333333;
+  --sort-border: rgba(255, 255, 255, 0.14);
+  --sort-orange: #ff9900;
+
+  display: inline-flex;
+  background-color: var(--sort-bg);
+  border: 1px solid var(--sort-border);
+
+  button {
+    appearance: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background-color: transparent;
+    color: var(--sort-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 0.35rem 0.95rem;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  button + button {
+    border-left: 1px solid var(--sort-border);
+  }
+
+  button:hover {
+    color: var(--sort-fg);
+    background-color: var(--sort-active-bg);
+  }
+
+  button[aria-pressed='true'] {
+    color: var(--sort-fg);
+    background-color: var(--sort-active-bg);
+    border-bottom-color: var(--sort-orange);
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--sort-orange);
+    outline-offset: -2px;
+  }
+}

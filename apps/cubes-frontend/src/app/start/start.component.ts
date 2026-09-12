@@ -155,6 +155,7 @@ const FEE_TIERS: readonly FeeTier[] = [
 @Component({
   selector: 'app-start',
   templateUrl: './start.component.html',
+  styleUrl: './start.component.scss',
   imports: [
     InscriptionListItemComponent,
     CubePreviewComponent,
@@ -238,7 +239,7 @@ export class StartComponent {
   /** Paginated cubes list. Reactive on itemsPerPage + currentPage + sort. */
   protected readonly currentPage = signal(1);
   protected readonly itemsPerPage = signal(DEFAULT_ITEMS_PER_PAGE);
-  /** Newest first (default) or by rarity rank. A plain signal, not a URL
+  /** By rarity rank (default) or newest first. A plain signal, not a URL
    *  parameter: a query-param navigation would scroll the page to the top
    *  (`scrollPositionRestoration: 'enabled'`), away from the list. */
   protected readonly cubeSort = signal<CubeSort>(DEFAULT_CUBE_SORT);

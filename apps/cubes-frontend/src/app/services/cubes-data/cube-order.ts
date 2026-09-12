@@ -1,13 +1,13 @@
 import { CubeRarity, InscriptionExtended, RarityIndex } from './types';
 
-/** How the minted-cubes list is ordered. `newest` is the default. */
+/** How the minted-cubes list is ordered. `rarity` is the default. */
 export type CubeSort = 'newest' | 'rarity';
 
-export const DEFAULT_CUBE_SORT: CubeSort = 'newest';
+export const DEFAULT_CUBE_SORT: CubeSort = 'rarity';
 
-/** Turns a URL value into a sort, falling back to the default for anything else. */
+/** Turns an outside value into a sort, falling back to the default for anything else. */
 export function toCubeSort(value: string | null | undefined): CubeSort {
-  return value === 'rarity' ? 'rarity' : DEFAULT_CUBE_SORT;
+  return value === 'newest' ? 'newest' : DEFAULT_CUBE_SORT;
 }
 
 /** The rarity rows keyed by inscription id. */

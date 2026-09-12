@@ -32,6 +32,18 @@ export class FaqComponent {
    */
   faqs: Faq[] = [
     {
+      question: 'How does rarity work?',
+      answer: `<p>Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities. However, the thrill of collecting intensifies when considering rarity. So every cube carries a <strong>Rarity Score</strong>, shown on its page. Cubes are scored against each other, and the score moves with every new cube.</p>
+<ul>
+  <li><strong>Cursed cubes get no score.</strong> A cube is cursed when two of its faces show the same inscription, when a face is black because its side does not render as an image, or when a side was already claimed by an earlier cube.<br>In essence, <strong>each cube claims six inscriptions</strong>, in mint order. First is first!</li>
+  <li><strong>Tiers.</strong> The first 100 scored cubes get a bonus of 100 points, cubes 101 to 1,000 get 50, cubes 1,001 to 5,000 get 25. The earlier you get in, the better.</li>
+  <li><strong>Collection points.</strong> A cube whose six sides all come from one collection earns up to 100 points. The more cubes show that collection, the more points: the most popular collection pays the full 100, the others in proportion. Mixed cubes earn none.</li>
+  <li><strong>Ties</strong> go to the older cube.</li>
+  <li>The experiment draws to a close after 10,000 scored cubes.</li>
+</ul>
+<p>Collections are read from our frozen <a href="https://github.com/ordpool-space/magic-eden-ordinals-archive">Magic Eden archive</a>, the same source the mint page draws its suggestions from. The full rules and the data behind every rank live in the <a href="https://github.com/ordpool-space/ordinal-cubes-index#rarity">ordinal-cubes-index</a>.</p>`,
+    },
+    {
       question: 'What is the purpose of the "Ordinal Cubes" project?',
       answer: `This project allows anyone to create art on the Bitcoin blockchain. The artistic process consists of selecting suitable images that are already present on the chain.<br><br>Additionally this project seeks to fully utilize the technical possibilities around Ordinals and Inscriptions. Normally, collections are pre-generated, and all digital artifacts are known from the start. The buyer acquires one of the artifacts without any possibility of intervening in the process. We want to reverse this process - the art collector becomes the curator and chooses the images to be added to the cube. <strong>It's a bit like fx(params), but for Bitcoin!</strong> Furthermore, the cube artifacts have been generated with the maximum possible technical compression. Each individual inscription stores data with exactly <strong>557 bytes</strong> in size, making it incredibly efficient. This efficiency is made possible through the use of recursive inscriptions.`,
     },
@@ -82,18 +94,6 @@ export class FaqComponent {
     {
       question: 'What is the "utility" of this project?',
       answer: 'There is no utility. This is a digital art experiment!<br>And you get two cute cats, if you create the cubes on this website.',
-    },
-    {
-      question: 'How does rarity work?',
-      answer: `<p>Primarily an art experiment, this project encourages you to appreciate your cube for its aesthetic qualities. However, the thrill of collecting intensifies when considering rarity. So every cube carries a <strong>Rarity Score</strong>, shown on its page. Cubes are scored against each other, and the score moves with every new cube.</p>
-<ul>
-  <li><strong>Cursed cubes get no score.</strong> A cube is cursed when two of its faces show the same inscription, when a face is black because its side does not render as an image, or when a side was already claimed by an earlier cube.<br>In essence, <strong>each cube claims six inscriptions</strong>, in mint order. First is first!</li>
-  <li><strong>Tiers.</strong> The first 100 scored cubes get a bonus of 100 points, cubes 101 to 1,000 get 50, cubes 1,001 to 5,000 get 25. The earlier you get in, the better.</li>
-  <li><strong>Collection points.</strong> A cube whose six sides all come from one collection earns up to 100 points. The more cubes show that collection, the more points: the most popular collection pays the full 100, the others in proportion. Mixed cubes earn none.</li>
-  <li><strong>Ties</strong> go to the older cube.</li>
-  <li>The experiment draws to a close after 10,000 scored cubes.</li>
-</ul>
-<p>Collections are read from our frozen <a href="https://github.com/ordpool-space/magic-eden-ordinals-archive">Magic Eden archive</a>, the same source the mint page draws its suggestions from. The full rules and the data behind every rank live in the <a href="https://github.com/ordpool-space/ordinal-cubes-index#rarity">ordinal-cubes-index</a>.</p>`,
     },
     {
       question: 'Positioning of the cube in the world space',

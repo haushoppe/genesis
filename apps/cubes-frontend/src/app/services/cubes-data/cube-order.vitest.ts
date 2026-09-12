@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { orderCubes, rarityById, toCubeSort } from './cube-order';
+import { DEFAULT_CUBE_SORT, orderCubes, rarityById, toCubeSort } from './cube-order';
 import { CubeRarity, InscriptionExtended, RarityIndex } from './types';
 
 function cube(n: number): InscriptionExtended {
@@ -23,12 +23,16 @@ const all = [0, 1, 2, 3, 4, 5].map(cube);
 const ids = (list: InscriptionExtended[]) => list.map((c) => c.inscriptionNumber);
 
 describe('toCubeSort', () => {
-  it('accepts rarity and falls back to newest for anything else', () => {
-    expect(toCubeSort('rarity')).toBe('rarity');
+  it('accepts newest and falls back to the rarity default for anything else', () => {
     expect(toCubeSort('newest')).toBe('newest');
-    expect(toCubeSort('score')).toBe('newest');
-    expect(toCubeSort(null)).toBe('newest');
-    expect(toCubeSort(undefined)).toBe('newest');
+    expect(toCubeSort('rarity')).toBe('rarity');
+    expect(toCubeSort('score')).toBe('rarity');
+    expect(toCubeSort(null)).toBe('rarity');
+    expect(toCubeSort(undefined)).toBe('rarity');
+  });
+
+  it('the list defaults to rarity', () => {
+    expect(DEFAULT_CUBE_SORT).toBe('rarity');
   });
 });
 

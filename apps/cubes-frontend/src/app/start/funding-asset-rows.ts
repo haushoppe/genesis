@@ -3,13 +3,19 @@ import { UtxoScanState } from 'ordpool-sdk';
 /**
  * What a flagged funding coin carries, as display rows.
  *
- * The panel's purpose is to let someone decide whether to spend a coin, and a
- * count cannot answer that: "3 inscriptions" reads the same whether they are
- * three throwaway test mints or three things the owner would be sick to lose.
- * So an inscription appears by its own id and links to the transaction that
- * created it. Cats stay a count with a link to the sat they ride, because that
- * is the page that shows every cat on it and where it sits now, and because
- * the other two family sites already link exactly there.
+ * The panel's purpose is to let someone decide whether to spend a coin, so
+ * every row carries the identifier that person would recognise, and links to
+ * the place that resolves it. A count cannot do that job: "3 inscriptions"
+ * reads the same whether they are three throwaway test mints or three things
+ * the owner would be sick to lose.
+ *
+ * Which identifier differs by asset. An inscription is its id, linked to the
+ * transaction that created it. A rare sat is its sat number, because rarity
+ * and block do not identify it: two sats in one block share both. A cat is the
+ * exception that proves the rule: `catIds` holds inscription-id strings rather
+ * than the cat NUMBER a holder knows, so listing them would show a row of
+ * opaque hex; the count plus a link to the sat page, which names every cat on
+ * that sat and shows it, identifies them better than the raw ids would.
  *
  * A rune renders as plain text for the moment: resolving its name to the
  * etching transaction needs the SDK resolver, and the scanner cannot see runes
@@ -58,7 +64,13 @@ export function fundingAssetRows(scan: UtxoScanState | undefined): FundingAssetR
   }
 
   if (rareSat) {
-    rows.push({ kind: 'rare-sat', label: `${rareSat.rarity} sat (block ${rareSat.block})`, href: null });
+    // The sat NUMBER is what a holder looks up and trades on; rarity and block
+    // together do not identify it, since two sats in one block share them.
+    rows.push({
+      kind: 'rare-sat',
+      label: `rare sat: ${rareSat.rarity} · sat ${rareSat.sat} · block ${rareSat.block}`,
+      href: null,
+    });
   }
 
   return rows;

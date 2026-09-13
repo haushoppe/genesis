@@ -58,9 +58,12 @@ describe('fundingAssetRows', () => {
     expect(rows).toEqual([{ kind: 'rune', label: 'UNCOMMON•GOODS', href: null }]);
   });
 
-  it('spells out a rare sat as text', () => {
-    const rows = fundingAssetRows(withAssets({ rareSat: { sat: '1', block: 1, rarity: 'uncommon' } as never }));
-    expect(rows).toEqual([{ kind: 'rare-sat', label: 'uncommon sat (block 1)', href: null }]);
+  it('names a rare sat by its sat number, not only its rarity and block', () => {
+    const rows = fundingAssetRows(withAssets({ rareSat: { sat: '1971987', block: 5, rarity: 'uncommon' } as never }));
+    // Two sats in one block share rarity and block, so the number is the identity.
+    expect(rows).toEqual([
+      { kind: 'rare-sat', label: 'rare sat: uncommon · sat 1971987 · block 5', href: null },
+    ]);
   });
 
   it('keeps every kind on one coin, inscriptions first', () => {

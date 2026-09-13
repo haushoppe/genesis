@@ -28,7 +28,7 @@ vi.mock('../../environments/environment', () => ({
 }));
 
 import {
-  Cat21Service, getDummyKeypair, InscribeSnapshot, KnownOrdinalWalletType, Network,
+  Cat21Service, getDummyKeypair, InscribeMintOrchestrator, InscribeSnapshot, KnownOrdinalWalletType, Network,
   toScureNetwork, UtxoContentScanner, WalletService,
 } from 'ordpool-sdk';
 import { hex } from '@scure/base';
@@ -58,13 +58,33 @@ describe('StartComponent: watch-only mint wiring', () => {
   const fakeUtxo = { txid: 'b'.repeat(64), vout: 0, value: 500_000, status: { confirmed: true } };
   const viableSim = { utxo: fakeUtxo, simulation: { fundingRequirementSats: 3000 }, insufficient: false };
 
-  /** A snapshot in the shape InscribeMintOrchestrator emits, for driving derived signals. */
+  /**
+   * A snapshot in the shape InscribeMintOrchestrator emits, for driving derived
+   * signals.
+   *
+   * The base comes from a real orchestrator rather than a hand-written literal:
+   * it emits its current snapshot on subscribe, so this is the actual initial
+   * shape with the actual defaults. A literal would silently fall behind every
+   * field the SDK adds, and vitest strips types, so nothing here would say so.
+   */
+  const emptySnapshot = ((): InscribeSnapshot => {
+    let captured: InscribeSnapshot | null = null;
+    new InscribeMintOrchestrator({
+      getUtxos: async () => [],
+      scan: { classify: async () => 'clean' },
+      broadcast: async () => '',
+      network: Network.Regtest,
+    }).subscribe((s) => { captured ??= s; });
+    if (captured === null) throw new Error('the orchestrator did not emit its snapshot on subscribe');
+    return captured;
+  })();
+
   function snapshot(over: Partial<InscribeSnapshot>): InscribeSnapshot {
     return {
-      state: 'ready', feeRate: 10, selectedUtxo: null, content: null,
+      ...emptySnapshot,
+      state: 'ready', feeRate: 10,
       simulations: [viableSim] as unknown as InscribeSnapshot['simulations'],
       fundingRecommendation: { status: 'auto', recommended: fakeUtxo, candidates: [fakeUtxo] } as unknown as InscribeSnapshot['fundingRecommendation'],
-      errorMessage: null, successResult: null,
       ...over,
     };
   }

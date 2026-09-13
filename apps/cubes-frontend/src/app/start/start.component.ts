@@ -43,6 +43,7 @@ import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { cubeListQueryParams, CubeSort, toCubePage, toCubeSort } from '../services/cubes-data/cube-order';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
+import { FundingAssetRow, fundingAssetRows } from './funding-asset-rows';
 import { allSidesRender, blackFaces } from './side-image-check';
 import { SideImageProbeService } from './side-image-probe.service';
 import { blackFacesLabel } from '../services/cubes-data/rarity-labels';
@@ -1016,14 +1017,21 @@ export class StartComponent {
     this.orch.setFeeRate(rate);
   }
 
+  /** The five labels are the family's, shared verbatim with ordpool.space and
+   *  cat21.space so a funding coin reads the same wherever it is shown. */
   bucketLabel(bucket: UtxoScanBucket): string {
     switch (bucket) {
-      case 'clean': return 'safe';
-      case 'assets': return 'assets on this UTXO';
+      case 'clean': return '✓ safe';
+      case 'assets': return '⚠ asset found';
       case 'unscanned': return 'not scanned';
       case 'scanning': return 'scanning…';
       case 'failed': return 'scan failed';
     }
+  }
+
+  /** What a flagged coin carries, as display rows (see `funding-asset-rows.ts`). */
+  assetRows(row: ViableInscribeSimulation): FundingAssetRow[] {
+    return fundingAssetRows(row.scan);
   }
 
   mintAnother() {

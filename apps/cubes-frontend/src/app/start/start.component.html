@@ -274,12 +274,13 @@
 
           @if (viableRows().length > 0) {
             <details class="mb-0" data-testid="mint-expert-details" [attr.open]="fundingExpertRequired() ? '' : null">
-              <summary class="text-muted small" style="cursor: pointer">Choose a different funding UTXO</summary>
+              <summary class="text-muted small" style="cursor: pointer">Choose a different funding source</summary>
               <div class="mt-2">
                 @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
-                  <div class="p-2 border-bottom d-flex justify-content-between align-items-center"
+                  <div class="p-2 border-bottom"
                        [attr.data-testid]="'mint-expert-row-' + idx">
-                    <div class="me-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="me-3">
                       <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
                       · {{ row.utxo.value | number }} sat
                       · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
@@ -305,9 +306,30 @@
                               [class.btn-outline-primary]="row.bucket !== 'assets'"
                               [class.btn-outline-danger]="row.bucket === 'assets'"
                               (click)="pickUtxo(row.utxo)">
-                        {{ row.bucket === 'assets' ? 'Use anyway' : 'Pick' }}
+                        {{ row.bucket === 'assets' ? 'Use anyway' : 'Use this UTXO' }}
                       </button>
                     </div>
+                  </div>
+
+                  <!-- What a flagged coin carries, by name rather than by count:
+                       "3 inscriptions" cannot tell anyone whether they are about
+                       to burn something they care about. -->
+                  @if (assetRows(row); as assets) {
+                    @if (assets.length) {
+                      <div class="small mt-1" [attr.data-testid]="'mint-expert-assets-' + idx">
+                        <span class="text-muted">Assets on this UTXO:</span>
+                        @for (asset of assets; track asset.kind + asset.label) {
+                          <span class="ms-2 d-inline-block">
+                            @if (asset.href; as href) {
+                              <a [href]="href" target="_blank" rel="noopener" class="font-monospace text-break">{{ asset.label }}</a>
+                            } @else {
+                              <span class="font-monospace text-break">{{ asset.label }}</span>
+                            }
+                          </span>
+                        }
+                      </div>
+                    }
+                    }
                   </div>
                 }
               </div>

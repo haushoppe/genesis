@@ -14,6 +14,7 @@ import { formatSatsWithUsd,
   getMinimumUtxoSize,
   InscribeMintOrchestrator,
   InscribeSnapshot,
+  InscribeUtxoSimulation,
   InscribeWalletContext,
   Network,
   prepareInscribeFundingInput,
@@ -409,7 +410,9 @@ export class StartComponent {
     const rows = this.simulations();
     const scanMap = this.scanStates();
     return rows
-      .filter((r): r is { utxo: TxnOutput; simulation: SimulateInscribeFeesResult; insufficient: false } =>
+      // A viable row is one that can fund the inscription, which is exactly
+      // the pair the SDK reports: not insufficient AND carrying a simulation.
+      .filter((r): r is InscribeUtxoSimulation & { simulation: SimulateInscribeFeesResult } =>
         !r.insufficient && r.simulation !== null,
       )
       .sort((a, b) => b.utxo.value - a.utxo.value)
@@ -715,8 +718,7 @@ export class StartComponent {
         if (Number.isFinite(v.feeRate) && v.feeRate > 0) this.orch.setFeeRate(v.feeRate);
         if (!this.mintForm().valid()) return;
         this.orch.setContent({
-          body: this.cubeBody(),
-          contentType: 'text/html;charset=utf-8',
+          source: { kind: 'file', body: this.cubeBody(), contentType: 'text/html;charset=utf-8' },
           tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
         });
       });
@@ -954,8 +956,7 @@ export class StartComponent {
     this.mintGateError.set(null);
 
     this.orch.setContent({
-      body,
-      contentType: 'text/html;charset=utf-8',
+      source: { kind: 'file', body, contentType: 'text/html;charset=utf-8' },
       tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
     });
 

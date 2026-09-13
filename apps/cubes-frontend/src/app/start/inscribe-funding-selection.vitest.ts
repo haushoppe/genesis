@@ -32,8 +32,11 @@ describe('inscribe funding selection: mixed pool auto-picks the headroom coin', 
     paymentPublicKey: hex.encode(dummy.dummyPublicKey),
   };
   const content = {
-    body: new TextEncoder().encode('<html><!--cubes.haushoppe.art--><body>cube</body></html>'),
-    contentType: 'text/html;charset=utf-8',
+    source: {
+      kind: 'file' as const,
+      body: new TextEncoder().encode('<html><!--cubes.haushoppe.art--><body>cube</body></html>'),
+      contentType: 'text/html;charset=utf-8',
+    },
   };
 
   function coin(txid: string, value: number): TxnOutput {

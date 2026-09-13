@@ -53,9 +53,53 @@ describe('fundingAssetRows', () => {
     expect(rows[0]).toEqual({ kind: 'cat', label: '1 CAT-21 cat', href: null });
   });
 
-  it('names a rune, without a link for now', () => {
-    const rows = fundingAssetRows(withAssets({ runes: { 'UNCOMMON•GOODS': { amount: '5' } } }));
-    expect(rows).toEqual([{ kind: 'rune', label: 'UNCOMMON•GOODS', href: null }]);
+  describe('runes', () => {
+    // ord serialises a pile's amount as a bare JSON number, so this is the
+    // shape that actually arrives. Measured on ord.ordpool.space:
+    // "runes":{"ANARCHY":{"amount":12600000,"divisibility":0,"symbol":"⬛"}}
+    const ANARCHY = { amount: 12600000, divisibility: 0, symbol: '⬛' };
+
+    it('renders the balance as ord does, and names the rune', () => {
+      const rows = fundingAssetRows(withAssets({ runes: { ANARCHY } }));
+      // U+00A0 written as an escape: ord's separator is invisible in source.
+      expect(rows).toEqual([{ kind: 'rune', label: '12600000 ⬛ ANARCHY', href: null }]);
+    });
+
+    it('divides by the divisibility and drops a zero fraction, as ord does', () => {
+      const rows = fundingAssetRows(
+        withAssets({ runes: { 'DOG•GO•TO•THE•MOON': { amount: 250000, divisibility: 5, symbol: '🐕' } } }),
+      );
+      expect(rows[0].label).toBe('2.5 🐕 DOG•GO•TO•THE•MOON');
+    });
+
+    it('writes every digit of an amount past the safe-integer range', () => {
+      // String(1e21) is "1e+21"; the digits have to come out in full or the
+      // SDK rejects the value and the amount silently disappears.
+      const rows = fundingAssetRows(withAssets({ runes: { BIG: { amount: 1e21, divisibility: 0, symbol: 'X' } } }));
+      expect(rows[0].label).toBe('1000000000000000000000 X BIG');
+    });
+
+    it('falls back to the currency sign when a rune has no symbol', () => {
+      const rows = fundingAssetRows(withAssets({ runes: { PLAIN: { amount: 7, divisibility: 0, symbol: null } } }));
+      expect(rows[0].label).toBe('7 ¤ PLAIN');
+    });
+
+    it('links a rune to the transaction that etched it', () => {
+      const rows = fundingAssetRows(withAssets({ runes: { ANARCHY } }), new Map([['ANARCHY', TXID]]));
+      expect(rows[0].href).toBe(`https://ordpool.space/tx/${TXID}`);
+    });
+
+    it('leaves a rune unlinked while its etching is unresolved', () => {
+      const rows = fundingAssetRows(withAssets({ runes: { ANARCHY } }), new Map([['SOMETHING•ELSE', TXID]]));
+      expect(rows[0].href).toBeNull();
+    });
+
+    it('shows the bare name rather than throwing on a value it cannot read', () => {
+      for (const value of [null, 'just a string', {}, { amount: 5 }, { amount: 'x', divisibility: 0 }, { amount: 5, divisibility: 99 }]) {
+        const rows = fundingAssetRows(withAssets({ runes: { ODD: value } }));
+        expect(rows[0]).toEqual({ kind: 'rune', label: 'ODD', href: null });
+      }
+    });
   });
 
   it('names a rare sat by its sat number, not only its rarity and block', () => {

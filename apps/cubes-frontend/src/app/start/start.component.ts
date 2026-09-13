@@ -45,6 +45,7 @@ import { cubeListQueryParams, CubeSort, toCubePage, toCubeSort } from '../servic
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
 import { FundingAssetRow, fundingAssetRows } from './funding-asset-rows';
+import { RuneEtchingService } from './rune-etching.service';
 import { allSidesRender, blackFaces } from './side-image-check';
 import { SideImageProbeService } from './side-image-probe.service';
 import { blackFacesLabel } from '../services/cubes-data/rarity-labels';
@@ -184,6 +185,7 @@ export class StartComponent {
   protected readonly pastMints = inject(PastMintsService);
   private readonly cat21 = inject(Cat21Service);
   private readonly scanner = inject(UtxoContentScanner);
+  private readonly runeEtchings = inject(RuneEtchingService);
   private readonly cubesData = inject(CubesDataService);
   private readonly cubeSuggestionService = inject(CubeSuggestionService);
   private readonly inscriptionLookup = inject(InscriptionLookupService);
@@ -697,6 +699,16 @@ export class StartComponent {
       );
     });
 
+    // Resolve the etching transaction of every rune a scan turned up, so the
+    // rune rows can link. Runs off the scan results rather than off the
+    // template, so reading the panel never starts a network request.
+    effect(() => {
+      const names = this.viableRows().flatMap((r) =>
+        r.scan.kind === 'scanned-with-assets' ? Object.keys(r.scan.content.runes ?? {}) : [],
+      );
+      this.runeEtchings.resolve(names);
+    });
+
     // Funding auto-pick is the SDK orchestrator's job (its snapshot's
     // `fundingRecommendation`), NOT ours. It force-scans covering candidates
     // regardless of size and never auto-selects an unscanned/asset coin. We
@@ -1030,9 +1042,11 @@ export class StartComponent {
     }
   }
 
-  /** What a flagged coin carries, as display rows (see `funding-asset-rows.ts`). */
+  /** What a flagged coin carries, as display rows (see `funding-asset-rows.ts`).
+   *  Reads the resolved etchings, so a rune row gains its link as the lookup
+   *  answers rather than the panel waiting for it. */
   assetRows(row: ViableInscribeSimulation): FundingAssetRow[] {
-    return fundingAssetRows(row.scan);
+    return fundingAssetRows(row.scan, this.runeEtchings.etchings());
   }
 
   mintAnother() {

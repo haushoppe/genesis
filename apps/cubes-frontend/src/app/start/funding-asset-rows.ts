@@ -1,4 +1,4 @@
-import { UtxoScanState } from 'ordpool-sdk';
+import { formatRunePile, UtxoScanState } from 'ordpool-sdk';
 
 /**
  * What a flagged funding coin carries, as display rows.
@@ -17,10 +17,10 @@ import { UtxoScanState } from 'ordpool-sdk';
  * opaque hex; the count plus a link to the sat page, which names every cat on
  * that sat and shows it, identifies them better than the raw ids would.
  *
- * A rune renders as plain text for the moment: resolving its name to the
- * etching transaction needs the SDK resolver, and the scanner cannot see runes
- * at all until ord-proxy's table parse ships, so the row is unreachable today
- * either way. It gains its link in the same wave as the other two sites.
+ * A rune is its balance rendered the way ord renders it, linked to the
+ * transaction that etched it. The etching is not in the scan, so the caller
+ * resolves the names it sees and passes them in; a name with no answer yet,
+ * or none to be had, is simply not in the map and its row stays plain text.
  */
 export interface FundingAssetRow {
   kind: 'inscription' | 'rune' | 'cat' | 'rare-sat';
@@ -39,10 +39,61 @@ const TX_BASE = 'https://ordpool.space/tx/';
 const SAT_BASE = 'https://cat21.space/sat/';
 
 /**
+ * One rune's row text: its balance as ord renders it, then the name.
+ *
+ * The value is typed `unknown` by the SDK because it is whatever ord put
+ * there, so the shape is checked here rather than trusted. ord serialises a
+ * pile's amount as a bare JSON NUMBER, so that is the case to expect after
+ * `JSON.parse`; a string or a bigint is accepted too, for a caller that got
+ * the digits out some other way.
+ *
+ * A value that does not match falls back to the bare name. `formatRuneAmount`
+ * throws on a divisibility it cannot use, and a throw while someone is deciding
+ * whether to spend a coin would take the whole panel down over a cosmetic
+ * detail; the name alone still tells them what is on the coin.
+ *
+ * The bound worth knowing: a rune amount is a u128, and the ones that exceed
+ * `Number.MAX_SAFE_INTEGER` have already lost their last digits inside
+ * `JSON.parse`, before any code here runs. Nothing downstream can recover
+ * them, and for a "do not burn this" panel it does not change the decision.
+ */
+function runeLabel(name: string, value: unknown): string {
+  if (typeof value !== 'object' || value === null) return name;
+  const { amount, divisibility, symbol } = value as {
+    amount?: unknown;
+    divisibility?: unknown;
+    symbol?: unknown;
+  };
+
+  // Integer-valued numbers go through BigInt, which writes out every digit.
+  // String(1e21) is "1e+21", which the SDK rejects as not-base-units.
+  const units =
+    typeof amount === 'number' && Number.isInteger(amount) && amount >= 0
+      ? BigInt(amount)
+      : typeof amount === 'string' || typeof amount === 'bigint'
+        ? amount
+        : null;
+  if (units === null || typeof divisibility !== 'number') return name;
+
+  const sym = typeof symbol === 'string' || symbol === null ? symbol : undefined;
+  try {
+    return `${formatRunePile({ amount: units, divisibility, symbol: sym })} ${name}`;
+  } catch {
+    return name;
+  }
+}
+
+/**
  * Rows for a coin the scanner flagged. Any other scan state yields none: a
  * coin that is clean, unscanned, still scanning or failed has nothing to list.
+ *
+ * @param runeEtchings Rune name to the txid that etched it, for the names
+ *   already resolved. A name that is absent renders without a link.
  */
-export function fundingAssetRows(scan: UtxoScanState | undefined): FundingAssetRow[] {
+export function fundingAssetRows(
+  scan: UtxoScanState | undefined,
+  runeEtchings?: ReadonlyMap<string, string>,
+): FundingAssetRow[] {
   if (!scan || scan.kind !== 'scanned-with-assets') return [];
   const { inscriptionIds, runes, catIds, catSat, rareSat } = scan.content;
   const rows: FundingAssetRow[] = [];
@@ -51,8 +102,13 @@ export function fundingAssetRows(scan: UtxoScanState | undefined): FundingAssetR
     rows.push({ kind: 'inscription', label: id, href: TX_BASE + inscriptionTxid(id) });
   }
 
-  for (const name of Object.keys(runes ?? {})) {
-    rows.push({ kind: 'rune', label: name, href: null });
+  for (const [name, value] of Object.entries(runes ?? {})) {
+    const etching = runeEtchings?.get(name);
+    rows.push({
+      kind: 'rune',
+      label: runeLabel(name, value),
+      href: etching ? TX_BASE + etching : null,
+    });
   }
 
   if (catIds.length > 0) {

@@ -6,6 +6,16 @@ import { DARK_PLACEHOLDER_SRCDOC, fetchCubeSrcdoc } from '../shared/utils/cube-s
 // ord's own render endpoint. Prod: https://ordinals.com/preview/ ; regtest:
 // the local ord. The cube's bytes are fetched from the sibling /content/ of
 // this base and shown as srcdoc, so the canvas is dark from its first frame.
+/**
+ * How long to wait before asking again for a cube whose fetch failed, and how
+ * many times. Sized for the one failure that actually happens: the content
+ * host answers 404 for a few seconds between a reveal being broadcast and its
+ * witness being indexed, so a handful of attempts a second apart covers it
+ * without turning a genuinely missing cube into a permanent poll.
+ */
+const FETCH_RETRY_MS = 1_000;
+const MAX_FETCH_RETRIES = 8;
+
 const PREVIEW_BASE = environment.ordinalsExplorerIframe;
 
 /**
@@ -57,6 +67,12 @@ export class ToggleIframeDirective {
   private appliedId = '';
   /** The fetch whose result may still be applied; a stale one must not overwrite. */
   private currentFetch: Promise<string> | null = null;
+  /** Failed fetches for the current id, so a permanently missing cube stops asking. */
+  private retries = 0;
+  /** The id the retry budget belongs to; a different cube starts fresh. */
+  private lastAttemptedId = '';
+  /** Pending retry, cancelled on destroy so it cannot fire into a dead view. */
+  private retryTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     const host = this.element.nativeElement;
@@ -72,6 +88,7 @@ export class ToggleIframeDirective {
     this.intersectionObserver.observe(host);
     this.destroyRef.onDestroy(() => {
       this.intersectionObserver?.disconnect();
+      clearTimeout(this.retryTimer);
       // Angular removes its own host; a replacement element is ours to remove.
       if (this.current !== host) this.current.remove();
     });
@@ -90,11 +107,20 @@ export class ToggleIframeDirective {
       if (this.appliedId !== '') {
         this.appliedId = '';
         this.currentFetch = null;
+        clearTimeout(this.retryTimer);
+        this.retryTimer = undefined;
+        this.retries = 0;
         this.show(DARK_PLACEHOLDER_SRCDOC);
       }
       return;
     }
     if (this.appliedId === inscriptionId) return;
+    // A different cube gets its own budget; the count belongs to the id, not
+    // to the directive's lifetime.
+    if (this.lastAttemptedId !== inscriptionId) {
+      this.lastAttemptedId = inscriptionId;
+      this.retries = 0;
+    }
     this.appliedId = inscriptionId;
     // Placeholder first, so the tile is never blank while the fetch is in flight.
     this.show(DARK_PLACEHOLDER_SRCDOC);
@@ -107,8 +133,24 @@ export class ToggleIframeDirective {
         this.show(srcdoc);
       })
       .catch(() => {
-        // The placeholder stays; the id is released so a later intersect retries.
-        if (this.currentFetch === thisFetch) this.appliedId = '';
+        if (this.currentFetch !== thisFetch) return;
+        // Release the id so the work can be done again.
+        this.appliedId = '';
+        // And actually do it again, on a short delay. Releasing alone only
+        // helps a tile that can be scrolled out and back in; `reconcile` is
+        // reached from the intersection observer and the id input, and neither
+        // fires again for a frame that never leaves the viewport and never
+        // changes id. The mint-success preview is exactly that, and its fetch
+        // is the one most likely to fail: the content host 404s in the beat
+        // between the transaction being visible and its witness being indexed.
+        // Without a retry the reader watches an empty dark rectangle where the
+        // cube they just paid for should be, for as long as they look at it.
+        if (this.retries >= MAX_FETCH_RETRIES) return;
+        this.retries += 1;
+        this.retryTimer = setTimeout(() => {
+          this.retryTimer = undefined;
+          if (this.currentFetch === thisFetch) this.reconcile();
+        }, FETCH_RETRY_MS);
       });
   }
 

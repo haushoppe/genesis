@@ -55,6 +55,7 @@ import { inscriptionNumberFromInput } from './inscription-number-input';
 import { PastMintsService } from '../services/past-mints.service';
 import { PriceService } from '../services/price.service';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
+import { shouldIgnoreListKey } from '../shared/utils/list-key';
 import { bridgeSignedPsbt } from './watch-only-sign-bridge';
 
 /**
@@ -267,12 +268,20 @@ export class StartComponent {
     this.goToList(sort, 1);
   }
 
-  /** Writes order + page into the URL, keeping every other query parameter. */
-  private goToList(sort: CubeSort, page: number): void {
+  /**
+   * Writes order + page into the URL, keeping every other query parameter.
+   *
+   * `replaceUrl` for key-repeat paging: holding an arrow key fires at the
+   * operating system's repeat rate, and one history entry per page would mean
+   * one Back press per page to get out of the list. A click is a deliberate
+   * step and keeps its entry.
+   */
+  private goToList(sort: CubeSort, page: number, replaceUrl = false): void {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: cubeListQueryParams(sort, page),
       queryParamsHandling: 'merge',
+      replaceUrl,
     });
   }
 
@@ -797,14 +806,19 @@ export class StartComponent {
   // ---------- Commands ----------
 
   onKeydown(event: KeyboardEvent) {
-    if (isTextInputTarget(event.target)) return;
+    // The listener is on the window, so it hears every key in the page. Arrow
+    // keys belong to the focused control whenever there is one: a <select>
+    // changes its option with them, a dialog's buttons are walked with them,
+    // and paging the list behind an open dialog is never what was meant.
+    if (shouldIgnoreListKey(event)) return;
     const list = this.inscriptionsResource.value();
     if (!list || !list.itemsPerPage) return;
     const lastPage = Math.ceil(list.totalInscriptions / list.itemsPerPage);
+    // Key-repeat replaces the entry rather than stacking one per page.
     if (event.key === 'ArrowLeft' && list.currentPage > 1) {
-      this.goToList(this.cubeSort(), list.currentPage - 1);
+      this.goToList(this.cubeSort(), list.currentPage - 1, true);
     } else if (event.key === 'ArrowRight' && list.currentPage < lastPage) {
-      this.goToList(this.cubeSort(), list.currentPage + 1);
+      this.goToList(this.cubeSort(), list.currentPage + 1, true);
     }
   }
 
@@ -1061,8 +1075,4 @@ export class StartComponent {
   }
 }
 
-function isTextInputTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
-}
+

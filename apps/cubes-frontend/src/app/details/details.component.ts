@@ -10,6 +10,7 @@ import { CHROME_CURSE_LABEL, chromeCurseExplanation, curseLabel } from '../servi
 import { RarityService } from '../services/cubes-data/rarity.service';
 import { CubeRarity } from '../services/cubes-data/types';
 import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
+import { shouldIgnoreListKey } from '../shared/utils/list-key';
 
 @Component({
   selector: 'app-details',
@@ -61,7 +62,7 @@ export class DetailsComponent {
   protected readonly chromeExplanation = computed(() => chromeCurseExplanation(this.chromeSides()));
 
   onKeydown(event: KeyboardEvent) {
-    if (isTextInputTarget(event.target)) return;
+    if (shouldIgnoreListKey(event)) return;
     const i = this.detailsResource.value();
     if (event.key === 'ArrowLeft' && i?.previousInscriptionId) {
       this.router.navigate(['/inscription', i.previousInscriptionId]);
@@ -71,8 +72,4 @@ export class DetailsComponent {
   }
 }
 
-function isTextInputTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
-}
+

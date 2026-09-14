@@ -498,6 +498,19 @@
 
 @let inscriptionsList = inscriptionsResource.value();
 @if (inscriptionsList) {
+  <!-- The rarity index is a separate fetch, and a rarity-sorted list falls back
+       to newest-first when it fails. The sort control reads its pressed state
+       from the URL and cannot know, so without this the reader sees "Rarity"
+       marked as the applied order over cubes in a different one, with no
+       badges, and toggling changes nothing visible. -->
+  @if (cubeSort() === 'rarity' && inscriptionsList.rarityAvailable === false) {
+    <p class="alert alert-warning py-2 px-3 small" role="alert" data-testid="rarity-unavailable">
+      The rarity index could not be loaded, so these cubes are in newest-first
+      order and have no rank. <button type="button" class="btn btn-link p-0 align-baseline"
+        (click)="inscriptionsResource.reload()">Try again</button>.
+    </p>
+  }
+
   <p class="mb-3">
     Here you see all <span data-testid="minted-cubes-total">{{ inscriptionsList.totalInscriptions }}</span> cubes that have been inscribed so far.
     @let cursor = cursorResource.value();

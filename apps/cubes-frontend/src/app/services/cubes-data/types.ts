@@ -37,6 +37,17 @@ export interface InscriptionExtendedPaginatedResult {
   currentPage: number;
   /** The rarity rows of the listed cubes, present when the list is sorted by rarity. */
   rarity?: Map<string, CubeRarity>;
+  /**
+   * Whether the rarity index could be fetched at all.
+   *
+   * Distinct from `rarity` being absent, which is also the normal case for a
+   * newest-first list. When the index is down, a rarity-sorted list falls back
+   * to newest-first, and the sort control cannot tell: its pressed state comes
+   * from the URL. Without this the reader sees "Rarity" marked as the applied
+   * order over cubes in a different order, with no badges and no explanation,
+   * and toggling the control changes nothing.
+   */
+  rarityAvailable?: boolean;
 }
 
 export interface InscriptionExtendedSingleResult {

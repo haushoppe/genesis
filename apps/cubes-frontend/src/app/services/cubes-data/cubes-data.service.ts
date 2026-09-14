@@ -48,6 +48,11 @@ export interface IndexCursor {
  */
 @Injectable({ providedIn: 'root' })
 export class CubesDataService {
+  // `inject`, not constructor injection: it is this app's convention, and
+  // constructor parameters need decorator metadata that the unit-test runner
+  // does not emit, so a spec cannot construct this service otherwise.
+  private readonly http = inject(HttpClient);
+
 
   // Replay-share with resetOnError so a first-load 5xx doesn't stick:
   // rxResourceFixed .reload() re-subscribes and gets a fresh HTTP call.
@@ -74,7 +79,6 @@ export class CubesDataService {
 
   private readonly rarity = inject(RarityService);
 
-  constructor(private http: HttpClient) {}
 
   /** Every known cube, sorted by (blockHeight, inscriptionNumber). */
   getAllCubes(): Observable<InscriptionExtended[]> {
@@ -103,12 +107,26 @@ export class CubesDataService {
     return combineLatest([this.all$, rarity$]).pipe(
       map(([all, rarity]) => {
         const ordered = orderCubes(all, sort, rarity);
-        const start = (currentPage - 1) * itemsPerPage;
+        // Clamp to the last page that exists. `page` is a query parameter, so
+        // any number is reachable by hand-editing the URL, by a stale bookmark
+        // or by a link shared before the list shrank. Slicing past the end
+        // returns nothing, and the page then reads "all N cubes" above an
+        // empty grid, with the pagination widget silently showing a different
+        // page from the one in the address bar.
+        const lastPage = Math.max(1, Math.ceil(ordered.length / itemsPerPage));
+        const page = Math.min(currentPage, lastPage);
+        const start = (page - 1) * itemsPerPage;
         return {
           inscriptions: ordered.slice(start, start + itemsPerPage),
           totalInscriptions: ordered.length,
           itemsPerPage,
-          currentPage,
+          currentPage: page,
+          // Whether the rarity index arrived. The sort control reads its
+          // pressed state from the URL, which knows nothing about that, so
+          // without this the list can show "Rarity" as the applied order while
+          // silently rendering newest-first, and clicking between the two
+          // changes nothing visible.
+          rarityAvailable: rarity !== null,
           ...(rarity ? { rarity } : {}),
         };
       }),

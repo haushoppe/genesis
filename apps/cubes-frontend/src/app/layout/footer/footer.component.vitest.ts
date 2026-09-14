@@ -13,6 +13,23 @@ import { FooterComponent } from './footer.component';
  * (ux-round4/cubes frames + measured contrast); this vitest setup is
  * template-compiler-free, so it exercises the class, not the rendered template.
  */
+/**
+ * The component's template-facing members.
+ *
+ * They are `protected`, which in Angular means "the template may read this,
+ * code outside the class may not". These tests stand in for the template, so
+ * they reach past that boundary. Doing it once, in a typed place, keeps the
+ * assertions checked: a member that is renamed or changes type still fails
+ * here rather than passing through an `any`.
+ */
+function templateView(c: FooterComponent): {
+  currentKey: string;
+  family: typeof ORDPOOL_FAMILY;
+  familyHeading: string;
+} {
+  return c as unknown as ReturnType<typeof templateView>;
+}
+
 describe('FooterComponent: Ordpool family contract', () => {
   let component: FooterComponent;
 
@@ -26,16 +43,16 @@ describe('FooterComponent: Ordpool family contract', () => {
     // Load-bearing: the self-key decides which card renders as "you are here".
     // 'cubes' must be hardcoded so it works on localhost and preview builds,
     // where a host match would silently vanish.
-    expect(component.currentKey).toBe('cubes');
+    expect(templateView(component).currentKey).toBe('cubes');
   });
 
   it('renders all four family members from the SDK, in build order', () => {
-    expect(component.family).toBe(ORDPOOL_FAMILY);
-    expect(component.family.map(m => m.key)).toEqual(['ordpool', 'cat21', 'cubes', 'wallet']);
+    expect(templateView(component).family).toBe(ORDPOOL_FAMILY);
+    expect(templateView(component).family.map(m => m.key)).toEqual(['ordpool', 'cat21', 'cubes', 'wallet']);
   });
 
   it('uses the SDK heading verbatim', () => {
-    expect(component.familyHeading).toBe(ORDPOOL_FAMILY_HEADING);
+    expect(templateView(component).familyHeading).toBe(ORDPOOL_FAMILY_HEADING);
   });
 
 });

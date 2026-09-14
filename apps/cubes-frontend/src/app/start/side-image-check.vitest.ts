@@ -9,11 +9,20 @@ import {
   SideImageVerdict,
 } from './side-image-check';
 
+/**
+ * `ProbeImage` picks its fields off `HTMLImageElement`, which carries the
+ * readonly modifier with them: the browser sets a decoded image's size and
+ * the production code only reads it. A fake has to play the browser's half,
+ * so it writes through a mutable view of the same type rather than a looser
+ * one, and stays assignable to `ProbeImage` for the code under test.
+ */
+type MutableProbeImage = { -readonly [K in keyof ProbeImage]: ProbeImage[K] };
+
 /** A fake `Image` that settles according to a per-url script the test controls. */
 function fakeImages(script: Record<string, { event: 'load' | 'error'; width: number; height: number }>) {
   const requested: string[] = [];
   const factory = (): ProbeImage => {
-    const img: ProbeImage = {
+    const img: MutableProbeImage = {
       naturalWidth: 0,
       naturalHeight: 0,
       onload: null,

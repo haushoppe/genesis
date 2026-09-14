@@ -7,6 +7,11 @@
   "include": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
+    // Most tests here are named *.vitest.ts. Without this line the type
+    // checker sees one test file out of twenty, so a test can disagree with
+    // the types it claims to use and nothing says so: vitest strips types
+    // rather than checking them.
+    "src/**/*.vitest.ts",
     "src/**/*.d.ts"
   ],
 }

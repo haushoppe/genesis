@@ -37,6 +37,10 @@ jobs:
     # in CI.
     - run: npm test --if-present
     - run: npm run test:vitest
+    # Nothing above type-checks a test. vitest strips types rather than
+    # checking them, and `ng build` compiles the app only, so a test can
+    # disagree with the types it claims to use and every lane stays green.
+    - run: npm run typecheck
     - name: Build (with HAUSHOPPE_TIP_ADDRESS injected)
       env:
         # Real mainnet P2TR address baked into the prod bundle at build

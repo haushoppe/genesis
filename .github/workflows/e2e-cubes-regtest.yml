@@ -69,6 +69,12 @@ jobs:
           - wizz
           - alby
           - okx
+          # Not a wallet: the watch-only (xpub) mint path, which is the SECOND
+          # way this app mints and needs no extension at all, because the
+          # signature is made outside the browser by construction. The
+          # extension cache and download steps below are each gated on a
+          # wallet name, so none of them match and this job simply skips them.
+          - watchonly
           # Oyl removed 2026-08-06: vendor decommissioned the mainnet.ordit.io
           # relay-validator backend the extension calls during signPsbt
           # (DNS NXDOMAIN). The .crx still installs but every sign attempt

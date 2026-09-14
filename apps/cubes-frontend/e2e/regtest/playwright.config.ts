@@ -58,7 +58,10 @@ export default defineConfig({
       cwd: path.resolve(__dirname, '../..'),
       port: 4203,
       reuseExistingServer: !process.env.CI,
-      timeout: 180_000,
+      // A cold Angular build with no `.angular/cache` measured past three
+      // minutes here, and clearing that cache is the documented fix for a
+      // stale SDK prebundle, so the slow case is a normal one.
+      timeout: 420_000,
     },
   ],
 });

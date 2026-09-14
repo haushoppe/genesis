@@ -33,7 +33,7 @@
     "@fontsource/inter": "^5.0.8",
     "@fontsource/merriweather": "^4.5.14",
     "@fontsource/yantramanav": "^4.5.9",
-    "@ng-bootstrap/ng-bootstrap": "^20.0.0",
+    "@ng-bootstrap/ng-bootstrap": "^21.0.0",
     "@noble/curves": "^1.4.0",
     "@popperjs/core": "^2.11.8",
     "@scure/base": "^1.1.0",

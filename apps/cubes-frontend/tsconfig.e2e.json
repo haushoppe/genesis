@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc",
+    "types": ["node"],
+    // Playwright specs are run by Playwright's own transpiler, which strips
+    // types rather than checking them, exactly like vitest. Without this
+    // project nothing type-checks the e2e suite at all: a helper whose
+    // signature changed, or a data-testid whose element now returns a
+    // different shape, compiles fine and fails at 3am in CI.
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "include": [
+    "e2e/**/*.ts",
+    "src/**/*.d.ts"
+  ]
+}

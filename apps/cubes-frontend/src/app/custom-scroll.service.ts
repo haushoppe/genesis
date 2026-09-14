@@ -7,6 +7,13 @@ import { filter, map } from 'rxjs/operators';
 const HOLD_MS = 1500;
 
 /**
+ * Inputs that mean the reader wants to scroll. A hold releases on the first
+ * one, because only an input distinguishes their intent from the layout
+ * shifting underneath them.
+ */
+const USER_SCROLL_EVENTS = ['wheel', 'touchstart', 'keydown'] as const;
+
+/**
  * Router scroll behaviour for cubes-frontend, and the only place that scrolls
  * on navigation (`app.config.ts` hands the job over by switching the router's
  * own `withInMemoryScrolling` off). Four cases:
@@ -36,13 +43,34 @@ export class CustomScrollService {
 
   private previousComponent: unknown = undefined;
 
+  /** Timer of a hold in flight, so the next navigation can cancel it. */
+  private holdTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Removes the hold's input listeners. Null when no hold is in flight. */
+  private releaseHold: (() => void) | null = null;
+
   constructor() {
+    // Take the browser's own scroll restoration off the field.
+    //
+    // Angular normally does this, but it is gated on exactly the option
+    // `app.config.ts` switches off: RouterScroller.init() only calls
+    // setHistoryScrollRestoration('manual') when scrollPositionRestoration is
+    // NOT 'disabled'. So turning the router's restoration off left
+    // history.scrollRestoration at 'auto' (measured on production), and on
+    // back/forward the browser restored an offset on its own schedule against
+    // a grid that had not rendered yet, while this service restored another.
+    // Two things scrolling, neither aware of the other.
+    this.viewportScroller.setHistoryScrollRestoration('manual');
+
     this.router.events
       .pipe(
         filter((event) => event instanceof Scroll),
         map((e) => e as Scroll),
       )
       .subscribe((e) => {
+        // Any hold belongs to the navigation that started it.
+        this.cancelHold();
+
         // Special value that means "don't scroll at all".
         if (e.anchor === 'x') return;
 
@@ -64,7 +92,11 @@ export class CustomScrollService {
         // restores don't need polling and land on the first tick.
         const deadline = Date.now() + 1500;
         const tryScroll = () => {
-          if (e.anchor && document.querySelector('#' + e.anchor)) {
+          // getElementById, not querySelector('#' + anchor): a fragment is an
+          // arbitrary string and most are not valid CSS identifiers. `#1`
+          // throws a SyntaxError, which escapes this callback, kills the
+          // subscription and takes the position fallback down with it.
+          if (e.anchor && document.getElementById(e.anchor)) {
             this.viewportScroller.scrollToAnchor(e.anchor);
           } else if (e.position) {
             this.viewportScroller.scrollToPosition(e.position);
@@ -83,15 +115,56 @@ export class CustomScrollService {
     return route.component;
   }
 
-  /** Keeps the viewport where it is while the view re-renders under it. */
+  /**
+   * Keeps the viewport where it is while the view re-renders under it.
+   *
+   * The grid swaps every tile at once, so for a moment the document is a
+   * different height and the browser moves the scroll position on its own. The
+   * position is therefore re-asserted for a while rather than set once.
+   *
+   * It stops early on the reader's first scroll input. The test is the INPUT,
+   * not the resulting offset: a layout shift moves the offset too, so
+   * comparing positions cannot tell "the page resized under them" from "they
+   * scrolled", and treating the first as the second gives up the hold exactly
+   * when it is needed. Measured: clicking page 2 moves the offset by several
+   * hundred pixels with nobody touching anything.
+   *
+   * Cancellable, and cancelled by the next navigation: three quick page clicks
+   * used to leave three loops alive with three different captured offsets,
+   * alternating every 100 ms, and a hold started on the list could drag a
+   * freshly opened cube page back down to the list's offset.
+   */
   private holdPosition(): void {
     const position = this.viewportScroller.getScrollPosition();
     if (position[1] === 0) return;
     const deadline = Date.now() + HOLD_MS;
-    const hold = () => {
-      this.viewportScroller.scrollToPosition(position);
-      if (Date.now() < deadline) setTimeout(hold, 100);
+
+    const release = () => this.cancelHold();
+    for (const type of USER_SCROLL_EVENTS) {
+      window.addEventListener(type, release, { passive: true });
+    }
+    this.releaseHold = () => {
+      for (const type of USER_SCROLL_EVENTS) window.removeEventListener(type, release);
     };
-    hold();
+
+    const hold = () => {
+      this.holdTimer = null;
+      this.viewportScroller.scrollToPosition(position);
+      if (Date.now() < deadline) this.holdTimer = setTimeout(hold, 100);
+      else this.cancelHold();
+    };
+    this.holdTimer = setTimeout(hold, 0);
+  }
+
+  /** Stops a hold in flight, so it cannot outlive the navigation that began it. */
+  private cancelHold(): void {
+    if (this.holdTimer !== null) {
+      clearTimeout(this.holdTimer);
+      this.holdTimer = null;
+    }
+    if (this.releaseHold !== null) {
+      this.releaseHold();
+      this.releaseHold = null;
+    }
   }
 }

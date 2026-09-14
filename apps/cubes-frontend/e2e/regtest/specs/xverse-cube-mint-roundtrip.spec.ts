@@ -5,6 +5,7 @@ import * as fs from 'node:fs';
 import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
+  isExpectedConsoleError,
   waitForElectrsSync,
   fundCommonSats,
   waitForTxConfirmed,
@@ -184,17 +185,8 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   //   - CORS blocks on side-inscription placeholder SVGs the cube
   //     preview iframe tries to load (regtest doesn't ship those
   //     assets; the iframe is null-origin so any /assets fetch fails)
-  const IGNORED_CONSOLE: RegExp[] = [
-    /Failed to load resource:.*404/,
-    // Best-effort UI loads (the mempool preview iframe + fee estimate) can 5xx
-    // transiently in regtest before the backend / tx settle; the explicit
-    // mempool-render + confirm-badge assertions are the real check on them.
-    /Failed to load resource:.*5\d\d/,
-    /Failed to load resource:.*net::/,
-    /^\[sdk:/,
-    /\[inscribe-mint-orchestrator\] simulation threw for utxo/,
-    /has been blocked by CORS policy/,
-  ];
+  // Console noise is judged by the failing resource, not by status class:
+  // see `isExpectedConsoleError` in regtest-helpers.
   const browserErrors: string[] = [];
 
   // Surface browser console errors + page errors so a silent connect
@@ -210,7 +202,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       // eslint-disable-next-line no-console
       console.log(`[cubes console.${t}] ${text}`);
     }
-    if (t === 'error' && !IGNORED_CONSOLE.some((re) => re.test(text))) {
+    if (t === 'error' && !isExpectedConsoleError(text, msg.location()?.url ?? '')) {
       browserErrors.push(`console.error: ${text}`);
     }
   });

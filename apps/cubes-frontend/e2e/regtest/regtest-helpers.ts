@@ -704,3 +704,47 @@ export const RENDERABLE_SIDE_IDS = [
 
 /** A mainnet inscription whose body is JSON: loads with 200, never decodes as an image. */
 export const NON_IMAGE_SIDE_ID = 'a1aff8c3dc8ff01c775d3de7400ec6734b5fd289e8cff33b3fed8cd7da422fafi1';
+
+/**
+ * Whether a browser console error is one this regtest run legitimately
+ * produces, judged by WHAT FAILED rather than by the status class.
+ *
+ * The difference matters. Ignoring every 404 and every 5xx also swallows a
+ * broken API call, a missing chunk and a dead asset, which is precisely what a
+ * console check exists to notice. Filtering by the failing resource's URL
+ * keeps the noise out and leaves the signal in: narrowing this way immediately
+ * surfaced a fee-endpoint 404 that the blanket version had been hiding.
+ *
+ * The three expected classes, each for a stated reason:
+ *
+ *   - `/content/` and `/preview/`: the cubes are minted with MAINNET side ids,
+ *     because those are the ones that render, and the app then asks the
+ *     REGTEST content host for them. They must 404; the inscriptions do not
+ *     exist on this chain.
+ *   - `/assets/`: the preview iframe is null-origin, so any asset it pulls
+ *     fails by construction.
+ *   - `/api/v1/fees/recommended`: on regtest `/api/*` proxies to electrs,
+ *     which serves the esplora surface and not mempool's v1 endpoints. The app
+ *     is built to degrade to absence here, so its absence is designed
+ *     behaviour. A spec that stubs this endpoint will never see it.
+ *
+ * Non-resource noise (SDK logs, an orchestrator's per-UTXO simulation
+ * complaint, a CORS refusal) stays matched on text, since those carry no URL.
+ */
+const EXPECTED_MISSING_URL = [
+  '/content/',
+  '/preview/',
+  '/assets/',
+  '/api/v1/fees/recommended',
+];
+
+const EXPECTED_CONSOLE_TEXT: RegExp[] = [
+  /^\[sdk:/,
+  /\[inscribe-mint-orchestrator\] simulation threw for utxo/,
+  /has been blocked by CORS policy/,
+];
+
+export function isExpectedConsoleError(text: string, url: string): boolean {
+  if (url && EXPECTED_MISSING_URL.some((part) => url.includes(part))) return true;
+  return EXPECTED_CONSOLE_TEXT.some((re) => re.test(text));
+}

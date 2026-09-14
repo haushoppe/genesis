@@ -9,6 +9,7 @@ import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   fundCommonSats,
   getStockOrdContent,
+  isExpectedConsoleError,
   mineBlocks,
   openDetails,
   RENDERABLE_SIDE_IDS,
@@ -98,18 +99,6 @@ let fundedAddress: string;
 const browserErrors: string[] = [];
 
 /**
- * The one class of failed request this run legitimately produces.
- *
- * The cube is minted with MAINNET side ids, because those are the ones that
- * render, and the app then asks the REGTEST content host for them. Those
- * requests must 404: the inscriptions do not exist on this chain.
- *
- * Filtered by the failing resource's URL rather than by the status code, which
- * is the distinction that matters. A blanket "ignore 404 and 5xx" also
- * swallows a broken API call, a missing chunk and a dead asset, so it hides
- * exactly the regressions a console check exists to catch.
- */
-/**
  * Mean luminance of a PNG screenshot, 0 (black) to 255 (white).
  *
  * Decoded without an image library: a Playwright screenshot is a PNG, and
@@ -135,18 +124,7 @@ async function meanLuminanceInPage(page: Page, pngBase64: string): Promise<numbe
   }, pngBase64);
 }
 
-function isExpectedMissingContent(url: string): boolean {
-  // Mainnet side inscriptions, asked of the regtest content host.
-  if (url.includes('/content/') || url.includes('/preview/')) return true;
 
-  // The fee recommendation. On regtest `/api/*` is proxied to electrs, which
-  // serves the esplora surface and not mempool's v1 endpoints, so this 404s by
-  // construction. The app is built to degrade to absence here rather than to a
-  // dead screen, so its absence is the designed behaviour and not a defect.
-  if (url.includes('/api/v1/fees/recommended')) return true;
-
-  return false;
-}
 
 test.beforeAll(async () => {
   const tip = Number(rpc('getblockcount').trim());
@@ -170,7 +148,7 @@ test.beforeAll(async () => {
   cubes = await context.newPage();
   cubes.on('console', (m) => {
     if (m.type() !== 'error') return;
-    if (isExpectedMissingContent(m.location()?.url ?? '')) return;
+    if (isExpectedConsoleError(m.text(), m.location()?.url ?? '')) return;
     browserErrors.push(`console.error: ${m.text()} @ ${m.location()?.url ?? '?'}`);
   });
   cubes.on('pageerror', (e) => browserErrors.push(String(e)));

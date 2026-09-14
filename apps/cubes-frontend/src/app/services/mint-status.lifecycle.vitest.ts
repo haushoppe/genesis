@@ -1,129 +1,128 @@
-import { HttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MintStatusService } from './mint-status.service';
 
 /**
  * The polling LIFECYCLE, which the pure-function spec beside this one cannot
- * reach. Both defects pinned here were shipped and invisible: the suite was
- * green because it only ever asked `nextMintTxStatus` what a single response
- * means, never what the service does with two of them.
+ * reach: it only ever asks `nextMintTxStatus` what a SINGLE response means,
+ * never what the service does with a sequence of them over time.
+ *
+ * Nothing is mocked except the network itself. The real `HttpClient` runs with
+ * Angular's testing BACKEND under it, so the URL the service assembles, the
+ * request it issues and the way it consumes the response are all production
+ * code paths. Replacing `HttpClient` wholesale would leave the `esploraBase`
+ * assembly and the observable handling untested, and those are a real part of
+ * what this service does.
+ *
+ * The clock is controlled rather than waited on, because the behaviour under
+ * test IS timing.
+ *
+ * Note on `match`: it CONSUMES the requests it returns, so each call means
+ * "the requests issued since I last looked", and calling it twice in a row
+ * legitimately returns nothing the second time.
  */
 
 const TXID = 'a'.repeat(64);
 
-/** One controllable response per request, in call order. */
-function httpStub() {
-  const pending: Subject<unknown>[] = [];
-  const urls: string[] = [];
-  const http = {
-    get: (url: string) => {
-      urls.push(url);
-      const s = new Subject<unknown>();
-      pending.push(s);
-      return s.asObservable();
-    },
-  };
-  return { http, pending, urls };
-}
-
-function makeService(http: unknown): MintStatusService {
+function makeService(): { service: MintStatusService; http: HttpTestingController } {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: HttpClient, useValue: http },
+      provideHttpClient(),
+      provideHttpClientTesting(),
       MintStatusService,
     ],
   });
-  return TestBed.inject(MintStatusService);
+  return {
+    service: TestBed.inject(MintStatusService),
+    http: TestBed.inject(HttpTestingController),
+  };
+}
+
+/** Requests for this txid issued since the last call. Consuming, see above. */
+function takeRequests(http: HttpTestingController, txid = TXID) {
+  return http.match((req) => req.url.endsWith(`/tx/${txid}`));
 }
 
 describe('MintStatusService polling lifecycle', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it('does not let a slow response walk a confirmed mint back to mempool', () => {
-    const { http, pending } = httpStub();
-    const service = makeService(http);
-    const status = service.statusOf(TXID);
-
-    // Request A goes out on registration and is slow.
-    expect(pending.length).toBe(1);
-    const slow = pending[0];
-
-    // The interval fires; the in-flight guard means no second request yet.
-    vi.advanceTimersByTime(5_000);
-    expect(pending.length).toBe(1);
-
-    // A answers "confirmed".
-    slow.next({ status: { confirmed: true, block_height: 840_123 } });
-    expect(status()).toEqual({ state: 'confirmed', blockHeight: 840_123 });
-
-    // A straggler from an earlier, slower path reports the tx as unconfirmed.
-    // Applying it would lose the block height AND restart the loop, because the
-    // loop's exit condition reads the very state it just regressed.
-    slow.next({ status: { confirmed: false } });
-    expect(status()).toEqual({ state: 'confirmed', blockHeight: 840_123 });
+  it('asks esplora for the reveal txid, at the URL it assembles itself', () => {
+    const { service, http } = makeService();
+    service.statusOf(TXID);
+    const req = http.expectOne((r) => r.url.endsWith(`/api/tx/${TXID}`));
+    expect(req.request.method).toBe('GET');
   });
 
-  it('keeps one request per txid in flight', () => {
-    const { http, pending } = httpStub();
-    const service = makeService(http);
+  it('keeps exactly one request per txid in flight', () => {
+    // This is what makes an out-of-order pair impossible in the first place.
+    // Before it, the interval fired a second request while the first was still
+    // out, and whichever answered LAST won regardless of which was newer.
+    const { service, http } = makeService();
     service.statusOf(TXID);
 
-    expect(pending.length).toBe(1);
-    // Several ticks with the first request still out.
     vi.advanceTimersByTime(5_000);
     vi.advanceTimersByTime(5_000);
     vi.advanceTimersByTime(5_000);
-    expect(pending.length).toBe(1);
+
+    expect(takeRequests(http).length).toBe(1);
   });
 
   it('backs off a reveal that never confirms instead of asking every five seconds forever', () => {
-    const { http, pending } = httpStub();
-    const service = makeService(http);
+    const { service, http } = makeService();
     service.statusOf(TXID);
 
-    // Answer every request with "still in the mempool" for an hour of ticks.
-    let answered = 0;
+    let issued = 0;
     for (let elapsed = 0; elapsed < 60 * 60_000; elapsed += 5_000) {
-      while (answered < pending.length) {
-        pending[answered].next({ status: { confirmed: false } });
-        answered += 1;
+      for (const req of takeRequests(http)) {
+        issued += 1;
+        req.flush({ status: { confirmed: false } });
       }
       vi.advanceTimersByTime(5_000);
     }
 
-    // A flat five-second poll would be 720 requests in that hour. The backoff
-    // has to be well under that; the exact figure is not the point, the order
-    // of magnitude is.
-    expect(pending.length).toBeLessThan(60);
-    expect(pending.length).toBeGreaterThan(5);
+    // A flat five-second poll would be 720 requests in that hour. The exact
+    // figure is not the point; the order of magnitude is.
+    expect(issued).toBeLessThan(60);
+    expect(issued).toBeGreaterThan(5);
+  });
+
+  it('advances to confirmed and keeps the block height', () => {
+    const { service, http } = makeService();
+    const status = service.statusOf(TXID);
+    takeRequests(http)[0].flush({ status: { confirmed: true, block_height: 840_123 } });
+    expect(status()).toEqual({ state: 'confirmed', blockHeight: 840_123 });
   });
 
   it('stops polling once the tx is confirmed', () => {
-    const { http, pending } = httpStub();
-    const service = makeService(http);
+    const { service, http } = makeService();
     const status = service.statusOf(TXID);
 
-    pending[0].next({ status: { confirmed: true, block_height: 1 } });
+    takeRequests(http)[0].flush({ status: { confirmed: true, block_height: 1 } });
     expect(status().state).toBe('confirmed');
 
-    const after = pending.length;
     vi.advanceTimersByTime(60_000);
-    expect(pending.length).toBe(after);
+    expect(takeRequests(http).length).toBe(0);
+  });
+
+  it('treats a 404 as "nothing to apply" rather than as a state', () => {
+    const { service, http } = makeService();
+    const status = service.statusOf(TXID);
+    takeRequests(http)[0].flush('not found', { status: 404, statusText: 'Not Found' });
+    expect(status()).toEqual({ state: 'unknown' });
   });
 
   it('hands the same signal back for a txid it already tracks, without a second request', () => {
-    const { http, pending } = httpStub();
-    const service = makeService(http);
+    const { service, http } = makeService();
     const first = service.statusOf(TXID);
     const second = service.statusOf(TXID.toUpperCase());
     expect(second).toBe(first);
-    expect(pending.length).toBe(1);
+    expect(takeRequests(http).length).toBe(1);
   });
 });

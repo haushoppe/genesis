@@ -121,10 +121,16 @@ export class MintStatusService {
         tracked.inFlight = false;
         const next = nextMintTxStatus(tx);
 
-        // Never walk the status back. A slow response can still arrive after a
-        // fast one: without this, a confirmed mint returns to "In the mempool",
-        // loses its block height, and starts being polled again because the
-        // loop's exit condition reads the state it just regressed.
+        // Never walk the status back: a confirmed mint must not return to "In
+        // the mempool", lose its block height, and restart the loop, because
+        // the loop's exit condition reads the state that was just regressed.
+        //
+        // Defence in depth, and honestly labelled as such: the in-flight guard
+        // above already makes two concurrent requests for one txid impossible,
+        // so responses cannot cross and this branch is unreachable through the
+        // public path. Removing it turns no test red. It stays because it is
+        // one comparison and it is what keeps the regression from coming back
+        // if the in-flight guard is ever loosened.
         if (next && RANK[next.state] > RANK[tracked.sig().state]) {
           tracked.sig.set(next);
         }

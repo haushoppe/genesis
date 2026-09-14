@@ -306,7 +306,31 @@ the code:
 - `foo.component.spec.ts` for a component (legacy naming — new tests
   use `foo.spec.ts` alongside `foo.ts`)
 
-Run: `npx vitest run` from `apps/cubes-frontend/`.
+Run: `npm run test:vitest` from `apps/cubes-frontend/`.
+
+### A green suite here says nothing about types: run `npm run typecheck`
+
+**vitest strips types rather than checking them.** This app is the only one
+in the family that runs vitest; ordpool.space and cat21.space use jest with
+ts-jest (via `jest-preset-angular`), which type-checks every spec as it runs.
+So a test here can disagree with the types it claims to use and stay green
+forever, and `ng build` will not catch it either, because it compiles the app
+project and not the tests.
+
+`npm run typecheck` runs both projects (`tsconfig.app.json` and
+`tsconfig.spec.json`) and CI runs it after the two test lanes. If you add a
+test file whose name matches neither `*.spec.ts`, `*.test.ts` nor
+`*.vitest.ts`, add the pattern to `tsconfig.spec.json` or it is invisible to
+the checker.
+
+Do NOT run `tsc -p tsconfig.json` and treat its output as real. That is the
+base config the other two extend; it has no test-runner types, so it reports
+dozens of missing `describe` errors that mean nothing.
+
+This is not theoretical. A hand-written `InscribeSnapshot` in
+`start.component.vitest.ts` fell five fields behind the SDK type it stood in
+for, and nothing said so, because `tsconfig.spec.json` matched `*.spec.ts`
+while nineteen of the twenty test files here are `*.vitest.ts`.
 
 ## Templates
 

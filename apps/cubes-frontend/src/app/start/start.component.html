@@ -267,7 +267,7 @@
               None of your spendable coins are verified clear of ordinal-bound
               assets, so the safe auto-pick won't spend one for you. Choose a
               funding coin below. A coin marked
-              <span class="badge bg-danger">assets on this UTXO</span> WILL be spent
+              <span class="badge bg-danger">{{ bucketLabel('assets') }}</span> WILL be spent
               (and its inscription / cat / rare sat moved) if you pick it.
             </div>
           }
@@ -394,9 +394,9 @@
       @if (ss.state === 'confirmed') {
         <span class="badge text-bg-success">✅ Confirmed@if (ss.blockHeight) { · block {{ ss.blockHeight }}}</span>
       } @else if (ss.state === 'mempool') {
-        <span class="badge text-bg-warning">⏳ In the mempool — your cube is rendering above</span>
+        <span class="badge text-bg-warning">⏳ In the mempool, your cube is rendering above</span>
       } @else {
-        <span class="badge text-bg-secondary">📡 Sent to Bitcoin — your cube appears in a moment…</span>
+        <span class="badge text-bg-secondary">📡 Sent to Bitcoin, your cube appears in a moment…</span>
       }
     </p>
 

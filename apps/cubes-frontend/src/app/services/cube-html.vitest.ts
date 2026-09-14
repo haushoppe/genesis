@@ -85,6 +85,18 @@ describe('getCubeHtml + parseCube round-trip', () => {
     '&amp;lt;',    // literal 8-char user string
     '&amp;&lt;&gt;&quot;',
     'A & B < C > D " E',
+    // Every shape that `String.replace` reads as a substitution pattern rather
+    // than as characters. The single-`$` case is already covered by the ASCII
+    // sweep below and always passed, because `$p` means nothing; only these
+    // pairs do, which is why an exhaustive-looking sweep missed a title being
+    // rewritten on its way onto the chain.
+    'Worth $$$',
+    'A $& B',
+    "X $' Y",
+    'Y $` X',
+    'Costs $1 and $9',
+    '$<name>',
+    'plain $ sign',
   ])('round-trips title with special chars: %s', (title) => {
     const html = getCubeHtml(buildDetails(title));
     expect(isCubeWarningHtml(html)).toBe(false);

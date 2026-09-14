@@ -155,7 +155,13 @@ export function getCubeHtml(cubeDetails: CubeDetails): string {
   let head: string;
   if (cubeDetails.title) {
     const title = escapeCubeTitle(cubeDetails.title);
-    head = TEMPLATE_HEAD_WITH_TITLE.replace('__TITLE__', title);
+    // The replacement MUST be a function. With a string, `$$`, `$&`, `$\`` and
+    // `$'` are substitution patterns rather than characters, so a title
+    // containing a dollar sign is rewritten on its way into the body: "Worth
+    // $$$" inscribes as "Worth $$", and "A $& B" inscribes the `__TITLE__`
+    // placeholder itself. Both round-trip through parseCube, so nothing refuses
+    // them and the wrong bytes are signed, paid for and permanent.
+    head = TEMPLATE_HEAD_WITH_TITLE.replace('__TITLE__', () => title);
   } else {
     head = TEMPLATE_HEAD_NO_TITLE;
   }

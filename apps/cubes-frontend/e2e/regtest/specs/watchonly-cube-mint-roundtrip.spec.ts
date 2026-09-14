@@ -109,6 +109,32 @@ const browserErrors: string[] = [];
  * swallows a broken API call, a missing chunk and a dead asset, so it hides
  * exactly the regressions a console check exists to catch.
  */
+/**
+ * Mean luminance of a PNG screenshot, 0 (black) to 255 (white).
+ *
+ * Decoded without an image library: a Playwright screenshot is a PNG, and
+ * sampling it needs pixels. `sharp` is not a dependency here and adding one to
+ * read brightness would be the heavier answer, so the bytes are averaged
+ * through the browser instead, which already has a decoder.
+ */
+async function meanLuminanceInPage(page: Page, pngBase64: string): Promise<number> {
+  return page.evaluate(async (b64: string) => {
+    const blob = await (await fetch(`data:image/png;base64,${b64}`)).blob();
+    const bmp = await createImageBitmap(blob);
+    const canvas = document.createElement('canvas');
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(bmp, 0, 0);
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let sum = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      sum += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+    }
+    return sum / (data.length / 4);
+  }, pngBase64);
+}
+
 function isExpectedMissingContent(url: string): boolean {
   // Mainnet side inscriptions, asked of the regtest content host.
   if (url.includes('/content/') || url.includes('/preview/')) return true;
@@ -292,6 +318,35 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').getAttribute('aria-label'))?.trim() ?? '';
   expect(commitTxId).toMatch(/^[0-9a-f]{64}$/);
   expect(revealTxId).toMatch(/^[0-9a-f]{64}$/);
+
+  // ─── Step 6b: the success preview actually paints ──────────────
+  //
+  // What is and is not provable here, stated plainly so nobody reads more
+  // into a green than it carries.
+  //
+  // PROVEN: the iframe's document loads and paints its dark stage. That is
+  // the srcdoc mechanism this app calls load-bearing (see CLAUDE.md, "Cube
+  // iframes"), and the regression it guards against was a white flash, so
+  // the measurement is the same one that rule demands: sample the rendered
+  // pixels rather than trust an attribute.
+  //
+  // NOT PROVABLE ON REGTEST: a painted CUBE. The renderer is itself a
+  // MAINNET inscription, loaded through the document's base href, which on
+  // this chain resolves to the regtest content host and 404s. So no spec
+  // here can assert that a cube appears, and one claiming to would be
+  // asserting the stage and calling it the cube.
+  const preview = cubes.locator('[data-testid="mint-success-preview"]');
+  await expect(preview).toHaveAttribute('srcdoc', /<meta name="color-scheme" content="dark">/, { timeout: 30_000 });
+
+  const box = await preview.boundingBox();
+  expect(box, 'the preview must have a rendered box, not zero height').toBeTruthy();
+  const shot = await preview.screenshot();
+  const luminance = await meanLuminanceInPage(cubes, shot.toString('base64'));
+  // A blank or white frame reads near 255; the dark stage sits far below it.
+  // The window this catches is real: the frame was white for seconds before
+  // the srcdoc mechanism existed.
+  expect(luminance, `preview mean luminance was ${luminance}`).toBeLessThan(120);
+  expect(luminance, 'a fully black box would mean nothing painted at all').toBeGreaterThan(0);
 
   // ─── Step 7: both confirm, ord indexes, bytes match ────────────
   await waitForElectrsSync(mineBlocks(1));

@@ -15,7 +15,7 @@
     "e2e:headed": "playwright test --headed",
     "e2e:regtest": "playwright test --config e2e/regtest/playwright.config.ts",
     "e2e:regtest:up": "bash e2e/regtest/regtest-bootstrap.sh",
-    "e2e:regtest:down": "E2E_PREFIX=cubes-e2e docker compose -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml down -v",
+    "e2e:regtest:down": "E2E_PREFIX=cubes-e2e docker compose -p cubes-e2e -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml down -v",
     "test": "ng test",
     "test:vitest": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.spec.json && tsc --noEmit -p tsconfig.e2e.json"

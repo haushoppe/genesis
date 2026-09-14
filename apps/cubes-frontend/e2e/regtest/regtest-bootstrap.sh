@@ -29,7 +29,16 @@ export ORDPOOL_SRC="${ORDPOOL_SRC:-$(cd "$HERE/../../../../.." && pwd)/ordpool}"
 # Provide an empty dir in the docker/backend build context so the COPY resolves.
 mkdir -p "$ORDPOOL_SRC/docker/backend/GeoIP" 2>/dev/null || true
 
-COMPOSE="docker compose -f $HERE/../../node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml"
+# `-p` is load-bearing, not cosmetic. The compose file sets no project name, so
+# the project defaults to the directory it lives in, which is `e2e` for EVERY
+# consumer of the SDK's stack. Two repos bringing it up on one daemon then share
+# a project: compose treats the other's running containers as its own services
+# and will recreate or remove them, and the named volumes resolve to the same
+# `e2e_*` for both, so even a differently-prefixed stack shares its index.
+# E2E_PREFIX does not help; it only renames containers. Measured the hard way on
+# 2026-09-14, when another session's isolated-looking stack deleted this one's
+# chain. Pinning the project makes the isolation real.
+COMPOSE="docker compose -p cubes-e2e -f $HERE/../../node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml"
 RPC="docker exec ${E2E_PREFIX}-bitcoind bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool"
 
 # --- bring containers up if not already running ---

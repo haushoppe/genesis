@@ -66,6 +66,33 @@ describe('probeSideImage', () => {
     const { factory } = fakeImages({ [`${BASE}/content/${PNG}`]: { event: 'load', width: 0, height: 0 } });
     expect(await probeSideImage(PNG, BASE, factory)).toBe('black');
   });
+
+  it('a load that never settles gives up as unknown rather than hanging', async () => {
+    // A connection that opens and delivers nothing fires neither handler, so
+    // without a deadline this promise never resolves and the five other sides
+    // are withheld with it, since they are awaited together.
+    const neverSettles = (): ProbeImage => ({
+      naturalWidth: 0, naturalHeight: 0, onload: null, onerror: null, src: '',
+    });
+    expect(await probeSideImage(PNG, BASE, neverSettles, 10)).toBe('unknown');
+  });
+
+  it('one stalled side does not withhold the others', async () => {
+    const script: Record<string, { event: 'load' | 'error'; width: number; height: number }> = {
+      [`${BASE}/content/${PNG}`]: { event: 'load', width: 600, height: 600 },
+    };
+    const { factory } = fakeImages(script);
+    const createImage = (): ProbeImage => {
+      // The first call is the stalled side, the rest answer normally.
+      if (!stalledUsed) { stalledUsed = true; return { naturalWidth: 0, naturalHeight: 0, onload: null, onerror: null, src: '' }; }
+      return factory();
+    };
+    let stalledUsed = false;
+    expect(await probeSideImages([MISSING, PNG], BASE, createImage, 10)).toEqual({
+      [MISSING]: 'unknown',
+      [PNG]: 'ok',
+    });
+  });
 });
 
 describe('probeSideImages', () => {
@@ -88,6 +115,27 @@ describe('blackFaces / allSidesRender', () => {
   it('lists nothing while there are no verdicts or for sides without one', () => {
     expect(blackFaces([PNG, JSON_SIDE], null)).toEqual([]);
     expect(blackFaces(['unknown-id', ''], verdicts)).toEqual([]);
+  });
+
+  it('a probe that never answered does not block the mint, and is not called black', () => {
+    // The content host being slow or blocked is not evidence about anyone's
+    // inscriptions. It must not disable Mint, and it must not be reported as a
+    // black face, or the reader is told their cube is broken by an outage.
+    const stalled: Record<string, SideImageVerdict> = { [PNG]: 'unknown' };
+    expect(allSidesRender([PNG, PNG, PNG, PNG, PNG, PNG], stalled)).toBe(true);
+    expect(blackFaces([PNG, PNG], stalled)).toEqual([]);
+  });
+
+  it('still blocks while a side has no verdict at all', () => {
+    // Different from 'unknown': the probe has not finished, so the question is
+    // open rather than answered.
+    expect(allSidesRender([PNG, 'not-probed-yet'], { [PNG]: 'unknown' })).toBe(false);
+  });
+
+  it('one black side still blocks even when the others are unknown', () => {
+    const mixed: Record<string, SideImageVerdict> = { [PNG]: 'unknown', [JSON_SIDE]: 'black' };
+    expect(allSidesRender([PNG, JSON_SIDE], mixed)).toBe(false);
+    expect(blackFaces([PNG, JSON_SIDE], mixed)).toEqual([2]);
   });
 
   it('allSidesRender needs a verdict of ok for every side', () => {

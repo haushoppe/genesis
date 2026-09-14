@@ -24,6 +24,12 @@ export const environment = {
   // The side ids the specs mint with are mainnet inscriptions (like the cube
   // renderer itself), so the mint form's black-face check loads them from
   // mainnet content, the same host prod probes.
+  //
+  // This is the one reach outside the regtest stack, and it is deliberately no
+  // longer load-bearing: a probe that cannot finish answers `unknown`, which
+  // does not gate the Mint button (`side-image-check.ts`). Blocked or slow CI
+  // egress therefore costs the specs a few seconds, not seven red runs
+  // attributed to whatever wallet happened to be under test.
   sideImageProbeBase: 'https://api.ordpool.space',
   // The SDK UtxoContentScanner's funding-safety scan hits both real regtest ord
   // instances the docker stack brings up: ordApiUrl -> stock ord (:8081,

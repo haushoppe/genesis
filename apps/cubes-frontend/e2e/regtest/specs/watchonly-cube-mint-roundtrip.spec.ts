@@ -85,6 +85,26 @@ const APP_URL = 'http://localhost:4203/';
  * address with two hundred thousand bitcoin, which regtest will cheerfully
  * refuse in a way that looks like a wallet bug.
  */
+/**
+ * A title carrying the SILENT substitution patterns, and deliberately not the
+ * loud one.
+ *
+ * `$$` and `$&` corrupt the title while leaving a structurally valid cube, so
+ * they reach the chain and are paid for. `$'` splices the rest of the template
+ * into the title, which breaks `parseCube`, trips the Warning sentinel and
+ * refuses the mint: unpleasant, but loud, and it would fail this spec at its
+ * own setup rather than at the assertion that matters. Excluding it is what
+ * makes the mutation below prove the right thing.
+ *
+ * This is the one thing the byte comparison below CANNOT catch on its own. It
+ * compares the chain against `getCubeHtml`, which is the app's own generator,
+ * so a bug inside that function corrupts both sides equally and they agree. A
+ * dollar sign in a title did exactly that, and shipped: "Worth $$$" was
+ * inscribed as "Worth $$". The guard that works is the round-trip below, which
+ * compares the chain against what was TYPED into the form.
+ */
+const CUBE_TITLE = 'Worth $$$ and A $& B';
+
 const FUND_AMOUNT_BTC = 0.002;
 const FUND_SATS = 200_000;
 
@@ -236,6 +256,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
+  await cubes.locator('[data-testid="cube-title"]').fill(CUBE_TITLE);
 
   const mintCta = cubes.locator('[data-testid="mint-cta"]');
   await expect(mintCta).toBeEnabled({ timeout: 30_000 });
@@ -257,7 +278,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
       inscriptionId5: CUBE_SIDE_IDS[4],
       inscriptionId6: CUBE_SIDE_IDS[5],
     },
-    title: '',
+    title: CUBE_TITLE,
     rotationSpeedX: '',
     rotationSpeedY: '',
     colorPane: '',
@@ -349,6 +370,14 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
     .sort((a, b) => a.trait_type.localeCompare(b.trait_type))
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
+
+  // The independent half. Everything above compares the chain against the
+  // app's own generator, so a bug inside it agrees with itself. This compares
+  // the chain against the string a person typed, decoded by a different
+  // function, and it is the assertion that a dollar sign in a title would have
+  // failed before today's fix.
+  const parsedTitle = parsed!.find((t) => t.trait_type === 'Title')?.value;
+  expect(parsedTitle).toBe(CUBE_TITLE);
 
   if (browserErrors.length) {
     throw new Error(`browser errors during the watch-only mint:\n${browserErrors.join('\n')}`);

@@ -1,6 +1,19 @@
 import { defineConfig } from '@playwright/test';
 import * as path from 'node:path';
 
+// The SDK's regtest helpers (seedDirtyCoin and friends) shell into docker by
+// container name, defaulting to the SDK's own stack (`ordpool-e2e-*`). Cubes
+// runs the same compose file under its own project prefix so the two stacks can
+// coexist on one machine, so the names have to be handed over explicitly.
+// Without this a helper reports "No such container", which reads like a stack
+// that is down rather than a naming mismatch.
+process.env.REGTEST_BITCOIND_CONTAINER ??= 'cubes-e2e-bitcoind';
+process.env.REGTEST_ORD_CONTAINER ??= 'cubes-e2e-cat21-ord';
+process.env.REGTEST_ORD_STOCK_CONTAINER ??= 'cubes-e2e-ord-stock';
+// Same reason for the bitcoind wallet: the compose file creates it named after
+// the project prefix, so the helpers have to be told which one to spend from.
+process.env.REGTEST_WALLET ??= 'cubes-e2e';
+
 /**
  * Regtest e2e suite for cubes-frontend.
  *

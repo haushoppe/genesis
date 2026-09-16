@@ -9,6 +9,7 @@ import {
   isExpectedConsoleError,
   waitForElectrsSync,
   fundCommonSats,
+  expectTipPaid,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -305,9 +306,10 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
   console.log(`[wizz-mint] commit=${commitTxId.slice(0, 12)}… reveal=${revealTxId.slice(0, 12)}…`);
 
   await waitForElectrsSync(mineBlocks(1));
-  await waitForTxConfirmed(commitTxId);
+  const commitTx = await waitForTxConfirmed(commitTxId);
   await waitForElectrsSync(mineBlocks(1));
   const revealTx = await waitForTxConfirmed(revealTxId);
+  expectTipPaid(commitTx, revealTx);
   expect(revealTx.status.block_hash).toBeTruthy();
 
   await waitForOrdStockSync(Number(rpc('getblockcount').trim()));

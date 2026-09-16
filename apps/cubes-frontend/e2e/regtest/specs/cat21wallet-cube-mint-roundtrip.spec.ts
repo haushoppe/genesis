@@ -9,6 +9,7 @@ import {
   isExpectedConsoleError,
   waitForElectrsSync,
   fundCommonSats,
+  expectTipPaid,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -344,9 +345,10 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Mine + wait for both txs to confirm.
   await waitForElectrsSync(mineBlocks(1));
-  await waitForTxConfirmed(commitTxId);
+  const commitTx = await waitForTxConfirmed(commitTxId);
   await waitForElectrsSync(mineBlocks(1));
   const revealTx = await waitForTxConfirmed(revealTxId);
+  expectTipPaid(commitTx, revealTx);
   expect(revealTx.status.block_hash).toBeTruthy();
 
   // Wait for ord-stock to catch up and verify byte-equal HTML.

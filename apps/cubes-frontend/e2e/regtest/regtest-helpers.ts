@@ -4,7 +4,7 @@
 // Expects the regtest stack to be up via `e2e/regtest-bootstrap.sh`
 // and `REGTEST_FUNDED_ADDR` / `REGTEST_FUNDED_WIF` set in env.
 
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 
 const ELECTRS_URL = process.env.REGTEST_ELECTRS_URL ?? 'http://localhost:3010';
@@ -747,4 +747,49 @@ const EXPECTED_CONSOLE_TEXT: RegExp[] = [
 export function isExpectedConsoleError(text: string, url: string): boolean {
   if (url && EXPECTED_MISSING_URL.some((part) => url.includes(part))) return true;
   return EXPECTED_CONSOLE_TEXT.some((re) => re.test(text));
+}
+
+/**
+ * The cube mint pays a fixed tip to an address the minter does not control.
+ * Nothing else in the suite looks at it, so a build that dropped the tip, paid
+ * the wrong address or paid the wrong amount would still produce a valid cube,
+ * still index byte-for-byte, and still pass every wallet lane.
+ *
+ * Asserted per wallet rather than once, because the app only BUILDS the
+ * transaction: the wallet signs it, and a wallet that rewrites outputs is not
+ * hypothetical here. Xverse's Accelerate feature rewrote an unconfirmed CAT-21
+ * mint and dropped its nLockTime=21, which is the same failure shape applied to
+ * a different field.
+ *
+ * The two values are literals owned by the test, never imported from
+ * `environment.regtest.ts`. Importing them would compare the app's output
+ * against the app's own input, so changing the tip would move both sides
+ * together and leave this green. They live here rather than in eight specs so
+ * that one edit updates them, which is safe precisely because this file is not
+ * the code under test.
+ */
+const TIP_ADDRESS = 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk';
+const TIP_SATS = 1000;
+
+/**
+ * Assert the tip was paid exactly once across the commit and reveal pair.
+ * Spans both because either may legitimately carry it; requiring EXACTLY one
+ * match means a tip paid twice fails as loudly as a tip not paid at all.
+ */
+export function expectTipPaid(commitTx: EsploraTx, revealTx: EsploraTx): void {
+  const toTip = [...commitTx.vout, ...revealTx.vout]
+    .map((o) => o as { scriptpubkey_address?: string; value?: number })
+    .filter((o) => o.scriptpubkey_address === TIP_ADDRESS);
+
+  // Matched on address AND amount. A wallet's own ordinals address can equal
+  // the tip address, in which case the cube's 546-sat postage lands here too
+  // and an address-only filter sees two outputs. Pinning the amount keeps the
+  // claim exact without counting the cube: a dropped tip, a tip to the wrong
+  // address and a tip of the wrong size all leave zero matches.
+  const tipOutputs = toTip.filter((o) => o.value === TIP_SATS);
+
+  expect(
+    tipOutputs,
+    `expected exactly one ${TIP_SATS}-sat tip to ${TIP_ADDRESS}, saw ${JSON.stringify(toTip.map((o) => o.value))}`,
+  ).toHaveLength(1);
 }

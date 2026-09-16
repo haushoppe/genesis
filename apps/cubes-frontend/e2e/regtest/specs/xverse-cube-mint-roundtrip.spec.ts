@@ -12,6 +12,7 @@ import {
   isExpectedConsoleError,
   waitForElectrsSync,
   fundCommonSats,
+  expectTipPaid,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -750,9 +751,10 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
 
   // ─── Step 7: mine both txs into blocks ─────────────────────────
   await waitForElectrsSync(mineBlocks(1));
-  await waitForTxConfirmed(commitTxId);
+  const commitTx = await waitForTxConfirmed(commitTxId);
   await waitForElectrsSync(mineBlocks(1));
   const revealTx = await waitForTxConfirmed(revealTxId);
+  expectTipPaid(commitTx, revealTx);
   expect(revealTx.status.block_hash).toBeTruthy();
 
   // ─── Step 8: ord indexes the cube ─────────────────────────────

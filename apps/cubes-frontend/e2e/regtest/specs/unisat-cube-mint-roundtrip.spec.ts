@@ -9,6 +9,7 @@ import {
   isExpectedConsoleError,
   waitForElectrsSync,
   fundCommonSats,
+  expectTipPaid,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -336,9 +337,10 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   console.log('[unisat-mint] ordpool-backend rendered the cube from the mempool (pre-confirmation) ✓');
 
   await waitForElectrsSync(mineBlocks(1));
-  await waitForTxConfirmed(commitTxId);
+  const commitTx = await waitForTxConfirmed(commitTxId);
   await waitForElectrsSync(mineBlocks(1));
   const revealTx = await waitForTxConfirmed(revealTxId);
+  expectTipPaid(commitTx, revealTx);
   expect(revealTx.status.block_hash).toBeTruthy();
 
   // --- PROOF: once mined, the status badge flips to "confirmed" ---

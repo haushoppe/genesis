@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { SideImageProbeService } from './side-image-probe.service';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, map, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the environment BEFORE importing StartComponent: the default env's
@@ -141,7 +141,18 @@ describe('StartComponent: watch-only mint wiring', () => {
         { provide: NgbModal, useValue: { open: vi.fn() } },
         {
           provide: WalletService,
-          useValue: { connectedWallet$: walletSubject, requestWalletConnect: vi.fn() },
+          // walletReadiness$ derives from connectedWallet$ in the real service,
+          // so the stand-in mirrors that: a connected identity is ready, and
+          // nothing connected is disconnected. Shaped from the SDK's published
+          // WalletReadiness union, not invented here.
+          useValue: {
+            connectedWallet$: walletSubject,
+            requestWalletConnect: vi.fn(),
+            disconnectWallet: vi.fn(),
+            walletReadiness$: walletSubject.pipe(
+              map((w) => (w === null ? { state: 'disconnected' as const } : { state: 'ready' as const, wallet: w })),
+            ),
+          },
         },
         { provide: Cat21Service, useValue: cat21 },
         { provide: UtxoContentScanner, useValue: { states$: new BehaviorSubject(new Map()), autoScan: vi.fn(), reset: vi.fn(), scan: vi.fn(() => of(undefined)), classify: vi.fn(() => Promise.resolve('clean')) } },

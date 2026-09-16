@@ -303,6 +303,41 @@ export class StartComponent {
   protected readonly connectedWallet = toSignal(this.walletService.connectedWallet$, { initialValue: null });
 
   /**
+   * Connected is not the same as usable. `connectedWallet$` emits an identity
+   * from two places: a fresh connect, where the extension has demonstrably
+   * answered, and a restore from storage on page load, which emits
+   * synchronously before the extension has necessarily injected its provider.
+   * Rendering identity off the first is right; ACTING on it is not, which is
+   * why the mint gate below waits for `ready` and the template offers a
+   * reconnect on `unreachable` instead of leaving a user clicking at a wallet
+   * that is disabled or removed.
+   *
+   * Watch-only is `ready` immediately and by construction: there is no provider
+   * to wait for, because the signature is made outside the browser.
+   */
+  protected readonly walletReadiness = toSignal(this.walletService.walletReadiness$, {
+    initialValue: { state: 'disconnected' as const },
+  });
+
+  /** The wallet is connected AND its provider has answered. */
+  protected readonly walletReady = computed(() => this.walletReadiness().state === 'ready');
+
+  /**
+   * Drop the stored identity so the picker comes back. The provider never
+   * answered, so there is nothing to disconnect FROM; this clears the restored
+   * identity that is making the app look connected.
+   */
+  protected reconnectWallet(): void {
+    this.walletService.disconnectWallet();
+  }
+
+  /** Set when the identity is known but the provider never appeared. */
+  protected readonly walletUnreachable = computed(() => {
+    const r = this.walletReadiness();
+    return r.state === 'unreachable' ? r.reason : null;
+  });
+
+  /**
    * Single-address custody caveat. Non-null when the connected wallet hands out
    * ONE address for both payment and ordinals (UniSat, Wizz, OKX, Alby) —
    * detected by comparing the two addresses actually returned (`usesSingleAddress`,
@@ -472,6 +507,7 @@ export class StartComponent {
   });
 
   protected readonly canMint = computed(() =>
+    this.walletReady() &&
     this.mintState() === 'ready' &&
     this.mintForm().valid() &&
     this.sidesRender() &&

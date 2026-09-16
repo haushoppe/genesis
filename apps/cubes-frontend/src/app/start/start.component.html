@@ -349,6 +349,19 @@
         </div>
       }
 
+      <!-- The identity is restored from storage on load, so a wallet whose
+           extension is disabled or removed still renders as connected. Without
+           this the only symptom is a confirm button that never enables and
+           never says why. -->
+      @if (walletUnreachable(); as reason) {
+        <div class="alert alert-warning small" role="alert" data-testid="wallet-unreachable">
+          Your wallet is connected but not responding: {{ reason }}.
+          <button type="button" class="btn btn-link p-0 align-baseline" data-testid="wallet-unreachable-reconnect" (click)="reconnectWallet()">
+            Reconnect
+          </button>
+        </div>
+      }
+
       <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
         <button type="button"
                 data-testid="mint-btn"

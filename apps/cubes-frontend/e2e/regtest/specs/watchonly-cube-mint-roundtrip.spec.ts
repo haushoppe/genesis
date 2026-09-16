@@ -86,15 +86,25 @@ const APP_URL = 'http://localhost:4203/';
  * refuse in a way that looks like a wallet bug.
  */
 /**
- * A title carrying the SILENT substitution patterns, and deliberately not the
- * loud one.
+ * The one field a person types that the chain stores back, so it carries every
+ * shape that is known to survive a generator and still arrive wrong:
  *
- * `$$` and `$&` corrupt the title while leaving a structurally valid cube, so
- * they reach the chain and are paid for. `$'` splices the rest of the template
- * into the title, which breaks `parseCube`, trips the Warning sentinel and
- * refuses the mint: unpleasant, but loud, and it would fail this spec at its
- * own setup rather than at the assertion that matters. Excluding it is what
- * makes the mutation below prove the right thing.
+ * - `$$` and `$&`, the SILENT substitution patterns of `String.replace`. They
+ *   corrupt the title while leaving a structurally valid cube, so they reach
+ *   the chain and are paid for.
+ * - `&`, `<`, `>`, `"`, the four characters `escapeCubeTitle` encodes and
+ *   `parseCube` decodes. Asymmetry between those two maps is invisible to any
+ *   assertion that does not start from typed input.
+ * - `&lt;` written out literally, which must come back as those four
+ *   characters and not as `<`. It is the case that forces `&amp;` to decode
+ *   last, and the one a sequential-replace implementation gets wrong.
+ * - Non-ASCII (`café`, an emoji), which passes through unescaped and dies to
+ *   byte-vs-character length handling rather than to escaping.
+ *
+ * `$'` is deliberately absent. It splices the rest of the template into the
+ * title, which breaks `parseCube`, trips the Warning sentinel and refuses the
+ * mint: unpleasant, but loud, and it would fail this spec at its own setup
+ * rather than at the assertion that matters.
  *
  * This is the one thing the byte comparison below CANNOT catch on its own. It
  * compares the chain against `getCubeHtml`, which is the app's own generator,
@@ -103,7 +113,7 @@ const APP_URL = 'http://localhost:4203/';
  * inscribed as "Worth $$". The guard that works is the round-trip below, which
  * compares the chain against what was TYPED into the form.
  */
-const CUBE_TITLE = 'Worth $$$ and A $& B';
+const CUBE_TITLE = 'Worth $$$ & A $& B <b> "q" &lt; café 🧊';
 
 const FUND_AMOUNT_BTC = 0.002;
 const FUND_SATS = 200_000;

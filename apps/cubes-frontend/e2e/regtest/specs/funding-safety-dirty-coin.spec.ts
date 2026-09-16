@@ -95,7 +95,10 @@ test.afterAll(async () => {
 });
 
 for (const asset of ASSETS) {
-  test(`funding safety: a coin carrying ${asset} is never spent to fund a mint`, async () => {
+  // The title carries the matrix value verbatim: CI runs each lane as
+  // `--grep "<matrix value>"`, so a title that does not contain it is a spec
+  // that only ever runs on someone's laptop.
+  test(`funding-safety: a coin carrying ${asset} is never spent to fund a mint`, async () => {
     test.setTimeout(360_000);
 
     // A fresh account per asset: no leftover coin from a previous case can

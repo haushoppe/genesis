@@ -75,6 +75,11 @@ jobs:
           # extension cache and download steps below are each gated on a
           # wallet name, so none of them match and this job simply skips them.
           - watchonly
+          # Not a wallet either: the funding-safety proof, which mints through
+          # the watch-only path with a coin carrying an inscription, a cat, a
+          # rune or a rare sat in the pool and asserts that coin is never spent.
+          # Needs no extension, so the .crx steps below skip it the same way.
+          - funding-safety
           # Oyl removed 2026-08-06: vendor decommissioned the mainnet.ordit.io
           # relay-validator backend the extension calls during signPsbt
           # (DNS NXDOMAIN). The .crx still installs but every sign attempt

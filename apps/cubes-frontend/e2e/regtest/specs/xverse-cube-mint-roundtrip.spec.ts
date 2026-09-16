@@ -2,6 +2,10 @@ import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
+// SEED_USER_DATA_DIR is imported, never re-derived: global-setup owns where
+// the seed lives, and a second hand-maintained copy of that path reads the
+// wrong place, silently, the moment the first one moves.
+import { SEED_USER_DATA_DIR } from '../global-setup';
 import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
@@ -62,8 +66,6 @@ const EXT_PATH = path.resolve(__dirname, '../extensions/xverse');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
 const CUBES_URL = 'http://localhost:4203/';
 const TEST_PASSWORD = 'TestPassword123!';
-const SEED_USER_DATA_DIR = process.env.XVERSE_SEED_USER_DATA_DIR
-  ?? path.resolve(__dirname, '../../../test-results-regtest/xverse-seed-user-data-dir');
 
 /**
  * ~200k sats — comfortably covers postage (546) + reveal fee + tip

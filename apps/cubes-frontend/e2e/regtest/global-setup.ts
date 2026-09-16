@@ -29,7 +29,7 @@ import { onboardXverse, primeAndSwitchToRegtest, overrideRegtestElectrsUrl } fro
  *
  * Dump path:
  *   process.env.XVERSE_STORAGE_DUMP
- *   ?? path.resolve(__dirname, '../../test-results-regtest/xverse-storage.json')
+ *   ?? e2e/regtest/.xverse-seed/xverse-storage.json
  *
  * The test seed is the well-known BIP-39 abandon×11 + about
  * vector and the password is publicly checked into this file.
@@ -38,12 +38,17 @@ import { onboardXverse, primeAndSwitchToRegtest, overrideRegtestElectrsUrl } fro
  */
 
 const EXT_PATH = path.resolve(__dirname, './extensions/xverse');
+// Both seed artifacts live OUTSIDE Playwright's outputDir. Playwright clears
+// that directory at the start of every run, so a cache kept there is gone
+// before the guard below can read it, and each local run re-pays a headed
+// onboarding that only has to happen once.
+const SEED_CACHE_DIR = path.resolve(__dirname, './.xverse-seed');
 const DUMP_PATH = process.env.XVERSE_STORAGE_DUMP
-  ?? path.resolve(__dirname, '../../test-results-regtest/xverse-storage.json');
+  ?? path.join(SEED_CACHE_DIR, 'xverse-storage.json');
 // Seeded chromium user-data-dir — specs clone this per-test so each
 // gets a fresh context but skip the onboarding click flow.
 export const SEED_USER_DATA_DIR = process.env.XVERSE_SEED_USER_DATA_DIR
-  ?? path.resolve(__dirname, '../../test-results-regtest/xverse-seed-user-data-dir');
+  ?? path.join(SEED_CACHE_DIR, 'xverse-seed-user-data-dir');
 
 async function dumpStorage(context: BrowserContext, extensionId: string): Promise<Record<string, unknown>> {
   // chrome.storage.local is only available from extension-origin

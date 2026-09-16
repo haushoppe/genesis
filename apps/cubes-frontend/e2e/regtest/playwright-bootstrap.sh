@@ -24,7 +24,9 @@ set -euo pipefail
 WALLET="${1:-}"
 if [ -z "$WALLET" ]; then
   echo "ERROR: usage: $0 <wallet>" >&2
-  echo "       supported: xverse, unisat, leather" >&2
+  echo "       supported: xverse, unisat, leather, okx, phantom, wizz, alby, cat21wallet" >&2
+  echo "       every wallet the CI matrix runs can be bootstrapped, so the" >&2
+  echo "       whole suite is runnable locally." >&2
   exit 2
 fi
 

@@ -768,7 +768,7 @@ export function isExpectedConsoleError(text: string, url: string): boolean {
  * that one edit updates them, which is safe precisely because this file is not
  * the code under test.
  */
-const TIP_ADDRESS = 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk';
+const TIP_ADDRESS = 'bcrt1pgnmqsy3m04999vwvczfuuualuptlcwnlqx7yrf7y2xwzyswdxpvq92zqwq';
 const TIP_SATS = 1000;
 
 /**
@@ -781,15 +781,17 @@ export function expectTipPaid(commitTx: EsploraTx, revealTx: EsploraTx): void {
     .map((o) => o as { scriptpubkey_address?: string; value?: number })
     .filter((o) => o.scriptpubkey_address === TIP_ADDRESS);
 
-  // Matched on address AND amount. A wallet's own ordinals address can equal
-  // the tip address, in which case the cube's 546-sat postage lands here too
-  // and an address-only filter sees two outputs. Pinning the amount keeps the
-  // claim exact without counting the cube: a dropped tip, a tip to the wrong
-  // address and a tip of the wrong size all leave zero matches.
-  const tipOutputs = toTip.filter((o) => o.value === TIP_SATS);
-
+  // Exactly ONE output reaches the tip address, and it is the tip. The second
+  // half pins the ABSENCE of a fixture collision, which is the thing that
+  // cannot be seen by looking: the tip address used to be the Leather test
+  // wallet's own ordinals address, so the cube's 546-sat postage landed here
+  // too and a tip wrongly paid to the connected wallet read as correct. The
+  // address above is derived from a passphrase no wallet seed reaches, and
+  // this assertion fails the moment someone reintroduces a convenient one.
   expect(
-    tipOutputs,
-    `expected exactly one ${TIP_SATS}-sat tip to ${TIP_ADDRESS}, saw ${JSON.stringify(toTip.map((o) => o.value))}`,
-  ).toHaveLength(1);
+    toTip.map((o) => o.value),
+    `expected exactly one ${TIP_SATS}-sat tip to ${TIP_ADDRESS} and nothing else. ` +
+    `More than one output here means the tip address collides with an address ` +
+    `the wallet itself owns, which blinds this assertion.`,
+  ).toEqual([TIP_SATS]);
 }

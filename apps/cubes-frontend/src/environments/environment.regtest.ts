@@ -40,7 +40,7 @@ export const environment = {
   // sat reads as an "uncommon" rare sat, which would (correctly) force expert-mode.
   ordApiUrl: 'http://localhost:8081',
   cat21OrdApiUrl: 'http://localhost:8080',
-  haushoppeTipAddress: 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk',
+  haushoppeTipAddress: 'bcrt1pgnmqsy3m04999vwvczfuuualuptlcwnlqx7yrf7y2xwzyswdxpvq92zqwq',
   haushoppeTipSats: 1000,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',
   // Witness-capable preview = the real ordpool-backend in the regtest stack

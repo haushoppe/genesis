@@ -80,6 +80,10 @@ jobs:
           # rune or a rare sat in the pool and asserts that coin is never spent.
           # Needs no extension, so the .crx steps below skip it the same way.
           - funding-safety
+          # Not a wallet either: the disabled Mint button has to say WHY it is
+          # disabled while the side-image probe runs. Holds the probe open to
+          # make that window observable; needs no extension.
+          - mint-cta
           # Oyl removed 2026-08-06: vendor decommissioned the mainnet.ordit.io
           # relay-validator backend the extension calls during signPsbt
           # (DNS NXDOMAIN). The .crx still installs but every sign attempt

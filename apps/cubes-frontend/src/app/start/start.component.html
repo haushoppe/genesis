@@ -97,6 +97,18 @@
           </div>
         }
 
+        <!-- The probe decides whether every side decodes as an image, and the
+             Mint button stays off until it answers. Saying so is the whole
+             point: without this the button is disabled, every other branch
+             below is suppressed while the probe runs, and a reader is left
+             clicking a dead control with nothing on screen explaining it. -->
+        @if (sideImageResource.isLoading() && mintForm().valid()) {
+          <p class="text-muted small text-center mb-0" role="status" data-testid="mint-checking-sides">
+            <span class="spinner-border spinner-border-sm align-middle me-2" aria-hidden="true"></span>
+            Checking that all six sides render…
+          </p>
+        }
+
         @if (!canOpenCheckout() && !suggestionResource.isLoading() && !sideImageResource.isLoading() && !blackFacesLabel()) {
           @if (suggestionResource.error()) {
             <div class="alert alert-warning small text-center mb-0" role="alert" data-testid="suggestion-error">

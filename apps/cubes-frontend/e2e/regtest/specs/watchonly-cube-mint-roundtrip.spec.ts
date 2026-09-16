@@ -359,10 +359,25 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
 
   // ─── Step 7: both confirm, ord indexes, bytes match ────────────
   await waitForElectrsSync(mineBlocks(1));
-  await waitForTxConfirmed(commitTxId);
+  const commitTx = await waitForTxConfirmed(commitTxId);
   await waitForElectrsSync(mineBlocks(1));
   const revealTx = await waitForTxConfirmed(revealTxId);
   expect(revealTx.status.block_hash).toBeTruthy();
+
+  // The tip is a payment: every mint sends sats to an address the minter does
+  // not control, and nothing else in this suite looks at it. A build that
+  // dropped the tip, paid the wrong address or paid the wrong amount would
+  // produce a perfectly valid cube and pass all eight wallet lanes.
+  //
+  // Asserted as literals on purpose. `environment.regtest.ts` holds the same
+  // two values, and importing them would compare the app's output against the
+  // app's own input: change either and both sides move together, leaving this
+  // green. A literal is what makes a changed tip turn this red for a human.
+  const tipOutputs = [...commitTx.vout, ...revealTx.vout]
+    .map((o) => o as { scriptpubkey_address?: string; value?: number })
+    .filter((o) => o.scriptpubkey_address === 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk');
+  expect(tipOutputs).toHaveLength(1);
+  expect(tipOutputs[0].value).toBe(1000);
 
   await waitForOrdStockSync(Number(rpc('getblockcount').trim()));
   const { bytes, contentType } = await getStockOrdContent(`${revealTxId}i0`);

@@ -54,10 +54,10 @@ describe('walletPickerRows (Inscription, Desktop)', () => {
     expect(xpub?.installUrl).toBeUndefined();
   });
 
-  it('offers exactly the desktop inscription set, in matrix order', () => {
-    // Positive-equality pin of the full ordered row set: membership + order in
-    // one assertion. Phantom/Binance (mobile-only) being absent is a
-    // consequence of this list, not a separate check.
+  it('offers every inscription-capable wallet, usable ones first', () => {
+    // Positive-equality pin of the full ordered row set: membership AND order
+    // in one assertion. The mobile-only wallets are at the end because the SDK
+    // sorts by actionability, not because they are an afterthought.
     expect(rows().map((r) => r.wallet)).toEqual([
       KnownOrdinalWalletType.cat21wallet,
       KnownOrdinalWalletType.xverse,
@@ -67,13 +67,36 @@ describe('walletPickerRows (Inscription, Desktop)', () => {
       KnownOrdinalWalletType.okx,
       KnownOrdinalWalletType.alby,
       KnownOrdinalWalletType.xpub,
+      KnownOrdinalWalletType.phantom,
+      KnownOrdinalWalletType.binance,
     ]);
   });
 
-  it('excludes mobile-only wallets from the desktop set (Phantom, Binance)', () => {
-    const types = rows().map((r) => r.wallet);
-    expect(types).not.toContain(KnownOrdinalWalletType.phantom);
-    expect(types).not.toContain(KnownOrdinalWalletType.binance);
+  it('shows a wallet this device cannot use, rather than erasing it', () => {
+    // The behaviour this replaced: mobile-only wallets were dropped from a
+    // desktop list entirely. That told someone holding one that we do not
+    // support it, while the same list advertised wallets they do not have. The
+    // assertion is inverted on purpose; the old one pinned the erasure.
+    const phantom = rows().find((r) => r.wallet === KnownOrdinalWalletType.phantom);
+    expect(phantom).toBeDefined();
+    expect(phantom?.reachableHere).toBe(false);
+    expect(phantom?.action).toBe('use-on-mobile');
+    expect(phantom?.actionLabel).toBe('Mobile only');
+  });
+
+  it('gives every unreachable row the SAME action, so one heading covers them', () => {
+    // Load-bearing for the layout: the group carries one heading rather than a
+    // per-row label. That is safe because the SDK derives the action from the
+    // single opposite platform, so a mixed group cannot occur.
+    const actions = new Set(rows().filter((r) => !r.reachableHere).map((r) => r.action));
+    expect([...actions]).toEqual(['use-on-mobile']);
+  });
+
+  it('marks the wallets this device CAN use as reachable', () => {
+    const reachable = rows().filter((r) => r.reachableHere).map((r) => r.wallet);
+    expect(reachable).toContain(KnownOrdinalWalletType.leather);
+    expect(reachable).toContain(KnownOrdinalWalletType.xpub);
+    expect(reachable).not.toContain(KnownOrdinalWalletType.phantom);
   });
 
   it('renders every not-injected non-xpub wallet as an Install row with a real link', () => {
@@ -86,5 +109,39 @@ describe('walletPickerRows (Inscription, Desktop)', () => {
         expect(r.installUrl).toBeTruthy();
       }
     }
+  });
+
+  /**
+   * The case the maintainer actually hit: a phone, with a wallet installed
+   * that the picker had been erasing. Asserted here rather than in the browser
+   * because the platform comes from the user agent, and a headless run cannot
+   * be a phone without pretending to be one.
+   */
+  describe('on a phone', () => {
+    const mobileRows = () =>
+      walletPickerRows({
+        win: {} as unknown as Window,
+        platform: WalletPlatform.Mobile,
+        capability: WalletCapability.Inscription,
+        currentUrl: 'https://cubes.haushoppe.art/',
+      });
+
+    it('shows Leather instead of erasing it, marked as desktop-only', () => {
+      const leather = mobileRows().find((r) => r.wallet === KnownOrdinalWalletType.leather);
+      expect(leather).toBeDefined();
+      expect(leather?.reachableHere).toBe(false);
+      expect(leather?.action).toBe('use-on-desktop');
+    });
+
+    it('still offers the wallets a phone can actually use', () => {
+      const usable = mobileRows().filter((r) => r.reachableHere).map((r) => r.wallet);
+      expect(usable).toContain(KnownOrdinalWalletType.xverse);
+      expect(usable).toContain(KnownOrdinalWalletType.xpub);
+    });
+
+    it('gives the unreachable group one action here too, so one heading covers it', () => {
+      const actions = new Set(mobileRows().filter((r) => !r.reachableHere).map((r) => r.action));
+      expect([...actions]).toEqual(['use-on-desktop']);
+    });
   });
 });

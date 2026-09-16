@@ -28,3 +28,16 @@
     flex: 1 1 auto;
   }
 }
+
+/* The discovery group's logos: small enough to read as part of a sentence
+   rather than as a list of rows, since these wallets are not actionable here. */
+.wallet-logo-sm {
+  border-radius: 3px;
+  vertical-align: -2px;
+  opacity: 0.75;
+}
+
+/* Names wrap as a paragraph; they are prose, not a column. */
+.wallet-unreachable {
+  line-height: 1.8;
+}

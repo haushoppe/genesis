@@ -78,6 +78,45 @@ export class WalletConnectComponent {
     });
   });
 
+  /**
+   * The wallets this device can actually use. The list proper.
+   *
+   * No heading of its own, deliberately: on a phone in an ordinary browser
+   * nothing is injected, so every row here is an Install and there is no
+   * connected row. That is the COMMON case, and a heading over it would be an
+   * orphan label on the majority screen.
+   */
+  protected readonly usableRows = computed(() => this.rows().filter((r) => r.reachableHere));
+
+  /**
+   * Wallets that exist and are supported, but not on this device.
+   *
+   * Shown, not hidden. Hiding them told someone holding Leather on a phone
+   * that we do not support Leather, while the same list happily advertised
+   * wallets they do not have. Discovery, not an affordance: names only, no
+   * buttons, not even disabled ones, since a disabled button is still
+   * announced as a button and still looks pressable.
+   */
+  protected readonly unreachableRows = computed(() => this.rows().filter((r) => !r.reachableHere));
+
+  /**
+   * The heading over that group.
+   *
+   * One heading covers the whole group, and that is provable rather than
+   * conventional: `walletPickerRows` derives every unreachable row's action
+   * from the single opposite platform, so on a phone they are all
+   * `use-on-desktop` and on a desktop all `use-on-mobile`. A mixed group
+   * cannot occur.
+   *
+   * No "we detected Desktop" sentence anywhere: detection is user-agent based,
+   * so an unusual device would read a visibly wrong claim about itself.
+   */
+  protected readonly unreachableHeading = computed(() =>
+    this.unreachableRows()[0]?.action === 'use-on-mobile'
+      ? 'Also supported on mobile'
+      : 'Also supported on desktop',
+  );
+
   /** True when no offered wallet has a provider detected. Drives the
    *  "no wallet detected" hint under the list. */
   protected readonly noneInstalled = computed(

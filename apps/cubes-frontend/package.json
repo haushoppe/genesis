@@ -45,7 +45,7 @@
     "bootstrap-icons": "^1.10.5",
     "buffer": "^6.0.3",
     "canvas-confetti": "^1.6.0",
-    "ordpool-sdk": "github:ordpool-space/ordpool-sdk#df74d03f164f0afb6c354a8546e72a0488b60906",
+    "ordpool-sdk": "github:ordpool-space/ordpool-sdk#cc101f70c438cb48f6f655e47c1ce3e582549f90",
     "process": "^0.11.10",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0",

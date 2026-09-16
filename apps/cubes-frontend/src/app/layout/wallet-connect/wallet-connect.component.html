@@ -10,7 +10,7 @@
 
     <p class="small mb-3" data-testid="wallet-picker-detected" ngbAutofocus tabindex="-1">Connect a wallet to mint your cube.</p>
     <ul class="list-unstyled mb-0" data-testid="wallet-picker-list">
-      @for (row of rows(); track row.wallet) {
+      @for (row of usableRows(); track row.wallet) {
         <li class="wallet-row d-flex align-items-center gap-2 mb-2">
           <img class="wallet-logo" [src]="row.logo" alt="" width="22" height="22">
           <span class="wallet-name text-truncate">{{ row.label }}</span>
@@ -62,6 +62,29 @@
         </li>
       }
     </ul>
+
+    <!-- Wallets that exist and are supported, but not on this device. Shown
+         rather than hidden: hiding them told someone holding Leather on a
+         phone that we do not support Leather, while the list above happily
+         advertised wallets they do not have.
+
+         Discovery, not an affordance, so names only. No buttons, not even
+         disabled ones: a disabled button is still announced as a button and
+         still looks pressable. And no "we detected Desktop" sentence, because
+         detection is user-agent based and an unusual device would read a
+         visibly wrong claim about itself; the heading says enough. -->
+    @if (unreachableRows().length) {
+      <div class="mt-3" data-testid="wallet-picker-also-supported">
+        <p class="text-muted small mb-1">{{ unreachableHeading() }}</p>
+        <p class="small mb-0 wallet-unreachable">
+          @for (row of unreachableRows(); track row.wallet; let last = $last) {
+            <span class="text-nowrap" [attr.data-testid]="'wallet-unreachable-' + row.wallet">
+              <img class="wallet-logo-sm" [src]="row.logo" alt="" width="14" height="14">
+              {{ row.label }}</span>@if (!last) {<span>, </span>}
+          }
+        </p>
+      </div>
+    }
 
     @if (xpubOpen()) {
       <div class="xpub-form border rounded p-3 mt-3" data-testid="wallet-xpub-form">

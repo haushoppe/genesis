@@ -10,6 +10,7 @@ import {
   waitForElectrsSync,
   fundCommonSats,
   expectTipPaid,
+  openWalletPopover,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -18,7 +19,7 @@ import {
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, onboardOkx, waitForApprovalPopup } from 'ordpool-sdk/e2e';
+import { closeLeftoverExtensionPages, onboardOkx } from 'ordpool-sdk/e2e';
 
 /**
  * Full user-flow proof for OKX — cubes.haushoppe.art end-to-end on
@@ -69,18 +70,41 @@ async function shot(p: Page, name: string): Promise<void> {
   }).catch(() => undefined);
 }
 
-async function approveOkxConnectPopup(ctx: BrowserContext, knownPages: Set<Page>): Promise<void> {
-  const approval = await waitForApprovalPopup({
-    context: ctx,
-    knownPages,
-    timeoutMs: 60_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByText('Connect account').first()
-        .waitFor({ state: 'visible', timeout: 60_000 });
-      return true;
-    },
-  });
+/**
+ * Polls the pages that EXIST rather than waiting for a new one.
+ *
+ * OKX reuses a single `notification.html` page, and it is frequently already
+ * open when the connect click lands: opened during onboarding, or opened fast
+ * enough to precede the snapshot of known pages. `waitForApprovalPopup` filters
+ * known pages out and resolves only on a NEW page event, so in that case it
+ * waits its full budget for a page that is already on screen and then reports
+ * that no popup appeared. It is not intermittent: it depends entirely on
+ * whether that page pre-exists, which is why it failed every local run and
+ * passed in CI, where the profile is fresh.
+ *
+ * The sign path in this file already polls for this reason. This is the same
+ * shape, applied to the connect step.
+ */
+async function approveOkxConnectPopup(ctx: BrowserContext): Promise<void> {
+  const deadline = Date.now() + 60_000;
+  let approval: Page | null = null;
+  while (Date.now() < deadline) {
+    for (const p of ctx.pages()) {
+      if (!p.url().startsWith('chrome-extension://')) continue;
+      const text = await p.locator('body').innerText().catch(() => '');
+      if (/Connect account/i.test(text)) {
+        approval = p;
+        break;
+      }
+    }
+    if (approval) break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  if (approval === null) {
+    throw new Error(
+      'OKX connect popup never showed "Connect account" within 60s, on a new page or an existing one.',
+    );
+  }
   await shot(approval, '03a-connect-popup');
   await approval.getByRole('button', { name: /^connect$/i }).first().click();
   await approval.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
@@ -230,14 +254,14 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   await expect(connectLink).toBeVisible({ timeout: 10_000 });
   await shot(cubes, '02b-wallet-picker-open');
 
-  const knownPagesBeforeConnect = new Set(context.pages());
+
   await connectLink.click();
-  await approveOkxConnectPopup(context, knownPagesBeforeConnect);
+  await approveOkxConnectPopup(context);
   await cubes.bringToFront();
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
 
-  await cubes.locator('[data-testid="wallet-connected-btn"]').click();
+  await openWalletPopover(cubes);
   const paymentAddrLoc = cubes.locator('[data-testid="wallet-popover-payment-address"]');
   await expect(paymentAddrLoc).toBeVisible({ timeout: 15_000 });
   const paymentAddr = ((await paymentAddrLoc.getAttribute('title')) ?? (await paymentAddrLoc.textContent()) ?? '').trim();
@@ -250,9 +274,9 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
 
   await cubes.reload({ waitUntil: 'domcontentloaded' });
 
-  const knownPagesBeforeReconnect = new Set(context.pages());
+
   try {
-    await approveOkxConnectPopup(context, knownPagesBeforeReconnect);
+    await approveOkxConnectPopup(context);
   } catch {
     // No reconnect popup — OKX cached the auth.
   }

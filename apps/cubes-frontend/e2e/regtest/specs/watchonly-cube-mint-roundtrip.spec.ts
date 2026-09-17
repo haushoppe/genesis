@@ -17,6 +17,7 @@ import {
   waitForElectrsSync,
   waitForOrdStockSync,
   expectTipPaid,
+  openWalletPopover,
   waitForTxConfirmed,
   waitForUtxoAt,
 } from '../regtest-helpers';
@@ -238,7 +239,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   // is single-address by construction, and if the app ever derived a different
   // one for either role, a mint would be funded from, or land on, a coin the
   // reader does not control.
-  await cubes.locator('[data-testid="wallet-connected-btn"]').click();
+  await openWalletPopover(cubes);
   const paymentLocator = cubes.locator('[data-testid="wallet-popover-payment-address"]');
   const ordinalsLocator = cubes.locator('[data-testid="wallet-popover-ordinals-address"]');
   // The popover renders after the click, so read only once it is on screen.

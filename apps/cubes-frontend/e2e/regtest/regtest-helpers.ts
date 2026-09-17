@@ -795,3 +795,31 @@ export function expectTipPaid(commitTx: EsploraTx, revealTx: EsploraTx): void {
     `the wallet itself owns, which blinds this assertion.`,
   ).toEqual([TIP_SATS]);
 }
+
+/**
+ * Open the connected-wallet popover and return once its contents are on screen.
+ *
+ * The trigger is a toggle, and the wallet row re-renders as the wallet's state
+ * settles after a connect or a reload. A click that lands on the node being
+ * replaced is swallowed: the popover never opens, and the spec fails on the
+ * address element rather than on the click, which reads like a missing element
+ * instead of a lost click. Re-clicking until the content appears is what makes
+ * it deterministic; a single click is correct only if the timing happens to be.
+ *
+ * Deliberately does NOT swallow the end state: if the popover never opens
+ * within the budget, the caller's own expectation fails as it would have.
+ */
+export async function openWalletPopover(page: Page, timeoutMs = 20_000): Promise<void> {
+  const trigger = page.locator('[data-testid="wallet-connected-btn"]');
+  const content = page.locator('[data-testid="wallet-popover-payment-address"]');
+  const deadline = Date.now() + timeoutMs;
+
+  await trigger.waitFor({ state: 'visible', timeout: timeoutMs });
+  while (Date.now() < deadline) {
+    if (await content.isVisible().catch(() => false)) return;
+    await trigger.click().catch(() => undefined);
+    // One settle beat: the popover renders synchronously once the click lands,
+    // so anything longer only slows the common case.
+    if (await content.isVisible({ timeout: 1_000 }).catch(() => false)) return;
+  }
+}

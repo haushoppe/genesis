@@ -10,6 +10,7 @@ import {
   waitForElectrsSync,
   fundCommonSats,
   expectTipPaid,
+  openWalletPopover,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -201,7 +202,7 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 60_000 });
 
-  await cubes.locator('[data-testid="wallet-connected-btn"]').click();
+  await openWalletPopover(cubes);
   const paymentAddrLoc = cubes.locator('[data-testid="wallet-popover-payment-address"]');
   await expect(paymentAddrLoc).toBeVisible({ timeout: 15_000 });
   const paymentAddr = ((await paymentAddrLoc.getAttribute('title')) ?? (await paymentAddrLoc.textContent()) ?? '').trim();

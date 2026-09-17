@@ -331,7 +331,18 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   // must land in the iframe byte-for-byte, wrapped only with the display-only
   // dark meta and a base at the :8999 ord root.
   const preview = cubes.locator('[data-testid="mint-success-preview"]');
-  await expect(preview).toHaveAttribute('srcdoc', /<meta name="color-scheme" content="dark">/, { timeout: 30_000 });
+  // Waits for the BASE, not for the dark meta. The placeholder document this
+  // iframe shows before the bytes arrive carries that same meta by design
+  // (cube-srcdoc.ts paints the stage from the first frame), so waiting on it
+  // is satisfied by the placeholder and the read below then samples the
+  // placeholder instead of the cube. That is not a timing accident: it is a
+  // wait whose condition the intermediate state also meets, and it failed
+  // whenever the fetch had not landed within the same beat.
+  // The iframe loads its bytes on INTERSECTION (ToggleIframeDirective), so an
+  // off-screen preview holds the placeholder indefinitely and no wait can
+  // rescue it. Scrolling it in is part of the scenario, not a workaround.
+  await preview.scrollIntoViewIfNeeded();
+  await expect(preview).toHaveAttribute('srcdoc', /<base href="http:\/\/[^"]+:8999\/">/, { timeout: 30_000 });
   const previewSrcdoc = (await preview.getAttribute('srcdoc')) ?? '';
   expect(previewSrcdoc).toMatch(/<base href="http:\/\/[^"]+:8999\/">/);
   expect(previewSrcdoc.endsWith(expectedCubeHtml.slice(expectedCubeHtml.indexOf('<body>')))).toBe(true);

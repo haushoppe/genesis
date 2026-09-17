@@ -87,6 +87,20 @@ export default async function globalSetup(): Promise<void> {
   // Skip re-onboarding if the seed dir + dump already exist from
   // a previous run with the same Xverse version. Saves ~25s on
   // local re-runs.
+  //
+  // LOCALLY this guard means the onboarding below now runs about once per
+  // machine rather than once per run, and that changes what a local green
+  // proves. The onboarding used to time out at its first wait (the options
+  // page never showing both "restore" and "create") on every local run after
+  // the first, and that timeout is UNEXPLAINED. It stopped appearing when the
+  // cache moved out of Playwright's outputDir, where it was being deleted
+  // before every run. So locally the failing path is not fixed, it is rarely
+  // reached; deleting this cache, or setting the force-reonboard flag, walks
+  // back into it.
+  //
+  // CI is the opposite and is why this is not a coverage hole: every CI run is
+  // a fresh machine with no cache, so the real onboarding executes on every
+  // push and a broken selector fails the xverse lane loudly.
   if (
     fs.existsSync(DUMP_PATH) &&
     fs.existsSync(path.join(SEED_USER_DATA_DIR, 'Default')) &&

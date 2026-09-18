@@ -21,6 +21,7 @@ import {
   NON_IMAGE_SIDE_ID,
 } from '../regtest-helpers';
 import { closeLeftoverExtensionPages, onboardUnisat, waitForApprovalPopup } from 'ordpool-sdk/e2e';
+import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
  * Poll the real ordpool-backend for an inscription's rendered bytes. It
@@ -152,9 +153,11 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
       status: 200,
       contentType: 'application/json',
       headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' },
-      body: JSON.stringify({
-        fastestFee: 5, halfHourFee: 3, hourFee: 1, economyFee: 1, minimumFee: 1,
-      }),
+      // Canonical shape captured from api.ordpool.space, so a contract change
+        // reds here instead of passing against a body we invented. The spread is
+        // passed explicitly because the captured sample came from a quiet mempool
+        // where every tier reads 1-2 sat/vB and cannot separate fastest from hour.
+        body: JSON.stringify(recommendedFeesFixture({ fastestFee: 5, halfHourFee: 3, hourFee: 1 })),
     });
   });
 

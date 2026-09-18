@@ -20,6 +20,7 @@ import {
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
 import { installAlbyAutoApprove, seedAlbyAccount } from 'ordpool-sdk/e2e';
+import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
  * Full user-flow proof for Alby — cubes.haushoppe.art end-to-end on
@@ -159,9 +160,11 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
       status: 200,
       contentType: 'application/json',
       headers: { 'access-control-allow-origin': '*', 'cache-control': 'no-store' },
-      body: JSON.stringify({
-        fastestFee: 5, halfHourFee: 3, hourFee: 1, economyFee: 1, minimumFee: 1,
-      }),
+      // Canonical shape captured from api.ordpool.space, so a contract change
+        // reds here instead of passing against a body we invented. The spread is
+        // passed explicitly because the captured sample came from a quiet mempool
+        // where every tier reads 1-2 sat/vB and cannot separate fastest from hour.
+        body: JSON.stringify(recommendedFeesFixture({ fastestFee: 5, halfHourFee: 3, hourFee: 1 })),
     });
   });
 

@@ -11,11 +11,14 @@ import {
   openDetails,
   RENDERABLE_SIDE_IDS,
   rpc,
+  getUtxos,
   waitForElectrsSync,
   waitForTxConfirmed,
   waitForUtxoAt,
 } from '../regtest-helpers';
-import { seedDirtyCoin, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
+import { seedDirtyCoin, assertDirtyCoinIsBestFit, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
+import { simulateInscribeFees, getDummyKeypair, toScureNetwork, Network } from 'ordpool-sdk';
+import { getCubeHtml } from '../../../src/app/services/cube-html';
 
 /**
  * The funding-safety guard, proven by watching a coin NOT get spent.
@@ -36,7 +39,8 @@ import { seedDirtyCoin, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
  *   2. The dirty coin is bigger than any plausible pick, so selection would
  *      never have taken it regardless. (The SDK's inscription seeder defaulted
  *      to 2 000 000 sats, which best-fit could not choose: a test built on it
- *      would pass with the guard removed.)
+ *      would pass with the guard removed.) `assertDirtyCoinIsBestFit` below
+ *      fails at setup rather than letting that pass silently.
  *   3. The dirty coin is the ONLY coin, so there is nothing to steer to. That
  *      proves the guard FLAGS a coin, not that selection AVOIDS it.
  *
@@ -67,14 +71,27 @@ const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
  */
 const CLEAN_SATS = 2_000_000;
 const CLEAN_BTC = 0.02;
+
 /**
- * 300 000, and the number is load-bearing. At 60 000 this spec passed with the
- * guard NEUTRALISED, because a coin that does not cover the funding requirement
- * is never a candidate and selection reached past it to the clean coin either
- * way. That is trap 2 in the mirror: not too large to be best-fit, too small to
- * be a candidate at all. Measured by neutralising the guard and reading which
- * outpoint the commit actually spent, which is the only way to tell the two
- * apart, since both look like a green test.
+ * The app's own initial fee rate and tip. The simulation below has to describe
+ * the SAME flow the spec then runs, or it measures the requirement of a
+ * different mint.
+ */
+const APP_FEE_RATE = 10;
+const TIP_ADDRESS = 'bcrt1pgnmqsy3m04999vwvczfuuualuptlcwnlqx7yrf7y2xwzyswdxpvq92zqwq';
+const TIP_SATS = 1000;
+/**
+ * Any value that COVERS the funding requirement and is the smallest covering
+ * coin in the pool. Measured, not guessed: `simulateInscribeFees` reports the
+ * requirement at 6 296 sats for a cube body at this fee rate, so both this and
+ * the 60 000 tried earlier qualify, and the premise assertion below proves it
+ * per run rather than trusting the number.
+ *
+ * Correcting a claim this file used to make: 60 000 was NOT too small to be a
+ * candidate. That green came from the Angular dev server's prebundle cache
+ * serving the un-mutated guard, so the mutation never ran at all. With the
+ * cache cleared, a 60 000 dirty coin IS spent by an unguarded selection. The
+ * size was never the problem; the unapplied mutation was.
  */
 const DIRTY_SATS = 300_000;
 
@@ -118,6 +135,56 @@ for (const asset of ASSETS) {
     const dirty = await seedDirtyCoin({ asset, address, valueSats: DIRTY_SATS });
     expect(dirty.value, 'the seeder must honour the size that makes this a candidate').toBe(DIRTY_SATS);
     await waitForElectrsSync(mineBlocks(1));
+
+    // MEASURE the requirement, do not reason about it. `fundingRequirementSats`
+    // is commit output + commit fee, i.e. postage + reveal fee + tip + the
+    // commit's own fee. It does not depend on the funding coin's VALUE (the
+    // commit's vsize turns on the input's script type), so a dummy input shaped
+    // like this wallet's P2TR payment address answers the same number the real
+    // coin would.
+    // The simulator signs with its OWN dummy key, so the dummy input must carry
+    // that key's script. Using the real leaf's key here makes scure find nothing
+    // to sign ("No taproot scripts signed"). The requirement depends on the
+    // input's SCRIPT TYPE, not on whose key it is, so a dummy P2TR input answers
+    // the same number this wallet's P2TR coin would.
+    const dummy = getDummyKeypair(toScureNetwork(Network.Regtest));
+    const body = new TextEncoder().encode(getCubeHtml({
+      inscriptionIds: {
+        inscriptionId1: CUBE_SIDE_IDS[0], inscriptionId2: CUBE_SIDE_IDS[1],
+        inscriptionId3: CUBE_SIDE_IDS[2], inscriptionId4: CUBE_SIDE_IDS[3],
+        inscriptionId5: CUBE_SIDE_IDS[4], inscriptionId6: CUBE_SIDE_IDS[5],
+      },
+      title: '', rotationSpeedX: '', rotationSpeedY: '',
+      colorPane: '', bgColor1: '', bgColor2: '',
+    } as never));
+    const { fundingRequirementSats } = simulateInscribeFees({
+      feeRatePerVbyte: APP_FEE_RATE,
+      body,
+      contentType: 'text/html;charset=utf-8',
+      fundingInput: {
+        txid: dirty.txid,
+        vout: dirty.vout,
+        value: dirty.value,
+        scriptPubKey: btc.p2tr(dummy.xOnlyDummyPublicKey, undefined, REGTEST).script,
+        tapInternalKey: dummy.xOnlyDummyPublicKey,
+      },
+      senderChangeAddress: dummy.addressP2TR,
+      recipientAddress: dummy.addressP2TR,
+      ephemeralPubkeyXonly: dummy.xOnlyDummyPublicKey,
+      network: 'regtest',
+      tip: { address: TIP_ADDRESS, value: TIP_SATS },
+    } as never);
+
+    // The premise, asserted instead of assumed: this coin has to be the one an
+    // unguarded best-fit selection would take. If it is not, the mutation goes
+    // green and the spec proves nothing, which is what happened at 60 000.
+    const pool = [
+      { txid: dirty.txid, vout: dirty.vout, value: dirty.value },
+      ...(await getUtxos(address))
+        .filter((u) => !(u.txid === dirty.txid && u.vout === dirty.vout))
+        .map((u) => ({ txid: u.txid, vout: u.vout, value: u.value })),
+    ];
+    assertDirtyCoinIsBestFit(pool, `${dirty.txid}:${dirty.vout}`, fundingRequirementSats as number);
 
     const page: Page = await browser.newPage();
     const errors: string[] = [];

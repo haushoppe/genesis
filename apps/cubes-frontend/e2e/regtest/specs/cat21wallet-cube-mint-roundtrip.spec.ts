@@ -11,6 +11,7 @@ import {
   fundCommonSats,
   expectTipPaid,
   openWalletPopover,
+  readWalletPopoverAddress,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -225,10 +226,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Extract the regtest payment address from the header popover — the
   // full-address element, not the shortened wallet-connected label.
-  await openWalletPopover(cubes);
-  const paymentAddrLoc = cubes.locator('[data-testid="wallet-popover-payment-address"]');
-  await expect(paymentAddrLoc).toBeVisible({ timeout: 15_000 });
-  const paymentAddr = ((await paymentAddrLoc.getAttribute('title')) ?? (await paymentAddrLoc.textContent()) ?? '').trim();
+  const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   expect(paymentAddr).toMatch(/^bcrt1q/);
   console.log(`[cat21wallet-mint] payment address: ${paymentAddr}`);
   // Close the popover.

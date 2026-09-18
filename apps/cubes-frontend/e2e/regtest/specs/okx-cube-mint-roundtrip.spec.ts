@@ -11,6 +11,7 @@ import {
   fundCommonSats,
   expectTipPaid,
   openWalletPopover,
+  readWalletPopoverAddress,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -264,10 +265,7 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
 
-  await openWalletPopover(cubes);
-  const paymentAddrLoc = cubes.locator('[data-testid="wallet-popover-payment-address"]');
-  await expect(paymentAddrLoc).toBeVisible({ timeout: 15_000 });
-  const paymentAddr = ((await paymentAddrLoc.getAttribute('title')) ?? (await paymentAddrLoc.textContent()) ?? '').trim();
+  const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   // OKX's default is BIP-86 Taproot (bcrt1p on regtest).
   expect(paymentAddr).toMatch(/^bcrt1[qp]|^2/);
   console.log(`[okx-mint] payment address: ${paymentAddr}`);

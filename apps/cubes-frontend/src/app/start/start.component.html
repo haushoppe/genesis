@@ -274,6 +274,14 @@
               }
               @if (selectedUtxo()) {
                 <p class="mb-0 mt-2 text-muted small">✓ You picked this funding coin.</p>
+              } @else if (fundingAssetNotice()) {
+                <!-- The clean-pick sentence would contradict the notice directly
+                     below it, which names what this very coin carries. Saying
+                     both is worse than saying neither: a reader who believes the
+                     reassurance stops reading the notice. -->
+                <p class="mb-0 mt-2 text-muted small" data-testid="mint-auto-pick-asset-note">
+                  ⚠ No content-clean coin covers this mint, so the coin below was picked and its contents are listed.
+                </p>
               } @else {
                 <p class="mb-0 mt-2 text-muted small">✓ Best content-clean UTXO auto-picked. Larger coins are content-checked too, so a coin carrying an inscription, rune, cat or rare sat is never auto-spent.</p>
               }

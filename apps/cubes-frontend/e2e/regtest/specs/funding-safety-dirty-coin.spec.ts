@@ -17,7 +17,7 @@ import {
   waitForUtxoAt,
 } from '../regtest-helpers';
 import { seedDirtyCoin, assertDirtyCoinIsBestFit, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
-import { simulateInscribeFees, prepareInscribeFundingInput, Network } from 'ordpool-sdk';
+import { simulateInscribeFees, prepareInscribeFundingInput, changeDustFloor, Network } from 'ordpool-sdk';
 import { getCubeHtml } from '../../../src/app/services/cube-html';
 
 /**
@@ -185,7 +185,13 @@ for (const asset of ASSETS) {
         .filter((u) => !(u.txid === dirty.txid && u.vout === dirty.vout))
         .map((u) => ({ txid: u.txid, vout: u.vout, value: u.value })),
     ];
-    assertDirtyCoinIsBestFit(pool, `${dirty.txid}:${dirty.vout}`, fundingRequirementSats as number);
+    // The 4th argument mirrors selection's CHANGE-HEADROOM target, which it
+    // prefers whenever any candidate clears it. Without it a coin sized between
+    // the two targets passes this guard while never being a candidate, and the
+    // resulting green reads as a protection that does not exist. Inscribe's two
+    // targets sit further apart than a mint's, so the gap is wider here.
+    const preferred = (fundingRequirementSats as number) + changeDustFloor(address);
+    assertDirtyCoinIsBestFit(pool, `${dirty.txid}:${dirty.vout}`, fundingRequirementSats as number, preferred);
 
     const page: Page = await browser.newPage();
     const errors: string[] = [];

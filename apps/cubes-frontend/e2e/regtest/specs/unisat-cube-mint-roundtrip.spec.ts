@@ -11,6 +11,7 @@ import {
   fundCommonSats,
   expectTipPaid,
   openWalletPopover,
+  readWalletPopoverAddress,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -212,10 +213,7 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
 
-  await openWalletPopover(cubes);
-  const paymentAddrLoc = cubes.locator('[data-testid="wallet-popover-payment-address"]');
-  await expect(paymentAddrLoc).toBeVisible({ timeout: 15_000 });
-  const paymentAddr = ((await paymentAddrLoc.getAttribute('title')) ?? (await paymentAddrLoc.textContent()) ?? '').trim();
+  const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   // Unisat's default address type is BIP-84 P2WPKH (bc1q…); SDK shim
   // rewrites to bcrt1q. Users who selected other address types would
   // see bcrt-2… (Nested SegWit) or bcrt1p… (Taproot); address-type

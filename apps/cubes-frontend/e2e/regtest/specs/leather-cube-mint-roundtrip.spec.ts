@@ -11,6 +11,7 @@ import {
   fundCommonSats,
   expectTipPaid,
   openWalletPopover,
+  readWalletPopoverAddress,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -207,10 +208,7 @@ test('mint a cube via Leather: fill form → sign in wallet → broadcast → or
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
 
-  await openWalletPopover(cubes);
-  const paymentAddrLoc = cubes.locator('[data-testid="wallet-popover-payment-address"]');
-  await expect(paymentAddrLoc).toBeVisible({ timeout: 15_000 });
-  const paymentAddr = ((await paymentAddrLoc.getAttribute('title')) ?? (await paymentAddrLoc.textContent()) ?? '').trim();
+  const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   // The shim's whole point: Leather returns mainnet at the connector,
   // the SDK shim rewrites to bcrt before the app sees it.
   expect(paymentAddr).toMatch(/^bcrt1q/);

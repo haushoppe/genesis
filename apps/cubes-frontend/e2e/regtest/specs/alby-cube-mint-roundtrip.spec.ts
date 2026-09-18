@@ -11,6 +11,7 @@ import {
   fundCommonSats,
   expectTipPaid,
   openWalletPopover,
+  readWalletPopoverAddress,
   waitForTxConfirmed,
   rpc,
   mineBlocks,
@@ -205,10 +206,7 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 60_000 });
 
-  await openWalletPopover(cubes);
-  const paymentAddrLoc = cubes.locator('[data-testid="wallet-popover-payment-address"]');
-  await expect(paymentAddrLoc).toBeVisible({ timeout: 15_000 });
-  const paymentAddr = ((await paymentAddrLoc.getAttribute('title')) ?? (await paymentAddrLoc.textContent()) ?? '').trim();
+  const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   // Alby is Taproot-only on regtest — bcrt1p prefix, and specifically
   // the pinned BIP-86 derivation of the test seed.
   expect(paymentAddr).toBe(EXPECTED_REGTEST_TAPROOT);

@@ -823,3 +823,29 @@ export async function openWalletPopover(page: Page, timeoutMs = 20_000): Promise
     if (await content.isVisible({ timeout: 1_000 }).catch(() => false)) return;
   }
 }
+
+/**
+ * Read an address out of the connected-wallet popover, re-opening if it closes.
+ *
+ * `openWalletPopover` makes OPENING deterministic; reading is still two steps,
+ * and the wallet row re-renders as its state settles, so an element that passed
+ * `toBeVisible` can be gone by the time `getAttribute` runs. That surfaces as a
+ * getAttribute timeout on a locator the previous line just asserted visible,
+ * which reads like a Playwright fault and is a re-render.
+ *
+ * The VISIBLE text is elided in the middle, so the address comes from `title`.
+ */
+export async function readWalletPopoverAddress(
+  page: Page,
+  testId: 'wallet-popover-payment-address' | 'wallet-popover-ordinals-address',
+  timeoutMs = 30_000,
+): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  let last = '';
+  while (Date.now() < deadline) {
+    await openWalletPopover(page, Math.max(2_000, deadline - Date.now()));
+    last = (await page.locator(`[data-testid="${testId}"]`).getAttribute('title').catch(() => null))?.trim() ?? '';
+    if (last.length > 0) return last;
+  }
+  throw new Error(`could not read ${testId} within ${timeoutMs}ms (last value: "${last}")`);
+}

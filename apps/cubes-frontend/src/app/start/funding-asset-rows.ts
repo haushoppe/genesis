@@ -131,3 +131,47 @@ export function fundingAssetRows(
 
   return rows;
 }
+
+/**
+ * Rows for the assets the SDK reports on the coin it RECOMMENDED, as opposed to
+ * the scanner state behind a picker row. Same rendering, different source: the
+ * recommendation is what the guard actually decided about, so a notice built
+ * from it cannot describe a different coin than the one being spent.
+ */
+export function assetDetailRows(
+  assets: {
+    inscriptionIds: readonly string[];
+    runeNames: readonly string[];
+    catIds: readonly string[];
+    rareSat: { sat: string; block: number; rarity: string } | null;
+  },
+  runeEtchings?: ReadonlyMap<string, string>,
+): FundingAssetRow[] {
+  const rows: FundingAssetRow[] = [];
+
+  for (const id of assets.inscriptionIds) {
+    rows.push({ kind: 'inscription', label: id, href: TX_BASE + inscriptionTxid(id) });
+  }
+
+  // The recommendation carries rune NAMES without balances, so the row shows
+  // the name alone. A balance would have to come from somewhere else, and that
+  // is the second source this function exists to avoid.
+  for (const name of assets.runeNames) {
+    const etching = runeEtchings?.get(name);
+    rows.push({ kind: 'rune', label: name, href: etching ? TX_BASE + etching : null });
+  }
+
+  for (const id of assets.catIds) {
+    rows.push({ kind: 'cat', label: id, href: TX_BASE + inscriptionTxid(id) });
+  }
+
+  if (assets.rareSat) {
+    rows.push({
+      kind: 'rare-sat',
+      label: `${assets.rareSat.rarity} sat ${assets.rareSat.sat} (block ${assets.rareSat.block})`,
+      href: SAT_BASE + assets.rareSat.sat,
+    });
+  }
+
+  return rows;
+}

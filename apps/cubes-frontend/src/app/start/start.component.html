@@ -228,7 +228,13 @@
            Auto-opened when the insufficient-funds alert fires so the
            user can find the fee-rate the alert points at without
            hunting for the disclosure. -->
-      <details class="mb-3" data-testid="mint-advanced" [attr.open]="hasInsufficientFunds() ? '' : null">
+      <!-- Opens itself whenever there is something the reader MUST see before
+           clicking: not enough funds, a coin carrying assets we are about to
+           spend (notice), or a blocked mint (warning). A reason folded inside a
+           collapsed section is not a reason the reader was given, and for the
+           notice case enabled is not permission to bury it. -->
+      <details class="mb-3" data-testid="mint-advanced"
+               [attr.open]="hasInsufficientFunds() || fundingAssetNotice() || fundingExpertRequired() ? '' : null">
         <summary class="text-muted small" style="cursor: pointer">
           <i class="bi bi-sliders me-1"></i>
           Advanced: fee rate + UTXO
@@ -271,6 +277,32 @@
               } @else {
                 <p class="mb-0 mt-2 text-muted small">✓ Best content-clean UTXO auto-picked. Larger coins are content-checked too, so a coin carrying an inscription, rune, cat or rare sat is never auto-spent.</p>
               }
+            </div>
+          }
+
+          <!-- NOTICE, not a warning: this wallet keeps its spending money on a
+               different address from its ordinals, so the coin is named and the
+               mint PROCEEDS. Placed above the confirm button on purpose, because
+               enabled is not permission to bury it: the reader has to be able to
+               see what the coin carries without scrolling to find it. -->
+          @if (fundingAssetNotice()) {
+            <div class="alert alert-info py-2 px-3 small" role="alert" data-testid="mint-asset-notice">
+              <strong>Heads up:</strong> no coin of yours is verified clear of ordinal-bound
+              assets, so this mint will be funded by a coin that carries:
+              <ul class="mb-1 mt-1 ps-3" data-testid="mint-asset-notice-list">
+                @for (row of noticeAssetRows(); track row.label) {
+                  <li>
+                    @if (row.href) {
+                      <a [href]="row.href" target="_blank" rel="noopener" data-testid="mint-asset-notice-item">{{ row.label }}</a>
+                    } @else {
+                      <span data-testid="mint-asset-notice-item">{{ row.label }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+              Spending it moves those to the miner's change, not to you. Your ordinals
+              address is separate, so nothing there is at risk. Pick a different coin
+              below if you would rather not.
             </div>
           }
 

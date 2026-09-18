@@ -44,7 +44,7 @@ import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { cubeListQueryParams, CubeSort, toCubePage, toCubeSort } from '../services/cubes-data/cube-order';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
-import { FundingAssetRow, fundingAssetRows } from './funding-asset-rows';
+import { assetDetailRows, FundingAssetRow, fundingAssetRows } from './funding-asset-rows';
 import { RuneEtchingService } from './rune-etching.service';
 import { allSidesRender, blackFaces } from './side-image-check';
 import { SideImageProbeService } from './side-image-probe.service';
@@ -215,6 +215,15 @@ export class StartComponent {
     scan: this.scanner,
     broadcast: (signedTxHex) => firstValueFrom(this.cat21.postTransaction(signedTxHex)),
     network: this.deriveNetwork(),
+    // How hard to stand in the way when only an asset-bearing coin can fund the
+    // mint. 'derive' reads it off the connected wallet's own addresses: a wallet
+    // that keeps payments separate from ordinals gets a NOTICE and proceeds,
+    // a wallet using one address for everything gets a WARNING and is blocked
+    // until the reader picks a coin explicitly, because there the assets and the
+    // spending money share a lane. Opting in rather than defaulting, because
+    // omitting it blocks everyone, and deriving it here is the only form that
+    // cannot go stale: no wallet-name list to rot when a wallet changes model.
+    fundingTopology: 'derive',
   });
   private readonly snap = signal<InscribeSnapshot>(this.orch.getSnapshot());
 
@@ -497,7 +506,32 @@ export class StartComponent {
     const manual = this.selectedUtxo();
     if (manual) return manual;
     const rec = this.fundingRecommendation();
-    return rec.status === 'auto' ? rec.recommended : null;
+    // `asset-notice` resolves to a coin exactly like `auto` does: the reader is
+    // TOLD what is on it and proceeds. Only `expert-required` withholds the
+    // coin, because there it must be an explicit choice.
+    return rec.status === 'auto' || rec.status === 'asset-notice' ? rec.recommended : null;
+  });
+
+  /**
+   * Only asset-bearing coins cover, and this wallet keeps payments on a
+   * SEPARATE address from its ordinals, so an accidental spend is far less
+   * likely and the reader is informed rather than blocked.
+   */
+  protected readonly fundingAssetNotice = computed(() => this.fundingRecommendation().status === 'asset-notice');
+
+  /**
+   * What the funding coin carries, named, from the recommendation itself.
+   *
+   * Deliberately NOT a second lookup against the scanner: the guard decided
+   * about one coin, and a panel that names assets from a different source can
+   * describe a different coin than the one being spent, silently. A notice
+   * that does not say WHAT is on the coin is not a notice.
+   */
+  protected readonly noticeAssetRows = computed<FundingAssetRow[]>(() => {
+    const rec = this.fundingRecommendation();
+    const assets = rec.recommended?.assets;
+    if (!assets) return [];
+    return assetDetailRows(assets, this.runeEtchings.etchings());
   });
 
   /** True when only asset-bearing coins cover the cost. Surfaces the picker. */

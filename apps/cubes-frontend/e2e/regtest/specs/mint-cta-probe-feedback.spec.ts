@@ -39,6 +39,18 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
 
   page = await browser.newPage();
 
+  // Navigate FIRST, then start holding. The hold below blocks every request to
+  // the probe host, and the page's own load pulls images from that same host,
+  // so installing the route first makes `page.goto` wait for a load event that
+  // the route itself is preventing. That is a deadlock of the spec's own making
+  // and it timed out at 30s in CI while passing locally on timing.
+  //
+  // `domcontentloaded` for the same reason: this spec deliberately leaves
+  // requests outstanding, so waiting for a quiet load is waiting for something
+  // it has decided will not happen.
+  await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+
   // Hold every probe image until released. The probe loads each side from
   // `sideImageProbeBase`, which is the same host the cubes index uses.
   let release: (() => void) | undefined;
@@ -47,9 +59,6 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
     await held;
     await route.abort();
   });
-
-  await page.goto(APP_URL);
-  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
   await openDetails(page, 'configurator-advanced');
   for (let i = 0; i < 6; i++) {

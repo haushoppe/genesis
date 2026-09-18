@@ -89,7 +89,12 @@ if [ "$WALLET" = "cat21wallet" ] && [ -z "${CAT21_WALLET_LOCAL_DIST:-}" ]; then
   exit 2
 fi
 
-CRX_FILE="$(mktemp "/tmp/${WALLET}.XXXXXX.crx")"
+# The extension goes on the END, after mktemp has run. BSD mktemp only
+# substitutes X's at the end of a template: given "...XXXXXX.crx" it returns the
+# template VERBATIM, so every run on a Mac writes the same fixed path and the
+# second one dies with "mkstemp failed ... File exists". GNU mktemp accepts the
+# suffix, which is why CI never saw this and every local run did.
+CRX_FILE="$(mktemp "/tmp/${WALLET}.XXXXXX").crx"
 
 trap 'rm -f "$CRX_FILE"' EXIT
 

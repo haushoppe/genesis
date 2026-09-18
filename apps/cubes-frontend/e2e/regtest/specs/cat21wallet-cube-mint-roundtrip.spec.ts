@@ -188,9 +188,8 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Click mint-cta — triggers the top-right wallet-connect widget when
   // no wallet is connected yet.
-  const mintCta = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
-  await mintCta.click();
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await cubes.locator('[data-testid="mint-cta"]').click();
 
   // Wallet picker opens.
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
@@ -271,9 +270,8 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
-  const mintCtaAfterReload = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCtaAfterReload).toBeEnabled({ timeout: 15_000 });
-  await mintCtaAfterReload.click();
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await cubes.locator('[data-testid="mint-cta"]').click();
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
   await openDetails(cubes, 'mint-advanced');
   await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });

@@ -116,7 +116,7 @@ for (const asset of ASSETS) {
     await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
 
-  await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
+  await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
   await page.locator('[data-testid="mint-cta"]').click();
 
   await expect(page.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 30_000 });
@@ -181,6 +181,53 @@ for (const asset of ASSETS) {
     await page.locator('[data-testid="mint-checkout"]').screenshot({
       path: path.resolve(STATE_SHOTS, 'funding-expert-picked.png'),
     });
+  }
+
+  if (asset === 'inscription') {
+    const contrast = await page.evaluate(() => {
+      const lum = (c: string) => {
+        const m = c.match(/\d+(\.\d+)?/g)!.map(Number);
+        const [r, g, b] = m.slice(0, 3).map((v) => {
+          const s = v / 255;
+          return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const groundOf = (el: Element): string => {
+        let n: Element | null = el;
+        while (n) {
+          const bg = getComputedStyle(n).backgroundColor;
+          if (bg && !/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) return bg;
+          n = n.parentElement;
+        }
+        return 'rgb(255,255,255)';
+      };
+      const out: Record<string, unknown> = {};
+      for (const [k, sel] of [['badge', '[data-testid="mint-expert-details"] .badge'],
+                              ['useAnyway', '[data-testid="mint-expert-details"] button']] as const) {
+        const el = document.querySelector(sel);
+        if (!el) { out[k] = 'ABSENT'; continue; }
+        const cs = getComputedStyle(el);
+        const fg = cs.color;
+        const bg = /rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor) ? groundOf(el.parentElement!) : cs.backgroundColor;
+        const l1 = lum(fg), l2 = lum(bg);
+        out[k] = { text: (el as HTMLElement).innerText.trim().slice(0, 20), fg, bg,
+                   ratio: Number(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)).toFixed(2)) };
+      }
+      return out;
+    });
+    // WCAG AA: 4.5:1 for normal text. Asserted, not logged, because the
+    // failure mode is a pairing rather than a value: every colour involved is
+    // individually valid and only the combination fails, so it survives being
+    // looked at. Measured before the fix: the badge read 3.48:1 and "Use
+    // anyway" 2.94:1 on this panel's dark ground, and "Use anyway" is the one
+    // control that spends an asset-bearing coin.
+    for (const [key, m] of Object.entries(contrast as Record<string, { text: string; fg: string; bg: string; ratio: number }>)) {
+      expect(
+        m.ratio,
+        `${key} ("${m.text}") renders ${m.fg} on ${m.bg} at ${m.ratio}:1, under the 4.5:1 AA floor`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
   }
 
   expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([]);

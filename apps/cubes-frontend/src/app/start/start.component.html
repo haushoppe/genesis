@@ -319,7 +319,7 @@
               None of your spendable coins are verified clear of ordinal-bound
               assets, so the safe auto-pick won't spend one for you. Choose a
               funding coin below. A coin marked
-              <span class="badge bg-danger">{{ bucketLabel('assets') }}</span> WILL be spent
+              <span class="badge bg-danger-subtle text-danger-emphasis">{{ bucketLabel('assets') }}</span> WILL be spent
               (and its inscription / cat / rare sat moved) if you pick it.
             </div>
           }
@@ -336,11 +336,21 @@
                       <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
                       · {{ row.utxo.value | number }} sat
                       · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
+                      <!-- Subtle fill + emphasis text, not a saturated fill with
+                           near-white text. Measured on this panel's own dark
+                           ground: bg-danger with the inherited body colour gave
+                           3.48:1, under the 4.5:1 a badge needs as normal text.
+                           Every colour was individually valid; only the pairing
+                           failed, which is why it survived being looked at. -->
                       <span class="badge ms-2"
-                            [class.bg-success]="row.bucket === 'clean'"
-                            [class.bg-danger]="row.bucket === 'assets'"
-                            [class.bg-secondary]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
-                            [class.bg-warning]="row.bucket === 'failed'">
+                            [class.bg-success-subtle]="row.bucket === 'clean'"
+                            [class.text-success-emphasis]="row.bucket === 'clean'"
+                            [class.bg-danger-subtle]="row.bucket === 'assets'"
+                            [class.text-danger-emphasis]="row.bucket === 'assets'"
+                            [class.bg-secondary-subtle]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
+                            [class.text-secondary-emphasis]="row.bucket === 'unscanned' || row.bucket === 'scanning'"
+                            [class.bg-warning-subtle]="row.bucket === 'failed'"
+                            [class.text-warning-emphasis]="row.bucket === 'failed'">
                         {{ bucketLabel(row.bucket) }}
                       </span>
                       @if (effectiveFundingUtxo()?.txid === row.utxo.txid && effectiveFundingUtxo()?.vout === row.utxo.vout) {
@@ -353,10 +363,14 @@
                           {{ row.bucket === 'failed' ? 'Retry scan' : 'Scan' }}
                         </button>
                       }
+                      <!-- Filled, not outlined. Outline-danger paints its label
+                           in #dc3545 on this panel's #2b3035 ground: measured
+                           2.94:1, under the 3:1 a control needs, and this is the
+                           one control that spends an asset-bearing coin. -->
                       <button type="button" class="btn btn-sm text-nowrap"
                               [attr.data-testid]="'mint-expert-pick-' + idx"
                               [class.btn-outline-primary]="row.bucket !== 'assets'"
-                              [class.btn-outline-danger]="row.bucket === 'assets'"
+                              [class.btn-danger]="row.bucket === 'assets'"
                               (click)="pickUtxo(row.utxo)">
                         {{ row.bucket === 'assets' ? 'Use anyway' : 'Use this UTXO' }}
                       </button>

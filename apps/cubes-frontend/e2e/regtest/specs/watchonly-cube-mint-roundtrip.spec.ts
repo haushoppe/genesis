@@ -12,6 +12,7 @@ import {
   isExpectedConsoleError,
   mineBlocks,
   openDetails,
+  openMintCheckout,
   RENDERABLE_SIDE_IDS,
   rpc,
   waitForElectrsSync,
@@ -270,9 +271,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   }
   await cubes.locator('[data-testid="cube-title"]').fill(CUBE_TITLE);
 
-  const mintCta = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCta).toBeEnabled({ timeout: 30_000 });
-  await mintCta.click();
+  await openMintCheckout(cubes);
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
   await expect(mintBtn).toBeEnabled({ timeout: 60_000 });

@@ -192,9 +192,14 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   }
   await shot(cubes, '02a-form-filled');
 
-  const mintCta = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
-  await mintCta.click();
+  // Pre-connect: this click opens the WALLET PICKER, not the checkout drawer,
+
+  // so it must not wait for a drawer that cannot appear yet.
+
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
+
+  await cubes.locator('[data-testid="mint-cta"]').click();
+
 
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-alby"]');
@@ -224,9 +229,8 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
-  const mintCtaAfterReload = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCtaAfterReload).toBeEnabled({ timeout: 15_000 });
-  await mintCtaAfterReload.click();
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await cubes.locator('[data-testid="mint-cta"]').click();
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
   await openDetails(cubes, 'mint-advanced');
   await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });

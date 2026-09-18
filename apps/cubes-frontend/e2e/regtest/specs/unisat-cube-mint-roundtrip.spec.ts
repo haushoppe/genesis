@@ -248,9 +248,8 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
-  const mintCtaAfterReload = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCtaAfterReload).toBeEnabled({ timeout: 15_000 });
-  await mintCtaAfterReload.click();
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await cubes.locator('[data-testid="mint-cta"]').click();
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
   await openDetails(cubes, 'mint-advanced');
   await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });

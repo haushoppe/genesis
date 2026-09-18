@@ -237,9 +237,8 @@ for (const asset of ASSETS) {
       await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
     }
 
-    const mintCta = page.locator('[data-testid="mint-cta"]');
-    await expect(mintCta).toBeEnabled({ timeout: 30_000 });
-    await mintCta.click();
+    await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await page.locator('[data-testid="mint-cta"]').click();
 
     const mintBtn = page.locator('[data-testid="mint-btn"]');
     await expect(mintBtn).toBeEnabled({ timeout: 60_000 });

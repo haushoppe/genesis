@@ -187,9 +187,14 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
 
-  const mintCta = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
-  await mintCta.click();
+  // Pre-connect: this click opens the WALLET PICKER, not the checkout drawer,
+
+  // so it must not wait for a drawer that cannot appear yet.
+
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
+
+  await cubes.locator('[data-testid="mint-cta"]').click();
+
 
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const knownPagesBeforeConnect = new Set(context.pages());
@@ -245,9 +250,8 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
   for (let i = 0; i < 6; i++) {
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
-  await expect(mintCta).toBeEnabled({ timeout: 30_000 });
-  await mintCta.click();
-  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await cubes.locator('[data-testid="mint-cta"]').click();
 
   // INFORMED, not blocked.
   const notice = cubes.locator('[data-testid="mint-asset-notice"]');

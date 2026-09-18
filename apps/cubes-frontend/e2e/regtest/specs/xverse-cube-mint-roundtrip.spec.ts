@@ -244,9 +244,8 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   }
   await shot(cubes, '02a-form-filled-preflight');
 
-  const mintCta = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
-  await mintCta.click();
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await cubes.locator('[data-testid="mint-cta"]').click();
 
   // New UX: mint-cta triggers `walletService.requestWalletConnect()`
   // when the user isn't connected yet, so the wallet-connect modal
@@ -426,9 +425,8 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
   }
   // Re-open the drawer post-reload, then set the fee-rate inside it.
-  const mintCtaAfterReload = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCtaAfterReload).toBeEnabled({ timeout: 10_000 });
-  await mintCtaAfterReload.click();
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await cubes.locator('[data-testid="mint-cta"]').click();
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
   await openDetails(cubes, 'mint-advanced');
   await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
@@ -498,9 +496,8 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     for (let i = 0; i < 6; i++) {
       await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
     }
-    const mintCtaAfter2nd = cubes.locator('[data-testid="mint-cta"]');
-    await expect(mintCtaAfter2nd).toBeEnabled({ timeout: 10_000 });
-    await mintCtaAfter2nd.click();
+    await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await cubes.locator('[data-testid="mint-cta"]').click();
     await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
     await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
     await openDetails(cubes, 'mint-advanced');

@@ -815,12 +815,20 @@ export async function openWalletPopover(page: Page, timeoutMs = 20_000): Promise
   const deadline = Date.now() + timeoutMs;
 
   await trigger.waitFor({ state: 'visible', timeout: timeoutMs });
+  let clicks = 0;
   while (Date.now() < deadline) {
-    if (await content.isVisible().catch(() => false)) return;
+    if (await content.isVisible().catch(() => false)) {
+      if (clicks > 1) console.log(`[openWalletPopover] opened only after ${clicks} clicks`);
+      return;
+    }
+    clicks += 1;
     await trigger.click().catch(() => undefined);
     // One settle beat: the popover renders synchronously once the click lands,
     // so anything longer only slows the common case.
-    if (await content.isVisible({ timeout: 1_000 }).catch(() => false)) return;
+    if (await content.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      if (clicks > 1) console.log(`[openWalletPopover] opened only after ${clicks} clicks`);
+      return;
+    }
   }
 }
 
@@ -848,4 +856,39 @@ export async function readWalletPopoverAddress(
     if (last.length > 0) return last;
   }
   throw new Error(`could not read ${testId} within ${timeoutMs}ms (last value: "${last}")`);
+}
+
+/**
+ * Click the top-level mint CTA until the checkout drawer is actually open.
+ *
+ * Same shape as `openWalletPopover`: the CTA's own disabled state depends on a
+ * probe that resolves asynchronously, so the button can be re-rendered around
+ * the moment it is clicked and the click is swallowed. The spec then fails on
+ * `mint-btn` not existing, which reads as a missing element and is a lost
+ * click. One click is correct only when the timing happens to be.
+ */
+export async function openMintCheckout(page: Page, timeoutMs = 60_000): Promise<void> {
+  const cta = page.locator('[data-testid="mint-cta"]');
+  const drawer = page.locator('[data-testid="mint-checkout"]');
+  const deadline = Date.now() + timeoutMs;
+
+  await expect(cta).toBeEnabled({ timeout: timeoutMs });
+  let attempts = 0;
+  while (Date.now() < deadline) {
+    if (await drawer.isVisible().catch(() => false)) {
+      // Reported, never swallowed. A helper that retries in silence makes a
+      // genuinely broken control look merely slow, and then nobody ever learns
+      // which one it was. If this line appears, the first click did NOT open the
+      // drawer and that is a defect to chase, not a harness detail.
+      if (attempts > 1) console.log(`[openMintCheckout] drawer opened only after ${attempts} clicks`);
+      return;
+    }
+    attempts += 1;
+    await cta.click().catch(() => undefined);
+    if (await drawer.waitFor({ state: 'visible', timeout: 3_000 }).then(() => true).catch(() => false)) {
+      if (attempts > 1) console.log(`[openMintCheckout] drawer opened only after ${attempts} clicks`);
+      return;
+    }
+  }
+  await expect(drawer, 'the checkout drawer never opened').toBeVisible({ timeout: 1_000 });
 }

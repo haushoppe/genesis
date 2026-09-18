@@ -277,7 +277,10 @@ jobs:
         run: bash e2e/regtest/playwright-bootstrap.sh cat21wallet
 
       - name: Cache Leather extension
-        if: matrix.wallet == 'leather'
+        # funding-notice drives Leather too: it is the only wallet here that
+        # hands out a SEPARATE payment address, which is what makes the notice
+        # path reachable at all.
+        if: matrix.wallet == 'leather' || matrix.wallet == 'funding-notice'
         id: leather-cache
         uses: actions/cache@v4
         with:
@@ -287,7 +290,7 @@ jobs:
           key: leather-extension-v6.102.0
 
       - name: Fetch Leather .crx from ordpool-sdk release mirror
-        if: matrix.wallet == 'leather'   # not cache-gated: bootstrap self-heals on version mismatch
+        if: matrix.wallet == 'leather' || matrix.wallet == 'funding-notice'   # not cache-gated: bootstrap self-heals on version mismatch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash e2e/regtest/playwright-bootstrap.sh leather

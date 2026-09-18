@@ -471,12 +471,19 @@ export class StartComponent {
   });
 
   /**
-   * The SDK's safe funding recommendation. Its `FundingRecommendationService`
-   * FORCE-scans the covering candidates for content REGARDLESS of size, so a
-   * large coin above the local scan threshold can no longer slip through as
-   * "probably clean": `auto` = a content-clean covering coin was auto-picked
-   * (the invisible comfortable default); `expert-required` = only asset-bearing
-   * coins cover, so the SDK refuses to auto-spend and the UI surfaces the picker.
+   * The SDK's safe funding recommendation, as the orchestrator produced it.
+   *
+   * The force-scan happens in `selectFunding` underneath the orchestrator, NOT
+   * in `FundingRecommendationService`: this component never constructs that
+   * service, and naming it here points a reader at a class with a different
+   * topology API than the one this path uses. Either way the behaviour is the
+   * same and is the point: every COVERING candidate is scanned regardless of
+   * size, so a large coin above the local scan threshold cannot slip through as
+   * "probably clean".
+   *
+   * `auto` = a content-clean covering coin was auto-picked, the invisible
+   * comfortable default; `expert-required` = only asset-bearing coins cover, so
+   * the SDK refuses to auto-spend and the UI surfaces the picker.
    */
   protected readonly fundingRecommendation = computed(() => this.snap().fundingRecommendation);
 

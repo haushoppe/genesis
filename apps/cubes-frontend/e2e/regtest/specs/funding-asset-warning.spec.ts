@@ -178,6 +178,21 @@ for (const asset of ASSETS) {
     await expect(picker).toContainText(dirty.assetId);
   }
 
+  // THE FEE COLUMN. Per-coin cost is a consequence of picking that coin exactly
+  // as its assets are, so it belongs on the row. The qualifier is not decoration
+  // here: a cube is commit + reveal, and the same figure on a mint surface is
+  // one transaction, so the word is what stops a reader comparing two different
+  // things across two sites.
+  if (asset === 'inscription') {
+    const fee = page.locator('[data-testid="mint-row-fee"]').first();
+    await expect(fee).toBeVisible();
+    await expect(fee).toContainText('(commit + reveal)');
+    // The family money shape: space-grouped sats. The fiat half is absent when
+    // no rate is known, and must never appear as 0 or a dash.
+    await expect(fee).toContainText(/\d[\d\u202f\u00a0 ]* sat/);
+    await expect(fee).not.toContainText(/~\$0\b|~\$-|\(\s*-\s*\)/);
+  }
+
   // The EXPERT state: the reader overrides the block by picking the coin the
   // guard refused. Asserted, not just photographed: after the explicit pick the
   // CTA must become usable, or "Use anyway" is a button that does nothing.

@@ -328,14 +328,24 @@
             <details class="mb-0" data-testid="mint-expert-details" [attr.open]="fundingExpertRequired() ? '' : null">
               <summary class="text-muted small" style="cursor: pointer">Choose a different funding source</summary>
               <div class="mt-2">
-                @for (row of viableRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
+                @for (row of pickerRows(); track row.utxo.txid + ':' + row.utxo.vout; let idx = $index) {
                   <div class="p-2 border-bottom"
+                       [class.opacity-50]="row.simulation === null"
                        [attr.data-testid]="'mint-expert-row-' + idx">
                     <div class="d-flex justify-content-between align-items-center">
                       <div class="me-3">
                       <code class="small">{{ row.utxo.txid.slice(0, 12) }}…:{{ row.utxo.vout }}</code>
                       · {{ row.utxo.value | number }} sat
-                      · fee <strong>{{ row.simulation.totalFeeSats }}</strong> sat
+                      @if (row.simulation) {
+                        · fee <strong data-testid="mint-row-fee">{{ rowFeeLabel(row) }}</strong>
+                      } @else {
+                        <!-- Names the RATE as the variable, so a reader who lowers
+                             it can predict this row becoming pickable. A dash
+                             would read as free, and hiding the row entirely, which
+                             is what this picker used to do, reads as the coin not
+                             existing at all. -->
+                        · <span class="text-warning-emphasis" data-testid="mint-row-unavailable">can't fund at this fee rate</span>
+                      }
                       <!-- Subtle fill + emphasis text, not a saturated fill with
                            near-white text. Measured on this panel's own dark
                            ground: bg-danger with the inherited body colour gave
@@ -371,6 +381,7 @@
                               [attr.data-testid]="'mint-expert-pick-' + idx"
                               [class.btn-outline-primary]="row.bucket !== 'assets'"
                               [class.btn-danger]="row.bucket === 'assets'"
+                              [disabled]="row.simulation === null"
                               (click)="pickUtxo(row.utxo)">
                         {{ row.bucket === 'assets' ? 'Use anyway' : 'Use this UTXO' }}
                       </button>

@@ -141,6 +141,22 @@ export interface ViableInscribeSimulation {
   bucket: UtxoScanBucket;
 }
 
+/**
+ * A picker row, INCLUDING a coin that cannot fund at the current rate.
+ *
+ * Such a coin used to be filtered out of the list entirely, which reads as the
+ * coin not existing. Naming the rate as the variable is the point: a reader who
+ * lowers the fee rate can predict the row coming back, and a reader who cannot
+ * see the row at all can predict nothing.
+ */
+export interface PickerRow {
+  utxo: TxnOutput;
+  /** Null exactly when this coin cannot fund the mint at the current rate. */
+  simulation: SimulateInscribeFeesResult | null;
+  scan: UtxoScanState;
+  bucket: UtxoScanBucket;
+}
+
 /** One preset button next to the fee-rate input. */
 interface FeeTier {
   testId: string;
@@ -609,6 +625,37 @@ export class StartComponent {
     const change = utxoValue - funding;
     return change < changeMin ? utxoValue : funding;
   });
+
+  /**
+   * Every candidate coin, fundable or not, in the order the SDK reports them.
+   * `viableRows` stays the pickable set; this is what the picker LISTS.
+   */
+  protected readonly pickerRows = computed<PickerRow[]>(() => {
+    const scanMap = this.scanStates();
+    return this.simulations().map((r): PickerRow => {
+      const outpoint = `${r.utxo.txid}:${r.utxo.vout}`;
+      const scan = scanMap.get(outpoint) ?? { kind: 'not-scanned' as const };
+      return {
+        utxo: r.utxo,
+        simulation: r.insufficient ? null : r.simulation,
+        scan,
+        bucket: bucketOf(scan),
+      };
+    });
+  });
+
+  /**
+   * What picking this coin costs, in the family money shape.
+   *
+   * The qualifier trails the number rather than splitting the label from it, so
+   * the fee column still scans as a column. It says commit + reveal because a
+   * cube is TWO transactions: comparing this figure against a single-tx fee on
+   * another surface without that word compares two different things.
+   */
+  protected rowFeeLabel(row: PickerRow): string {
+    if (row.simulation === null) return '';
+    return `${formatSatsWithUsd(row.simulation.totalFeeSats, this.btcUsdResource.value() ?? null)} (commit + reveal)`;
+  }
 
   /** Human-friendly cost line — `"3 000 sat (~$1.85)"` or just `"3 000 sat"`. */
   protected readonly totalSpendLabel = computed<string>(() => {
@@ -1109,6 +1156,12 @@ export class StartComponent {
 
   /** Expert-mode manual funding pick from the picker. */
   pickUtxo(utxo: TxnOutput) {
+    // A row the picker shows as unavailable must not be pickable by any route.
+    // The template disables the control; this is the same rule where the
+    // decision is made, so a future caller cannot bypass it.
+    const row = this.pickerRows().find((r) => r.utxo.txid === utxo.txid && r.utxo.vout === utxo.vout);
+    if (row && row.simulation === null) return;
+
     this.orch.setSelectedUtxo(utxo);
   }
 
@@ -1136,7 +1189,7 @@ export class StartComponent {
   /** What a flagged coin carries, as display rows (see `funding-asset-rows.ts`).
    *  Reads the resolved etchings, so a rune row gains its link as the lookup
    *  answers rather than the panel waiting for it. */
-  assetRows(row: ViableInscribeSimulation): FundingAssetRow[] {
+  assetRows(row: { scan: UtxoScanState }): FundingAssetRow[] {
     return fundingAssetRows(row.scan, this.runeEtchings.etchings());
   }
 

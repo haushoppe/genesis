@@ -19,6 +19,7 @@ import {
   postTx,
   waitForOrdStockSync,
   getStockOrdContent,
+  isVisibleWithin,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -164,7 +165,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     }, undefined, { timeout: 30_000, polling: 250 });
   }
   const notNow = primer.getByText('Not now', { exact: true }).first();
-  if (await notNow.isVisible({ timeout: 1_500 }).catch(() => false)) {
+  if (await isVisibleWithin(notNow, 1_500)) {
     await notNow.click({ force: true }).catch(() => undefined);
   }
   await shot(primer, '01-xverse-unlocked');

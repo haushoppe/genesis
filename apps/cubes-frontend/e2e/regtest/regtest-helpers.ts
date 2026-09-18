@@ -4,7 +4,7 @@
 // Expects the regtest stack to be up via `e2e/regtest-bootstrap.sh`
 // and `REGTEST_FUNDED_ADDR` / `REGTEST_FUNDED_WIF` set in env.
 
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 
 const ELECTRS_URL = process.env.REGTEST_ELECTRS_URL ?? 'http://localhost:3010';
@@ -894,4 +894,21 @@ export async function openMintCheckout(page: Page, timeoutMs = 60_000): Promise<
     }
   }
   await expect(drawer, 'the checkout drawer never opened').toBeVisible({ timeout: 1_000 });
+}
+
+/**
+ * Is this element on screen within `ms`, tolerating that it may never appear?
+ *
+ * The obvious spelling, `locator.isVisible({ timeout })`, does NOT wait: the
+ * option is declared, marked deprecated-and-ignored, still typechecks, and
+ * reads to every reviewer as a bounded wait. So an optional dialog that has not
+ * rendered yet reports absent, the dismissal is skipped, and the next click
+ * lands on the overlay that was about to appear.
+ *
+ * `waitFor` is not a drop-in here, because it throws when the element
+ * legitimately never appears, which for an optional promo is the normal
+ * outcome. This waits properly and answers false instead of throwing.
+ */
+export async function isVisibleWithin(locator: Locator, ms: number): Promise<boolean> {
+  return locator.waitFor({ state: 'visible', timeout: ms }).then(() => true).catch(() => false);
 }

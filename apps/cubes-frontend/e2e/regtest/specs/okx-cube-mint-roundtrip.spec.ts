@@ -17,6 +17,7 @@ import {
   mineBlocks,
   waitForOrdStockSync,
   getStockOrdContent,
+  isVisibleWithin,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -139,9 +140,9 @@ async function approveOkxSignPopup(ctx: BrowserContext): Promise<void> {
 
   // Promo modal may cover Confirm.
   const promo = approval.getByText('Asset transfer pending');
-  if (await promo.isVisible({ timeout: 2_000 }).catch(() => false)) {
+  if (await isVisibleWithin(promo, 2_000)) {
     const closeBtn = approval.locator('button:has(svg), [aria-label="close" i], [aria-label="Close" i]').first();
-    if (await closeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    if (await isVisibleWithin(closeBtn, 2_000)) {
       await closeBtn.click({ force: true }).catch(() => undefined);
     }
     await promo.waitFor({ state: 'hidden', timeout: 10_000 }).catch(() => undefined);

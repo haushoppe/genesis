@@ -60,11 +60,9 @@ case "$WALLET" in
     ASSET_NAME="alby-bitcoin-wallet-v${VERSION}.crx"
     ;;
   cat21wallet)
-    # Cat21 Wallet — our own fork of Leather. Built from source in
-    # the cat21-wallet repo's apps/extension/dist/ (no CRX
-    # packaging in the wallet's CI yet); CI publishes the same
-    # bytes attested via gh attestation under the release tag
-    # below.
+    # Cat21 Wallet — our own fork of Leather, staged from a source build via
+    # CAT21_WALLET_LOCAL_DIST. No CRX has ever been published for it under any
+    # tag, so VERSION here is only a cache label, not something to download.
     VERSION="6.103.0.675"
     ASSET_NAME="cat21-wallet-v${VERSION}.crx"
     ;;
@@ -79,6 +77,18 @@ REPO="ordpool-space/ordpool-sdk"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 EXT_DIR="${SCRIPT_DIR}/extensions/${WALLET}"
+
+# cat21wallet has NO downloadable release at any version: it is our own Leather
+# fork and its CI has never published a CRX, so the download path below cannot
+# work for it. It is staged from a source build (see the
+# CAT21_WALLET_LOCAL_DIST block further down, which CI also uses). Failing here
+# with the command to run beats a "release not found" from the download arm.
+if [ "$WALLET" = "cat21wallet" ] && [ -z "${CAT21_WALLET_LOCAL_DIST:-}" ]; then
+  echo "ERROR: cat21wallet has no downloadable release; stage it from a source build:" >&2
+  echo "       CAT21_WALLET_LOCAL_DIST=/path/to/cat21-wallet/apps/extension/dist $0 cat21wallet" >&2
+  exit 2
+fi
+
 CRX_FILE="$(mktemp "/tmp/${WALLET}.XXXXXX.crx")"
 
 trap 'rm -f "$CRX_FILE"' EXIT

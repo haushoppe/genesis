@@ -185,8 +185,15 @@ for (const asset of ASSETS) {
 
   if (asset === 'inscription') {
     const contrast = await page.evaluate(() => {
+      // A measurement is code and can be wrong in the same shape as the thing
+      // it measures. This one reads colours as OPAQUE: given rgba() it would
+      // ignore the alpha and compute a confident ratio for a colour nobody
+      // sees. Rather than composite (which needs the full stack and is its own
+      // source of error), refuse to answer, so a translucent layer surfaces as
+      // an explicit gap instead of a number that looks fine.
       const lum = (c: string) => {
         const m = c.match(/\d+(\.\d+)?/g)!.map(Number);
+        if (m.length > 3 && m[3] < 1) throw new Error(`translucent colour ${c}: this measurement assumes opaque`);
         const [r, g, b] = m.slice(0, 3).map((v) => {
           const s = v / 255;
           return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);

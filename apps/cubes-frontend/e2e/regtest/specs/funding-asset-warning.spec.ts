@@ -122,6 +122,14 @@ for (const asset of ASSETS) {
   await expect(page.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 30_000 });
 
   // The warning, not the notice: this wallet cannot separate the two lanes.
+  const emits = await page.evaluate(() => {
+    const w = window as unknown as { __walletEmits?: number; __walletRefs?: unknown[] };
+    const refs = w.__walletRefs ?? [];
+    const distinct = new Set(refs).size;
+    return { emissions: w.__walletEmits ?? 0, distinctRefs: distinct };
+  });
+  console.log('[wallet-emit]', JSON.stringify(emits));
+
   const warning = page.locator('[data-testid="mint-expert-required"]');
   await expect(warning).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('[data-testid="mint-asset-notice"]')).toHaveCount(0);

@@ -823,9 +823,12 @@ export async function openWalletPopover(page: Page, timeoutMs = 20_000): Promise
     }
     clicks += 1;
     await trigger.click().catch(() => undefined);
-    // One settle beat: the popover renders synchronously once the click lands,
-    // so anything longer only slows the common case.
-    if (await content.isVisible({ timeout: 1_000 }).catch(() => false)) {
+    // waitFor, NOT isVisible({timeout}). `isVisible` takes no timeout and
+    // answers instantly, so the old code checked before the popover had
+    // rendered, looped, and clicked again — which TOGGLED THE POPOVER SHUT.
+    // The retry counts that produced were this helper opening and closing it,
+    // not a control ignoring clicks.
+    if (await content.waitFor({ state: 'visible', timeout: 2_000 }).then(() => true).catch(() => false)) {
       if (clicks > 1) console.log(`[openWalletPopover] opened only after ${clicks} clicks`);
       return;
     }

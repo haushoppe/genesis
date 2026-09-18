@@ -17,7 +17,7 @@ import {
   waitForUtxoAt,
 } from '../regtest-helpers';
 import { seedDirtyCoin, assertDirtyCoinIsBestFit, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
-import { simulateInscribeFees, getDummyKeypair, toScureNetwork, Network } from 'ordpool-sdk';
+import { simulateInscribeFees, prepareInscribeFundingInput, Network } from 'ordpool-sdk';
 import { getCubeHtml } from '../../../src/app/services/cube-html';
 
 /**
@@ -136,18 +136,19 @@ for (const asset of ASSETS) {
     expect(dirty.value, 'the seeder must honour the size that makes this a candidate').toBe(DIRTY_SATS);
     await waitForElectrsSync(mineBlocks(1));
 
-    // MEASURE the requirement, do not reason about it. `fundingRequirementSats`
+    // MEASURE the requirement, do not reason about it. The funding input is
+    // built by `prepareInscribeFundingInput` with `isSimulation: true`, and
+    // THAT is the load-bearing part: a hand-built input literal makes
+    // `simulateInscribeFees` throw "No taproot scripts signed", whatever key it
+    // carries. A dummy keypair appears to fix it only because its key matches
+    // the simulator's own signer, which hides the real defect. The wallet's
+    // REAL key works here, and returns the same 6 296 sats.
+    // `fundingRequirementSats`
     // is commit output + commit fee, i.e. postage + reveal fee + tip + the
     // commit's own fee. It does not depend on the funding coin's VALUE (the
     // commit's vsize turns on the input's script type), so a dummy input shaped
     // like this wallet's P2TR payment address answers the same number the real
     // coin would.
-    // The simulator signs with its OWN dummy key, so the dummy input must carry
-    // that key's script. Using the real leaf's key here makes scure find nothing
-    // to sign ("No taproot scripts signed"). The requirement depends on the
-    // input's SCRIPT TYPE, not on whose key it is, so a dummy P2TR input answers
-    // the same number this wallet's P2TR coin would.
-    const dummy = getDummyKeypair(toScureNetwork(Network.Regtest));
     const body = new TextEncoder().encode(getCubeHtml({
       inscriptionIds: {
         inscriptionId1: CUBE_SIDE_IDS[0], inscriptionId2: CUBE_SIDE_IDS[1],
@@ -161,16 +162,16 @@ for (const asset of ASSETS) {
       feeRatePerVbyte: APP_FEE_RATE,
       body,
       contentType: 'text/html;charset=utf-8',
-      fundingInput: {
-        txid: dirty.txid,
-        vout: dirty.vout,
-        value: dirty.value,
-        scriptPubKey: btc.p2tr(dummy.xOnlyDummyPublicKey, undefined, REGTEST).script,
-        tapInternalKey: dummy.xOnlyDummyPublicKey,
-      },
-      senderChangeAddress: dummy.addressP2TR,
-      recipientAddress: dummy.addressP2TR,
-      ephemeralPubkeyXonly: dummy.xOnlyDummyPublicKey,
+      fundingInput: prepareInscribeFundingInput({
+        utxo: { txid: dirty.txid, vout: dirty.vout, value: dirty.value, status: { confirmed: true } },
+        paymentPublicKey: leaf.publicKey!,
+        paymentAddress: address,
+        isSimulation: true,
+        network: Network.Regtest,
+      } as never),
+      senderChangeAddress: address,
+      recipientAddress: address,
+      ephemeralPubkeyXonly: leaf.publicKey!.slice(1, 33),
       network: 'regtest',
       tip: { address: TIP_ADDRESS, value: TIP_SATS },
     } as never);

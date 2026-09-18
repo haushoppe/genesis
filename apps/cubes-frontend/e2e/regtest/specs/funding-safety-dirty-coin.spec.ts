@@ -1,4 +1,6 @@
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { base64 } from '@scure/base';
 import { HDKey } from '@scure/bip32';
 import * as btc from '@scure/btc-signer';
@@ -96,6 +98,9 @@ const TIP_SATS = 1000;
 const DIRTY_SATS = 300_000;
 
 const ASSETS: DirtyCoinAsset[] = ['cat', 'inscription', 'rune', 'rareSat'];
+
+/** Outside Playwright's outputDir, which is wiped at the start of every run. */
+const STATE_SHOTS = path.resolve(__dirname, '../.state-screenshots');
 
 let browser: Browser;
 
@@ -253,6 +258,18 @@ for (const asset of ASSETS) {
     await mintError.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => undefined);
     if (await mintError.isVisible()) {
       throw new Error(`the mint failed: ${(await mintError.textContent())?.trim()}`);
+    }
+
+    // The SAFE state, photographed once: a clean coin covers, so the guard
+    // auto-picks it and says nothing at all. The quiet default is a state worth
+    // documenting precisely because there is nothing to see.
+    if (asset === 'cat') {
+      await expect(page.locator('[data-testid="mint-asset-notice"]')).toHaveCount(0);
+      await expect(page.locator('[data-testid="mint-expert-required"]')).toHaveCount(0);
+      fs.mkdirSync(STATE_SHOTS, { recursive: true });
+      await page.locator('[data-testid="mint-checkout"]').screenshot({
+        path: path.resolve(STATE_SHOTS, 'funding-safe-clean-coin.png'),
+      });
     }
 
     await expect(page.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });

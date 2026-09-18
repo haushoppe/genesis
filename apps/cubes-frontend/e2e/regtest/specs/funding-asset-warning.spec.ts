@@ -1,4 +1,6 @@
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { HDKey } from '@scure/bip32';
 import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
@@ -11,7 +13,7 @@ import {
   rpc,
   waitForElectrsSync,
 } from '../regtest-helpers';
-import { seedDirtyCoin } from 'ordpool-sdk/e2e';
+import { seedDirtyCoin, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
 
 /**
  * What the reader is TOLD when the only coin that can fund the mint carries
@@ -40,6 +42,23 @@ const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
 /** Covers the ~6 300-sat requirement many times over, so nothing here turns on size. */
 const DIRTY_SATS = 300_000;
 
+/**
+ * All four classes, which watch-only makes safe to loop: it derives a FRESH
+ * account per case, so no case inherits the previous one's coin. The sibling
+ * notice spec cannot do this, because Leather's seed is fixed and its address
+ * accumulates across runs.
+ */
+const ASSETS: DirtyCoinAsset[] = ['inscription', 'cat', 'rune', 'rareSat'];
+
+
+/**
+ * Documentation screenshots live OUTSIDE Playwright's outputDir, which is
+ * cleared at the start of every run: a picture written there is gone the moment
+ * anyone runs another spec, which is not what "the screenshot exists" should
+ * mean. Gitignored; regenerate by running this lane.
+ */
+const STATE_SHOTS = path.resolve(__dirname, '../.state-screenshots');
+
 let browser: Browser;
 
 test.beforeAll(async () => {
@@ -54,7 +73,8 @@ test.afterAll(async () => {
   await browser?.close();
 });
 
-test('funding-warning: a one-address wallet whose only coin carries an inscription is BLOCKED and told why', async () => {
+for (const asset of ASSETS) {
+  test(`funding-warning: a one-address wallet whose only coin carries ${asset} is BLOCKED and told why`, async () => {
   test.setTimeout(240_000);
 
   const master = HDKey.fromMasterSeed(randomBytes(32), TESTNET_VERSIONS);
@@ -63,7 +83,7 @@ test('funding-warning: a one-address wallet whose only coin carries an inscripti
   const address = btc.p2tr(leaf.publicKey!.slice(1, 33), undefined, REGTEST).address!;
 
   // The ONLY coin. No clean coin anywhere, which is what forces the decision.
-  const dirty = await seedDirtyCoin({ asset: 'inscription', address, valueSats: DIRTY_SATS });
+  const dirty = await seedDirtyCoin({ asset, address, valueSats: DIRTY_SATS });
   await waitForElectrsSync(mineBlocks(1));
 
   const page: Page = await browser.newPage();
@@ -119,14 +139,51 @@ test('funding-warning: a one-address wallet whose only coin carries an inscripti
   // rather than about the framing.
   await warning.scrollIntoViewIfNeeded();
   const shot = page.locator('[data-testid="mint-checkout"]');
-  await shot.screenshot({ path: 'test-results-regtest/funding-warning-one-address.png' });
+  if (asset === 'inscription') {
+    fs.mkdirSync(STATE_SHOTS, { recursive: true });
+    await shot.screenshot({ path: path.resolve(STATE_SHOTS, 'funding-warning-one-address.png') });
+  }
 
   // Names the SPECIFIC asset, which is the difference between a warning and a
   // useful one. Asserting that "a warning appeared" would pass against a panel
   // describing a different coin, which is exactly the two-source failure the
   // SDK removed by putting the assets on the recommendation.
-  await expect(page.locator('[data-testid="mint-expert-details"]')).toContainText(dirty.assetId);
+  // What identifies a coin's contents differs BY CLASS, so assert what that
+  // class actually shows rather than forcing one shape on all four.
+  //
+  // A cat is the documented exception: `catIds` are inscription-id hex, not the
+  // cat NUMBER a holder knows, so the row shows the count and links to the sat
+  // page, which names and shows every cat on that sat. Asserting the raw id
+  // here would demand a row of opaque hex and argue against a decision that was
+  // made deliberately and is written down in funding-asset-rows.ts. This spec
+  // caught that difference by failing on it, which is the assertion working.
+  const picker = page.locator('[data-testid="mint-expert-details"]');
+  if (asset === 'cat') {
+    await expect(picker).toContainText(/CAT-21 cat/);
+    await expect(picker.locator('a[href*="/sat/"]')).toHaveCount(1);
+  } else if (asset === 'rune') {
+    await expect(picker).toContainText(dirty.assetId);
+  } else if (asset === 'rareSat') {
+    await expect(picker).toContainText(/rare sat:/);
+    await expect(picker).toContainText(dirty.assetId);
+  } else {
+    await expect(picker).toContainText(dirty.assetId);
+  }
+
+  // The EXPERT state: the reader overrides the block by picking the coin the
+  // guard refused. Asserted, not just photographed: after the explicit pick the
+  // CTA must become usable, or "Use anyway" is a button that does nothing.
+  if (asset === 'inscription') {
+    await page.locator('[data-testid="mint-expert-details"]').getByRole('button', { name: /use anyway/i }).first().click();
+    await expect(page.locator('[data-testid="mint-btn"]')).toBeEnabled({ timeout: 30_000 });
+    await expect(page.locator('[data-testid="mint-checkout"]')).toContainText(/You picked this funding coin/i);
+    fs.mkdirSync(STATE_SHOTS, { recursive: true });
+    await page.locator('[data-testid="mint-checkout"]').screenshot({
+      path: path.resolve(STATE_SHOTS, 'funding-expert-picked.png'),
+    });
+  }
 
   expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([]);
   await page.close();
-});
+  });
+}

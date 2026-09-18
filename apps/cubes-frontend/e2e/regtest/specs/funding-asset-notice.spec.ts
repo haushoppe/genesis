@@ -69,6 +69,15 @@ const FUND_AMOUNT_BTC = 0.002;
  *  are fine as long as they pass `isValidInscriptionId`. */
 const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
 
+
+/**
+ * Documentation screenshots live OUTSIDE Playwright's outputDir, which is
+ * cleared at the start of every run: a picture written there is gone the moment
+ * anyone runs another spec, which is not what "the screenshot exists" should
+ * mean. Gitignored; regenerate by running this lane.
+ */
+const STATE_SHOTS = path.resolve(__dirname, '../.state-screenshots');
+
 let context: BrowserContext;
 let extensionId: string;
 
@@ -261,7 +270,8 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
   // If they cannot be seen together that is a finding about the layout.
   const shotTarget = cubes.locator('[data-testid="mint-checkout"]');
   await notice.scrollIntoViewIfNeeded();
-  await shotTarget.screenshot({ path: path.resolve(RESULTS_DIR, 'funding-notice-separate-address.png') });
+  fs.mkdirSync(STATE_SHOTS, { recursive: true });
+  await shotTarget.screenshot({ path: path.resolve(STATE_SHOTS, 'funding-notice-separate-address.png') });
 
   // Measured, not eyeballed: both boxes inside the viewport at once. "Enabled
   // and the notice is visible" is one claim only if a reader can see both

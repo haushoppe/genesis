@@ -88,19 +88,22 @@ export default async function globalSetup(): Promise<void> {
   // a previous run with the same Xverse version. Saves ~25s on
   // local re-runs.
   //
-  // LOCALLY this guard means the onboarding below now runs about once per
-  // machine rather than once per run, and that changes what a local green
-  // proves. The onboarding used to time out at its first wait (the options
-  // page never showing both "restore" and "create") on every local run after
-  // the first, and that timeout is UNEXPLAINED. It stopped appearing when the
-  // cache moved out of Playwright's outputDir, where it was being deleted
-  // before every run. So locally the failing path is not fixed, it is rarely
-  // reached; deleting this cache, or setting the force-reonboard flag, walks
-  // back into it.
+  // Locally this guard means the onboarding below runs about once per machine
+  // instead of once per run. CI is the opposite and is why this is not a
+  // coverage hole: every CI run is a fresh machine with no cache, so the real
+  // onboarding executes on every push and a broken selector fails the xverse
+  // lane loudly.
   //
-  // CI is the opposite and is why this is not a coverage hole: every CI run is
-  // a fresh machine with no cache, so the real onboarding executes on every
-  // push and a broken selector fails the xverse lane loudly.
+  // The onboarding timeout this used to hit is CAUSED and FIXED, not merely
+  // avoided: Xverse's options page does not always hydrate on the FIRST
+  // navigation, because the extension's service worker has not woken, and the
+  // shell it renders never shows the welcome screen the wait looks for. A
+  // single navigation plus a long timeout therefore watches a dead page for
+  // its whole budget. The SDK's `gotoAndHydrate` re-navigates between
+  // attempts, which re-triggers the extension bootstrap. Proven by mutation
+  // here: collapsing it to one navigation reproduces the failure ("did not
+  // hydrate in 30000 ms") on repeated forced onboardings, and restoring the
+  // retry passes.
   if (
     fs.existsSync(DUMP_PATH) &&
     fs.existsSync(path.join(SEED_USER_DATA_DIR, 'Default')) &&
@@ -130,7 +133,21 @@ export default async function globalSetup(): Promise<void> {
   const extensionId = worker.url().split('/')[2];
 
   try {
-    await onboardXverse(context, extensionId);
+    try {
+      await onboardXverse(context, extensionId);
+    } catch (err) {
+      // Say what the options page ACTUALLY showed. The wait inside onboardXverse
+      // looks for a welcome screen ("restore" + "create"); any other screen
+      // times out identically and reports nothing about which screen it was,
+      // which is what made this look like slow hydration for a day.
+      for (const p of context.pages()) {
+        if (!p.url().startsWith('chrome-extension://')) continue;
+        const text = (await p.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300);
+        console.log(`[globalSetup:onboard-fail] ${p.url()} -> "${text}"`);
+        await p.screenshot({ path: path.resolve(SEED_CACHE_DIR, `onboard-fail-${Date.now()}.png`) }).catch(() => undefined);
+      }
+      throw err;
+    }
     await primeAndSwitchToRegtest(context, extensionId);
     // Point Xverse's Regtest network at the local electrs the
     // mint-roundtrip spec hits. Without this override Xverse would

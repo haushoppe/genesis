@@ -719,22 +719,31 @@ export const NON_IMAGE_SIDE_ID = 'a1aff8c3dc8ff01c775d3de7400ec6734b5fd289e8cff3
  * keeps the noise out and leaves the signal in: narrowing this way immediately
  * surfaced a fee-endpoint 404 that the blanket version had been hiding.
  *
- * The three expected classes, each for a stated reason:
+ * Remaining entries, each for a stated reason:
  *
- *   - `/content/` and `/preview/`: the cubes are minted with MAINNET side ids,
- *     because those are the ones that render, and the app then asks the
- *     REGTEST content host for them. They must 404; the inscriptions do not
- *     exist on this chain.
+ *   - the MAINNET ids listed below, under `/content/` or `/preview/`: a cube
+ *     minted here references mainnet side ids, because those are the ones
+ *     that render, and its iframe then asks the REGTEST ord (`:8081`) for
+ *     them. They cannot exist on this chain. Matched BY ID, never by path:
+ *     `/content/` as a prefix also swallowed any failure to fetch a minted
+ *     cube's OWN body, which is a thing these lanes exist to prove.
  *   - `/assets/`: the preview iframe is null-origin, so any asset it pulls
- *     fails by construction.
+ *     fails by construction. Still a path prefix, so it also covers the app's
+ *     own assets; narrowing it needs the error's originating frame rather
+ *     than its URL, which is not available here. The widest entry left.
+ *
  * Non-resource noise (SDK logs, an orchestrator's per-UTXO simulation
  * complaint, a CORS refusal) stays matched on text, since those carry no URL.
  */
-const EXPECTED_MISSING_URL = [
-  '/content/',
-  '/preview/',
-  '/assets/',
+/** Mainnet inscription ids a regtest chain cannot serve: the six cube sides,
+ *  the non-image side, and the renderer that a cube body loads. */
+const MAINNET_IDS_ABSENT_ON_REGTEST = [
+  ...RENDERABLE_SIDE_IDS,
+  NON_IMAGE_SIDE_ID,
+  'fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0',
 ];
+
+const EXPECTED_MISSING_URL = ['/assets/'];
 
 const EXPECTED_CONSOLE_TEXT: RegExp[] = [
   /^\[sdk:/,
@@ -758,7 +767,10 @@ const EXPECTED_CONSOLE_TEXT: RegExp[] = [
 const reportedSuppressions = new Set<string>();
 
 export function isExpectedConsoleError(text: string, url: string): boolean {
-  const byUrl = !!url && EXPECTED_MISSING_URL.some((part) => url.includes(part));
+  const isContentPath = !!url && (url.includes('/content/') || url.includes('/preview/'));
+  const byMainnetId = isContentPath
+    && MAINNET_IDS_ABSENT_ON_REGTEST.some((id) => url.includes(id));
+  const byUrl = byMainnetId || (!!url && EXPECTED_MISSING_URL.some((part) => url.includes(part)));
   const byText = EXPECTED_CONSOLE_TEXT.some((re) => re.test(text));
   if (!byUrl && !byText) return false;
 

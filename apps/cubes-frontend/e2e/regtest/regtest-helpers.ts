@@ -926,16 +926,19 @@ export async function isVisibleWithin(locator: Locator, ms: number): Promise<boo
  * The DEFECT has the opposite shape: a side the loop has ALREADY typed comes
  * back holding something else. Twice in CI that was side 1, with sides 2 to 5
  * the spec's own, which against the baseline above reads as the fill of side 1
- * being lost rather than as a mystery writer picking one field.
+ * never taking rather than as a writer picking one field out of six. A fill
+ * that lands while the control re-renders under it does not stick, and the
+ * suggestion's whole-form write IS a re-render of all six fields.
  *
  * So the gate is "an already-typed side deviates", never "anything deviates".
- * When it trips, the untyped sides say WHICH KIND of write did it: one that
- * replaced the whole form leaves sides the loop has not reached holding ids,
- * one that touched a single field leaves them blank, and nothing but the
- * suggestion effect writes all six. That reading only exists during the first
- * pass, so the verdict is scoped to it: once the loop has refilled sides 2 to
- * 6 the two are indistinguishable, which is exactly the misreading the CI
- * artifacts invited.
+ * When it trips, the untyped sides decide the one thing they can: whether the
+ * suggestion's write was CONCURRENT. Holding ids means it landed in this
+ * window and the lost fill needs no further explanation; blank means it did
+ * not, and something else re-rendered or wrote. They do not establish that a
+ * writer of some shape exists, because a lost fill has no writer at all.
+ * The reading only exists during the first pass, so it is scoped to it: once
+ * the loop has refilled sides 2 to 6 the two cases are indistinguishable,
+ * which is exactly the misreading the CI artifacts invited.
  *
  * It is not the suggestion effect reading a lagging form signal.
  * `@angular/forms/signals` writes the model inside the `input` event
@@ -965,11 +968,18 @@ export async function fillCubeSides(page: Page, ids: readonly string[]): Promise
       console.log(`[fillCubeSides] ${when}: side ${i + 1} holds "${v}", typed "${ids[i]}"`);
     }
     if (typedUpTo >= 0) {
+      const untyped = ids.length - 1 - last;
       const untypedFilled = values.filter((v, i) => i > last && v !== '').length;
+      // What the untyped sides can decide is whether the SUGGESTION's
+      // whole-form write was concurrent with the lost fill, not that some
+      // writer of a given shape exists. A fill can simply fail to take when
+      // the control re-renders under it, and then there is no writer at all.
       console.log(
-        `[fillCubeSides] ${when}: ${clobbered.length} typed side(s) clobbered, ` +
-        `${untypedFilled} of the ${ids.length - 1 - last} not-yet-typed side(s) hold ids -> ` +
-        `${untypedFilled > 0 ? 'a WHOLE-FORM write (only the suggestion effect writes all six)' : 'a SINGLE-FIELD write'}`);
+        `[fillCubeSides] ${when}: ${clobbered.length} typed side(s) lost their value, ` +
+        `${untypedFilled} of ${untyped} not-yet-typed side(s) hold ids -> ` +
+        (untypedFilled > 0
+          ? 'the suggestion\'s whole-form write landed in this window, so the lost fill is consistent with a re-render of all six'
+          : 'NO suggestion write in this window, so something else re-rendered or wrote'));
     }
     return true;
   };

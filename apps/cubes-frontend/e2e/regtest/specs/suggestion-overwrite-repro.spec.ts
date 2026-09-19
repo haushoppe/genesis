@@ -14,10 +14,17 @@ import { openDetails, RENDERABLE_SIDE_IDS, rpc } from '../regtest-helpers';
  * they released. That makes the landing moment a decision rather than a
  * coincidence.
  *
- * Both orderings this can place, after a settled fill and mid-fill, leave the
- * guard correctly refusing. So neither is the CI mechanism, and that is what
- * this spec is worth: it rules two candidates out and locks in the behaviour
- * for the orderings it does cover.
+ * THREE orderings have been placed and all three leave the guard correctly
+ * refusing: after a settled fill, mid-fill released at the fourth side, and an
+ * earliest-possible fill that does not wait for the page to settle (navigating
+ * with `waitUntil: 'commit'` and typing as soon as the inputs exist). None is
+ * the CI mechanism.
+ *
+ * The earliest-fill variant is not kept, because Playwright's actionability
+ * wait means `fill` does not type into a form that is not ready anyway, so it
+ * reaches no earlier than this and only makes the spec more fragile. What this
+ * spec is worth is ruling three candidates out and locking in the behaviour for
+ * the orderings it covers.
  */
 
 const APP_URL = 'http://localhost:4203/';

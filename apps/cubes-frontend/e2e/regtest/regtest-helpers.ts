@@ -915,77 +915,80 @@ export async function isVisibleWithin(locator: Locator, ms: number): Promise<boo
 
 /**
  * Fill the side inputs, confirm each value STUCK, and characterise whatever
- * replaced one if something did.
+ * clobbered one if something did.
  *
- * CI has twice produced a form whose side 1 held an inscription id the spec
- * never typed while sides 2 to 5 held the spec's own. That is not a write that
- * touched side 1. It is a write that replaced the WHOLE form, landing after
- * side 1 was filled and before side 2 was, with the loop then re-filling 2
- * through 6 on top of it and leaving side 1 as the only survivor. The window is
- * therefore not "between two fills" in general: it is the moment the form stops
- * being blank.
+ * The BASELINE, measured in CI (`genesis` a6141d6, 23 occurrences across one
+ * green matrix run): the suggestion routinely lands on the still-blank form
+ * BEFORE the loop types anything, so at "after side 1" sides 2 to 6 already
+ * hold suggestion ids and side 1 holds ours. That is the guard working as
+ * designed, it happens constantly, and it must stay silent.
+ *
+ * The DEFECT has the opposite shape: a side the loop has ALREADY typed comes
+ * back holding something else. Twice in CI that was side 1, with sides 2 to 5
+ * the spec's own, which against the baseline above reads as the fill of side 1
+ * being lost rather than as a mystery writer picking one field.
+ *
+ * So the gate is "an already-typed side deviates", never "anything deviates".
+ * When it trips, the untyped sides say WHICH KIND of write did it: one that
+ * replaced the whole form leaves sides the loop has not reached holding ids,
+ * one that touched a single field leaves them blank, and nothing but the
+ * suggestion effect writes all six. That reading only exists during the first
+ * pass, so the verdict is scoped to it: once the loop has refilled sides 2 to
+ * 6 the two are indistinguishable, which is exactly the misreading the CI
+ * artifacts invited.
  *
  * It is not the suggestion effect reading a lagging form signal.
  * `@angular/forms/signals` writes the model inside the `input` event
  * (`nativeControlCreate` -> `parser.setRawValue` -> `controlValue.set` ->
  * `debounceSync()`, whose only `await` sits behind `if (debouncer)`, and no
  * field or ancestor here declares one), so it reaches `sync()` synchronously
- * and no effect can interleave. Four orderings are now ruled out and the writer
- * is still unidentified.
- *
- * So this reads the WHOLE form after every single fill and reports the first
- * deviation from what the loop has typed so far. The untyped sides are what
- * discriminate: a full-form replacement leaves sides the loop has not reached
- * holding ids, a single-field write leaves them empty. Nothing but the
- * suggestion effect writes all six, so that one reading separates the two
- * candidate writers without needing the suggestion's own ids to compare
- * against.
+ * and no effect can interleave.
  */
 export async function fillCubeSides(page: Page, ids: readonly string[]): Promise<void> {
   const readAll = () =>
     Promise.all(ids.map((_, i) =>
       page.locator(`[data-testid="cube-side-${i + 1}"]`).inputValue().catch(() => '')));
 
-  /** Report a snapshot that disagrees with `expected`; returns true if it did. */
-  const report = (values: string[], expected: string[], when: string, verdict = false): boolean => {
-    const wrong = values.map((v, i) => ({ i, v })).filter(({ i, v }) => v !== expected[i]);
-    if (wrong.length === 0) return false;
-    for (const { i, v } of wrong) {
-      console.log(`[fillCubeSides] ${when}: side ${i + 1} holds "${v}", expected "${expected[i]}"`);
+  /**
+   * Report only if a side at or before `typedUpTo` lost its typed value; the
+   * untyped sides are context for the verdict, never a reason to speak.
+   * `typedUpTo` of -1 means the whole set has been typed.
+   */
+  const reportClobber = (values: string[], typedUpTo: number, when: string): boolean => {
+    const last = typedUpTo < 0 ? ids.length - 1 : typedUpTo;
+    const clobbered = values
+      .map((v, i) => ({ i, v }))
+      .filter(({ i, v }) => i <= last && v !== ids[i]);
+    if (clobbered.length === 0) return false;
+
+    for (const { i, v } of clobbered) {
+      console.log(`[fillCubeSides] ${when}: side ${i + 1} holds "${v}", typed "${ids[i]}"`);
     }
-    // The verdict is only meaningful while "not yet typed" still means "blank",
-    // so it is emitted during the first pass and never after it: once the loop
-    // has refilled the later sides, a whole-form write is indistinguishable
-    // from a single-field one, which is exactly the misreading the CI
-    // artifacts invited.
-    if (verdict) {
-      const untypedFilled = wrong.filter(({ i, v }) => expected[i] === '' && v !== '').length;
+    if (typedUpTo >= 0) {
+      const untypedFilled = values.filter((v, i) => i > last && v !== '').length;
       console.log(
-        `[fillCubeSides] ${when}: ${wrong.length} of ${ids.length} sides deviate, ` +
-        `${untypedFilled} of them not yet typed -> ` +
+        `[fillCubeSides] ${when}: ${clobbered.length} typed side(s) clobbered, ` +
+        `${untypedFilled} of the ${ids.length - 1 - last} not-yet-typed side(s) hold ids -> ` +
         `${untypedFilled > 0 ? 'a WHOLE-FORM write (only the suggestion effect writes all six)' : 'a SINGLE-FIELD write'}`);
     }
     return true;
   };
 
-  // Report the per-side deviation ONCE: the signal is the moment of the
-  // intrusion, and repeating it for every later side buries it.
-  let charactised = false;
+  // Characterise the first clobber once: the signal is the moment it happens,
+  // and repeating it for every later side buries it.
+  let characterised = false;
+
 
   for (let attempt = 0; attempt < 3; attempt++) {
     for (let i = 0; i < ids.length; i++) {
       if ((await readAll())[i] !== ids[i]) {
         await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(ids[i]);
       }
-      // What the form must look like now: everything typed so far, nothing
-      // beyond it. Only on the first pass, where "not yet typed" still means
-      // "blank" and the untyped sides can therefore discriminate.
-      if (attempt === 0 && !charactised) {
-        charactised = report(await readAll(), ids.map((v, j) => (j <= i ? v : '')), `after side ${i + 1}`, true);
+      if (attempt === 0 && !characterised) {
+        characterised = reportClobber(await readAll(), i, `after side ${i + 1}`);
       }
     }
-    const values = await readAll();
-    if (!report(values, [...ids], `attempt ${attempt + 1}`)) {
+    if (!reportClobber(await readAll(), -1, `attempt ${attempt + 1}`)) {
       if (attempt > 0) console.log(`[fillCubeSides] sides settled on attempt ${attempt + 1}`);
       return;
     }

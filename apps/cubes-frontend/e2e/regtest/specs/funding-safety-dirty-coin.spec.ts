@@ -11,6 +11,7 @@ import {
   isExpectedConsoleError,
   mineBlocks,
   openDetails,
+  openMintCheckout,
   RENDERABLE_SIDE_IDS,
   rpc,
   getUtxos,

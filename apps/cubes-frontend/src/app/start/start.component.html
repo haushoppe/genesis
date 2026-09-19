@@ -271,6 +271,20 @@
                   <span class="text-muted small">Miner fee</span>
                   <span data-testid="mint-found-funds-miner-fee">commit {{ selRow.simulation.commitFeeSats }} + reveal {{ selRow.simulation.revealFeeSats }} = <strong>{{ selRow.simulation.totalFeeSats }}</strong> sat</span>
                 </div>
+                <!-- The dust-cliff band: this coin CAN fund, and its leftover was
+                     too small to pay its own way as a change output, so it went
+                     to the miner instead. Only the COMMIT can do this; the
+                     reveal's fee is reserved inside the commit output, so there
+                     is no second fold to report. Worth saying because it is the
+                     one number here a reader can act on: another coin avoids it. -->
+                @if (selRow.simulation.commitAbsorbedSubDustSats > 0) {
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Over-pay</span>
+                    <span class="small text-warning-emphasis" data-testid="mint-found-funds-dust-fold">
+                      +{{ selRow.simulation.commitAbsorbedSubDustSats | number }} sat: this coin's change was too small to keep, so it went to the miner
+                    </span>
+                  </div>
+                }
               }
               @if (selectedUtxo()) {
                 <p class="mb-0 mt-2 text-muted small">✓ You picked this funding coin.</p>
@@ -338,6 +352,13 @@
                       · {{ row.utxo.value | number }} sat
                       @if (row.simulation) {
                         · fee <strong data-testid="mint-row-fee">{{ rowFeeLabel(row) }}</strong>
+                        @if (row.simulation.commitAbsorbedSubDustSats > 0) {
+                          <span class="badge ms-2 bg-warning-subtle text-warning-emphasis"
+                                data-testid="mint-row-overpay"
+                                [title]="'This coin leaves change too small to keep, so ' + row.simulation.commitAbsorbedSubDustSats + ' sat goes to the miner. A larger coin avoids it.'">
+                            over-pays {{ row.simulation.commitAbsorbedSubDustSats | number }} sat
+                          </span>
+                        }
                       } @else {
                         <!-- Names the RATE as the variable, so a reader who lowers
                              it can predict this row becoming pickable. A dash

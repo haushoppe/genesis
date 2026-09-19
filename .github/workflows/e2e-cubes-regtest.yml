@@ -91,6 +91,9 @@ jobs:
           # The notice half, on Leather, which hands out a separate payment
           # address. Needs the leather .crx, so it reuses that cache step below.
           - funding-notice
+          # The third funding state: a coin that CAN fund and over-pays, because
+          # its change is too small to keep. Watch-only, no extension needed.
+          - funding-dust-band
           # Oyl removed 2026-08-06: vendor decommissioned the mainnet.ordit.io
           # relay-validator backend the extension calls during signPsbt
           # (DNS NXDOMAIN). The .crx still installs but every sign attempt

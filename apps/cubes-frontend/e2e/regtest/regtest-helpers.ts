@@ -1052,3 +1052,30 @@ export async function fillCubeSides(page: Page, ids: readonly string[]): Promise
   }
   throw new Error(`side inputs did not hold the typed ids after 3 attempts: ${JSON.stringify(await readAll())}`);
 }
+
+/**
+ * Record every request the browser failed to complete, so a bare
+ * `Uncaught (in promise) TypeError: Failed to fetch` can be attributed.
+ *
+ * A `pageerror` from a rejected fetch carries no URL, which makes the most
+ * common browser error in this suite undiagnosable: twice now a lane has died
+ * on exactly that line while the dev server logged `read ECONNRESET` beside it
+ * (alby on `95aa368`, watchonly on `7c4e119`), and there was no way to tell
+ * from the failure whether the fetch was the app talking to its own dev server
+ * or to a real upstream.
+ *
+ * This deliberately does NOT widen what the specs tolerate. The returned
+ * reader is meant to be appended to a message that is already being thrown, so
+ * a failing gate says WHICH requests failed, and nothing that passes today
+ * starts failing. Deciding that some of these are harness noise is a separate
+ * decision, and it needs this evidence first.
+ */
+export function trackRequestFailures(page: Page): () => string[] {
+  const failures: string[] = [];
+  page.on('requestfailed', (r) => {
+    failures.push(`${r.failure()?.errorText ?? 'failed'} ${r.method()} ${r.url()}`);
+  });
+  return () => failures.length
+    ? ['', 'requests that failed in this page (context for any "Failed to fetch" above):', ...failures.map((f) => `  - ${f}`)]
+    : [];
+}

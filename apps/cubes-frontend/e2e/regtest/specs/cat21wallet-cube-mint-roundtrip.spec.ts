@@ -18,6 +18,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   fillCubeSides,
+  trackRequestFailures,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -156,6 +157,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
       browserErrors.push(`console.error: ${text}`);
     }
   });
+  const requestFailures = trackRequestFailures(cubes);
   cubes.on('pageerror', (err) => {
     console.log(`[cat21wallet-mint pageerror] ${err.message}`);
     browserErrors.push(`pageerror: ${err.message}`);
@@ -370,7 +372,8 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
   // Rule §11: fail if any unfiltered browser error surfaced.
   if (browserErrors.length) {
     throw new Error(
-      `Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:\n  - ${browserErrors.join('\n  - ')}`,
+      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
+       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
     );
   }
 });

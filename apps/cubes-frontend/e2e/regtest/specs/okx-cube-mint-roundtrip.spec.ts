@@ -19,6 +19,7 @@ import {
   getStockOrdContent,
   isVisibleWithin,
   fillCubeSides,
+  trackRequestFailures,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -224,6 +225,7 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
       browserErrors.push(`console.error: ${text}`);
     }
   });
+  const requestFailures = trackRequestFailures(cubes);
   cubes.on('pageerror', (err) => {
     console.log(`[okx-mint pageerror] ${err.message}`);
     browserErrors.push(`pageerror: ${err.message}`);
@@ -370,7 +372,8 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
 
   if (browserErrors.length) {
     throw new Error(
-      `Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:\n  - ${browserErrors.join('\n  - ')}`,
+      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
+       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
     );
   }
 });

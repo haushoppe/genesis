@@ -12,6 +12,7 @@ import {
   isExpectedConsoleError,
   mineBlocks,
   fillCubeSides,
+  trackRequestFailures,
   openDetails,
   openMintCheckout,
   RENDERABLE_SIDE_IDS,
@@ -131,6 +132,9 @@ let accountTpub: string;
 let fundedAddress: string;
 
 const browserErrors: string[] = [];
+// Assigned when the page is created (below); the throw site is in the test
+// body, a different scope from the setup that installs the listener.
+let requestFailures: () => string[] = () => [];
 
 /**
  * Mean luminance of a PNG screenshot, 0 (black) to 255 (white).
@@ -185,6 +189,7 @@ test.beforeAll(async () => {
     if (isExpectedConsoleError(m.text(), m.location()?.url ?? '')) return;
     browserErrors.push(`console.error: ${m.text()} @ ${m.location()?.url ?? '?'}`);
   });
+  requestFailures = trackRequestFailures(cubes);
   cubes.on('pageerror', (e) => browserErrors.push(String(e)));
 });
 
@@ -392,6 +397,6 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   expect(parsedTitle).toBe(CUBE_TITLE);
 
   if (browserErrors.length) {
-    throw new Error(`browser errors during the watch-only mint:\n${browserErrors.join('\n')}`);
+    throw new Error(['browser errors during the watch-only mint:', ...browserErrors, ...requestFailures()].join('\n'));
   }
 });

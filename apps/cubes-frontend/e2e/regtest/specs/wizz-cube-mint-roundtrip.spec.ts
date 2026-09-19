@@ -18,6 +18,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   fillCubeSides,
+  trackRequestFailures,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -179,6 +180,7 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
       browserErrors.push(`console.error: ${text}`);
     }
   });
+  const requestFailures = trackRequestFailures(cubes);
   cubes.on('pageerror', (err) => {
     console.log(`[wizz-mint pageerror] ${err.message}`);
     browserErrors.push(`pageerror: ${err.message}`);
@@ -339,7 +341,8 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
 
   if (browserErrors.length) {
     throw new Error(
-      `Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:\n  - ${browserErrors.join('\n  - ')}`,
+      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
+       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
     );
   }
 });

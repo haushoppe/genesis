@@ -209,6 +209,12 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
 
   // so it must not wait for a drawer that cannot appear yet.
 
+  const suggLog = await cubes.evaluate(() => (window as unknown as { __sugg?: unknown[] }).__sugg ?? []);
+
+
+  console.log('[sugg]', JSON.stringify(suggLog, null, 1));
+
+
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
 
   await cubes.locator('[data-testid="mint-cta"]').click();

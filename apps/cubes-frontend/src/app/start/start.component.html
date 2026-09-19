@@ -277,7 +277,7 @@
                      reveal's fee is reserved inside the commit output, so there
                      is no second fold to report. Worth saying because it is the
                      one number here a reader can act on: another coin avoids it. -->
-                @if (selRow.simulation.commitAbsorbedSubDustSats > 0) {
+                @if (feeReading(selRow) === 'overpay') {
                   <div class="d-flex justify-content-between">
                     <span class="text-muted small">Over-pay</span>
                     <span class="small text-warning-emphasis" data-testid="mint-found-funds-dust-fold">
@@ -352,7 +352,7 @@
                       · {{ row.utxo.value | number }} sat
                       @if (row.simulation) {
                         · fee <strong data-testid="mint-row-fee">{{ rowFeeLabel(row) }}</strong>
-                        @if (row.simulation.commitAbsorbedSubDustSats > 0) {
+                        @if (feeReading(row) === 'overpay') {
                           <span class="badge ms-2 bg-warning-subtle text-warning-emphasis"
                                 data-testid="mint-row-overpay"
                                 [title]="'This coin leaves change too small to keep, so ' + row.simulation.commitAbsorbedSubDustSats + ' sat goes to the miner. A larger coin avoids it.'">

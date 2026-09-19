@@ -4,32 +4,34 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { form, max, min, pattern, required, schema, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgbModal, NgbModalRef, NgbPagination } from '@ng-bootstrap/ng-bootstrap';
-import { formatSatsWithUsd,
+import {
   AUTO_SCAN_MAX_VALUE_SAT,
   BITCOIN_MIN_RELAY_FEE_SAT_PER_VBYTE,
-  bucketOf,
   Cat21Service,
-  getAddressNetwork,
-  getDummyKeypair,
-  getMinimumUtxoSize,
   InscribeMintOrchestrator,
   InscribeSnapshot,
   InscribeUtxoSimulation,
   InscribeWalletContext,
   Network,
-  prepareInscribeFundingInput,
   RecommendedFees,
-  simulateInscribeFees,
   SimulateInscribeFeesResult,
-  singleAddressCaveat,
-  toScureNetwork,
   TxnOutput,
   UtxoContentScanner,
   UtxoScanBucket,
   UtxoScanState,
+  WalletService,
+  bucketOf,
+  classifyCandidateFee,
+  formatSatsWithUsd,
+  getAddressNetwork,
+  getDummyKeypair,
+  getMinimumUtxoSize,
+  prepareInscribeFundingInput,
+  simulateInscribeFees,
+  singleAddressCaveat,
+  toScureNetwork,
   usesSingleAddress,
   validateInscribeOperation,
-  WalletService,
 } from 'ordpool-sdk';
 import { catchError, debounceTime, finalize, firstValueFrom, map, Observable, of } from 'rxjs';
 
@@ -645,6 +647,26 @@ export class StartComponent {
   });
 
   /**
+   * How the family READS this row's fee: normal, overpay, overpay-unknown or
+   * unavailable.
+   *
+   * Shared rather than derived here. Four surfaces each had their own version
+   * of "is this coin over-paying", and they disagreed: cubes rendered nothing
+   * when the fold was unknown, cat21-indexer grew a fourth state, ordpool
+   * collapsed unknown into normal. The FIELD was never the unit of agreement;
+   * the interpretation had to be too.
+   */
+  protected feeReading(row: PickerRow): ReturnType<typeof classifyCandidateFee> {
+    return classifyCandidateFee({
+      txid: row.utxo.txid,
+      vout: row.utxo.vout,
+      finalFeeSats: row.simulation?.totalFeeSats ?? null,
+      vsize: null,
+      absorbedSubDustSats: row.simulation?.commitAbsorbedSubDustSats ?? null,
+    });
+  }
+
+  /**
    * What picking this coin costs, in the family money shape.
    *
    * The qualifier trails the number rather than splitting the label from it, so
@@ -827,8 +849,13 @@ export class StartComponent {
     // Eager-scan small viable UTXOs.
     effect(() => {
       const rows = this.viableRows();
+      // The funding floor: below it a coin cannot pay for this mint, so
+      // scanning it spends two round-trips against our own ord instances on a
+      // row nobody can act on.
+      const floor = this.selectedRow()?.simulation.fundingRequirementSats;
       this.scanner.autoScan(
         rows.map((r) => ({ txid: r.utxo.txid, vout: r.utxo.vout, value: r.utxo.value })),
+        floor ?? undefined,
       );
     });
 

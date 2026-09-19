@@ -727,11 +727,6 @@ export const NON_IMAGE_SIDE_ID = 'a1aff8c3dc8ff01c775d3de7400ec6734b5fd289e8cff3
  *     exist on this chain.
  *   - `/assets/`: the preview iframe is null-origin, so any asset it pulls
  *     fails by construction.
- *   - `/api/v1/fees/recommended`: on regtest `/api/*` proxies to electrs,
- *     which serves the esplora surface and not mempool's v1 endpoints. The app
- *     is built to degrade to absence here, so its absence is designed
- *     behaviour. A spec that stubs this endpoint will never see it.
- *
  * Non-resource noise (SDK logs, an orchestrator's per-UTXO simulation
  * complaint, a CORS refusal) stays matched on text, since those carry no URL.
  */
@@ -739,7 +734,6 @@ const EXPECTED_MISSING_URL = [
   '/content/',
   '/preview/',
   '/assets/',
-  '/api/v1/fees/recommended',
 ];
 
 const EXPECTED_CONSOLE_TEXT: RegExp[] = [
@@ -748,9 +742,33 @@ const EXPECTED_CONSOLE_TEXT: RegExp[] = [
   /has been blocked by CORS policy/,
 ];
 
+/**
+ * Every error this suppresses, reported once, so the list can be emptied.
+ *
+ * Suppressing a browser error hides it; the ruling is that we fix them
+ * instead. These entries are therefore a WORK LIST and not a policy, and the
+ * end state is that this function and both arrays are deleted. Until each
+ * cause is actually fixed, a suppressed error is printed rather than dropped,
+ * so the inventory is visible in every run and shrinks where the count does.
+ *
+ * Printing cannot turn a passing lane red on its own, which is the point:
+ * removing the filter before knowing what it hides would produce eight red
+ * lanes and no list of causes.
+ */
+const reportedSuppressions = new Set<string>();
+
 export function isExpectedConsoleError(text: string, url: string): boolean {
-  if (url && EXPECTED_MISSING_URL.some((part) => url.includes(part))) return true;
-  return EXPECTED_CONSOLE_TEXT.some((re) => re.test(text));
+  const byUrl = !!url && EXPECTED_MISSING_URL.some((part) => url.includes(part));
+  const byText = EXPECTED_CONSOLE_TEXT.some((re) => re.test(text));
+  if (!byUrl && !byText) return false;
+
+  const key = `${byUrl ? 'url' : 'text'}|${url || '-'}|${text.slice(0, 160)}`;
+  if (!reportedSuppressions.has(key)) {
+    reportedSuppressions.add(key);
+    console.log(`[suppressed-error] matched-by-${byUrl ? 'url' : 'text'}: ${text.slice(0, 160)}` +
+      (url ? ` @ ${url}` : ''));
+  }
+  return true;
 }
 
 /**

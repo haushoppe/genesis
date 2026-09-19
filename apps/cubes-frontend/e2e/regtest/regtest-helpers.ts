@@ -679,10 +679,14 @@ export async function waitForOrdStockInscription(
  * `.fill()` throws on inputs whose ancestor `display: none` makes
  * them non-actionable.
  */
+/** When `configurator-advanced` was last opened, per page, for the gap below. */
+const detailsOpenedAt = new WeakMap<Page, number>();
+
 export async function openDetails(page: Page, testId: string): Promise<void> {
   await page.locator(`[data-testid="${testId}"]`).evaluate(
     (el: HTMLDetailsElement) => { el.open = true; },
   );
+  if (testId === 'configurator-advanced') detailsOpenedAt.set(page, Date.now());
 }
 
 /**
@@ -957,7 +961,7 @@ export async function fillCubeSides(page: Page, ids: readonly string[]): Promise
    * untyped sides are context for the verdict, never a reason to speak.
    * `typedUpTo` of -1 means the whole set has been typed.
    */
-  const reportClobber = (values: string[], typedUpTo: number, when: string): boolean => {
+  const reportClobber = async (values: string[], typedUpTo: number, when: string): Promise<boolean> => {
     const last = typedUpTo < 0 ? ids.length - 1 : typedUpTo;
     const clobbered = values
       .map((v, i) => ({ i, v }))
@@ -966,6 +970,13 @@ export async function fillCubeSides(page: Page, ids: readonly string[]): Promise
 
     for (const { i, v } of clobbered) {
       console.log(`[fillCubeSides] ${when}: side ${i + 1} holds "${v}", typed "${ids[i]}"`);
+    }
+    for (const { i } of clobbered) {
+      const same = await sameNode(i);
+      console.log(`[fillCubeSides] ${when}: side ${i + 1} is ` + (
+        same === null ? 'of unknown node identity'
+          : same ? 'the SAME DOM node, so a write or a clobber, not a rebuild'
+            : 'a DIFFERENT DOM node, so the element was REPLACED and no write ever happened'));
     }
     if (typedUpTo >= 0) {
       const untyped = ids.length - 1 - last;
@@ -988,17 +999,53 @@ export async function fillCubeSides(page: Page, ids: readonly string[]): Promise
   // and repeating it for every later side buries it.
   let characterised = false;
 
+  // The six input NODES as they are before any typing. If a value vanishes
+  // because its element was replaced, no write ever happened and no write
+  // inventory could have found it. Template reading says these views are
+  // never recreated (`@for` over a module constant, no conditional ancestor),
+  // but template reading is what nearly produced the opposite conclusion, so
+  // this answers it empirically instead.
+  const nodesBefore = await Promise.all(ids.map((_, i) =>
+    page.locator(`[data-testid="cube-side-${i + 1}"]`).elementHandle()));
+
+  /** Is side `i` still the same DOM node it was before the loop started? */
+  const sameNode = async (i: number): Promise<boolean | null> => {
+    const before = nodesBefore[i];
+    if (!before) return null;
+    return page.locator(`[data-testid="cube-side-${i + 1}"]`)
+      .evaluate((el, prev) => el === prev, before)
+      .catch(() => null);
+  };
+
+  const openedAt = detailsOpenedAt.get(page);
+  let gapToFirstFill: number | null = null;
+
 
   for (let attempt = 0; attempt < 3; attempt++) {
     for (let i = 0; i < ids.length; i++) {
       if ((await readAll())[i] !== ids[i]) {
         await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(ids[i]);
       }
+      // Every verified loss so far has been side 1 and only side 1, three for
+      // three, which is not the shape of a writer landing at a random moment.
+      // Whatever it is happens once and is over before side 2. So record how
+      // long after the panel opened the first fill completed, and print it on
+      // losing AND surviving passes: if losses cluster at short gaps, the
+      // window is the first moments after opening and can be placed instead of
+      // waited for.
+      if (attempt === 0 && i === 0 && openedAt !== undefined) {
+        gapToFirstFill = Date.now() - openedAt;
+      }
       if (attempt === 0 && !characterised) {
-        characterised = reportClobber(await readAll(), i, `after side ${i + 1}`);
+        characterised = await reportClobber(await readAll(), i, `after side ${i + 1}`);
       }
     }
-    if (!reportClobber(await readAll(), -1, `attempt ${attempt + 1}`)) {
+    const lostThisPass = await reportClobber(await readAll(), -1, `attempt ${attempt + 1}`);
+    if (attempt === 0 && gapToFirstFill !== null) {
+      console.log(`[fillCubeSides] open->side1 gap ${gapToFirstFill}ms, ` +
+        (lostThisPass ? 'a side was LOST' : 'all sides held'));
+    }
+    if (!lostThisPass) {
       if (attempt > 0) console.log(`[fillCubeSides] sides settled on attempt ${attempt + 1}`);
       return;
     }

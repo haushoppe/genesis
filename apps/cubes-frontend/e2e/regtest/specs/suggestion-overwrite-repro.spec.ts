@@ -110,18 +110,39 @@ test('suggestion-repro: a suggestion landing after the fill must not replace typ
  * The offsets are a search range, not a measured constant: the point is to
  * cover the window, and any one of them landing is the finding.
  *
- * WHAT A LOCAL GREEN MEANS HERE, precisely: the index fetches ARE issued from
- * a dev machine (this spec counts six of them), but no suggestion was observed
- * to land in any local run, measured as the not-yet-typed sides being blank at
- * every check. With no whole-form write there is no re-render and the sweep
- * exercises nothing, so a local pass is a statement about the machinery and
- * not about the placement. The assertion is mutation-checked separately: a
- * clobber injected before the read fails the pass and names the offset.
+ * A PASS REPORTS WHETHER IT EXERCISED ANYTHING, because a green sweep and a
+ * sweep that never opened the window look identical otherwise. After the first
+ * fill each offset reads the not-yet-typed sides: only the suggestion effect
+ * writes all six, so any of sides 2 to 6 holding an id means the write landed
+ * inside the first fill and that offset really did test the mechanism. The
+ * closing line names the offsets where it happened, or says plainly that the
+ * pass proved nothing about placement.
+ *
+ * Measured locally with the offsets below: 5 of 10 and 3 of 10 opened the
+ * window, always at the larger ones, which is where the chain's resolution
+ * falls on this machine. In every case the typed value survived. A handful of
+ * samples on one machine is not a result, it is the start of a count, and the
+ * same line in CI turns each run into another sample. If the window is opened
+ * often and the sweep still never reddens, the placement hypothesis weakens on
+ * evidence rather than on patience.
+ *
+ * The assertion is mutation-checked separately: a clobber injected before the
+ * read fails the pass and names the offset.
  */
-const RELEASE_OFFSETS_MS = [0, 50, 100, 150, 200, 300, 400, 600, 900];
+// A search range covering the window, not measured constants. The upper end
+// matters most: locally the suggestion's chain resolves far enough after the
+// release that only the larger offsets put the write inside the first fill,
+// and a CI runner is slower, so the range reaches well past what is needed
+// here rather than being tuned to this machine.
+const RELEASE_OFFSETS_MS = [0, 100, 200, 300, 400, 600, 900, 1200, 1600, 2000];
 
 test('suggestion-repro: a suggestion landing across the first fill must not drop it', async () => {
   test.setTimeout(300_000);
+
+  // Offsets at which a whole-form write was actually observed. An empty list
+  // means the pass exercised nothing, and it says so rather than passing
+  // quietly.
+  const observed: number[] = [];
 
   for (const offset of RELEASE_OFFSETS_MS) {
     const page: Page = await browser.newPage();
@@ -140,7 +161,19 @@ test('suggestion-repro: a suggestion landing across the first fill must not drop
     // while the typing happens, which is the window under test.
     release!();
     await page.waitForTimeout(offset);
-    for (let i = 0; i < 6; i++) {
+    await page.locator('[data-testid="cube-side-1"]').fill(RENDERABLE_SIDE_IDS[0]);
+
+    // Did a whole-form write actually happen in this pass? The not-yet-typed
+    // sides answer it: only the suggestion effect writes all six, so any of
+    // sides 2 to 6 holding an id means the write landed and this offset really
+    // did exercise the window. Without this the pass reports success whether
+    // or not anything happened, which is the silent green this spec exists to
+    // avoid.
+    const untyped = await Promise.all([1, 2, 3, 4, 5].map((i) =>
+      page.locator(`[data-testid="cube-side-${i + 1}"]`).inputValue()));
+    if (untyped.some((v) => v !== '')) observed.push(offset);
+
+    for (let i = 1; i < 6; i++) {
       await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(RENDERABLE_SIDE_IDS[i]);
     }
 
@@ -161,5 +194,12 @@ test('suggestion-repro: a suggestion landing across the first fill must not drop
       `release +${offset}ms after the form was ready: these sides did not keep the typed value`,
     ).toEqual([]);
   }
+
+  console.log(observed.length === 0
+    ? `[repro] no suggestion landed at any of the ${RELEASE_OFFSETS_MS.length} offsets; ` +
+      'this pass proved NOTHING about placement'
+    : `[repro] a whole-form write was observed at ${observed.length} of ` +
+      `${RELEASE_OFFSETS_MS.length} offsets (${observed.join(', ')} ms); ` +
+      'the window was exercised and the typed values survived it');
 });
 

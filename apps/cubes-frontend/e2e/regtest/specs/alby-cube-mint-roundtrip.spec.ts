@@ -17,6 +17,7 @@ import {
   mineBlocks,
   waitForOrdStockSync,
   getStockOrdContent,
+  fillCubeSides,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -187,9 +188,7 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
   await openDetails(cubes, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await shot(cubes, '02a-form-filled');
 
   // Pre-connect: this click opens the WALLET PICKER, not the checkout drawer,
@@ -226,9 +225,7 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 60_000 });
 
   await openDetails(cubes, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
   await cubes.locator('[data-testid="mint-cta"]').click();
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });

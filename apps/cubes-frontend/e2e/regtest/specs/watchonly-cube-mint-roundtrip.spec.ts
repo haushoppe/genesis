@@ -11,6 +11,7 @@ import {
   getStockOrdContent,
   isExpectedConsoleError,
   mineBlocks,
+  fillCubeSides,
   openDetails,
   openMintCheckout,
   RENDERABLE_SIDE_IDS,
@@ -266,9 +267,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   // element being scrolled into view and not covered, and this one sits below
   // a live preview whose height changes while the page settles.
   await openDetails(cubes, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await cubes.locator('[data-testid="cube-title"]').fill(CUBE_TITLE);
 
   await openMintCheckout(cubes);

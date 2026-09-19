@@ -1,6 +1,6 @@
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 
-import { openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
+import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 
 /**
  * The disabled Mint button has to say why it is disabled.
@@ -61,9 +61,7 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
   });
 
   await openDetails(page, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(RENDERABLE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(page, RENDERABLE_SIDE_IDS);
 
   // The state a reader meets: button off, and a reason on screen.
   const cta = page.locator('[data-testid="mint-cta"]');

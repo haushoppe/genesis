@@ -8,6 +8,7 @@ import { randomBytes } from '@noble/hashes/utils';
 import {
   isExpectedConsoleError,
   mineBlocks,
+  fillCubeSides,
   openDetails,
   RENDERABLE_SIDE_IDS,
   rpc,
@@ -112,9 +113,7 @@ for (const asset of ASSETS) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
   await openDetails(page, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(page, CUBE_SIDE_IDS);
 
   await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
   await page.locator('[data-testid="mint-cta"]').click();

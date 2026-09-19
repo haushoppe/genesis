@@ -17,6 +17,7 @@ import {
   mineBlocks,
   waitForOrdStockSync,
   getStockOrdContent,
+  fillCubeSides,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -183,9 +184,7 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
 
   await openDetails(cubes, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
 
   // Pre-connect: this click opens the WALLET PICKER, not the checkout drawer,
 
@@ -247,9 +246,7 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
   await cubes.reload({ waitUntil: 'domcontentloaded' });
   await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
   await openDetails(cubes, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
   await cubes.locator('[data-testid="mint-cta"]').click();
 

@@ -17,6 +17,7 @@ import {
   mineBlocks,
   waitForOrdStockSync,
   getStockOrdContent,
+  fillCubeSides,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -181,9 +182,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Fill six sides via the Customize details.
   await openDetails(cubes, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await shot(cubes, '02a-form-filled');
 
   // Click mint-cta — triggers the top-right wallet-connect widget when
@@ -267,9 +266,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Re-fill the six sides — form state doesn't survive reload.
   await openDetails(cubes, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
   await cubes.locator('[data-testid="mint-cta"]').click();
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });

@@ -912,3 +912,48 @@ export async function openMintCheckout(page: Page, timeoutMs = 60_000): Promise<
 export async function isVisibleWithin(locator: Locator, ms: number): Promise<boolean> {
   return locator.waitFor({ state: 'visible', timeout: ms }).then(() => true).catch(() => false);
 }
+
+/**
+ * Fill the side inputs and confirm each value STUCK, naming whatever replaced
+ * one if something did.
+ *
+ * CI has twice produced a form whose side 1 held an id the spec never typed
+ * while sides 2-5 held the spec's own. That is the shape of a write landing
+ * between two fills. It is not the suggestion effect reading a lagging form
+ * signal: `@angular/forms/signals` writes the model inside the `input` event
+ * (`controlValue.set` -> `debounceSync()`, which reaches `sync()` before its
+ * first `await` when no debouncer is declared, and this form declares none),
+ * and an effect cannot run between those two statements. Four orderings have
+ * now been ruled out and the writer is still unidentified.
+ *
+ * So this does not paper over it: a mismatch is reported to the log with the
+ * value that was found, which is the evidence needed to identify the writer
+ * (a suggestion id, a number-lookup result, or something else), and the re-fill
+ * keeps the rest of the lane meaningful instead of failing 20 minutes later on
+ * a disabled Mint button.
+ */
+export async function fillCubeSides(page: Page, ids: readonly string[]): Promise<void> {
+  const read = (i: number) =>
+    page.locator(`[data-testid="cube-side-${i + 1}"]`).inputValue().catch(() => '');
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    for (let i = 0; i < ids.length; i++) {
+      if ((await read(i)) !== ids[i]) {
+        await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(ids[i]);
+      }
+    }
+    const values = await Promise.all(ids.map((_, i) => read(i)));
+    const wrong = values
+      .map((v, i) => ({ i, v }))
+      .filter(({ i, v }) => v !== ids[i]);
+    if (wrong.length === 0) {
+      if (attempt > 0) console.log(`[fillCubeSides] sides settled on attempt ${attempt + 1}`);
+      return;
+    }
+    for (const { i, v } of wrong) {
+      console.log(`[fillCubeSides] side ${i + 1} holds "${v}", typed "${ids[i]}" (attempt ${attempt + 1})`);
+    }
+  }
+  const finalValues = await Promise.all(ids.map((_, i) => read(i)));
+  throw new Error(`side inputs did not hold the typed ids after 3 attempts: ${JSON.stringify(finalValues)}`);
+}

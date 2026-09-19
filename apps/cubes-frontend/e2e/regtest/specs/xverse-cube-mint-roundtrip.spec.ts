@@ -20,6 +20,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   isVisibleWithin,
+  fillCubeSides,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -240,9 +241,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // exact IDs it later checks on-chain, so we open the details first
   // and fill them explicitly.
   await openDetails(cubes, 'configurator-advanced');
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await shot(cubes, '02a-form-filled-preflight');
 
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
@@ -422,9 +421,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // Refill the six sides — form state doesn't persist across reload.
   await openDetails(cubes, 'configurator-advanced');
   await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
-  for (let i = 0; i < 6; i++) {
-    await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-  }
+  await fillCubeSides(cubes, CUBE_SIDE_IDS);
   // Re-open the drawer post-reload, then set the fee-rate inside it.
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
   await cubes.locator('[data-testid="mint-cta"]').click();
@@ -494,9 +491,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     }
     await openDetails(cubes, 'configurator-advanced');
     await expect(cubes.locator('[data-testid="cube-side-1"]')).toBeVisible({ timeout: 30_000 });
-    for (let i = 0; i < 6; i++) {
-      await cubes.locator(`[data-testid="cube-side-${i + 1}"]`).fill(CUBE_SIDE_IDS[i]);
-    }
+    await fillCubeSides(cubes, CUBE_SIDE_IDS);
     await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
   await cubes.locator('[data-testid="mint-cta"]').click();
     await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });

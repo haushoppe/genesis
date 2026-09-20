@@ -2,12 +2,12 @@
   "name": "cubes-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "HAUS HOPPE — Ordinal Cubes frontend (cubes.haushoppe.art). Permissionless 3D Bitcoin cube gallery.",
+  "description": "HAUS HOPPE \u2014 Ordinal Cubes frontend (cubes.haushoppe.art). Permissionless 3D Bitcoin cube gallery.",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "start:regtest": "ng serve -c regtest",
-    "prebuild": "node scripts/inject-env.mjs",
+    "prebuild": "node scripts/ensure-regtest-inscriptions.mjs && node scripts/inject-env.mjs",
     "build": "ng build",
     "lint": "eslint 'src/**/*.ts'",
     "e2e": "playwright test",
@@ -18,7 +18,8 @@
     "e2e:regtest:down": "E2E_PREFIX=cubes-e2e docker compose -p cubes-e2e -f node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml down -v",
     "test": "ng test",
     "test:vitest": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.spec.json && tsc --noEmit -p tsconfig.e2e.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.spec.json && tsc --noEmit -p tsconfig.e2e.json",
+    "pretypecheck": "node scripts/ensure-regtest-inscriptions.mjs"
   },
   "dependencies": {
     "@angular/animations": "22.0.6",

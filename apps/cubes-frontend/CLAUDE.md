@@ -1,440 +1,190 @@
 # cubes-frontend/CLAUDE.md
 
-Signal-first Angular 22 app. Adapted from the maintainer's `learnly`
-best-practices playbook — the same patterns apply here.
+Signal-first Angular 22 app.
 
 ## Reading order
 
-1. Workspace `/Users/johanneshoppe/Work/ordpool/CLAUDE.md`
+1. `/Users/johanneshoppe/Work/ordpool/CLAUDE.md` (workspace)
 2. `genesis/CLAUDE.md` (this repo)
-3. This file (frontend-specific)
-4. Before any E2E work: workspace `/Users/johanneshoppe/Work/ordpool/E2E_BEST_PRACTICES.md`
-   (data-testid first, click instead of `goto`, wait on states, secure-first-then-refactor,
-   regtest bootstrap, wallet-load pattern, `openDetails` helper convention).
+3. This file
+4. Before any E2E work: `/Users/johanneshoppe/Work/ordpool/E2E_BEST_PRACTICES.md`
 
-## HARD RULE: No NgRx in this app
+## RULE: No NgRx
 
-NgRx was retired in favor of signals + `rxResourceFixed` (see below).
+- Banned: `provideStore`, `provideEffects`, `provideRouterStore`, `provideStoreDevtools`, facades over `Store.selectSignal`, `createActionGroup`/`createReducer`, the `ngrx-store-localstorage` metaReducer.
+- Use `signal()` for local state, `computed()` for derived values, `linkedSignal()` for editable state that resets on its source, `effect()` for side effects, `rxResourceFixed()` for async data.
+- Persistence across reloads is a `signal()` plus an `effect()` reading and writing localStorage, not a store.
 
-- No `provideStore`, `provideEffects`, `provideRouterStore`,
-  `provideStoreDevtools`.
-- No facades over `Store.selectSignal`.
-- No `createActionGroup`/`createReducer`.
-- No `ngrx-store-localstorage` metaReducer.
+## RULE: Never set `changeDetection`
 
-State-management primitives:
+- OnPush is the default in Angular 22. The enum values changed: `OnPush = 0` (default), `Eager = 1` (the old `Default`, now `@deprecated`).
+- Omit the key. Setting `ChangeDetectionStrategy.OnPush` is noise, like `standalone: true` or an empty `imports: []`.
+- The greedy behaviour, if ever needed, is `ChangeDetectionStrategy.Eager` with a comment saying why.
 
-- `signal()` for local component state.
-- `computed()` for derived read-only values.
-- `linkedSignal()` for editable state that resets on source change.
-- `effect()` for side effects that must run when signals change.
-- `rxResourceFixed()` for async data (see below).
+Ref: `node_modules/@angular/core/types/_debug_node-chunk.d.ts`, the `ChangeDetectionStrategy` JSDoc.
 
-If a piece of state needs to persist across reloads, wrap a
-`signal()` in an `effect()` that reads/writes localStorage. Don't
-introduce a store just for that.
+## RULE: Async data goes through `rxResourceFixed`
 
-## HARD RULE: Don't set `changeDetection` explicitly
+- Never call `rxResource` or `resource` from `@angular/core` directly. Use `src/app/shared/utils/rx-resource-fixed.ts`.
+- It fixes three built-in bugs: value resets to `undefined` when params change (flicker), `HttpErrorResponse` wrapped in `ResourceWrappedError`, and `reload()` not clearing error state immediately.
+- Reactivity comes from `params`, never from signals read inside `stream`.
+- `.reload()` directly; no refresh keys, no Subjects.
+- No `firstValueFrom` in services: return `Observable<T>` or `Promise<T>` and let the component wrap it.
 
-**OnPush is the default in Angular 22.** The enum still exists but its
-values changed: `OnPush = 0` (the default), `Eager = 1` (the old
-`Default` value, now `@deprecated`). Explicitly setting
-`changeDetection: ChangeDetectionStrategy.OnPush` is redundant noise
-just like `standalone: true` and empty `imports: []`.
-
-Verify: `node_modules/@angular/core/types/_debug_node-chunk.d.ts`
-around the `ChangeDetectionStrategy` enum — the JSDoc says "OnPush
-is enabled by default".
-
-If you ever need the old greedy behaviour (you probably don't in a
-zoneless signal-first app), set `changeDetection:
-ChangeDetectionStrategy.Eager` explicitly with a comment explaining
-why. Otherwise omit the `changeDetection` key entirely.
-
-## HARD RULE: Async data via `rxResourceFixed`
-
-**Never call `rxResource` or `resource` from `@angular/core` directly.**
-Use the wrapper at `src/app/shared/utils/rx-resource-fixed.ts` which
-fixes three bugs in the built-in:
-
-1. Value resets to `undefined` when parameters change (causes flicker).
-2. `HttpErrorResponse` gets wrapped in an unhelpful `ResourceWrappedError`.
-3. `reload()` doesn't clear error state immediately.
-
-### Basic pattern
+## rxResourceFixed shape
 
 ```typescript
-import { rxResourceFixed } from '../shared/utils/rx-resource-fixed';
-
 readonly cubesResource = rxResourceFixed({
   params: () => ({ page: this.currentPage() }),
   stream: ({ params }) => this.cubesData.getCubes(params.page),
 });
 ```
 
-Template consumes status directly:
-
 ```html
-@if (cubesResource.value(); as cubes) {
-  <!-- render cubes -->
-} @else if (cubesResource.isLoading()) {
-  <!-- skeleton -->
-} @else if (cubesResource.error()) {
-  <p>Failed. <a (click)="cubesResource.reload()" role="button">Retry</a></p>
-}
+@if (cubesResource.value(); as cubes) { <!-- render --> }
+@else if (cubesResource.isLoading()) { <!-- skeleton --> }
+@else if (cubesResource.error()) { <a (click)="cubesResource.reload()" role="button">Retry</a> }
 ```
 
-### Key rules
+## RULE: Nothing hardcoded may be unreachable on regtest
 
-- Reactivity comes from `params`, not from reading signals inside `stream`.
-- Use `.reload()` directly — no refresh keys or Subjects needed.
-- No `firstValueFrom` in services — services return `Observable<T>` or
-  `Promise<T>` and the component uses `rxResourceFixed`/`toSignal`.
+- Inscription ids that production reads from mainnet come from the environment, never from module constants: `cubeRendererInscriptionId`, `previewFallbackSides`, `bannerCubeSides`, `cubesIndexBase`, `suggestionGalleries`, `sideImageProbeBase`.
+- On regtest they resolve to fixtures inscribed on that chain by `e2e/regtest/inscribe-fixtures.sh`, which writes `src/environments/regtest-inscriptions.generated.ts` (gitignored; `scripts/ensure-regtest-inscriptions.mjs` writes a loud placeholder from `pretypecheck`/`prebuild` so a missing file cannot break the production build).
+- `parse-cube.ts`'s known-versions list takes `environment.cubeRendererInscriptionId` in its v3 SLOT, never a fourth entry: an appended entry reports the cube as v4 and breaks the Version trait.
+- A Node-side importer of app code (a Playwright spec) resolves `environments/environment` WITHOUT Angular's fileReplacements, so it sees mainnet values while the running app sees regtest ones. `expectedRegtestCubeHtml` and `parseRegtestCube` in `e2e/regtest/regtest-helpers.ts` bridge that, and throw rather than pass through if the id they substitute is absent.
 
-## HARD RULE: Cube iframes render via srcdoc + dark canvas (final, measured; do not refactor)
+Why: a fixture pointing at mainnet is the bug, not the 404 it produces. See the workspace rule "Never suppress an error. Fix it, or ask."
 
-**Every on-chain cube iframe (gallery tiles, details page, mint-success
-preview, "My cubes") is rendered by `ToggleIframeDirective` through the
-mechanism in `src/app/shared/utils/cube-srcdoc.ts`. It is the final solution
-to the white-flash and stage-flicker problem. Do not replace, "simplify" or
-re-architect it without (a) a measured reproduction of a problem with it and
-(b) a measured proof that the replacement passes the test below. "The tests
-are green" or "it looked fine on my desktop" is not that proof: both earlier
-regressions shipped green, and one of them was written by a session that had
-just declared the problem solved.**
+## RULE: Cube iframes render via srcdoc + dark canvas. Do not refactor
 
-### The mechanism (all four parts are load-bearing)
+<!-- long-rule: the measured luminance profiles and the list of failed approaches ARE the rule; a replacement without them repeats a shipped regression -->
 
-1. **Fetch the bytes, then `srcdoc`; never a cross-origin `src`.** On
-   intersection the directive fetches the cube's HTML from the ord behind the
-   preview base (its sibling `/content/<id>`; CORS `*` verified live on
-   ordinals.com, api.ordpool.space and ord.ordpool.space) and sets it as
-   `srcdoc`. Owning the document is the only way to paint anything before the
-   cube's own script has run.
-2. **`<meta name="color-scheme" content="dark">` inside the document.** A
-   browser paints a document's canvas in that document's colour scheme. The
-   parent page's `color-scheme` never crosses the frame boundary (measured: a
-   cross-origin `/preview/` frame painted white with the parent dark), so the
-   meta has to live in the iframe's own head.
-3. **The stage, as CSS, in the document before the renderer runs.** The v3
-   renderer paints its stage at runtime by injecting
-   `body { background-color: t; background-image: linear-gradient(180deg, t 20%, u 80%) }`
-   (the sky), draws on a transparent WebGL canvas, and adds a lit floor plane
-   in `k` that forms the horizon. `t`, `u`, `k` default to `#000000`,
-   `#5a5a5a`, `#202020`; a cube overrides them via fields 9, 10, 8 of its
-   `t='…'` list. `stageCss()` reproduces sky, horizon and floor with the cube's
-   own colours (`stageColorsOf`, values validated so nothing can break out of
-   the style), injected `!important` so the renderer's later sky-only style
-   cannot drop the floor replica in the frames before WebGL paints the real
-   floor. It applies to every cube: all three renderer versions (v1, v2, v3)
-   paint this same stage, confirmed by the maintainer, who wrote them.
-4. **A dark stage placeholder, never `about:blank`.** Out of the viewport, and
-   while a fetch is in flight, the iframe shows `DARK_PLACEHOLDER_SRCDOC`, the
-   default stage with nothing on it. `about:blank` is white.
+Every on-chain cube iframe (gallery tiles, details, mint-success preview, "My cubes") renders through `ToggleIframeDirective` and `src/app/shared/utils/cube-srcdoc.ts`. Replace it only with (a) a measured reproduction of a problem with it and (b) a measured proof the replacement passes the test below. A green suite is not that proof: both earlier regressions shipped green.
 
-5. **The texture shim, injected in the head before the cube's own scripts.**
-   The renderer hands every side to three.js as an `<img>`. Chrome refuses an
-   SVG **without an intrinsic size** (`width="100%"` and no height, or only a
-   `viewBox`) as a WebGL texture source: it loads and decodes as an image, but
-   the upload fails with `INVALID_VALUE` ("bad image data") and the face stays
-   black. Measured identically on ordinals.com's own `/preview/`, so it is the
-   browser and the on-chain renderer meeting; those cubes rendered before
-   Chrome tightened this. The shim patches `texImage2D` / `texSubImage2D` on
-   both WebGL contexts: when an upload of an `HTMLImageElement` fails, the same
-   image is drawn onto a canvas and that canvas is uploaded instead. Uploads
-   that succeed natively are untouched, the bytes are the cube's own, and the
-   canvas keeps the image's pixel size (WebGL2 allocates immutable storage from
-   it, so a different size would be rejected). Rasterising needs an
-   origin-clean image, hence `crossOrigin='anonymous'` on every `<img>` the
-   document creates; both content hosts answer with
-   `access-control-allow-origin: *` (verified). The six "bad image data"
-   warnings stay in the console: they are the first, native attempt that the
-   shim then retries.
-6. **Every document after the first goes into a FRESH iframe element.** The
-   directive never re-navigates an element in place: `show()` clones the
-   current iframe (same attributes), sets the new `srcdoc` on the clone,
-   swaps it into the DOM, moves the `IntersectionObserver` over and removes
-   the clone on destroy. Chrome does not paint a new srcdoc document in an
-   iframe whose current document still runs a WebGL scene: on the details
-   page, prev/next and the arrow keys (same component, same element, new
-   id) left a flat dark rectangle although the document loaded and fetched
-   its renderer and all six sides; a placeholder in between, a second of
-   waiting, or a scroll-out/in did not recover it; a new element with the
-   identical srcdoc painted at once. The gallery tiles never showed it only
-   because their swap to the placeholder happens off-screen.
+**The mechanism, all six parts load-bearing:**
 
-Around that: a stale-fetch guard (a fetch superseded by a scroll-out or a new
-id never overwrites the newer state), an LRU cache keyed by source and id (the
-bytes are immutable), and lazy load / unload via `IntersectionObserver`, which
-is what keeps twelve WebGL scenes from running at once on a phone.
+1. **Fetch the bytes, then `srcdoc`; never a cross-origin `src`.** On intersection the directive fetches the cube's HTML from the ord behind the preview base (sibling `/content/<id>`; CORS `*` verified on ordinals.com, api.ordpool.space, ord.ordpool.space). Owning the document is the only way to paint before the cube's own script runs.
+2. **`<meta name="color-scheme" content="dark">` inside the document.** A browser paints a document's canvas in that document's scheme; the parent's never crosses the frame boundary (measured: a cross-origin `/preview/` frame painted white under a dark parent).
+3. **The stage as CSS, before the renderer runs.** The renderer injects `body { background-color: t; background-image: linear-gradient(180deg, t 20%, u 80%) }`, draws on a transparent WebGL canvas, and adds a lit floor in `k`. Defaults `t`/`u`/`k` = `#000000`/`#5a5a5a`/`#202020`; a cube overrides them via fields 9, 10, 8 of its `t='…'` list. `stageCss()` reproduces sky, horizon and floor from `stageColorsOf` (values validated so nothing escapes the style), `!important` so the renderer's later sky-only style cannot drop the floor replica. All three renderer versions paint this same stage.
+4. **A dark stage placeholder, never `about:blank`.** Off-viewport and during a fetch the iframe shows `DARK_PLACEHOLDER_SRCDOC`. `about:blank` is white.
+5. **The texture shim, injected before the cube's scripts.** Chrome refuses an SVG with no intrinsic size as a WebGL texture source: it decodes, the upload fails `INVALID_VALUE` ("bad image data"), the face stays black. Same on ordinals.com's own `/preview/`. The shim patches `texImage2D`/`texSubImage2D` on both contexts: a failed `HTMLImageElement` upload is redrawn onto a canvas and that is uploaded, keeping the image's pixel size (WebGL2 allocates immutable storage from it). Needs an origin-clean image, hence `crossOrigin='anonymous'` on every `<img>` the document creates. The six "bad image data" warnings are the native first attempt and stay.
+6. **Every document after the first goes in a FRESH iframe element.** Chrome does not paint a new srcdoc document in an iframe whose current document ran WebGL: prev/next on the details page left a flat dark rectangle although the document loaded and fetched everything. A new element with identical srcdoc painted at once.
 
-The wrapping is display-only. The minted body stays the pristine canonical
-cube from `getCubeHtml`, the bytes shown are the real on-chain bytes, and
-`parseCube` rejects the wrapped copy by design (pinned in the spec). The local
-previews (mint form, banner) render an un-inscribed cube and use
-`withPreviewDarkCanvas` instead; the same rule applies to them.
+Around it: a stale-fetch guard, an LRU cache keyed by source and id, and lazy load/unload via `IntersectionObserver`.
 
-### Measured proof (2026-09-11, live site, 390 px viewport, Playwright)
+**Measured proof** (2026-09-11, live site, 390 px viewport, Playwright; mean luminance 0 black to 255 white, plus a 16-row profile down a stage-only column at 6% width):
 
-Method: scroll a below-fold tile into view and sample the iframe's rendered
-pixels over time (mean luminance, 0 black to 255 white, plus a 16-row
-luminance profile down a stage-only column at 6 % width).
+- Cross-origin `src` + `about:blank` (regression `6f63eff`): **255** from the first sample after `load`, still 255 past one second, both colour schemes, every scroll-in. Cube painted at ~2.7 to 3 s. Twelve tiles: a strobe.
+- srcdoc + meta (`b8e640f`): **31**, never above 80 (that is the cube painting).
+- srcdoc + meta + stage CSS (final): 43 ms after scroll-in, before any `load`, the profile is already `0 0 0 3 12 21 32 41 | 1 6 12 17 22 27 32 32`; the placeholder alone reads `… 41 | 1 7 12 17 22 28 32 32`; the finished WebGL stage `… 41 | 4 10 17 22 26 29 31 33`. Sky identical, floor within five steps.
 
-- Cross-origin `src` + `about:blank` (the regression in `6f63eff`): **255**
-  from the first sample after `load`, still 255 past one second, in light
-  AND dark colour scheme, on the first scroll-in and on every scroll-out /
-  scroll-in. The cube painted at about 2.7 to 3 s. Twelve tiles: a strobe.
-- srcdoc + meta (`b8e640f`): the same window reads **31** (a flat dark
-  canvas), never above 80 (that is the cube itself painting).
-- srcdoc + meta + stage CSS (the final state): 43 ms after scroll-in, before
-  any `load` has fired, the profile is already the stage,
-  `0 0 0 3 12 21 32 41 | 1 6 12 17 22 27 32 32`; the placeholder in isolation
-  reads `… 41 | 1 7 12 17 22 28 32 32`; the finished WebGL stage
-  `… 41 | 4 10 17 22 26 29 31 33`. Sky identical, floor within five
-  luminance steps. Placeholder, pre-render and finished stage look the same;
-  only the cube appears.
+**Tried, does NOT work, do not retry:**
 
-### Tried before, does NOT work (do not retry)
+- `:root { color-scheme: dark }` on the app (`6d2d3fb`): Bootstrap already sets it. Reverted `90e2c46`.
+- `color-scheme` or `background` on the `<iframe>` element: does not cross the document boundary.
+- `opacity: 0` until `load`: `load` fires long before the WebGL scene paints, so it reveals a white document.
+- A cross-origin `src` to `/preview/<id>` for speed or "real bytes" (`6f63eff`): the bytes are just as real when fetched, and the frame is white until the script runs.
+- A dark placeholder without the in-document meta (`139efcd`): fixes scroll-out, not the load window.
+- A fixed delay before revealing: guessed; too short flashes, too long hides a painted cube.
 
-- `:root { color-scheme: dark }` on the app (`6d2d3fb`): Bootstrap already
-  sets it; changed nothing; reverted in `90e2c46`.
-- `color-scheme` or a `background` on the `<iframe>` element: does not cross
-  the document boundary; cosmetic.
-- Keeping the iframe at `opacity: 0` until `load`: `load` fires once the
-  document and its script tag have loaded, long before the WebGL scene
-  paints, so it reveals a white document.
-- A cross-origin `src` to `/preview/<id>` for "speed" or "real bytes"
-  (`6f63eff`): the bytes are just as real when fetched, and the frame is
-  white until the script runs.
-- A dark placeholder alone, without the in-document meta (`139efcd`, 2023):
-  fixes the scroll-out, not the load window.
-- A fixed delay before revealing the frame: a guessed number; too short still
-  flashes, too long hides a cube that has already painted.
+**The test a replacement must pass:** Playwright on the built app, `emulateMedia({ colorScheme: 'light' })`, viewport 390x844, an `iframe[apptoggleiframe]` below the fold, `scrollIntoView`, element-screenshot every 100 to 400 ms for ~5 s, compute mean luminance plus the column profile. Pass: no sample near 255, and the profile right after scroll-in matches the settled stage in the sky rows and is within a few steps in the floor rows. Repeat after scroll-out and a second scroll-in. Then run the same measurement against production.
 
-### How to verify any change (the test a replacement has to pass)
+Then the SPA paths a direct load never exercises: on a details page press ArrowRight or click "Next Cube" and screenshot after a few seconds (measured with the fresh-element swap: iframe region mean luminance 41 and 36 right after the swap, never white); on the gallery scroll tiles out and back in; confirm exactly one iframe per tile remains after the swaps.
 
-Playwright against the built app: `emulateMedia({ colorScheme: 'light' })`,
-viewport 390×844, pick an `iframe[apptoggleiframe]` below the fold,
-`scrollIntoView`, then element-screenshot every 100 to 400 ms for about 5 s
-and compute the mean luminance, plus the column profile. Pass: no sample near
-255, and the profile right after scroll-in equals the settled stage profile
-in the sky rows and stays within a few steps in the floor rows. Repeat after a
-scroll-out (placeholder) and a second scroll-in. Then ship, and run the same
-measurement against production.
+**Pitfalls that produced wrong conclusions here:**
 
-Then the SPA paths, which a direct page load never exercises: on a details
-page press ArrowRight / click "Next Cube" and screenshot after a few seconds
-(the new cube must be visible; measured with the fresh-element swap: iframe
-region mean luminance 41 and 36 in the two screenshots right after the swap,
-never white), and on the gallery scroll the tiles out and back in (every
-tile renders again). Also check the DOM holds exactly one iframe per tile
-after the swaps (no leaked elements).
+- `load` fires after the renderer script ran. Sample by time after scroll-in, not after `load`.
+- Setting `srcdoc` to the value it already holds does not re-navigate, so no `load` fires.
+- A Playwright element screenshot scrolls the element into view first and triggers the lazy load; measure the placeholder in a standalone iframe.
+- `page.waitForFunction(fn, arg, options)` takes ONE argument; a second is read as options and the wait silently times out.
+- The Playwright MCP console log glues `:<column>` onto a resource URL with no separator, so `…i02888:0` is not a request for `:0`. Verify with `page.on('response')`.
+- Under plain `ng serve` the start page has no gallery and no mint form: `environment.ts` carries `haushoppeTipAddress: '???'` and `deriveNetwork()` throws. Use `npm run start:regtest`, or put a real mainnet address there temporarily and never commit it.
 
-Pitfalls that produced wrong conclusions while building this, each of which
-cost real time:
+**Known and unrelated:** cube #96140351 (`8bb3374c…i0`) carries five side ids with zero-padded indices (`i02888` and friends) that no inscription has. They 404 on ordinals.com's own preview too. On-chain, immutable, one cube. Do not touch the mechanism for them.
 
-- `load` fires after the renderer script ran; sample by time after
-  scroll-in, not "after load", to see the pre-render window.
-- Setting `srcdoc` to the value it already has does not re-navigate, so no
-  `load` fires for it.
-- A Playwright element screenshot scrolls the element into view first, which
-  triggers the lazy load; measure the placeholder in a standalone iframe.
-- `page.waitForFunction(fn, arg, options)` takes ONE argument; a second one
-  is read as the options object and the wait silently times out.
-- The Playwright MCP console log glues `:<column>` onto a resource URL with
-  no separator, so `…i02888:0` is not a request for `:0`; verify request
-  URLs with `page.on('response')`.
-- Under plain `ng serve` the start page has no gallery and no mint form:
-  `environment.ts` carries `haushoppeTipAddress: '???'` and
-  `deriveNetwork()` throws on it. For a local measurement put a real mainnet
-  address there temporarily and revert it; never commit it.
+**Files:** `src/app/layout/toggle-iframe.directive.ts`, `src/app/shared/utils/cube-srcdoc.ts` (+ `.vitest.ts`), `src/app/shared/utils/preview-dark-canvas.ts` (local previews), `src/shared/ordinals/parse-cube.ts` (the version gate), and `e2e/regtest/specs/unisat-cube-mint-roundtrip.spec.ts`, which asserts the minted body reaches the success preview's srcdoc byte-for-byte.
 
-### Known and unrelated: five 404s on a full scroll
+## RULE: The header paints with zero requests
 
-Cube #96140351 (`8bb3374c…i0`) carries five side ids with zero-padded indices
-(`i02888` and friends) that no inscription has; they 404 on ordinals.com's
-own preview as well. On-chain, immutable, one cube. Not a symptom of this
-mechanism; do not touch the mechanism to make them go away.
+- `src/app/layout/banner/banner-poster.ts` holds a 5914-byte WebP still frame of the featured cube as a data URI. It carries first paint.
+- The live cube replaces it after the window `load` event plus an idle callback, never on `afterNextRender` alone: measured, that swap fires within milliseconds and the ~253 KB of on-chain fetches (renderer + its 250274-byte three.js and fflate bundle + one image per side) land back inside the window that decides first paint.
+- Regenerate the poster after changing `bannerCubeSides`: screenshot the banner iframe on the live site at deviceScaleFactor 2, then `cwebp -q 72 -resize 1200 0 shot.png -o poster.webp`, and base64 it into that file.
 
-### Files
+## RULE: A green vitest suite says nothing about types
 
-`src/app/layout/toggle-iframe.directive.ts`,
-`src/app/shared/utils/cube-srcdoc.ts` (+ `.vitest.ts`),
-`src/app/shared/utils/preview-dark-canvas.ts` (local previews),
-`src/app/services/cube-html.ts` (`CUBE_RENDERER_INSCRIPTION_ID`, the v3 id
-the gate keys on), and
-`e2e/regtest/specs/unisat-cube-mint-roundtrip.spec.ts`, which asserts that
-the minted body lands in the success preview's srcdoc byte-for-byte.
+- Run the suite with `npm run test:vitest`. Specs sit next to the code (`foo.spec.ts`, or the legacy `foo.component.spec.ts`).
+- `npm run typecheck` runs `tsconfig.app.json`, `tsconfig.spec.json` and `tsconfig.e2e.json`. CI runs it after the test lanes.
+- vitest strips types rather than checking them, and `ng build` compiles the app project and not the tests, so a spec can disagree with the types it claims to use and stay green forever.
+- A test file matching neither `*.spec.ts`, `*.test.ts` nor `*.vitest.ts` is invisible to the checker; add its pattern to `tsconfig.spec.json`.
+- Never run `tsc -p tsconfig.json` and treat the output as real: it is the base config, has no test-runner types, and reports dozens of meaningless missing-`describe` errors.
+- A mock of an object must SPREAD the real one (`vi.importActual`) and override only what the test needs. A hand-listed copy silently omits every field added later.
+
+Ref: a hand-written `InscribeSnapshot` fell five fields behind its SDK type unnoticed; a hand-listed `environment` mock omitted two new fields and turned the production build red for four commits.
 
 ## Component conventions (Angular 22+)
 
-- **No `standalone: true`** — it's the default in v19+.
-- **No `.component.` in filenames** — `start.ts`, `start.html`,
-  `start.scss`. Class names have no `Component` suffix — `class Start`,
-  not `class StartComponent`. Existing files may still use the old
-  convention; only apply this rule to newly-created components until
-  we do a workspace-wide rename.
-- **No empty `imports: []`** — omit entirely if no imports needed.
-- **No empty stylesheet files** — omit `styleUrl` if no CSS is needed.
-- **`inject()` over constructor injection** always.
-- **`input()` and `output()` functions** — not decorators.
-- **Native control flow** — `@if`, `@for`, `@switch`, never
-  `*ngIf`/`*ngFor`/`*ngSwitch`.
-- **Host bindings in `host: { }`** — no `@HostBinding`/`@HostListener`.
-- **Class bindings** — `[class.foo]="bar()"` — not `ngClass`.
-- **Style bindings** — `[style.color]="c()"` — not `ngStyle`.
+- No `standalone: true` (default since v19). No empty `imports: []`. No empty stylesheet file, omit `styleUrl`.
+- No `.component.` in filenames: `start.ts`, `start.html`, `start.scss`, `class Start`. Existing files keep the old naming; apply this to new components only.
+- `inject()` over constructor injection, always.
+- `input()` / `output()` functions, not decorators.
+- `@if` / `@for` / `@switch`, never `*ngIf` / `*ngFor` / `*ngSwitch`.
+- Host bindings in `host: { }`, not `@HostBinding` / `@HostListener`.
+- `[class.foo]="bar()"` not `ngClass`; `[style.color]="c()"` not `ngStyle`.
 
-## Template signal-tracking rules
+## Template and signal rules
 
-- Read signals directly in interpolations and property bindings —
-  `{{ x() }}`, `[disabled]="isBusy()"`.
-- Prefer top-level signal reads (root component view). Deeply-nested
-  `@if (x; as alias)` with the alias-value read in the interior view
-  is the shape that hit us with the #61662 bug — historical detail
-  in `CLAUDE_HISTORICAL_BUGS.md`; the mitigation now is *use rxResource
-  and don't fabricate nested `@if` gates on top of it*.
-- Use `linkedSignal` when local state should follow an async source
-  but stay editable — e.g. a form default derived from a resource
-  value that the user can override.
+- Read signals directly in interpolations and bindings: `{{ x() }}`, `[disabled]="isBusy()"`.
+- Prefer top-level signal reads. Deeply nested `@if (x; as alias)` with the alias read in the interior view is the shape behind Angular #61662; use `rxResourceFixed` and do not fabricate nested `@if` gates on top of it (detail in `CLAUDE_HISTORICAL_BUGS.md`).
+- `@if (x; as alias)` scopes `alias` to that view. For multiple uses take a named `linkedSignal` or a top-level `@let`.
+- `computed()` reading a plain object property (`router.url`) needs `toSignal()` first.
+- Signals read inside `resource.stream` are NOT tracked; reactive reads belong in `params`.
+- Setting a signal inside `computed()` is a bug; use `effect()`.
+- `linkedSignal` when local state follows an async source but stays editable.
 
-## Vitest for unit tests
+## Templates and accessibility
 
-Vitest is installed at the workspace root. Unit tests live next to
-the code:
+- Every route needs a `title`.
+- `<button>` for actions, `<a>` for navigation.
+- `rel="noopener"` on every `target="_blank"`.
+- `aria-live="polite"` on async-updating containers, `role="status"` on spinners with a `visually-hidden` label, `role="alert"` on errors.
 
-- `foo.spec.ts` for a service or plain function
-- `foo.component.spec.ts` for a component (legacy naming — new tests
-  use `foo.spec.ts` alongside `foo.ts`)
+## Services and RxJS
 
-Run: `npm run test:vitest` from `apps/cubes-frontend/`.
+- Single responsibility, `providedIn: 'root'`, `inject()`.
+- HTTP-backed methods return `Observable<T>`; do not convert to Promise or Signal inside the service.
+- Never `firstValueFrom` / `toPromise` in a service.
+- `switchMap` / `concatMap` / `mergeMap` for chaining; `toSignal()` at the component entry point.
 
-### A green suite here says nothing about types: run `npm run typecheck`
+## RULE: native `fetch` only
 
-**vitest strips types rather than checking them.** This app is the only one
-in the family that runs vitest; ordpool.space and cat21.space use jest with
-ts-jest (via `jest-preset-angular`), which type-checks every spec as it runs.
-So a test here can disagree with the types it claims to use and stay green
-forever, and `ng build` will not catch it either, because it compiles the app
-project and not the tests.
+- No `axios`, no `xhr`. `HttpClient` where Angular DI matters (interceptors, auth), `fetch` for plain reads.
 
-`npm run typecheck` runs both projects (`tsconfig.app.json` and
-`tsconfig.spec.json`) and CI runs it after the two test lanes. If you add a
-test file whose name matches neither `*.spec.ts`, `*.test.ts` nor
-`*.vitest.ts`, add the pattern to `tsconfig.spec.json` or it is invisible to
-the checker.
+## Routing: sort and page are query parameters
 
-Do NOT run `tsc -p tsconfig.json` and treat its output as real. That is the
-base config the other two extend; it has no test-runner types, so it reports
-dozens of missing `describe` errors that mean nothing.
+- `/?sort=newest&page=3`, bound to `StartComponent` inputs by `withComponentInputBinding()`, parsed by `toCubeSort` / `toCubePage` which tolerate missing or nonsensical values. `cubeListQueryParams` writes only what differs from the default, so a plain URL stays plain.
+- Because those are navigations, the router's `withInMemoryScrolling` is OFF in `app.config.ts` and `CustomScrollService` is the single authority: back/forward restores position, an anchor is polled into view, a navigation within the same component HOLDS the viewport, only a navigation to another component jumps to the top.
+- The hold is active: the grid swaps every tile at once and the document is briefly too short to keep the offset, so the position is re-asserted for 1.5 s.
 
-This is not theoretical. A hand-written `InscribeSnapshot` in
-`start.component.vitest.ts` fell five fields behind the SDK type it stood in
-for, and nothing said so, because `tsconfig.spec.json` matched `*.spec.ts`
-while nineteen of the twenty test files here are `*.vitest.ts`.
+Ref: verified in the browser, sort/page/Back/Back keep y=1556; opening a cube lands at top; Back restores y=1556; the `#mint` anchor lands on the heading.
 
-## Templates
+## RULE: keep `deployUrl: "/"`
 
-- Every route needs a `title` (browser tab, screen readers).
-- Use `<button>` for actions and `<a>` for navigation — never confuse.
-- Add `rel="noopener"` on every `target="_blank"` link.
-- `aria-live="polite"` on containers that update asynchronously.
-- `role="status"` on spinners with a `<span class="visually-hidden">`.
-- `role="alert"` on error messages.
-
-## Services
-
-- Design around a single responsibility.
-- `providedIn: 'root'` for singletons.
-- `inject()` — never constructor injection.
-- Return `Observable<T>` from HTTP-backed methods so components can
-  pipe them through `rxResourceFixed`. Do not eagerly convert to
-  `Promise` or `Signal` inside the service.
-
-## RxJS rules
-
-- Never call `firstValueFrom`/`toPromise` in services.
-- Prefer `switchMap`/`concatMap`/`mergeMap` for chaining.
-- Use `toSignal(observable)` in components at the entry point when
-  you have to expose an observable as a signal.
-
-## Common pitfalls
-
-- `@if (x; as alias)` — `alias` is view-scoped. Prefer named
-  `linkedSignal` or top-level `@let` if you need the value in
-  multiple places.
-- `computed()` reading a plain object property (e.g. `router.url`) —
-  convert to a signal first via `toSignal()`.
-- Signals inside `resource.stream` are NOT tracked — put reactive
-  reads in `params`.
-- Setting signals inside `computed()` is a bug — use `effect()`.
-
-## Routing: the list's order and page are query parameters
-
-`/?sort=newest&page=3`. Both are bound to `StartComponent` inputs by
-`withComponentInputBinding()` and parsed by `toCubeSort` / `toCubePage`, which
-tolerate a missing or nonsensical value; `cubeListQueryParams` writes only what
-differs from the default view, so the plain URL stays plain. A view is
-therefore a link, Back returns to it, and a reload keeps it.
-
-The catch this creates: picking a sort or a page is a **navigation**, and the
-router's own `withInMemoryScrolling` would scroll to the top on every one of
-them. So the router's scrolling is switched off in `app.config.ts` and
-`CustomScrollService` is the single authority: back / forward restores the
-stored position, an anchor is polled into view, a navigation that stays in the
-same component **holds** the viewport, and only a navigation to another
-component jumps to the top. The hold is active, not passive: the grid swaps all
-of its tiles at once, and while the new ones have no height the document is
-short enough for the browser to clamp the scroll to the top, so the position is
-re-asserted for 1.5 s. Verified in the browser: sort, page, Back, Back again
-all keep y=1556; opening a cube lands at the top; Back to the list restores
-y=1556; the `#mint` shuffle anchor lands on the heading.
-
-## Build: `deployUrl` is `/` so the preload hint survives deep links
-
-`angular.json` sets `"deployUrl": "/"` on the build, which makes every
-resource URL Angular writes into `index.html` root-absolute (`/main-XXXX.js`,
-`/chunk-XXXX.js`). Why that matters: Angular emits the start chunk's preload
-hint relative (`<link rel="modulepreload" href="chunk-XXXX.js">`), and
-Cloudflare Pages turns the page's preload links into an HTTP header
-(`link: <chunk-XXXX.js>; rel="modulepreload"`, observed on production on every
-route). A relative `Link` header target is resolved against the REQUEST URL,
-not the document's `<base href="/">`, so on a nested route
-(`/inscription/<id>`) the browser preloads `/inscription/chunk-XXXX.js`, the
-SPA fallback answers with index.html, and the console shows "Failed to load
-module script … MIME type of text/html" on every deep link. The chunk itself
-still loads through `main.js`'s own import, so only the hint misfires; `/faq`
-never showed it because a relative name under a top-level route resolves to
-the root. A plain static server sends no such header, which is why this does
-not reproduce locally: verify on production. Keep the option; the
-alternative, `index.preloadInitial: false`, would drop the hint altogether.
-
-## `native-fetch` only
-
-- No `axios`, no `xhr`.
-- `HttpClient` for Angular-DI-integrated cases (interceptors,
-  auth), `fetch` for plain reads.
+- Set in `angular.json`. It makes every resource URL in `index.html` root-absolute (`/main-XXXX.js`, `/chunk-XXXX.js`).
+- Angular emits the hint relative (`<link rel="modulepreload" href="chunk-XXXX.js">`) and Cloudflare Pages turns it into a header (`link: <chunk-XXXX.js>; rel="modulepreload"`). A relative `Link` target resolves against the REQUEST URL, not `<base href="/">`, so on a nested route (`/inscription/<id>`) the browser preloads `/inscription/chunk-XXXX.js`, the SPA fallback answers with index.html, and every deep link logs "Failed to load module script … MIME type of text/html".
+- Only the hint misfires; the chunk still loads via `main.js`. `/faq` never showed it because a relative name under a top-level route resolves to the root.
+- A plain static server sends no such header, so this does not reproduce locally. Verify on production. `index.preloadInitial: false` would drop the hint altogether and is not the fix.
 
 ## What lives where
 
-- `src/app/start/` — mint form, drawer, past mints, minted-cubes grid.
-- `src/app/details/` — single cube page.
-- `src/app/faq/`, `src/app/presskit/` — static content.
-- `src/app/layout/` — reusable presentational components (banner,
-  footer, header, cube-preview, inscription-list-item, loading-
-  indicator).
-- `src/app/services/` — thin HTTP wrappers.
-- `src/app/services/cubes-data/rarity.service.ts` — `rarity.json` from the
-  cubes index (rank, score, cursed reasons per cube; rules in the
-  `ordinal-cubes-index` README under "Rarity"); wording in `rarity-labels.ts`.
-- `src/app/services/cubes-data/cube-order.ts` — the order of the minted-cubes
-  list: newest first (default) or by rarity rank, unranked cubes after the
-  ranked ones. The sort is a plain signal on the start page, not a URL
-  parameter, because a query-param navigation scrolls the page to the top.
-- `src/app/start/side-image-check.ts` + `side-image-probe.service.ts` — the
-  mint form's black-face check: every side is loaded as an `<img>` from
-  `api.ordpool.space/content/<id>`, the renderer's own load path, and the
-  Mint button stays off until all six decode. The cubes index probes the
-  same host in headless Chrome, so a cube that passes here is not cursed
-  for a black face there.
-- `src/app/shared/utils/rx-resource-fixed.ts` — the wrapper.
-- `src/environments/` — env-specific config.
+| Path | What |
+|---|---|
+| `src/app/start/` | mint form, drawer, past mints, minted-cubes grid |
+| `src/app/details/` | single cube page |
+| `src/app/faq/`, `src/app/presskit/` | static content |
+| `src/app/layout/` | banner, footer, header, cube-preview, inscription-list-item, loading-indicator |
+| `src/app/services/` | thin HTTP wrappers |
+| `src/app/services/cubes-data/rarity.service.ts` | `rarity.json` from the cubes index (rank, score, cursed reasons); rules in the `ordinal-cubes-index` README, wording in `rarity-labels.ts` |
+| `src/app/services/cubes-data/cube-order.ts` | list order: newest first, or by rarity rank with unranked last. A plain signal, not a URL parameter, because a query-param navigation scrolls to the top |
+| `src/app/start/side-image-check.ts`, `side-image-probe.service.ts` | the black-face check: every side loads as an `<img>` from `environment.sideImageProbeBase`, the renderer's own load path, and Mint stays off until all six decode. The cubes index probes the same way, so a cube that passes here is not cursed there |
+| `src/app/shared/utils/rx-resource-fixed.ts` | the resource wrapper |
+| `src/environments/` | per-environment config, including every id that must differ on regtest |

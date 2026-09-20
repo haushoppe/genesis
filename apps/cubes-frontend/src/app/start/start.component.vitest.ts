@@ -11,21 +11,25 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // A real regtest tip lets the mint gate resolve so mint() can reach the
 // orchestrator call under test. The two ord URLs feed the orchestrator's
 // scan port (classifyOutpoint); the tests never trigger a real scan.
-vi.mock('../../environments/environment', () => ({
-  environment: {
-    production: false,
-    api: 'http://localhost:3333',
-    mempoolApiUrl: '',
-    ordApiUrl: 'http://localhost:8082',
-    cat21OrdApiUrl: 'http://localhost:8082',
-    haushoppeTipAddress: 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk',
-    haushoppeTipSats: 1000,
-    ordinalsExplorerIframe: '',
-    ordinalsExplorerDetails: '',
-    satflowMarketplace: '',
-    ordNetMarketplace: '',
-  },
-}));
+//
+// SPREAD the real environment and override only those three. A hand-listed
+// copy silently omits every field added later: when the cube renderer id and
+// the preview fallback sides moved into the environment, this mock still
+// described the old shape, `PREVIEW_FALLBACK_SIDES[0]` read from undefined,
+// and the production build workflow went red on a unit test.
+vi.mock('../../environments/environment', async () => {
+  const actual = await vi.importActual<typeof import('../../environments/environment')>(
+    '../../environments/environment',
+  );
+  return {
+    environment: {
+      ...actual.environment,
+      ordApiUrl: 'http://localhost:8082',
+      cat21OrdApiUrl: 'http://localhost:8082',
+      haushoppeTipAddress: 'bcrt1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqvg32hk',
+    },
+  };
+});
 
 import {
   Cat21Service, getDummyKeypair, InscribeMintOrchestrator, InscribeSnapshot, KnownOrdinalWalletType, Network,

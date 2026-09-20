@@ -1,5 +1,6 @@
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 
+import { environment as regtestEnvironment } from '../../../src/environments/environment.regtest';
 import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 
 /**
@@ -21,7 +22,11 @@ import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-help
  */
 
 const APP_URL = 'http://localhost:4203/';
-const PROBE_HOST = 'https://api.ordpool.space';
+// Read from the regtest environment rather than repeated here: the probe host
+// moved to the stack's own ord when the mainnet reaches were removed, and a
+// hardcoded copy silently stopped intercepting anything, so the state this
+// spec exists to observe never appeared.
+const PROBE_HOST = regtestEnvironment.sideImageProbeBase;
 
 let browser: Browser;
 let page: Page;
@@ -48,9 +53,12 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
   // `domcontentloaded` for the same reason: this spec deliberately leaves
   // requests outstanding, so waiting for a quiet load is waiting for something
   // it has decided will not happen.
-  await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
-
+  // Installed BEFORE navigation. The suggestion now pre-fills six ids on load
+  // and the probe resolves them immediately, so a route installed after goto
+  // arrives too late: the results are already cached and the "checking" state
+  // this spec observes never appears. Installing it first is safe now that the
+  // probe host is the stack's own ord and no longer serves the page's assets,
+  // which is what made an early route deadlock goto previously.
   // Hold every probe image until released. The probe loads each side from
   // `sideImageProbeBase`, which is the same host the cubes index uses.
   let release: (() => void) | undefined;
@@ -59,6 +67,10 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
     await held;
     await route.abort();
   });
+
+  await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+
 
   await openDetails(page, 'configurator-advanced');
   await fillCubeSides(page, RENDERABLE_SIDE_IDS);

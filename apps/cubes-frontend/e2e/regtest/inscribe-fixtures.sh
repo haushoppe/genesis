@@ -41,12 +41,27 @@ wait_for_ord_sync() {
   echo "ord-stock did not reach height $want" >&2; exit 1
 }
 
+ord_json() {  # run an ord wallet command, fail loudly with ord's own message
+  local out; if ! out="$("$@" 2>&1)"; then echo "$* failed: $out" >&2; exit 1; fi
+  printf '%s' "$out"
+}
+
 # --- an ord wallet with mature funds -------------------------------------
-if ! ORD balance >/dev/null 2>&1; then
+# BEFORE the first wallet command, not only after each mine: ord refuses to
+# construct a wallet at all while its index trails bitcoind, and the bootstrap
+# has just mined 101 blocks to mature the coinbase.
+wait_for_ord_sync
+
+# The probe's stderr is kept and printed when it fails. Discarding it with
+# `2>&1` hides ord's own sentence ("`ord server` N blocks behind `bitcoind`")
+# and leaves the next command to die on empty stdin, so the run reports a JSON
+# decode error instead of the cause.
+if ! ORD_PROBE="$(ORD balance 2>&1)"; then
+  echo "ord wallet not usable yet, creating it. ord said: $ORD_PROBE" >&2
   ORD create >/dev/null
 fi
-if [ "$(ORD balance | python3 -c 'import sys,json;print(json.load(sys.stdin)["cardinal"])')" -lt 10000000 ]; then
-  ADDR="$(ORD receive | python3 -c 'import sys,json;print(json.load(sys.stdin)["addresses"][0])')"
+if [ "$(ord_json ORD balance | python3 -c 'import sys,json;print(json.load(sys.stdin)["cardinal"])')" -lt 10000000 ]; then
+  ADDR="$(ord_json ORD receive | python3 -c 'import sys,json;print(json.load(sys.stdin)["addresses"][0])')"
   BTC -rpcwallet="${PREFIX}" sendtoaddress "$ADDR" 1 >/dev/null
   BTC -rpcwallet="${PREFIX}" -generate 1 >/dev/null
   wait_for_ord_sync
@@ -62,7 +77,7 @@ docker cp "$HERE/fixtures" "${PREFIX}-ord-stock:/fixtures" >/dev/null
 # change sits unconfirmed in bitcoind.
 inscribe() {
   local id
-  id="$(ORD inscribe --fee-rate 1 --no-backup --file "/fixtures/$1" \
+  id="$(ord_json ORD inscribe --fee-rate 1 --no-backup --file "/fixtures/$1" \
     | python3 -c 'import sys,json;print(json.load(sys.stdin)["inscriptions"][0]["id"])')"
   BTC -rpcwallet="${PREFIX}" -generate 1 >/dev/null
   wait_for_ord_sync

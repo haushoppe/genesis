@@ -252,7 +252,13 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  await cubes.locator('[data-testid="mint-cta"]').click();
+  // The notice renders inside the drawer this click opens, so it is an
+  // appears-once effect and the swallow guard fits.
+  await clickUntilEffect(
+    cubes.locator('[data-testid="mint-cta"]'),
+    cubes.locator('[data-testid="mint-asset-notice"]'),
+    { label: 'mint-cta -> mint-asset-notice' },
+  );
 
   // INFORMED, not blocked.
   const notice = cubes.locator('[data-testid="mint-asset-notice"]');

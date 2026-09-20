@@ -20,7 +20,7 @@ import {
   waitForTxConfirmed,
   waitForUtxoAt,
 } from '../regtest-helpers';
-import { seedDirtyCoin, assertDirtyCoinIsBestFit, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
+import { clickUntilEffect, seedDirtyCoin, assertDirtyCoinIsBestFit, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
 import { simulateInscribeFees, prepareInscribeFundingInput, changeDustFloor, Network } from 'ordpool-sdk';
 
 /**
@@ -237,7 +237,16 @@ for (const asset of ASSETS) {
     await fillCubeSides(page, CUBE_SIDE_IDS);
 
     await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  await page.locator('[data-testid="mint-cta"]').click();
+    // `mint-btn` lives inside the drawer this click opens, so it IS an
+    // appears-once effect and the guard fits. Left plain at first on the
+    // reasoning that the next assertion might already be satisfied; it is
+    // not, and CI failed here with "element(s) not found", the swallow
+    // signature.
+    await clickUntilEffect(
+      page.locator('[data-testid="mint-cta"]'),
+      page.locator('[data-testid="mint-btn"]'),
+      { label: 'mint-cta -> mint-btn' },
+    );
 
     const mintBtn = page.locator('[data-testid="mint-btn"]');
     await expect(mintBtn).toBeEnabled({ timeout: 60_000 });

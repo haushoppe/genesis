@@ -1,7 +1,20 @@
-<iframe
-  width="100%"
-  height="300"
-  class="image-container"
-  [srcdoc]="bannerSrcdoc | safeHtml"
-  sandbox="allow-scripts"
-></iframe>
+@if (live()) {
+  <iframe
+    width="100%"
+    height="300"
+    class="image-container"
+    [srcdoc]="bannerSrcdoc | safeHtml"
+    sandbox="allow-scripts"
+  ></iframe>
+} @else {
+  <!-- Inlined still frame: the header's first paint costs no requests. -->
+  <img
+    class="image-container w-100"
+    style="object-fit: cover; display: block"
+    [src]="poster"
+    width="1200"
+    height="386"
+    alt="The featured Ordinal Cube, a 3D cube whose faces are inscribed artworks"
+    fetchpriority="high"
+  >
+}

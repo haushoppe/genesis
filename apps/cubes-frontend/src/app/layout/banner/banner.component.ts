@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { afterNextRender, Component, signal } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
+import { BANNER_POSTER } from './banner-poster';
 import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { getCubeHtml } from '../../services/cube-html';
 import { withPreviewDarkCanvas } from '../../shared/utils/preview-dark-canvas';
@@ -35,4 +36,25 @@ const BANNER_SRCDOC = withPreviewDarkCanvas(getCubeHtml({
 })
 export class BannerComponent {
   protected readonly bannerSrcdoc = BANNER_SRCDOC;
+  protected readonly poster = BANNER_POSTER;
+
+  /** The live cube costs ~253 KB of on-chain fetches (renderer + its three.js
+   *  and fflate bundle + one image per side), so it is not part of first
+   *  paint. The inlined still frame carries the header until then. */
+  protected readonly live = signal(false);
+
+  constructor() {
+    afterNextRender(() => {
+      // Gate on LOAD, then idle. `afterNextRender` alone fires within
+      // milliseconds, so the 253 KB of on-chain fetches would still land
+      // inside the window that decides first paint and LCP, and the poster
+      // would buy nothing.
+      const start = () => {
+        if ('requestIdleCallback' in window) window.requestIdleCallback(() => this.live.set(true), { timeout: 3000 });
+        else setTimeout(() => this.live.set(true), 200);
+      };
+      if (document.readyState === 'complete') start();
+      else window.addEventListener('load', start, { once: true });
+    });
+  }
 }

@@ -21,7 +21,7 @@ import {
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, onboardCat21Wallet, waitForApprovalPopup } from 'ordpool-sdk/e2e';
+import { clickUntilEffect, closeLeftoverExtensionPages, onboardCat21Wallet, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -188,7 +188,13 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
   // Click mint-cta — triggers the top-right wallet-connect widget when
   // no wallet is connected yet.
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  await cubes.locator('[data-testid="mint-cta"]').click();
+  // `mint-cta` re-renders from funding state that settles after first paint,
+  // so the click can be swallowed: measured on the alby lane in 3 of 6 runs.
+  await clickUntilEffect(
+    cubes.locator('[data-testid="mint-cta"]'),
+    cubes.locator('[data-testid="wallet-picker-detected"]'),
+    { label: 'mint-cta -> wallet-picker-detected' },
+  );
 
   // Wallet picker opens.
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
@@ -268,7 +274,15 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  await cubes.locator('[data-testid="mint-cta"]').click();
+  // `mint-cta` is bound to funding state that settles after first paint, so
+  // it can re-render between the locator resolving and the event landing.
+  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
+  // as this effect simply never appearing.
+  await clickUntilEffect(
+    cubes.locator('[data-testid="mint-cta"]'),
+    cubes.locator('[data-testid="mint-checkout"]'),
+    { label: 'mint-cta -> mint-checkout' },
+  );
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
   await openDetails(cubes, 'mint-advanced');
   await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });

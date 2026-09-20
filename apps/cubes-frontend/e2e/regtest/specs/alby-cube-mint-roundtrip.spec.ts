@@ -21,7 +21,7 @@ import {
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
-import { installAlbyAutoApprove, seedAlbyAccount } from 'ordpool-sdk/e2e';
+import { clickUntilEffect, installAlbyAutoApprove, seedAlbyAccount } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -197,8 +197,18 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
 
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
 
-  await cubes.locator('[data-testid="mint-cta"]').click();
-
+  // HYPOTHESIS UNDER TEST: this click is being swallowed. `mint-cta` is bound
+  // to funding state that settles after first paint, so it can re-render
+  // between the locator resolving and the event landing; nothing fails at the
+  // click and the picker simply never appears. `clicks` is logged so the
+  // result is readable either way: >1 means the click really was swallowed,
+  // ===1 means it was not and this helper is not what fixed the lane.
+  const ctaClick = await clickUntilEffect(
+    cubes.locator('[data-testid="mint-cta"]'),
+    cubes.locator('[data-testid="wallet-picker-detected"]'),
+    { label: 'mint-cta -> wallet picker' },
+  );
+  console.log(`[alby-mint] mint-cta took ${ctaClick.clicks} click(s) to open the picker`);
 
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-alby"]');
@@ -227,7 +237,15 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  await cubes.locator('[data-testid="mint-cta"]').click();
+  // Same control, same swallow: measured at 2 clicks on the pre-connect one,
+  // and this post-connect click failed at `mint-checkout` in the same run that
+  // proved it. Both clicks on `mint-cta` go through the guard.
+  const drawerClick = await clickUntilEffect(
+    cubes.locator('[data-testid="mint-cta"]'),
+    cubes.locator('[data-testid="mint-checkout"]'),
+    { label: 'mint-cta -> checkout drawer' },
+  );
+  console.log(`[alby-mint] mint-cta took ${drawerClick.clicks} click(s) to open the drawer`);
   await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
   await openDetails(cubes, 'mint-advanced');
   await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });

@@ -19,7 +19,7 @@ import {
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
-import { closeLeftoverExtensionPages, onboardLeather, waitForApprovalPopup, seedDirtyCoin } from 'ordpool-sdk/e2e';
+import { clickUntilEffect, closeLeftoverExtensionPages, onboardLeather, waitForApprovalPopup, seedDirtyCoin } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -190,9 +190,15 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
 
   await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
 
-  await cubes.locator('[data-testid="mint-cta"]').click();
-
-
+  // `mint-cta` is bound to funding state that settles after first paint, so
+  // it can re-render between the locator resolving and the event landing.
+  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
+  // as this effect simply never appearing.
+  await clickUntilEffect(
+    cubes.locator('[data-testid="mint-cta"]'),
+    cubes.locator('[data-testid="wallet-picker-detected"]'),
+    { label: 'mint-cta -> wallet-picker-detected' },
+  );
   await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const knownPagesBeforeConnect = new Set(context.pages());
   await cubes.locator('[data-testid="wallet-connect-leather"]').click();

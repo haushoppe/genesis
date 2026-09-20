@@ -13,7 +13,7 @@ import {
   rpc,
   waitForElectrsSync,
 } from '../regtest-helpers';
-import { seedDirtyCoin, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
+import { clickUntilEffect, seedDirtyCoin, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
 
 /**
  * What the reader is TOLD when the only coin that can fund the mint carries
@@ -115,8 +115,15 @@ for (const asset of ASSETS) {
   await fillCubeSides(page, CUBE_SIDE_IDS);
 
   await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  await page.locator('[data-testid="mint-cta"]').click();
-
+  // `mint-cta` is bound to funding state that settles after first paint, so
+  // it can re-render between the locator resolving and the event landing.
+  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
+  // as this effect simply never appearing.
+  await clickUntilEffect(
+    page.locator('[data-testid="mint-cta"]'),
+    page.locator('[data-testid="mint-checkout"]'),
+    { label: 'mint-cta -> mint-checkout' },
+  );
   await expect(page.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 30_000 });
 
   // The warning, not the notice: this wallet cannot separate the two lanes.

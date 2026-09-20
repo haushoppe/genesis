@@ -727,13 +727,11 @@ export const NON_IMAGE_SIDE_ID = 'a1aff8c3dc8ff01c775d3de7400ec6734b5fd289e8cff3
  *     them. They cannot exist on this chain. Matched BY ID, never by path:
  *     `/content/` as a prefix also swallowed any failure to fetch a minted
  *     cube's OWN body, which is a thing these lanes exist to prove.
- *   - `/assets/`: the preview iframe is null-origin, so any asset it pulls
- *     fails by construction. Still a path prefix, so it also covers the app's
- *     own assets; narrowing it needs the error's originating frame rather
- *     than its URL, which is not available here. The widest entry left.
- *
- * Non-resource noise (SDK logs, an orchestrator's per-UTXO simulation
- * complaint, a CORS refusal) stays matched on text, since those carry no URL.
+ * Everything else is gone. A full matrix run reported what each entry actually
+ * caught: `/assets/`, `^[sdk:`, the orchestrator's per-UTXO simulation
+ * complaint and the CORS refusal caught NOTHING in fourteen lanes, so they
+ * were deleted rather than carried. If one of them fires later it is a defect
+ * to fix, not an entry to restore.
  */
 /** Mainnet inscription ids a regtest chain cannot serve: the six cube sides,
  *  the non-image side, and the renderer that a cube body loads. */
@@ -743,13 +741,11 @@ const MAINNET_IDS_ABSENT_ON_REGTEST = [
   'fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0',
 ];
 
-const EXPECTED_MISSING_URL = ['/assets/'];
+/** Empty by ruling: a browser error is fixed, not filtered. An entry may be
+ *  added back only with the cause named and an owner, never to green a lane. */
+const EXPECTED_MISSING_URL: string[] = [];
 
-const EXPECTED_CONSOLE_TEXT: RegExp[] = [
-  /^\[sdk:/,
-  /\[inscribe-mint-orchestrator\] simulation threw for utxo/,
-  /has been blocked by CORS policy/,
-];
+const EXPECTED_CONSOLE_TEXT: RegExp[] = [];
 
 /**
  * Every error this suppresses, reported once, so the list can be emptied.

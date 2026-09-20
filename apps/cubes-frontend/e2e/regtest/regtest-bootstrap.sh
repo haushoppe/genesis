@@ -58,6 +58,42 @@ for _ in $(seq 1 30); do
 done
 $RPC getblockchaininfo >/dev/null
 
+# --- isolation: never inherit a previous run's chain ---
+# The stack above is REUSED when it is already running, so without this a
+# second bootstrap inherits everything the first one left: its blocks, its
+# wallets, its funded coins and its inscribed fixtures. Observed locally at
+# height 1031 with three generations of fixtures on the funder's wallet, which
+# is exactly what the funding-safety lanes assert about.
+#
+# A chain that is not empty when we arrive is carrying state we did not create,
+# so it is destroyed and rebuilt. In CI the containers are started fresh by the
+# workflow immediately before this runs, so the height is 0 and nothing is torn
+# down; the cost lands only where the reuse actually happens.
+#
+# E2E_REUSE_CHAIN=1 opts out for debugging a chain you want to keep. It is not
+# isolated and the specs may see another run's coins.
+if [ "$($RPC getblockcount 2>/dev/null || echo 0)" -gt 0 ] && [ "${E2E_REUSE_CHAIN:-0}" != "1" ]; then
+  echo "regtest chain is not empty, recreating it for isolation" >&2
+  $COMPOSE --profile ord-stock --profile cat21-ord --profile ordpool-backend down -v >&2
+  $COMPOSE --profile ord-stock --profile cat21-ord --profile ordpool-backend \
+    up -d bitcoind electrs ord-stock ord ordpool-backend >&2
+  for _ in $(seq 1 60); do
+    if $RPC getblockchaininfo >/dev/null 2>&1; then break; fi
+    sleep 1
+  done
+  $RPC getblockchaininfo >/dev/null
+  # bitcoind answering does NOT mean the stack is ready: ord-stock starts on an
+  # empty volume and rebuilds its index, and the fixture inscribe that follows
+  # budgets 60s for ord to reach a height. Without this the second bootstrap in
+  # a row dies on "ord-stock did not reach height N" while ord is still coming
+  # up, which reads as a chain problem and is a startup race.
+  for _ in $(seq 1 120); do
+    if curl -fsS -H 'Accept: application/json' \
+      "http://127.0.0.1:${E2E_ORD_STOCK_HOST_PORT:-8081}/blockheight" >/dev/null 2>&1; then break; fi
+    sleep 1
+  done
+fi
+
 # --- bitcoind wallet for mining + funding sends ---
 # A descriptor wallet (the only kind Bitcoin Core 29+ can create — the
 # legacy/BDB backend was removed). It owns the mined coinbases the SDK

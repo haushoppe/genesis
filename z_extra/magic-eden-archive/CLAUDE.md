@@ -2,6 +2,11 @@
 
 A frozen emergency archive of Magic Eden's ordinals data, taken before they shut their Bitcoin business down. cubes.haushoppe.art depended on that API for collection browsing and cube suggestions.
 
+**Not the published archive.** This is the RAW capture. The public dataset
+served at `ordpool-space.github.io/magic-eden-ordinals-archive/` is a separate
+repo with its own, smaller numbers (5,466 collections, 8.4M inscription ids).
+Two correct counts of two different artifacts: do not reconcile them into one.
+
 **Complete and immutable since 2026-03-27.** The API it came from no longer exists, so nothing here can be re-run and nothing can be added. The numbers below describe a frozen dataset and will not drift.
 
 ## What the archive holds

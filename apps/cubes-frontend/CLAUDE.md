@@ -102,7 +102,7 @@ Then the SPA paths a direct load never exercises: on a details page press ArrowR
 
 **Known and unrelated:** cube #96140351 (`8bb3374c…i0`) carries five side ids with zero-padded indices (`i02888` and friends) that no inscription has. They 404 on ordinals.com's own preview too. On-chain, immutable, one cube. Do not touch the mechanism for them.
 
-**Files:** `src/app/layout/toggle-iframe.directive.ts`, `src/app/shared/utils/cube-srcdoc.ts` (+ `.vitest.ts`), `src/app/shared/utils/preview-dark-canvas.ts` (local previews), `src/shared/ordinals/parse-cube.ts` (the version gate), and `e2e/regtest/specs/unisat-cube-mint-roundtrip.spec.ts`, which asserts the minted body reaches the success preview's srcdoc byte-for-byte.
+**Files:** `src/app/services/cube-html.ts` (`getCubeHtml`, the cube body every consumer generates from; 11 importers), `src/app/layout/toggle-iframe.directive.ts`, `src/app/shared/utils/cube-srcdoc.ts` (+ `.vitest.ts`), `src/app/shared/utils/preview-dark-canvas.ts` (local previews), `src/shared/ordinals/parse-cube.ts` (the version gate), and `e2e/regtest/specs/unisat-cube-mint-roundtrip.spec.ts`, which asserts the minted body reaches the success preview's srcdoc byte-for-byte.
 
 ## RULE: The header paints with zero requests
 

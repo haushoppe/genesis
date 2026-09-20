@@ -98,6 +98,14 @@ for _ in $(seq 1 90); do
   sleep 2
 done
 
+# --- inscribe the fixtures this chain has to serve ---
+# The app asks ord for the cube renderer and every unfilled side by inscription
+# id. Those ids are part of the minted bytes and of the preview, so they have to
+# exist HERE: a mainnet id on regtest is a request the stack cannot answer.
+# Writes src/environments/regtest-inscriptions.generated.ts, which the regtest
+# environment and the spec helpers both read.
+"$HERE/inscribe-fixtures.sh" >&2
+
 # --- emit the credentials as JSON ---
 BALANCE=$($RPC -rpcwallet=cubes-e2e getbalance)
 jq -n \

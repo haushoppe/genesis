@@ -6,7 +6,6 @@ import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
 
 import {
-  isExpectedConsoleError,
   mineBlocks,
   fillCubeSides,
   openDetails,
@@ -90,7 +89,7 @@ for (const asset of ASSETS) {
   const page: Page = await browser.newPage();
   const errors: string[] = [];
   page.on('console', (m) => {
-    if (m.type() === 'error' && !isExpectedConsoleError(m.text(), m.location().url)) {
+    if (m.type() === 'error') {
       errors.push(m.text());
     }
   });

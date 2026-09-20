@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 /**
  * Parses the given cube HTML string and extracts the attributes.
  *
@@ -18,10 +19,15 @@ export function parseCube(cubeHtmlRaw: string): { trait_type: string; value: str
   const regexFull = /^<html><!--cubes\.haushoppe\.art-->(<head><title>([^<>]*)<\/title><\/head>)?<body><script>t='([^']*)'<\/script><script src=\/content\/([^>]*)><\/script>$/;
   const matchFull = cubeHtmlRaw.match(regexFull);
 
+  // v3 comes from the environment rather than a literal. On mainnet the value
+  // IS the literal below, so this list is unchanged there. Regtest inscribes a
+  // byte-identical renderer under a different id, and a cube built against it
+  // is still a v3 cube: substituting into the v3 SLOT keeps the Version trait
+  // correct, where appending a fourth entry would report it as v4.
   const knownVersions = [
     '9475aa8df559d569f7284ce59e97014f28be758e832e212fdbba0202699dd035i0', // v1
     '4c5b32a1bd0dc43b3540097bf0135de6b0389f55fe6fe06910e5393bf6591a42i0', // v2
-    'fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0'  // v3
+    environment.cubeRendererInscriptionId                                 // v3
   ];
 
   /*

@@ -6,7 +6,6 @@ import * as fs from 'node:fs';
 import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
-  isExpectedConsoleError,
   getUtxos,
   waitForElectrsSync,
   fundCommonSats,

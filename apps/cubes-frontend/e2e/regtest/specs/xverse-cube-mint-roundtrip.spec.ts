@@ -9,7 +9,6 @@ import { SEED_USER_DATA_DIR } from '../global-setup';
 import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
-  isExpectedConsoleError,
   waitForElectrsSync,
   fundCommonSats,
   expectTipPaid,
@@ -193,7 +192,6 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   //     preview iframe tries to load (regtest doesn't ship those
   //     assets; the iframe is null-origin so any /assets fetch fails)
   // Console noise is judged by the failing resource, not by status class:
-  // see `isExpectedConsoleError` in regtest-helpers.
   const browserErrors: string[] = [];
 
   // Surface browser console errors + page errors so a silent connect
@@ -209,7 +207,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
       // eslint-disable-next-line no-console
       console.log(`[cubes console.${t}] ${text}`);
     }
-    if (t === 'error' && !isExpectedConsoleError(text, msg.location()?.url ?? '')) {
+    if (t === 'error') {
       browserErrors.push(`console.error: ${text}`);
     }
   });

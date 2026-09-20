@@ -6,7 +6,6 @@ import * as fs from 'node:fs';
 import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
-  isExpectedConsoleError,
   waitForElectrsSync,
   fundCommonSats,
   expectTipPaid,
@@ -216,12 +215,11 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   const cubes = await context.newPage();
   const browserErrors: string[] = [];
   // Console noise is judged by the failing resource, not by status class:
-  // see `isExpectedConsoleError` in regtest-helpers.
   cubes.on('console', (msg) => {
     if (msg.type() !== 'error') return;
     const text = msg.text();
     console.log(`[okx-mint console.error] ${text}`);
-    if (!isExpectedConsoleError(text, msg.location()?.url ?? '')) {
+    {
       browserErrors.push(`console.error: ${text}`);
     }
   });

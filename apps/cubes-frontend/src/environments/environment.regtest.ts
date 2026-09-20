@@ -1,3 +1,5 @@
+import { regtestInscriptions } from './regtest-inscriptions.generated';
+
 /**
  * Regtest environment — e2e/regtest/ specs boot the frontend with this.
  * mempoolApiUrl points at the local electrs container the docker-compose
@@ -21,16 +23,11 @@ export const environment = {
   // (stripping the `/api` prefix, since electrs's Esplora endpoints
   // live at the root — /address/{}/utxo, /tx, /tx/{}/hex, etc.).
   mempoolApiUrl: '',
-  // The side ids the specs mint with are mainnet inscriptions (like the cube
-  // renderer itself), so the mint form's black-face check loads them from
-  // mainnet content, the same host prod probes.
-  //
-  // This is the one reach outside the regtest stack, and it is deliberately no
-  // longer load-bearing: a probe that cannot finish answers `unknown`, which
-  // does not gate the Mint button (`side-image-check.ts`). Blocked or slow CI
-  // egress therefore costs the specs a few seconds, not seven red runs
-  // attributed to whatever wallet happened to be under test.
-  sideImageProbeBase: 'https://api.ordpool.space',
+  // The regtest stack's own ord. Everything the app asks for by inscription id
+  // exists on THIS chain, inscribed from the committed fixtures by
+  // e2e/regtest/inscribe-fixtures.sh, so a regtest run makes no request to
+  // mainnet at all.
+  sideImageProbeBase: 'http://localhost:8081',
   // The SDK UtxoContentScanner's funding-safety scan hits both real regtest ord
   // instances the docker stack brings up: ordApiUrl -> stock ord (:8081,
   // --index-sats; inscriptions/runes/rare-sats) and cat21OrdApiUrl -> cat21-ord
@@ -42,6 +39,12 @@ export const environment = {
   cat21OrdApiUrl: 'http://localhost:8080',
   haushoppeTipAddress: 'bcrt1pgnmqsy3m04999vwvczfuuualuptlcwnlqx7yrf7y2xwzyswdxpvq92zqwq',
   haushoppeTipSats: 1000,
+  // Inscribed by e2e/regtest/inscribe-fixtures.sh from the committed fixtures,
+  // byte-identical to their mainnet originals. The renderer id is part of the
+  // minted cube body and `parseCube` reads it in the v3 slot, so a cube minted
+  // here still parses as v3.
+  cubeRendererInscriptionId: regtestInscriptions.cubeRenderer,
+  previewFallbackSides: regtestInscriptions.fallbackSides,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',
   // Witness-capable preview = the real ordpool-backend in the regtest stack
   // (docker-compose.regtest.yml, `ordpool-backend` profile, port 8999). It

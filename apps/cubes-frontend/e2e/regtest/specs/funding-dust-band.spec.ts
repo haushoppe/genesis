@@ -14,7 +14,6 @@ import {
 import { seedDirtyCoin } from 'ordpool-sdk/e2e';
 import {
   fundCommonSats,
-  isExpectedConsoleError,
   mineBlocks,
   fillCubeSides,
   openDetails,
@@ -125,7 +124,7 @@ test('funding-dust-band: a coin just above the requirement says it over-pays, an
   const page: Page = await browser.newPage();
   const errors: string[] = [];
   page.on('console', (m) => {
-    if (m.type() === 'error' && !isExpectedConsoleError(m.text(), m.location().url)) errors.push(m.text());
+    if (m.type() === 'error') errors.push(m.text());
   });
 
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });

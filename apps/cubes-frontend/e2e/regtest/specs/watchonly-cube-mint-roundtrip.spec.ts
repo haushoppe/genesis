@@ -9,7 +9,6 @@ import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   fundCommonSats,
   getStockOrdContent,
-  isExpectedConsoleError,
   mineBlocks,
   fillCubeSides,
   trackRequestFailures,
@@ -186,7 +185,6 @@ test.beforeAll(async () => {
   cubes = await context.newPage();
   cubes.on('console', (m) => {
     if (m.type() !== 'error') return;
-    if (isExpectedConsoleError(m.text(), m.location()?.url ?? '')) return;
     browserErrors.push(`console.error: ${m.text()} @ ${m.location()?.url ?? '?'}`);
   });
   requestFailures = trackRequestFailures(cubes);

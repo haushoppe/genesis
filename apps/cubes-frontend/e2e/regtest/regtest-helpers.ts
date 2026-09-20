@@ -1,3 +1,4 @@
+import { regtestInscriptions } from '../../src/environments/regtest-inscriptions.generated';
 // Small helpers shared across regtest E2E specs. Hits the local
 // bitcoind RPC + electrs HTTP API directly — no Angular, no DI.
 //
@@ -690,94 +691,17 @@ export async function openDetails(page: Page, testId: string): Promise<void> {
 }
 
 /**
- * Six mainnet inscriptions that render as images (the BitcoinOneZero digits
- * 1 to 6, image/png), for the sides of the cube the specs mint. The mint
- * form loads every side as an <img> from mainnet content before it enables
- * Mint (`environment.sideImageProbeBase`), so the sides must be real
- * renderable inscriptions, not placeholder ids; the cube body itself is
- * still minted on regtest.
+ * The six image sides and the non-image side the specs fill, read from the ids
+ * e2e/regtest/inscribe-fixtures.sh inscribed on THIS chain from the committed
+ * fixtures. They are byte-identical to their mainnet originals, so the mint
+ * form's black-face probe, the cube body and the preview all resolve against
+ * the regtest stack and nothing reaches mainnet.
  */
-export const RENDERABLE_SIDE_IDS = [
-  'df58fbb44dbb2a9b17405f944c8ff966fd120cccda87873f3206f012ea239bebi0',
-  'ad8d751046787e22a0ef89a15b7f0e5eedae927a488a8ecc7e30711a7692fb11i0',
-  'fe4e588430b19d6e8b81005a3515a0f634fb3cd3b3bdf372bc7b12b50e302acci0',
-  '9825f7f09818f0adb7d3b20a4db6aa92f9af850bd4e0597db6b7ade3790b0f5bi0',
-  '412cb15b19496075ef9afbd07fbabe6d6e08461c30845fafe4ece083fd20d84fi0',
-  '81c64b1c7dfa8ce4e9e32dbcf68fbb51e004fb56be5b2253c880cd833ae74bcai0',
-];
+export const RENDERABLE_SIDE_IDS = regtestInscriptions.fallbackSides;
 
-/** A mainnet inscription whose body is JSON: loads with 200, never decodes as an image. */
-export const NON_IMAGE_SIDE_ID = 'a1aff8c3dc8ff01c775d3de7400ec6734b5fd289e8cff33b3fed8cd7da422fafi1';
+/** A regtest inscription whose body is JSON: loads with 200, never decodes as an image. */
+export const NON_IMAGE_SIDE_ID = regtestInscriptions.nonImageSide;
 
-/**
- * Whether a browser console error is one this regtest run legitimately
- * produces, judged by WHAT FAILED rather than by the status class.
- *
- * The difference matters. Ignoring every 404 and every 5xx also swallows a
- * broken API call, a missing chunk and a dead asset, which is precisely what a
- * console check exists to notice. Filtering by the failing resource's URL
- * keeps the noise out and leaves the signal in: narrowing this way immediately
- * surfaced a fee-endpoint 404 that the blanket version had been hiding.
- *
- * Remaining entries, each for a stated reason:
- *
- *   - the MAINNET ids listed below, under `/content/` or `/preview/`: a cube
- *     minted here references mainnet side ids, because those are the ones
- *     that render, and its iframe then asks the REGTEST ord (`:8081`) for
- *     them. They cannot exist on this chain. Matched BY ID, never by path:
- *     `/content/` as a prefix also swallowed any failure to fetch a minted
- *     cube's OWN body, which is a thing these lanes exist to prove.
- * Everything else is gone. A full matrix run reported what each entry actually
- * caught: `/assets/`, `^[sdk:`, the orchestrator's per-UTXO simulation
- * complaint and the CORS refusal caught NOTHING in fourteen lanes, so they
- * were deleted rather than carried. If one of them fires later it is a defect
- * to fix, not an entry to restore.
- */
-/** Mainnet inscription ids a regtest chain cannot serve: the six cube sides,
- *  the non-image side, and the renderer that a cube body loads. */
-const MAINNET_IDS_ABSENT_ON_REGTEST = [
-  ...RENDERABLE_SIDE_IDS,
-  NON_IMAGE_SIDE_ID,
-  'fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0',
-];
-
-/** Empty by ruling: a browser error is fixed, not filtered. An entry may be
- *  added back only with the cause named and an owner, never to green a lane. */
-const EXPECTED_MISSING_URL: string[] = [];
-
-const EXPECTED_CONSOLE_TEXT: RegExp[] = [];
-
-/**
- * Every error this suppresses, reported once, so the list can be emptied.
- *
- * Suppressing a browser error hides it; the ruling is that we fix them
- * instead. These entries are therefore a WORK LIST and not a policy, and the
- * end state is that this function and both arrays are deleted. Until each
- * cause is actually fixed, a suppressed error is printed rather than dropped,
- * so the inventory is visible in every run and shrinks where the count does.
- *
- * Printing cannot turn a passing lane red on its own, which is the point:
- * removing the filter before knowing what it hides would produce eight red
- * lanes and no list of causes.
- */
-const reportedSuppressions = new Set<string>();
-
-export function isExpectedConsoleError(text: string, url: string): boolean {
-  const isContentPath = !!url && (url.includes('/content/') || url.includes('/preview/'));
-  const byMainnetId = isContentPath
-    && MAINNET_IDS_ABSENT_ON_REGTEST.some((id) => url.includes(id));
-  const byUrl = byMainnetId || (!!url && EXPECTED_MISSING_URL.some((part) => url.includes(part)));
-  const byText = EXPECTED_CONSOLE_TEXT.some((re) => re.test(text));
-  if (!byUrl && !byText) return false;
-
-  const key = `${byUrl ? 'url' : 'text'}|${url || '-'}|${text.slice(0, 160)}`;
-  if (!reportedSuppressions.has(key)) {
-    reportedSuppressions.add(key);
-    console.log(`[suppressed-error] matched-by-${byUrl ? 'url' : 'text'}: ${text.slice(0, 160)}` +
-      (url ? ` @ ${url}` : ''));
-  }
-  return true;
-}
 
 /**
  * The cube mint pays a fixed tip to an address the minter does not control.

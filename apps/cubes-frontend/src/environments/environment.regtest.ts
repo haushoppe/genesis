@@ -46,6 +46,33 @@ export const environment = {
   cubeRendererInscriptionId: regtestInscriptions.cubeRenderer,
   // The banner cube's own sides are mainnet inscriptions in production and
   // cannot exist here, so the header reuses the inscribed fixtures.
+  // The suggestion normally proposes six inscriptions from the Magic Eden
+  // archive, which are MAINNET ids and cannot exist on this chain. Two
+  // stand-in galleries over the inscribed fixtures keep the whole suggestion
+  // flow exercisable here, including switching collections via /mint/:symbol,
+  // which had no regtest coverage at all.
+  //
+  // Both hold the same six images because that is every image the fixture set
+  // inscribes; they differ by name, symbol and side order, so a switch between
+  // them produces a different cube and a different collection name.
+  // No cubes index exists for a regtest chain. The gallery previously read the
+  // MAINNET index here and rendered every one of those cubes from the local
+  // ord, which cannot serve them: one 404 per listed cube, every page load.
+  // Empty means the gallery lists nothing and fetches nothing; the cubes a run
+  // mints still appear through past-mints, and those DO resolve on this chain.
+  cubesIndexBase: '',
+  suggestionGalleries: [
+    {
+      symbol: 'regtest-digits-ascending',
+      name: 'Regtest Digits Ascending',
+      inscriptionIds: regtestInscriptions.fallbackSides,
+    },
+    {
+      symbol: 'regtest-digits-descending',
+      name: 'Regtest Digits Descending',
+      inscriptionIds: [...regtestInscriptions.fallbackSides].reverse(),
+    },
+  ],
   bannerCubeSides: regtestInscriptions.fallbackSides,
   previewFallbackSides: regtestInscriptions.fallbackSides,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',

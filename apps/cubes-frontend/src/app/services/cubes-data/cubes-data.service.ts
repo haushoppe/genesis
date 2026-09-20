@@ -9,9 +9,10 @@ import {
   InscriptionExtendedPaginatedResult,
   InscriptionExtendedSingleResult,
 } from './types';
+import { environment } from '../../../environments/environment';
 
-const CUBES_URL = 'https://ordpool-space.github.io/ordinal-cubes-index/data/cubes.json';
-const CURSOR_URL = 'https://ordpool-space.github.io/ordinal-cubes-index/data/cursor.json';
+const CUBES_URL = environment.cubesIndexBase ? `${environment.cubesIndexBase}/cubes.json` : '';
+const CURSOR_URL = environment.cubesIndexBase ? `${environment.cubesIndexBase}/cursor.json` : '';
 
 /** Shape of records in cubes.json — flat fields, becomes `meta`-nested for the frontend. */
 interface ExternalCube {
@@ -58,7 +59,7 @@ export class CubesDataService {
   // rxResourceFixed .reload() re-subscribes and gets a fresh HTTP call.
   // shareReplay's ShareReplayConfig doesn't expose resetOnError in
   // rxjs 7.8, so use `share` with an explicit ReplaySubject connector.
-  private readonly all$ = this.http.get<ExternalCube[]>(CUBES_URL).pipe(
+  private readonly all$ = (CUBES_URL ? this.http.get<ExternalCube[]>(CUBES_URL) : of([])).pipe(
     map((raw) => raw.map(toInscriptionExtended)),
     share({
       connector: () => new ReplaySubject<InscriptionExtended[]>(1),
@@ -68,7 +69,7 @@ export class CubesDataService {
     }),
   );
 
-  private readonly cursor$ = this.http.get<IndexCursor>(CURSOR_URL).pipe(
+  private readonly cursor$ = (CURSOR_URL ? this.http.get<IndexCursor>(CURSOR_URL) : of({ } as IndexCursor)).pipe(
     share({
       connector: () => new ReplaySubject<IndexCursor>(1),
       resetOnError: true,

@@ -47,6 +47,12 @@ export const environment = {
    * mint gate is the form validator, where every side field is `required`.
    */
   /** Six sides of the featured cube the header renders. */
+  /** Regtest-only stand-in galleries for the cube suggestion; empty here, so
+   *  the suggestion comes from the Magic Eden archive as normal. */
+  /** The cubes index the gallery reads. Empty means there is no index for
+   *  this chain and the gallery lists nothing rather than reaching elsewhere. */
+  cubesIndexBase: 'https://ordpool-space.github.io/ordinal-cubes-index/data',
+  suggestionGalleries: [] as { symbol: string; name: string; inscriptionIds: string[] }[],
   bannerCubeSides: [
     '0a595eb00dffb649952951e76fa5cdd1032d621a91f1d75402eec692bb567da2i0',
     '31ad74da8f8162696570a538e51956d659ed8ba5af21ea6dd667eb7b54298ee5i0',

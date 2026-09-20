@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable, defer, firstValueFrom, from } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { PastMintsService } from '../past-mints.service';
 import { CubesDataService } from './cubes-data.service';
 import { ArchiveCollection, ArchiveDataService } from './archive-data.service';
@@ -62,6 +63,33 @@ export class CubeSuggestionService {
     // user's own recent mints so we never re-suggest their own IDs.
     for (const mint of this.pastMints.pastMints()) {
       for (const id of mint.inscriptionIds) claimed.add(id);
+    }
+
+    // A regtest chain cannot serve the archive's mainnet ids, so when the
+    // environment supplies stand-in galleries the suggestion comes from those
+    // instead. The claimed-set filter is deliberately NOT applied to them: the
+    // fixture set inscribes six images in total, so one mint would claim every
+    // one and leave the suggestion permanently unable to answer. The archive
+    // path below is large enough for that filter to mean something.
+    const galleries = environment.suggestionGalleries;
+    if (galleries.length) {
+      const pool = onlyCollectionSymbol
+        ? galleries.filter((g) => g.symbol === onlyCollectionSymbol)
+        : galleries;
+      if (!pool.length) throw new Error('Unknown collection!');
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      const six = chosen.inscriptionIds.slice(0, TOKEN_GOAL);
+      if (six.length < TOKEN_GOAL) throw new Error('Could not find enough unclaimed inscriptions!');
+      return {
+        inscriptionId1: six[0],
+        inscriptionId2: six[1],
+        inscriptionId3: six[2],
+        inscriptionId4: six[3],
+        inscriptionId5: six[4],
+        inscriptionId6: six[5],
+        collectionName: chosen.name,
+        collectionSymbol: chosen.symbol,
+      };
     }
 
     let candidates: ArchiveCollection[];

@@ -16,6 +16,7 @@ import {
   fundCommonSats,
   mineBlocks,
   fillCubeSides,
+  expectedRegtestCubeHtml,
   openDetails,
   openMintCheckout,
   RENDERABLE_SIDE_IDS,
@@ -23,7 +24,6 @@ import {
   waitForElectrsSync,
   waitForUtxoAt,
 } from '../regtest-helpers';
-import { getCubeHtml } from '../../../src/app/services/cube-html';
 
 /**
  * The THIRD funding state: a coin that can fund AND over-pays.
@@ -85,7 +85,7 @@ test('funding-dust-band: a coin just above the requirement says it over-pays, an
   // Measure the requirement the same way the app does, through the prepared
   // simulation path, so the band is derived rather than guessed.
   const dummy = getDummyKeypair(toScureNetwork(Network.Regtest));
-  const body = new TextEncoder().encode(getCubeHtml({
+  const body = new TextEncoder().encode(expectedRegtestCubeHtml({
     inscriptionIds: {
       inscriptionId1: CUBE_SIDE_IDS[0], inscriptionId2: CUBE_SIDE_IDS[1],
       inscriptionId3: CUBE_SIDE_IDS[2], inscriptionId4: CUBE_SIDE_IDS[3],

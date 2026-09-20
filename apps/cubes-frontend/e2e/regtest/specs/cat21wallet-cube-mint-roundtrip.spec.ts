@@ -3,8 +3,6 @@ import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
-import { getCubeHtml } from '../../../src/app/services/cube-html';
-import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   waitForElectrsSync,
   fundCommonSats,
@@ -18,6 +16,8 @@ import {
   getStockOrdContent,
   fillCubeSides,
   trackRequestFailures,
+  expectedRegtestCubeHtml,
+  parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -277,7 +277,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Compute the exact HTML the preview will produce so the on-chain
   // check is byte-for-byte.
-  const expectedCubeHtml = getCubeHtml({
+  const expectedCubeHtml = expectedRegtestCubeHtml({
     inscriptionIds: {
       inscriptionId1: CUBE_SIDE_IDS[0],
       inscriptionId2: CUBE_SIDE_IDS[1],
@@ -359,7 +359,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Parser round-trip: extract the six side IDs from the on-chain
   // bytes and confirm they match what the form was filled with.
-  const parsed = parseCube(onChainHtml);
+  const parsed = parseRegtestCube(onChainHtml);
   expect(parsed).toBeTruthy();
   const parsedSides = parsed!
     .filter((t) => /^Side \d$/.test(t.trait_type))

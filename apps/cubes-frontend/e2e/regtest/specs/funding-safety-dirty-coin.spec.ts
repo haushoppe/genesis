@@ -10,6 +10,7 @@ import {
   fundCommonSats,
   mineBlocks,
   fillCubeSides,
+  expectedRegtestCubeHtml,
   openDetails,
   openMintCheckout,
   RENDERABLE_SIDE_IDS,
@@ -21,7 +22,6 @@ import {
 } from '../regtest-helpers';
 import { seedDirtyCoin, assertDirtyCoinIsBestFit, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
 import { simulateInscribeFees, prepareInscribeFundingInput, changeDustFloor, Network } from 'ordpool-sdk';
-import { getCubeHtml } from '../../../src/app/services/cube-html';
 
 /**
  * The funding-safety guard, proven by watching a coin NOT get spent.
@@ -155,7 +155,7 @@ for (const asset of ASSETS) {
     // commit's vsize turns on the input's script type), so a dummy input shaped
     // like this wallet's P2TR payment address answers the same number the real
     // coin would.
-    const body = new TextEncoder().encode(getCubeHtml({
+    const body = new TextEncoder().encode(expectedRegtestCubeHtml({
       inscriptionIds: {
         inscriptionId1: CUBE_SIDE_IDS[0], inscriptionId2: CUBE_SIDE_IDS[1],
         inscriptionId3: CUBE_SIDE_IDS[2], inscriptionId4: CUBE_SIDE_IDS[3],

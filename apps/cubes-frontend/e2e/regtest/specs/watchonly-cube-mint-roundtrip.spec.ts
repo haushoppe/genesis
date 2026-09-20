@@ -4,14 +4,14 @@ import { HDKey } from '@scure/bip32';
 import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
 
-import { getCubeHtml } from '../../../src/app/services/cube-html';
-import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   fundCommonSats,
   getStockOrdContent,
   mineBlocks,
   fillCubeSides,
   trackRequestFailures,
+  expectedRegtestCubeHtml,
+  parseRegtestCube,
   openDetails,
   openMintCheckout,
   RENDERABLE_SIDE_IDS,
@@ -282,7 +282,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   // function the component encodes as the inscription body, so this is an
   // independent statement of what the on-chain content must be, made before
   // anything is signed.
-  const expectedCubeHtml = getCubeHtml({
+  const expectedCubeHtml = expectedRegtestCubeHtml({
     inscriptionIds: {
       inscriptionId1: CUBE_SIDE_IDS[0],
       inscriptionId2: CUBE_SIDE_IDS[1],
@@ -378,7 +378,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
 
   // The parser the gallery uses must read the on-chain bytes back as the same
   // six sides the form was filled with.
-  const parsed = parseCube(onChainHtml);
+  const parsed = parseRegtestCube(onChainHtml);
   expect(parsed).toBeTruthy();
   const parsedSides = parsed!
     .filter((t) => /^Side \d$/.test(t.trait_type))

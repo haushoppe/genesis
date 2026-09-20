@@ -6,8 +6,6 @@ import * as fs from 'node:fs';
 // the seed lives, and a second hand-maintained copy of that path reads the
 // wrong place, silently, the moment the first one moves.
 import { SEED_USER_DATA_DIR } from '../global-setup';
-import { getCubeHtml } from '../../../src/app/services/cube-html';
-import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   waitForElectrsSync,
   fundCommonSats,
@@ -21,6 +19,8 @@ import {
   isVisibleWithin,
   fillCubeSides,
   trackRequestFailures,
+  expectedRegtestCubeHtml,
+  parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -436,7 +436,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // preview iframe renders exactly what this returns, and
   // start.component.ts encodes the same string as the inscription
   // body. No dependency on iframe/DOM binding timing.
-  const expectedCubeHtml = getCubeHtml({
+  const expectedCubeHtml = expectedRegtestCubeHtml({
     inscriptionIds: {
       inscriptionId1: CUBE_SIDE_IDS[0],
       inscriptionId2: CUBE_SIDE_IDS[1],
@@ -767,7 +767,7 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   // Parser round-trip: parseCube must accept the on-chain bytes and
   // extract the same six side IDs as the "Side N" traits. This is
   // the same parser cubes.haushoppe.art uses to render the gallery.
-  const parsed = parseCube(onChainHtml);
+  const parsed = parseRegtestCube(onChainHtml);
   expect(parsed).toBeTruthy();
   const parsedSides = parsed!
     .filter((t) => /^Side \d$/.test(t.trait_type))

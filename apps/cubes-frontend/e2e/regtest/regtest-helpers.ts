@@ -1,4 +1,6 @@
 import { regtestInscriptions } from '../../src/environments/regtest-inscriptions.generated';
+import { getCubeHtml } from '../../src/app/services/cube-html';
+import { parseCube } from '../../src/shared/ordinals/parse-cube';
 // Small helpers shared across regtest E2E specs. Hits the local
 // bitcoind RPC + electrs HTTP API directly — no Angular, no DI.
 //
@@ -1028,4 +1030,58 @@ export function trackRequestFailures(page: Page): () => string[] {
   return () => failures.length
     ? ['', 'requests that failed in this page (context for any "Failed to fetch" above):', ...failures.map((f) => `  - ${f}`)]
     : [];
+}
+
+/**
+ * The bytes a cube minted ON REGTEST will carry.
+ *
+ * `getCubeHtml` is the app's own generator and reads the cube renderer id from
+ * `environments/environment`. Angular's `fileReplacements` swap that file for
+ * `environment.regtest.ts` when it BUILDS the app, but a Playwright spec
+ * imports the module directly in Node, where no replacement happens, so the
+ * generator returns the MAINNET renderer id while the running app mints the
+ * regtest one. A byte-for-byte assertion then fails on the one field that is
+ * legitimately different, which is what it did:
+ *
+ *   Expected: src=/content/fed0eb2d...   (mainnet, what Node resolved)
+ *   Received: src=/content/6e7cd90e...   (regtest, what the app minted)
+ *
+ * So the expectation is moved onto the regtest renderer, never the
+ * observation. Throws if the mainnet id is absent, because that means the
+ * substitution stopped applying and a silent pass-through would compare the
+ * chain against the wrong bytes.
+ */
+const MAINNET_CUBE_RENDERER_ID = 'fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0';
+
+export function expectedRegtestCubeHtml(cubeDetails: Parameters<typeof getCubeHtml>[0]): string {
+  const html = getCubeHtml(cubeDetails);
+  if (!html.includes(MAINNET_CUBE_RENDERER_ID)) {
+    throw new Error(
+      'getCubeHtml no longer emits the mainnet renderer id, so this substitution is stale. '
+      + 'Check environments/environment.ts and this helper before trusting any byte comparison.',
+    );
+  }
+  return html.replace(MAINNET_CUBE_RENDERER_ID, regtestInscriptions.cubeRenderer);
+}
+
+/**
+ * Parse an on-chain regtest cube with the app's own parser.
+ *
+ * `parseCube` identifies a cube by its renderer id against a known-versions
+ * list whose v3 entry is `environment.cubeRendererInscriptionId`. As with
+ * `expectedRegtestCubeHtml` above, a Playwright spec imports it in Node where
+ * Angular's `fileReplacements` do not apply, so the list holds the MAINNET id
+ * while the bytes on chain carry the regtest one and the parser returns null.
+ *
+ * The regtest renderer is a byte-identical copy of the mainnet v3 (see
+ * `e2e/regtest/fixtures/README.md`), so the cube genuinely IS a v3 and naming
+ * it as one is not a fiction. Throws rather than returning a misleading null
+ * if the input carries neither id.
+ */
+export function parseRegtestCube(onChainHtml: string): ReturnType<typeof parseCube> {
+  if (onChainHtml.includes(MAINNET_CUBE_RENDERER_ID)) return parseCube(onChainHtml);
+  if (!onChainHtml.includes(regtestInscriptions.cubeRenderer)) {
+    throw new Error('cube html carries neither the mainnet nor the regtest renderer id');
+  }
+  return parseCube(onChainHtml.replace(regtestInscriptions.cubeRenderer, MAINNET_CUBE_RENDERER_ID));
 }

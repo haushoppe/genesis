@@ -3,8 +3,6 @@ import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
-import { getCubeHtml } from '../../../src/app/services/cube-html';
-import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   waitForElectrsSync,
   fundCommonSats,
@@ -19,6 +17,8 @@ import {
   isVisibleWithin,
   fillCubeSides,
   trackRequestFailures,
+  expectedRegtestCubeHtml,
+  parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
@@ -299,7 +299,7 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-drawer-open');
 
-  const expectedCubeHtml = getCubeHtml({
+  const expectedCubeHtml = expectedRegtestCubeHtml({
     inscriptionIds: {
       inscriptionId1: CUBE_SIDE_IDS[0],
       inscriptionId2: CUBE_SIDE_IDS[1],
@@ -360,7 +360,7 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   const onChainHtml = new TextDecoder().decode(onChainBytes);
   expect(onChainHtml).toBe(expectedCubeHtml);
 
-  const parsed = parseCube(onChainHtml);
+  const parsed = parseRegtestCube(onChainHtml);
   expect(parsed).toBeTruthy();
   const parsedSides = parsed!
     .filter((t) => /^Side \d$/.test(t.trait_type))

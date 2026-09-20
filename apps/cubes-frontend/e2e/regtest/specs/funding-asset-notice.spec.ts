@@ -3,7 +3,6 @@ import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
-import { getCubeHtml } from '../../../src/app/services/cube-html';
 import { parseCube } from '../../../src/shared/ordinals/parse-cube';
 import {
   getUtxos,

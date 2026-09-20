@@ -1,6 +1,6 @@
 {
-  "/content/*": {
-    "target": "https://ordinals.com/",
+  "/content": {
+    "target": "http://127.0.0.1:8081",
     "secure": false,
     "changeOrigin": true
   },
@@ -13,7 +13,9 @@
     "target": "http://127.0.0.1:3010",
     "secure": false,
     "changeOrigin": true,
-    "pathRewrite": { "^/api": "" },
+    "pathRewrite": {
+      "^/api": ""
+    },
     "logLevel": "debug"
   }
 }

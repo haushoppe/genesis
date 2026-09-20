@@ -1,19 +1,14 @@
 import { Component } from '@angular/core';
 
+import { environment } from '../../../environments/environment';
 import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { getCubeHtml } from '../../services/cube-html';
 import { withPreviewDarkCanvas } from '../../shared/utils/preview-dark-canvas';
 
-// Six sides of the featured cube 00ef588330b…, hardcoded so the
-// header renders with zero fetches.
-const BANNER_CUBE_SIDES = [
-  '0a595eb00dffb649952951e76fa5cdd1032d621a91f1d75402eec692bb567da2i0',
-  '31ad74da8f8162696570a538e51956d659ed8ba5af21ea6dd667eb7b54298ee5i0',
-  '8f6d156fb339697f67adcfd54ae300a7b9f8a7f1f36c9cc6f79960508a9da881i0',
-  '30078f5394421c1593be2c06c7ca890c53ccc017550dc019e0c8a37a5f563cbei0',
-  '9a397c46bd6a547f697e186fa803bb71f2d7c58b62b733f7b1411ebf9fc88efdi0',
-  'b53e29d74eb41d7720760cb9c1b93eb9be0eaadbcf086aea0172672f6cce82aei0',
-];
+// The featured cube's sides come from the environment: they are mainnet
+// inscriptions in production, and a regtest chain cannot serve them, so a
+// hardcoded list renders six 404s per page there.
+const BANNER_CUBE_SIDES = environment.bannerCubeSides;
 
 const BANNER_SRCDOC = withPreviewDarkCanvas(getCubeHtml({
   inscriptionIds: {

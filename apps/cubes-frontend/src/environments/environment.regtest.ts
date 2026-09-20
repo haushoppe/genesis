@@ -44,6 +44,9 @@ export const environment = {
   // minted cube body and `parseCube` reads it in the v3 slot, so a cube minted
   // here still parses as v3.
   cubeRendererInscriptionId: regtestInscriptions.cubeRenderer,
+  // The banner cube's own sides are mainnet inscriptions in production and
+  // cannot exist here, so the header reuses the inscribed fixtures.
+  bannerCubeSides: regtestInscriptions.fallbackSides,
   previewFallbackSides: regtestInscriptions.fallbackSides,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',
   // Witness-capable preview = the real ordpool-backend in the regtest stack

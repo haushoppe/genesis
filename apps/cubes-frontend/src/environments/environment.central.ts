@@ -46,6 +46,15 @@ export const environment = {
    * through `/content/<id>` like any real face and never gate minting: the
    * mint gate is the form validator, where every side field is `required`.
    */
+  /** Six sides of the featured cube the header renders. */
+  bannerCubeSides: [
+    '0a595eb00dffb649952951e76fa5cdd1032d621a91f1d75402eec692bb567da2i0',
+    '31ad74da8f8162696570a538e51956d659ed8ba5af21ea6dd667eb7b54298ee5i0',
+    '8f6d156fb339697f67adcfd54ae300a7b9f8a7f1f36c9cc6f79960508a9da881i0',
+    '30078f5394421c1593be2c06c7ca890c53ccc017550dc019e0c8a37a5f563cbei0',
+    '9a397c46bd6a547f697e186fa803bb71f2d7c58b62b733f7b1411ebf9fc88efdi0',
+    'b53e29d74eb41d7720760cb9c1b93eb9be0eaadbcf086aea0172672f6cce82aei0',
+  ],
   previewFallbackSides: [
     'df58fbb44dbb2a9b17405f944c8ff966fd120cccda87873f3206f012ea239bebi0', // 1
     'ad8d751046787e22a0ef89a15b7f0e5eedae927a488a8ecc7e30711a7692fb11i0', // 2

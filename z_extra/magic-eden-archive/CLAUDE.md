@@ -9,11 +9,11 @@ Two correct counts of two different artifacts: do not reconcile them into one.
 
 **Complete and immutable since 2026-03-27.** The API it came from no longer exists, so nothing here can be re-run and nothing can be added. The numbers below describe a frozen dataset and will not drift.
 
-## What the archive holds
+## What the archive holds (raw capture figures)
 
 | Data | Count | Coverage | Notes |
 |---|---|---|---|
-| Tokens (ME) | 12.7M across 5,480 files | | full metadata: owner, listing, contentType |
+| Tokens (ME), RAW | 12.7M across 5,480 files | | full metadata: owner, listing, contentType |
 | Tokens (BiS) | ~3M, 13+ collections | | bitmap 920K, btc-name 2M, runestone 112K |
 | Collection details | 5,497 | 100% | name, description, socials, supply |
 | Collection stats | 5,497 | 100% | totalVolume, floorPrice, owners, supply |

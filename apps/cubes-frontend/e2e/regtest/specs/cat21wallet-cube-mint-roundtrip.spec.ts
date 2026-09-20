@@ -21,7 +21,7 @@ import {
   openDetails,
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
-import { clickUntilEffect, closeLeftoverExtensionPages, onboardCat21Wallet, waitForApprovalPopup } from 'ordpool-sdk/e2e';
+import { clickApprovalAndRequireClose, clickUntilEffect, closeLeftoverExtensionPages, onboardCat21Wallet, waitForApprovalPopup } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -90,7 +90,15 @@ async function shot(p: Page, name: string): Promise<void> {
 async function clickCat21WalletApproval(popup: Page): Promise<void> {
   const btn = popup.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
   await expect(btn).toBeVisible({ timeout: 10_000 });
-  await btn.click({ noWaitAfter: true, timeout: 30_000 });
+  // `noWaitAfter` is not the escape it reads as: on a recent Playwright it
+  // no longer suppresses the post-click bookkeeping that throws once the
+  // popup is gone, which surfaced as "Target page, context or browser has
+  // been closed" after the element was reported visible, enabled and stable.
+  // The shared helper tolerates that error (for an approval popup it IS the
+  // success signal), then REQUIRES the popup to close so a click that never
+  // landed is named here rather than later as a missing broadcast. It never
+  // re-clicks: a second click on a signing popup is a second signature.
+  await clickApprovalAndRequireClose(btn, popup, { label: 'cat21-wallet sign' });
 }
 
 test.beforeAll(async () => {

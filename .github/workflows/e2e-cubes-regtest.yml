@@ -28,10 +28,16 @@ on:
     paths:
       - 'apps/cubes-frontend/**'
       - '.github/workflows/e2e-cubes-regtest.yml'
+      # Markdown cannot change an e2e result, and this workflow supersedes a
+      # run in flight. A docs commit was cancelling a 14-lane matrix and
+      # throwing away its evidence, which is expensive during an
+      # investigation: the bottleneck there is samples, not wall clock.
+      - '!apps/cubes-frontend/**/*.md'
   pull_request:
     paths:
       - 'apps/cubes-frontend/**'
       - '.github/workflows/e2e-cubes-regtest.yml'
+      - '!apps/cubes-frontend/**/*.md'
   workflow_dispatch:
 
 permissions:

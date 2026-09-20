@@ -41,6 +41,22 @@ wait_for_ord_sync() {
   echo "ord-stock did not reach height $want" >&2; exit 1
 }
 
+# --- already inscribed on THIS chain? ------------------------------------
+# The lane calls this on every run, so re-inscribing eight fixtures per spec
+# file would be pure waste. Idempotence is decided by the CHAIN, not by the
+# file existing: after a `down -v` the ids in it are dead and every one 404s,
+# which is exactly the state that produced a red lane with a green bootstrap.
+if [ -f "$OUT" ]; then
+  alive=1
+  for id in $(grep -oE "'[0-9a-f]{64}i[0-9]+'" "$OUT" | tr -d "'"); do
+    [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${ORD_PORT}/content/$id")" = "200" ] || { alive=0; break; }
+  done
+  if [ "$alive" = "1" ]; then
+    echo "fixtures already inscribed on this chain, keeping $OUT" >&2
+    exit 0
+  fi
+fi
+
 ord_json() {  # run an ord wallet command, fail loudly with ord's own message
   local out; if ! out="$("$@" 2>&1)"; then echo "$* failed: $out" >&2; exit 1; fi
   printf '%s' "$out"

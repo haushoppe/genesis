@@ -1,5 +1,6 @@
 import { chromium, BrowserContext } from '@playwright/test';
 import * as path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 
 import { waitForChromeStorageKey, waitForSingletonLockGone } from './wait-helpers';
@@ -73,6 +74,15 @@ async function dumpStorage(context: BrowserContext, extensionId: string): Promis
 }
 
 export default async function globalSetup(): Promise<void> {
+  // Inscribe the fixture bytes on THIS chain and write their ids to
+  // src/environments/regtest-inscriptions.generated.ts, which both the regtest
+  // environment and the spec helpers read. It has to run here rather than only
+  // in regtest-bootstrap.sh: a Playwright run never calls that script, so ids
+  // written against an earlier chain survive a `down -v` and every one of them
+  // 404s, which disables the Mint button and reads as a product regression.
+  // The script exits early when the ids it already wrote still resolve.
+  execFileSync(path.resolve(__dirname, 'inscribe-fixtures.sh'), { stdio: 'inherit' });
+
   // globalSetup is Xverse-specific: it clones a onboarded seed
   // user-data-dir the xverse spec reuses. Every other wallet's
   // matrix job runs without the xverse .crx unpacked, so a hard

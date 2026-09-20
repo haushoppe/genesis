@@ -1,135 +1,120 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code in the `haushoppe/genesis` repo.
 
-## Project Overview
+## What this repo is
 
-Repo for the **Ordinal Cubes by HAUS HOPPE** project — a permissionless 3D cube gallery on Bitcoin Ordinals. Users select 6 existing inscriptions (one per cube side) and mint a new HTML inscription on Bitcoin that renders an interactive 3D cube.
+**Ordinal Cubes by HAUS HOPPE**: a permissionless 3D cube gallery on Bitcoin Ordinals. A user picks 6 existing inscriptions, one per cube side, and mints a new HTML inscription that renders an interactive 3D cube.
 
-**Live product:** https://cubes.haushoppe.art/ (Cloudflare Pages)
-**Backend API:** https://backend.haushoppe.art/ (happysrv via Cloudflare Tunnel — see `ordpool/deploy-happyserver/haushoppe-backend.service`)
+| | |
+|---|---|
+| Live product | https://cubes.haushoppe.art/ (Cloudflare Pages) |
+| Backend API | https://backend.haushoppe.art/ (happysrv via Cloudflare Tunnel, `ordpool/deploy-happyserver/haushoppe-backend.service`) |
 
-The genesis-frontend (Ethereum ERC-721 minting) was never finished and is inactive. The cubes-frontend is the live, active product.
+| Path | What | State |
+|---|---|---|
+| `apps/cubes-frontend/` | Angular 22 SPA, zoneless, signal-first | LIVE product |
+| `apps/backend/` | NestJS API, Node 18, no database | Live, ERC-721 side only |
+| `apps/genesis-frontend/` | Angular 16 SPA, ERC-721 mint, Kendo UI + `@web3-onboard/*` | Inactive, never shipped |
+| `contracts/` | Solidity ERC721A + Hardhat | |
 
-## Layout
+`apps/cubes-frontend/CLAUDE.md` holds the frontend conventions and its own HARD RULEs. Read it before touching that app.
 
-Three independent projects + contracts. **No root `npm install`** — each project owns its deps.
+## RULE: Each project owns its dependencies
 
-```
-apps/
-  backend/            # NestJS API (Node 18). Standalone Nest CLI project.
-  cubes-frontend/     # Angular 22 SPA, zoneless + signal-first (the LIVE product). Standalone Angular CLI project.
-  genesis-frontend/   # Angular 16 SPA (INACTIVE, ERC-721 minting). Standalone Angular CLI project.
-contracts/            # Solidity ERC721A smart contracts + Hardhat setup.
-```
+- No root `npm install`. Each `apps/*` has its own `package.json`, `tsconfig.json`, build, test and lint, and no root-level tooling is shared.
+- The root `package.json` is a stub of shortcuts (`npm run start:backend`). No root devDeps, no root `node_modules`.
+- Shared code is vendored per project into `src/shared/` and `src/openapi-client/`. Drift between copies is accepted; the surface is tiny.
 
-Each `apps/*` has its own `package.json`, `tsconfig.json`, build, test, and lint. They share **no** root-level tooling. Shared code (`apps/shared/`, the old `libs/openapi-client/`) used to live at the root — it's now **vendored into each project's `src/shared/` and `src/openapi-client/`**. Drift between copies is acceptable; the surface area is tiny and rarely changes.
+## RULE: native `fetch` only, never `axios`
+
+- Applies to `apps/backend` and every frontend. `HttpClient` is fine in Angular where DI integration is wanted.
+- Why: supply-chain exposure. Matches the workspace-wide ban.
+
+## RULE: cubes-frontend does not call the backend
+
+- It mints through `ordpool-sdk` (commit + reveal, signed by the connected wallet, broadcast directly). No invoice, no server-side order, no intermediary.
+- Its datasets (cube suggestions, collection lists) come from static GitHub Pages sources, or on regtest from environment-supplied surrogates.
+- `apps/backend` serves the ERC-721 side only, for the inactive genesis-frontend.
 
 ## Commands
 
 ```bash
-# Install (per project, on first checkout or after a deps change)
-cd apps/backend         && npm ci
-cd apps/cubes-frontend  && npm ci
+# Install, per project
+cd apps/backend          && npm ci
+cd apps/cubes-frontend   && npm ci
 cd apps/genesis-frontend && npm ci
 
-# Development (each in its own terminal)
-cd apps/backend          && npm start       # NestJS on the PORT env var (production: 3344 on happysrv)
-cd apps/cubes-frontend   && npm start       # ng serve on :4203
-cd apps/genesis-frontend && npm start       # ng serve on :4201
+# Develop, each in its own terminal
+cd apps/backend          && npm start   # NestJS, PORT env var; 3344 in production
+cd apps/cubes-frontend   && npm start   # ng serve on :4203
+cd apps/genesis-frontend && npm start   # ng serve on :4201
 
-# Build (per project — CI does this on push)
-cd apps/backend         && npm run build    # nest build --webpack → dist/main.js
-cd apps/cubes-frontend  && npm run build    # ng build production → dist/*
-cd apps/genesis-frontend && npm run build   # ng build production → dist/*
+# Build and test
+npm run build            # per project
+npm test                 # per project
 
-# Test
-cd apps/backend         && npm test         # jest (4 suites, 17 tests)
-cd apps/cubes-frontend  && npm test         # jest + jest-preset-angular (6 suites, 25 tests)
-cd apps/genesis-frontend && npm test        # jest + jest-preset-angular (1 suite, 4 tests)
-
-# Smart contracts (Hardhat)
+# Contracts
 cd contracts && npm install
 cd contracts && npm run hardhat:start-localhost-network
 cd contracts && npm run hardhat:test
 ```
 
-The root `package.json` is intentionally a tiny stub with just convenience shortcuts (`npm run start:backend` → `cd apps/backend && npm start`). There are no root devDeps and no root `node_modules`.
+## apps/backend
 
-## apps/backend (NestJS)
+- No database. State is in-memory or fetched from external APIs.
+- Routes: `GET /` and `GET /robots.txt` (`AppController`); `POST /api/mintTicket` plus the `GET /api/...` token routes (`ApiController`) for mint tickets, token metadata, owners, allowlist and token images.
+- Ethereum on-chain reads go through Alchemy. Cubes minting needs no server-side API.
+- OpenAPI at `/open-api` (UI) and `/open-api-json` (spec).
+- Build output: `dist/main.js` (webpack-bundled) + `dist/assets/` + the project's own `package.json`, shipped as-is to `haushoppe/backend-build@stage_prod`.
 
-**No database** — everything is in-memory or fetched from external APIs.
+## apps/cubes-frontend
 
-**Live endpoints:**
-- `GET /` + `GET /robots.txt` (`AppController`)
-- `POST /api/mintTicket` + the `GET /api/...` token routes (`ApiController`) — ERC-721 mint tickets, token metadata, owners, allowlist, and token images for the (inactive) genesis-frontend.
+- Angular 22 standalone components, zoneless, signal-first. No NgModules, no NgRx.
+- State: `signal()` / `computed()` / `linkedSignal()`, `rxResourceFixed()` for async data, localStorage-backed signals (`cube_` prefix) for mint history. Wallet connection via `ordpool-sdk`'s `WalletService`, any ordinals-aware wallet.
+- Routes (`ordinal.routes.ts`): `/` mint form + past mints; `/mint/:collectionSymbol` pre-selected collection; `/inscription/:inscriptionId`; `/faq`; `/presskit`.
+- Mint flow: connect wallet, enter six inscription ids, the wallet signs a commit then a reveal carrying the cube HTML, and the cube lands on the wallet's ordinals address. Built on `InscribeMintOrchestrator`. Both transactions carry `nLockTime=21`, so each mint also inscribes two CAT-21 cats.
+- Cube HTML: `<html><!--cubes.haushoppe.art--><head><title>TITLE</title></head><body><script>t='id1|...|id6|...'</script><script src=/content/CUBE_RENDERER_INSCRIPTION></script>`
+- Three renderer versions (v1, v2, v3), identified by inscription id in `src/shared/ordinals/parse-cube.ts`.
+- Validators: `inscription-id.validator.ts` (64 hex + `i` + digits), `btc-address.validator.ts` (Taproot `bc1p...`), `correct-code.validator.ts` (referral codes ending `_N`).
+- Inscription lookup by number (the user types `#12345`): `mintService.inscriptionNumberToId()` calls `https://ord.ordpool.space/inscription/{n}` with `Accept: application/json`.
 
-The backend serves the **ERC-721 side only**. **cubes-frontend does not call the backend**: it mints via `ordpool-sdk` (commit + reveal transactions signed by the connected ordinals-aware wallet, broadcast directly) and reads its datasets (cube suggestions, collection lists) from static GitHub Pages sources.
+<!-- long-rule: two measured traps whose numbers and failed approaches are the load-bearing part -->
+## RULE: Two cubes-frontend behaviours are measured, do not re-derive them
 
-**External APIs:** the ERC-721 routes read Ethereum on-chain state via Alchemy (see the env section). Cubes minting needs no server-side API.
+- **Cube iframes**: every on-chain cube renders through `ToggleIframeDirective` + `src/app/shared/utils/cube-srcdoc.ts`. Bytes are fetched and shown as `srcdoc`, with an in-document dark `color-scheme` meta, the renderer's stage reproduced as CSS, a dark placeholder off-screen, and every document after the first in a FRESH iframe element. Chrome does not paint a re-navigated iframe whose previous document ran WebGL.
+- **`deployUrl: "/"`** in `angular.json` makes every resource URL in `index.html` root-absolute. Cloudflare Pages turns the `modulepreload` hint into an HTTP `Link` header, and a relative target resolves against the request URL, so a nested route preloads a path the SPA fallback answers with HTML.
+- Both carry their proof, their failed alternatives and the measurement a replacement must pass in `apps/cubes-frontend/CLAUDE.md`. Read that before changing either.
 
-**HTTP client:** native `fetch` only. **axios is forbidden** (supply-chain risk).
+Why: both shipped as regressions once, green, and were fixed only after measurement.
 
-**Swagger/OpenAPI:** Available at `/open-api` (UI) and `/open-api-json` (spec).
+## apps/genesis-frontend
 
-**Build output:** `apps/backend/dist/main.js` (webpack-bundled) + `apps/backend/dist/assets/` + the project's own `package.json` (15 deps). CI ships this as-is to `haushoppe/backend-build@stage_prod`. No more "trim monorepo deps" build step.
+- Angular 16, ERC-721 mint flow, Kendo UI, `@web3-onboard/*`.
+- `webpack.config.js` supplies Node-builtin polyfills (`buffer`, `crypto-browserify`, `stream-*`) the web3 libraries need; `angular.json` uses `@angular-builders/custom-webpack:browser` for it.
 
-## apps/cubes-frontend (the live product)
+## CI/CD
 
-Angular 22 standalone-components app, zoneless and signal-first. No NgModules, no NgRx.
-
-**State management:** `signal()` / `computed()` / `linkedSignal()`, with `rxResourceFixed()` for async data and localStorage-backed signals (`cube_` prefix) for persisted mint history. Wallet connection is `ordpool-sdk`'s `WalletService` (any ordinals-aware wallet, not Xverse-only). The authoritative frontend conventions live in `apps/cubes-frontend/CLAUDE.md`.
-
-**Cube iframes (do not refactor):** every on-chain cube (gallery, details, mint preview) renders through `ToggleIframeDirective` + `src/app/shared/utils/cube-srcdoc.ts`: the bytes are fetched and shown as `srcdoc` with an in-document dark colour-scheme meta and the renderer's stage reproduced as CSS, a dark stage placeholder off-screen, and every document after the first in a fresh iframe element (Chrome does not paint a re-navigated iframe whose previous document ran WebGL). This is the measured, final answer to the white flash and stage flicker; `apps/cubes-frontend/CLAUDE.md` carries the HARD RULE with the proof, the approaches that already failed, and the measurement any replacement has to pass.
-
-**Build (`deployUrl: "/"`):** cubes-frontend sets `deployUrl` so every resource URL in `index.html` is root-absolute. Cloudflare Pages turns the page's `modulepreload` hint into an HTTP `Link` header, and a relative target resolves against the request URL, which on a nested route (`/inscription/<id>`) preloads a path the SPA fallback answers with HTML ("Failed to load module script … text/html" on every deep link). Details in `apps/cubes-frontend/CLAUDE.md`. cubes is the only app here that emits the hint (application builder); genesis-frontend and the other family sites do not, and only inherit the trap if they move to that builder.
-
-**Key routes** (`ordinal.routes.ts`):
-- `/` — StartComponent with the mint form + past mints
-- `/mint/:collectionSymbol` — StartComponent with a pre-selected collection for suggestions
-- `/inscription/:inscriptionId` — single inscription detail
-- `/faq`, `/presskit`
-
-**Minting flow (ordpool-sdk commit + reveal):** connect an ordinals-aware wallet → enter six inscription IDs → "Mint my cube!" → the wallet signs a **commit** transaction, then the **reveal** (carrying the cube HTML) follows automatically → when the reveal confirms, the cube is on-chain on the wallet's ordinals address. The wallet pays both transactions from its funded payment address; there is no invoice, no server-side order, and no intermediary. Built on `InscribeMintOrchestrator` from `ordpool-sdk`. Every cube mint also inscribes two CAT-21 cats as a side effect (commit + reveal both carry `nLockTime=21`).
-
-**Cube HTML format:** `<html><!--cubes.haushoppe.art--><head><title>TITLE</title></head><body><script>t='id1|id2|id3|id4|id5|id6|...'</script><script src=/content/CUBE_RENDERER_INSCRIPTION></script>`
-
-Three cube renderer versions exist (v1, v2, v3) identified by their inscription IDs in `src/shared/ordinals/parse-cube.ts`.
-
-**Form validators:** `inscription-id.validator.ts` (64 hex + `i` + digits), `btc-address.validator.ts` (Taproot `bc1p...` required), `correct-code.validator.ts` (referral codes ending in `_N`).
-
-**Inscription lookup by number** (when the user types `#12345`): `mintService.inscriptionNumberToId()` hits `https://ord.ordpool.space/inscription/{n}` with `Accept: application/json`. Hiro API was sunsetted; the ord-proxy in the ordpool family fills the same role.
-
-**HTTP client:** native `fetch` and Angular `HttpClient`. **axios is forbidden.**
-
-## apps/genesis-frontend (inactive)
-
-Angular 16 app for ERC-721 mint flow. Uses Kendo UI components and `@web3-onboard/*` for wallet connection. Custom webpack config (`webpack.config.js`) provides Node-builtin polyfills (`buffer`, `crypto-browserify`, `stream-*`, etc) required by the web3 libs — `angular.json` uses `@angular-builders/custom-webpack:browser` for this.
-
-## CI/CD & Deployment
-
-`.github/workflows/`:
-
-| Workflow | Trigger | What it does |
+| Workflow | Trigger | Does |
 |---|---|---|
-| `build-backend.yml` | push to `apps/backend/**` | `cd apps/backend && npm ci && npm test && npm run build`. Pushes `dist/` + `package.json` + `package-lock.json` to `haushoppe/backend-build@stage_prod`. happysrv's `haushoppe-backend-deploy.timer` polls that branch every minute, runs `npm ci --omit=dev`, restarts `haushoppe-backend.service`. ≤60s lag CI → live. |
-| `build-cubes-frontend.yml` | push to `apps/cubes-frontend/**` | `cd apps/cubes-frontend && npm ci && npm test && npm run build`. Pushes `dist/` to `haushoppe/cubes-frontend-build@main` → Cloudflare Pages auto-deploys to cubes.haushoppe.art. |
-| `build-genesis-frontend.yml` | push to `apps/genesis-frontend/**` | Same shape. Activates Kendo UI license via `npx kendo-ui-license activate`. Pushes to `haushoppe/genesis-frontend-build@main`. |
+| `build-backend.yml` | push to `apps/backend/**` | `npm ci && npm test && npm run build`, pushes `dist/` + `package.json` + `package-lock.json` to `haushoppe/backend-build@stage_prod`. happysrv's `haushoppe-backend-deploy.timer` polls that branch every minute, runs `npm ci --omit=dev`, restarts `haushoppe-backend.service`. Under 60s from CI to live. |
+| `build-cubes-frontend.yml` | push to `apps/cubes-frontend/**` | `npm ci && npm test && npm run build`, pushes `dist/` to `haushoppe/cubes-frontend-build@main`; Cloudflare Pages auto-deploys to cubes.haushoppe.art. |
+| `build-genesis-frontend.yml` | push to `apps/genesis-frontend/**` | Same shape. Runs `npx kendo-ui-license activate` first. Pushes to `haushoppe/genesis-frontend-build@main`. |
 
-Workflows use Node 18 + `npm ci`. The `npm install --force` workaround days are gone — each project has its own clean lockfile.
+Workflows run Node 18 with `npm ci`.
 
 ## Environment (apps/backend)
 
-See `ordpool/deploy-happyserver/haushoppe-backend.env.example`. Required vars:
+Template: `ordpool/deploy-happyserver/haushoppe-backend.env.example`.
+
 - `NODE_ENV=production`
-- `PORT=3344` (server-side; dev defaults to whatever you set)
-- `NETWORK` — `hardhat`, `goerli`, or `mainnet`
-- `SIGNER_KEY_*` — six private keys for ERC-721 mint ticket signing
+- `PORT=3344` in production
+- `NETWORK`: `hardhat`, `goerli` or `mainnet`
+- `SIGNER_KEY_*`: six private keys for ERC-721 mint-ticket signing
 - `ALCHEMY_KEY_MAINNET`, `ALCHEMY_KEY_GOERLI`
 
-## Code Style
+## Code style
 
-- Prettier: single quotes (`"singleQuote": true`)
-- EditorConfig: 2-space indent, LF line endings, UTF-8
-- ESLint: per-project standalone configs (`apps/*/.eslintrc.json`) using `eslint:recommended` + `@typescript-eslint/recommended`. No `@nx/enforce-module-boundaries` anymore.
-- Angular: standalone components, SCSS styles. cubes-frontend is signal-first (Angular 22, no NgRx); only the inactive genesis-frontend still uses NgRx (`createFeature()` + facade services).
+- Prettier with `"singleQuote": true`. EditorConfig: 2-space indent, LF, UTF-8.
+- ESLint per project (`apps/*/.eslintrc.json`), `eslint:recommended` + `@typescript-eslint/recommended`.
+- Angular: standalone components, SCSS. cubes-frontend is signal-first with no NgRx; only the inactive genesis-frontend uses NgRx (`createFeature()` + facades).

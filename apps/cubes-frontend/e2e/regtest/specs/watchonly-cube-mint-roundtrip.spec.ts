@@ -224,6 +224,10 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   const scriptType = cubes.locator('[data-testid="wallet-xpub-script-type"]');
   await scriptType.waitFor({ state: 'visible', timeout: 15_000 });
   await scriptType.selectOption('p2tr');
+  // Confirm the selection STUCK. A selection that silently does not take
+  // derives a different script type, and the failure then surfaces much
+  // later as an address with no funds rather than as a wrong choice here.
+  await expect(scriptType).toHaveValue('p2tr');
   await cubes.locator('[data-testid="wallet-xpub-connect"]').click();
 
   // Any error surviving the second attempt is a real rejection, and surfaces

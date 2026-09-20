@@ -221,6 +221,10 @@ for (const asset of ASSETS) {
     const scriptType = page.locator('[data-testid="wallet-xpub-script-type"]');
     await scriptType.waitFor({ state: 'visible', timeout: 15_000 });
     await scriptType.selectOption('p2tr');
+    // Confirm the selection STUCK. A selection that silently does not take
+    // derives a different script type, and the failure then surfaces much
+    // later as an address with no funds rather than as a wrong choice here.
+    await expect(scriptType).toHaveValue('p2tr');
     await page.locator('[data-testid="wallet-xpub-connect"]').click();
 
     const xpubError = page.locator('[data-testid="wallet-xpub-error"]');

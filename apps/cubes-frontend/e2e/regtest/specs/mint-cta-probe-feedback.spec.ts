@@ -83,19 +83,17 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
   await expect(checking).toHaveText(/checking that all six sides render/i);
 
   // The button must also LOOK unavailable, not merely be inert. Measured
-  // rather than eyeballed: on the screenshot it reads as a vivid, clickable
-  // orange, and the temptation was to restyle it. It is dimmed to 0.65 and
-  // carries a not-allowed cursor, so the affordance is already correct and the
-  // missing piece was only the reason. Pinned here so a future style change
-  // cannot quietly produce a button that looks live while refusing clicks.
+  // rather than eyeballed: by eye it reads as a vivid, clickable orange, and
+  // the temptation is to restyle it. It is dimmed to 0.65 and carries a
+  // not-allowed cursor, so the affordance is already correct and the missing
+  // piece was only the reason. Pinned here so a future style change cannot
+  // quietly produce a button that looks live while refusing clicks.
   const look = await cta.evaluate((el) => {
     const cs = getComputedStyle(el);
     return { opacity: Number(cs.opacity), cursor: cs.cursor };
   });
   expect(look.opacity).toBeLessThan(1);
   expect(look.cursor).toBe('not-allowed');
-
-  await page.screenshot({ path: 'test-results-regtest/mint-cta-probe-feedback.png', fullPage: false });
 
   // Released, the probe answers and the button becomes usable. Asserted so the
   // message cannot be a permanent fixture that merely happens to be present.

@@ -1,20 +1,23 @@
-@if (live()) {
-  <iframe
-    width="100%"
-    height="300"
-    class="image-container"
-    [srcdoc]="bannerSrcdoc | safeHtml"
-    sandbox="allow-scripts"
-  ></iframe>
-} @else {
-  <!-- Inlined still frame: the header's first paint costs no requests. -->
+<!-- The poster is a LAYER, not a phase. It stays in the DOM behind the live
+     cube for the life of the page, so any frame in which the iframe has
+     painted nothing shows the finished cube instead of an empty box. Removing
+     it on swap left a one-frame drop to near-black, measured at mean
+     luminance 4 against a steady 18. -->
+<div class="banner-stack image-container">
   <img
-    class="image-container w-100"
-    style="object-fit: cover; display: block"
+    class="banner-poster"
     [src]="poster"
     width="1200"
     height="386"
     alt="The featured Ordinal Cube, a 3D cube whose faces are inscribed artworks"
     fetchpriority="high"
   >
-}
+  @if (live()) {
+    <iframe
+      class="banner-live"
+      [srcdoc]="bannerSrcdoc | safeHtml"
+      sandbox="allow-scripts"
+      title="The featured Ordinal Cube, rendered live"
+    ></iframe>
+  }
+</div>

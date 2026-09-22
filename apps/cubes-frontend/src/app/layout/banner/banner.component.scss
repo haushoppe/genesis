@@ -1,3 +1,23 @@
+// The poster and the live cube occupy the SAME box, poster behind. The live
+// iframe paints over it, so an unpainted frame reveals the poster rather than
+// an empty element.
+.banner-stack {
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-poster,
+.banner-live {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
+.banner-poster { object-fit: cover; }
+
 // https://www.w3schools.com/howto/howto_css_cutout_text.asp
 .image-container {
   position: relative;

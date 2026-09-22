@@ -2,6 +2,7 @@ import { afterNextRender, Component, signal } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
 import { BANNER_POSTER } from './banner-poster';
+import { withSelfHostedBannerAssets } from './banner-self-hosted';
 import { SafeHtmlPipe } from '../../safe-html.pipe';
 import { getCubeHtml } from '../../services/cube-html';
 import { withPreviewDarkCanvas } from '../../shared/utils/preview-dark-canvas';
@@ -11,7 +12,7 @@ import { withPreviewDarkCanvas } from '../../shared/utils/preview-dark-canvas';
 // hardcoded list renders six 404s per page there.
 const BANNER_CUBE_SIDES = environment.bannerCubeSides;
 
-const BANNER_SRCDOC = withPreviewDarkCanvas(getCubeHtml({
+const BANNER_SRCDOC = withPreviewDarkCanvas(withSelfHostedBannerAssets(getCubeHtml({
   inscriptionIds: {
     inscriptionId1: BANNER_CUBE_SIDES[0],
     inscriptionId2: BANNER_CUBE_SIDES[1],
@@ -26,7 +27,7 @@ const BANNER_SRCDOC = withPreviewDarkCanvas(getCubeHtml({
   colorPane: '',
   bgColor1: '',
   bgColor2: '',
-}));
+}), BANNER_CUBE_SIDES));
 
 @Component({
   selector: 'app-banner',

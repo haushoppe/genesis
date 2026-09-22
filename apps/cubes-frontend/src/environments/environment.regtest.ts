@@ -73,7 +73,20 @@ export const environment = {
       inscriptionIds: [...regtestInscriptions.fallbackSides].reverse(),
     },
   ],
-  bannerCubeSides: regtestInscriptions.fallbackSides,
+  // Same ids as production ON PURPOSE. The banner never fetches them: they are
+  // substitution keys that `withSelfHostedBannerAssets` swaps for
+  // /assets/banner/side-N.webp, so the header renders the same artwork on
+  // every chain and needs nothing inscribed. Pointing this at regtest
+  // fixtures showed the digit faces locally while production showed the real
+  // cube, which is confusing and buys nothing.
+  bannerCubeSides: [
+    '0a595eb00dffb649952951e76fa5cdd1032d621a91f1d75402eec692bb567da2i0',
+    '31ad74da8f8162696570a538e51956d659ed8ba5af21ea6dd667eb7b54298ee5i0',
+    '8f6d156fb339697f67adcfd54ae300a7b9f8a7f1f36c9cc6f79960508a9da881i0',
+    '30078f5394421c1593be2c06c7ca890c53ccc017550dc019e0c8a37a5f563cbei0',
+    '9a397c46bd6a547f697e186fa803bb71f2d7c58b62b733f7b1411ebf9fc88efdi0',
+    'b53e29d74eb41d7720760cb9c1b93eb9be0eaadbcf086aea0172672f6cce82aei0',
+  ],
   previewFallbackSides: regtestInscriptions.fallbackSides,
   ordinalsExplorerIframe: 'http://localhost:8081/preview/',
   // Witness-capable preview = the real ordpool-backend in the regtest stack

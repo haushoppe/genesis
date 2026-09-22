@@ -1,0 +1,12 @@
+# The banner cube renders in a sandboxed iframe with no allow-same-origin, so
+# its document origin is `null`. The renderer requests every face with
+# crossOrigin="anonymous" (the texture shim needs origin-clean images to
+# rasterise an unsupported source), and a null origin makes that a
+# cross-origin request even for our own asset. ordinals.com served these with
+# `access-control-allow-origin: *`, which is the only reason the banner worked
+# before they were self-hosted.
+#
+# Scoped to the banner's own directory: nothing else is readable cross-origin.
+/assets/banner/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=31536000, immutable

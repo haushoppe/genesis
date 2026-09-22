@@ -27,17 +27,14 @@
     <meta name="twitter:card" content="summary_large_image">
 
     <!--
-      Warm the browser cache for the two cube-scene scripts every cube
-      iframe fetches. A cube's relative /content/* URLs resolve to the
-      `/content/* -> ordinals.com` redirect, landing at ordinals.com;
-      these preloads target that final origin so the cache-lookup hits.
-      - renderer: referenced by every generated cube (cube-html.ts)
-      - helper: fetched by the renderer at runtime
+      No third-party preload. The banner is the only cube above the fold and
+      it now loads a SELF-HOSTED renderer and scene bundle from
+      /assets/banner/, after the load event, behind an inlined still frame.
+      Gallery cubes are lazy and below the fold. Warming ordinals.com here
+      cost 252,650 bytes from a third party on every page load, ahead of
+      everything that decides first paint, for scripts the first visible cube
+      no longer uses.
     -->
-    <link rel="preload" as="script" crossorigin="anonymous"
-      href="https://ordinals.com/content/fed0eb2d943b1b6ce83c1d7bfb4639d3d44c7fdb161b1037c2fadaf630e55a55i0">
-    <link rel="preload" as="fetch" crossorigin="anonymous"
-      href="https://ordinals.com/content/2dbdf9ebbec6be793fd16ae9b797c7cf968ab2427166aaf390b90b71778266abi0">
 
   </head>
   <body>

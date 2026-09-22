@@ -1,7 +1,7 @@
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 
 import { environment as regtestEnvironment } from '../../../src/environments/environment.regtest';
-import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
+import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS, screenshotWhenFontsReady } from '../regtest-helpers';
 
 /**
  * The disabled Mint button has to say why it is disabled.
@@ -95,7 +95,7 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
   expect(look.opacity).toBeLessThan(1);
   expect(look.cursor).toBe('not-allowed');
 
-  await page.screenshot({ path: 'test-results-regtest/mint-cta-probe-feedback.png', fullPage: false });
+  await screenshotWhenFontsReady(page, { path: 'test-results-regtest/mint-cta-probe-feedback.png' });
 
   // Released, the probe answers and the button becomes usable. Asserted so the
   // message cannot be a permanent fixture that merely happens to be present.

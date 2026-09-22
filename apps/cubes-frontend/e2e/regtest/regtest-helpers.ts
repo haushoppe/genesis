@@ -1085,3 +1085,33 @@ export function parseRegtestCube(onChainHtml: string): ReturnType<typeof parseCu
   }
   return parseCube(onChainHtml.replace(regtestInscriptions.cubeRenderer, MAINNET_CUBE_RENDERER_ID));
 }
+
+/**
+ * Screenshot a page once its webfonts have actually loaded.
+ *
+ * Playwright's screenshot waits for fonts itself and fails the call with
+ * `Protocol error (Page.captureScreenshot): Unable to capture screenshot -
+ * waiting for fonts to load...` when that wait does not finish. The fonts are
+ * ours and self-hosted (`dist/media/*.woff2`), so this is contention, not a
+ * missing resource: 14 matrix jobs each run a full stack, and the font
+ * requests can still be in flight when the screenshot is asked for.
+ *
+ * Waiting on `document.fonts.ready` first makes the state explicit and gives
+ * the failure a name, instead of surfacing as a screenshot protocol error on a
+ * spec whose assertions all passed. It deliberately does NOT catch: a
+ * screenshot that cannot be taken is reported, not swallowed.
+ */
+export async function screenshotWhenFontsReady(
+  page: Page,
+  options: { path: string; fullPage?: boolean; timeoutMs?: number },
+): Promise<void> {
+  const timeout = options.timeoutMs ?? 30_000;
+  await page.waitForFunction(() => document.fonts.status === 'loaded', undefined, { timeout })
+    .catch((err: unknown) => {
+      throw new Error(
+        `webfonts did not finish loading within ${timeout}ms, so the screenshot for ${options.path} `
+        + `would have failed inside Chromium with a protocol error instead of naming the cause: ${String(err)}`,
+      );
+    });
+  await page.screenshot({ path: options.path, fullPage: options.fullPage ?? false });
+}

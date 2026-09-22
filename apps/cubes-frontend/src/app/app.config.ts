@@ -9,13 +9,8 @@ import { ORDINAL_ROUTES } from './ordinal.routes';
 import { bitcoinNetwork, cat21Config } from './shared/sdk-tokens';
 
 /**
- * The chain the app builds addresses for, from the environment's declared
- * `network`.
- *
- * A pure function rather than an expression inside the provider, so the choice
- * can be tested at its boundary: the branch that matters is the one nothing
- * routinely exercises, since every unit test and every production build take
- * the mainnet side.
+ * The chain the app builds addresses for. A function, not an inline
+ * expression, so the regtest branch is testable: nothing else takes it.
  */
 export function networkOf(env: { network: 'mainnet' | 'regtest' }): Network {
   return env.network === 'regtest' ? Network.Regtest : Network.Mainnet;
@@ -43,10 +38,6 @@ export const appConfig: ApplicationConfig = {
     // config in the constructor. These app-local tokens carry cubes-frontend's
     // concrete config; the useFactory providers below construct the SDK
     // classes as root singletons, so call sites keep injecting the class.
-    // Read from the environment's own `network` field. Inferring it from
-    // mempoolApiUrl being '' made every build that did not match the guess
-    // silently mainnet, which on a regtest chain means the app builds bc1
-    // addresses and nothing says so.
     { provide: bitcoinNetwork, useValue: networkOf(environment) },
     // cat21ApiUrl is unused by the inscribe flow but the config token
     // is required by Cat21Service's constructor. mempoolApiUrl comes

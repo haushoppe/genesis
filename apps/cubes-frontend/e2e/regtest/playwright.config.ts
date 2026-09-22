@@ -38,12 +38,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
 
-  // Zero everywhere, deliberately. A retry turns a real defect into a green
-  // run and hides how long it has been failing: these lanes drive real wallet
-  // extensions against a real chain, which is exactly where "it passed the
-  // second time" gets mistaken for a flake. A red here is a defect that has not
-  // been located yet.
-  retries: 0,
+  retries: 0,                // deliberate: a retry hides a real defect
   timeout: 360_000,          // 6 min per test; commit+reveal round-trip is slow
   expect: { timeout: 20_000 },
 

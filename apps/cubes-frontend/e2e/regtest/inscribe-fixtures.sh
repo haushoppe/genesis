@@ -41,14 +41,8 @@ wait_for_ord_sync() {
   echo "ord-stock did not reach height $want" >&2; exit 1
 }
 
-# ord answers /content only once its index has caught up, so the liveness
-# probe below has to run AFTER the wait, not before it. Probing a trailing ord
-# returns a non-200 for ids that are perfectly alive, the script concludes the
-# chain is fresh, and it re-inscribes every fixture and rewrites $OUT. Under a
-# running dev server that swaps the ids the app is already serving.
-#
-# This is also before the first wallet command, which ord refuses outright
-# while its index trails bitcoind.
+# Before the liveness probe: a trailing ord 404s ids that are alive, and the
+# script would re-inscribe and rewrite $OUT under a running dev server.
 wait_for_ord_sync
 
 # --- already inscribed on THIS chain? ------------------------------------
@@ -67,15 +61,9 @@ if [ -f "$OUT" ]; then
   fi
 fi
 
-# Run an ord wallet command whose stdout is JSON, and fail loudly with ord's
-# own message.
-#
-# stderr is captured SEPARATELY rather than folded in with `2>&1`. ord writes
-# warnings there on the very commands whose stdout is parsed: `ord wallet
-# balance` prints "warning: output <op> contains both inscriptions and runes"
-# (balance.rs) while still exiting 0, and folded into stdout that sentence
-# reaches python3 as leading garbage and the run dies on a JSON decode error
-# naming neither ord nor the output it was warning about.
+# Run an ord wallet command whose stdout is JSON, and fail with ord's message.
+# stderr stays separate: `ord wallet balance` warns on stderr while exiting 0
+# (balance.rs), and folded in, that sentence breaks the JSON parse.
 ord_json() {
   local out err
   err="$(mktemp)"
@@ -84,10 +72,7 @@ ord_json() {
     rm -f "$err"
     exit 1
   fi
-  # A warning on a successful command is still worth seeing; it just must not
-  # end up in the JSON. An `if` rather than `[ ... ] && cat`, because under
-  # `set -e` that list exits the script whenever the test is false, which is
-  # every ordinary call.
+  # `if`, not `[ ... ] && cat`: under `set -e` that list exits on a false test.
   if [ -s "$err" ]; then cat "$err" >&2; fi
   rm -f "$err"
   printf '%s' "$out"

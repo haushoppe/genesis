@@ -1,9 +1,7 @@
 export const environment = {
   production: true,
   api: 'https://backend.haushoppe.art',
-  // Which chain this build talks to, declared rather than inferred from
-  // another field's value. Decides the SDK's bitcoinNetwork, so it decides
-  // the shape of every address the app builds.
+  // Chain this build talks to; drives the SDK's bitcoinNetwork.
   network: 'mainnet' as 'mainnet' | 'regtest',
   mempoolApiUrl: 'https://api.ordpool.space',
   // Where the mint form loads each side as an <img> before enabling Mint

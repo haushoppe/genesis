@@ -14,10 +14,7 @@ describe('networkOf', () => {
     expect(networkOf({ network: 'mainnet' })).toBe(Network.Mainnet);
   });
 
-  // Each environment file is a separate build target, so nothing else compares
-  // them against each other. The regtest one is the branch that matters: a
-  // build that reads mainnet there produces bc1 addresses against a regtest
-  // chain, and every symptom of that appears somewhere other than the address.
+  // Separate build targets; nothing else compares them.
   it('gives each shipped environment the chain it declares', () => {
     expect(networkOf(regtestEnvironment)).toBe(Network.Regtest);
     expect(networkOf(environment)).toBe(Network.Mainnet);
@@ -25,10 +22,8 @@ describe('networkOf', () => {
   });
 
   it('treats an unrecognised value as mainnet, never as regtest', () => {
-    // The fallback direction is deliberate. Mainnet is the conservative
-    // answer: an app wrongly in mainnet mode on regtest fails visibly on the
-    // first address it builds, while one wrongly in regtest mode on mainnet
-    // would hand a user an address their own chain cannot pay.
+    // Mainnet is the safe fallback: regtest mode on mainnet would hand a user
+    // an address their chain cannot pay.
     expect(networkOf({ network: '' as 'mainnet' })).toBe(Network.Mainnet);
   });
 });

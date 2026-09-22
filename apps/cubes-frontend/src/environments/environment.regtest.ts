@@ -16,9 +16,8 @@ import { regtestInscriptions } from './regtest-inscriptions.generated';
 export const environment = {
   production: false,
   api: 'http://localhost:3333',
-  // Which chain this build talks to, declared rather than inferred. This is
-  // the one environment where getting it wrong is silent: an app that reads
-  // mainnet here builds bc1 addresses against a regtest chain.
+  // Chain this build talks to. Wrong here is silent: mainnet mode on a
+  // regtest chain builds bc1 addresses.
   network: 'regtest' as 'mainnet' | 'regtest',
   // Same-origin so the dev-server proxy handles CORS + path rewrites:
   // `proxy.conf.regtest.json` maps `/api/*` → `http://localhost:3010/*`

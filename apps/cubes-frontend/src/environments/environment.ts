@@ -5,12 +5,7 @@
 export const environment = {
   production: false,
   api: 'http://localhost:3333',
-  /**
-   * Which chain this build talks to, DECLARED rather than inferred. The app
-   * derives the SDK's `bitcoinNetwork` from it, and that decides the shape of
-   * every address it builds, so guessing from some other field's value picks
-   * mainnet whenever the guess misses.
-   */
+  /** Chain this build talks to; drives the SDK's `bitcoinNetwork`. */
   network: 'mainnet' as 'mainnet' | 'regtest',
   /**
    * SDK's mempoolApiUrl — routes through electrs. Dev + prod hit

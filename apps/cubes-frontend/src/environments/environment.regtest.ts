@@ -7,17 +7,19 @@ import { regtestInscriptions } from './regtest-inscriptions.generated';
  * the reveal's vout[1] doesn't dust-reject on regtest and the reveal
  * builder's decode step doesn't throw.
  *
- * The previous value used `tb`-computed checksum bytes with the `bcrt`
- * HRP swapped in — bech32/bech32m both rejected the resulting address
- * with "Invalid checksum … expected vg32hk", which surfaced inside
- * InscribeMintOrchestrator.computeSimulations and marked every UTXO
- * as `insufficient` (masking the real crash). Corrected to the same
- * data words re-encoded under `bcrt` HRP; the last six chars now match
- * the expected bech32m checksum for this pubkey under regtest.
+ * The tip address carries a bech32m checksum computed under the `bcrt` HRP.
+ * Reusing a `tb`-computed checksum with the HRP swapped in produces an
+ * address both bech32 and bech32m reject, and the rejection surfaces inside
+ * InscribeMintOrchestrator.computeSimulations as every UTXO being
+ * `insufficient`, which names neither the address nor the checksum.
  */
 export const environment = {
   production: false,
   api: 'http://localhost:3333',
+  // Which chain this build talks to, declared rather than inferred. This is
+  // the one environment where getting it wrong is silent: an app that reads
+  // mainnet here builds bc1 addresses against a regtest chain.
+  network: 'regtest' as 'mainnet' | 'regtest',
   // Same-origin so the dev-server proxy handles CORS + path rewrites:
   // `proxy.conf.regtest.json` maps `/api/*` → `http://localhost:3010/*`
   // (stripping the `/api` prefix, since electrs's Esplora endpoints

@@ -21,6 +21,7 @@ import {
   UtxoScanState,
   WalletService,
   bucketOf,
+  esploraInscribeTransport,
   classifyCandidateFee,
   formatSatsWithUsd,
   getAddressNetwork,
@@ -231,7 +232,8 @@ export class StartComponent {
   private readonly orch = new InscribeMintOrchestrator({
     getUtxos: (address) => firstValueFrom(this.cat21.getUtxos(address)),
     scan: this.scanner,
-    broadcast: (signedTxHex) => firstValueFrom(this.cat21.postTransaction(signedTxHex)),
+    // Commit and reveal go out as one package, dry-run first (SDK rule).
+    transport: esploraInscribeTransport([`${this.cat21.mempoolApiUrl}/api`]),
     network: this.deriveNetwork(),
     // How hard to stand in the way when only an asset-bearing coin can fund the
     // mint. 'derive' reads it off the connected wallet's own addresses: a wallet

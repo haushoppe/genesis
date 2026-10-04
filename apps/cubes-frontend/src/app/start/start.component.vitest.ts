@@ -32,7 +32,7 @@ vi.mock('../../environments/environment', async () => {
 });
 
 import {
-  Cat21Service, getDummyKeypair, InscribeMintOrchestrator, InscribeSnapshot, KnownOrdinalWalletType, Network,
+  Cat21Service, getDummyKeypair, InscribeBroadcastTransport, InscribeMintOrchestrator, InscribeSnapshot, KnownOrdinalWalletType, Network,
   toScureNetwork, UtxoContentScanner, WalletService,
 } from 'ordpool-sdk';
 import { hex } from '@scure/base';
@@ -42,6 +42,13 @@ import { InscriptionLookupService } from '../services/inscription-lookup.service
 import { PastMintsService } from '../services/past-mints.service';
 import { PriceService } from '../services/price.service';
 import { StartComponent } from './start.component';
+
+/** These specs never reach a broadcast; any send is a test bug. */
+const unusedTransport: InscribeBroadcastTransport = {
+  testPackage: async () => { throw new Error('unexpected testPackage'); },
+  submitPackage: async () => { throw new Error('unexpected submitPackage'); },
+  sendTransaction: async () => { throw new Error('unexpected sendTransaction'); },
+};
 
 /**
  * Constructs the real StartComponent class through DI (no template render).
@@ -76,7 +83,7 @@ describe('StartComponent: watch-only mint wiring', () => {
     new InscribeMintOrchestrator({
       getUtxos: async () => [],
       scan: { classify: async () => 'clean' },
-      broadcast: async () => '',
+      transport: unusedTransport,
       network: Network.Regtest,
     }).subscribe((s) => { captured ??= s; });
     if (captured === null) throw new Error('the orchestrator did not emit its snapshot on subscribe');

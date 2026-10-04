@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-  getDummyKeypair, InscribeMintOrchestrator, InscribeSnapshot,
+  getDummyKeypair, InscribeBroadcastTransport, InscribeMintOrchestrator, InscribeSnapshot,
   KnownOrdinalWalletType, Network, toScureNetwork, TxnOutput,
 } from 'ordpool-sdk';
 import { hex } from '@scure/base';
+
+/** These specs never reach a broadcast; any send is a test bug. */
+const unusedTransport: InscribeBroadcastTransport = {
+  testPackage: async () => { throw new Error('unexpected testPackage'); },
+  submitPackage: async () => { throw new Error('unexpected submitPackage'); },
+  sendTransaction: async () => { throw new Error('unexpected sendTransaction'); },
+};
 
 /**
  * Cubes-side durable coverage of the change-headroom fix on the INSCRIBE path.
@@ -47,7 +54,7 @@ describe('inscribe funding selection: mixed pool auto-picks the headroom coin', 
     const orch = new InscribeMintOrchestrator({
       getUtxos: async () => utxos,
       scan: { classify: async () => 'clean' }, // both coins clean → no expert-mode
-      broadcast: async () => 'txid',
+      transport: unusedTransport,
       network: Network.Regtest,
     });
     // setWallet FIRST: on a genuine wallet change it resets feeRate/content, so

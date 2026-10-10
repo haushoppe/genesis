@@ -74,6 +74,9 @@ export const environment = {
       inscriptionIds: [...regtestInscriptions.fallbackSides].reverse(),
     },
   ],
+  // The archive holds mainnet ids only; the stand-in galleries above answer
+  // the suggestion here, so there is no archive to read and nothing is fetched.
+  archiveBase: '',
   // Same ids as production ON PURPOSE. The banner never fetches them: they are
   // substitution keys that `withSelfHostedBannerAssets` swaps for
   // /assets/banner/side-N.webp, so the header renders the same artwork on

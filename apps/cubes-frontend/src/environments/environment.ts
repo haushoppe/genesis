@@ -49,6 +49,9 @@ export const environment = {
   /** Regtest-only stand-in galleries for the cube suggestion; empty here, so
    *  the suggestion comes from the Magic Eden archive as normal. */
   suggestionGalleries: [] as { symbol: string; name: string; inscriptionIds: string[] }[],
+  /** The frozen Magic Eden archive the suggestion picks collections from. Empty
+   *  means there is no archive for this chain and nothing is fetched. */
+  archiveBase: 'https://ordpool-space.github.io/magic-eden-ordinals-archive',
   /** Six sides of the featured cube the header renders. */
   bannerCubeSides: [
     '0a595eb00dffb649952951e76fa5cdd1032d621a91f1d75402eec692bb567da2i0',

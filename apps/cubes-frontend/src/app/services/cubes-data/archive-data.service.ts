@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
+
+import { environment } from '../../../environments/environment';
 import { parseCsv } from './csv';
 
-const ARCHIVE_BASE = 'https://ordpool-space.github.io/magic-eden-ordinals-archive';
+/** Empty when the chain has no archive; every read then rejects instead of reaching elsewhere. */
+const ARCHIVE_BASE = environment.archiveBase;
 
 export interface ArchiveCollection {
   symbol: string;
@@ -58,6 +61,7 @@ export class ArchiveDataService {
   // -------------------------------------------------------------------------
 
   private async fetchIndex(): Promise<ArchiveCollection[]> {
+    if (!ARCHIVE_BASE) throw new Error('No Magic Eden archive is configured for this chain');
     // Plain CSV — auto-decompressed in transit by GH Pages.
     const res = await fetch(`${ARCHIVE_BASE}/index.csv`);
     if (!res.ok) throw new Error(`Archive index fetch failed: HTTP ${res.status}`);
@@ -72,6 +76,7 @@ export class ArchiveDataService {
   }
 
   private async fetchInscriptions(symbol: string): Promise<ArchiveInscription[]> {
+    if (!ARCHIVE_BASE) throw new Error('No Magic Eden archive is configured for this chain');
     // Pre-gzipped — needs explicit DecompressionStream since GH Pages serves
     // .csv.gz as application/gzip, not as content-encoded text.
     const res = await fetch(`${ARCHIVE_BASE}/inscriptions/${encodeURIComponent(symbol)}.csv.gz`);

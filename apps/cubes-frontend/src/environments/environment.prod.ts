@@ -35,6 +35,9 @@ export const environment = {
    *  this chain and the gallery lists nothing rather than reaching elsewhere. */
   cubesIndexBase: 'https://ordpool-space.github.io/ordinal-cubes-index/data',
   suggestionGalleries: [] as { symbol: string; name: string; inscriptionIds: string[] }[],
+  /** The frozen Magic Eden archive the suggestion picks collections from. Empty
+   *  means there is no archive for this chain and nothing is fetched. */
+  archiveBase: 'https://ordpool-space.github.io/magic-eden-ordinals-archive',
   bannerCubeSides: [
     '0a595eb00dffb649952951e76fa5cdd1032d621a91f1d75402eec692bb567da2i0',
     '31ad74da8f8162696570a538e51956d659ed8ba5af21ea6dd667eb7b54298ee5i0',

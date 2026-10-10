@@ -1,10 +1,22 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, ReplaySubject, map, share } from 'rxjs';
+import { Observable, ReplaySubject, map, of, share } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { CubeRarity, RarityIndex } from './types';
 
-const RARITY_URL = 'https://ordpool-space.github.io/ordinal-cubes-index/data/rarity.json';
+/** `rarity.json` sits beside `cubes.json` in the cubes index. Empty when the chain has no index. */
+const RARITY_URL = environment.cubesIndexBase ? `${environment.cubesIndexBase}/rarity.json` : '';
+
+/** The answer for a chain without a cubes index: nothing is scored, nothing is fetched. */
+const NO_RARITY_INDEX: RarityIndex = {
+  totalCubes: 0,
+  scoredCubes: 0,
+  cursedCubes: 0,
+  afterCloseCubes: 0,
+  collections: [],
+  cubes: [],
+};
 
 /** A cube's rarity row plus the totals it is ranked against. */
 export interface CubeRarityView {
@@ -23,7 +35,7 @@ export class RarityService {
 
   private readonly http = inject(HttpClient);
 
-  private readonly index$ = this.http.get<RarityIndex>(RARITY_URL).pipe(
+  private readonly index$ = (RARITY_URL ? this.http.get<RarityIndex>(RARITY_URL) : of(NO_RARITY_INDEX)).pipe(
     share({
       connector: () => new ReplaySubject<RarityIndex>(1),
       resetOnError: true,

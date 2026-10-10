@@ -1,3 +1,15 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), Xverse 2.3.2 (.crx)
+ * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
+ *         overridden to 5 / 3 / 1 sat/vB
+ * Proves: clicking through the mint form with Xverse signing confirms a commit and reveal
+ *         whose ord-indexed body equals getCubeHtml() for the typed sides (the app's own
+ *         generator, so this half shares code), parses back to the typed side ids, and pays
+ *         the tip exactly once; any console.error or uncaught exception on an app page fails
+ *         it; the fee tiers and the found-funds breakdown render
+ */
 import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
@@ -7,24 +19,29 @@ import * as fs from 'node:fs';
 // wrong place, silently, the moment the first one moves.
 import { SEED_USER_DATA_DIR } from '../global-setup';
 import {
-  waitForElectrsSync,
-  fundCommonSats,
   expectTipPaid,
-  waitForTxConfirmed,
-  rpc,
-  mineBlocks,
-  postTx,
-  waitForOrdStockSync,
-  getStockOrdContent,
-  isVisibleWithin,
   fillCubeSides,
   trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
+  assertBrowserClean,
 } from '../regtest-helpers';
-import { clickUntilEffect, closeLeftoverExtensionPages, waitForApprovalPopup } from 'ordpool-sdk/e2e';
+import {
+  clickUntilEffect,
+  closeLeftoverExtensionPages,
+  waitForApprovalPopup,
+  waitForElectrsSync,
+  fundCommonSats,
+  waitForTxConfirmed,
+  rpc,
+  mineBlocks,
+  waitForOrdStockSync,
+  getStockOrdContent,
+  isVisibleWithin,
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -177,46 +194,12 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await primer.close().catch(() => undefined);
 
   // ─── Step 2: open cubes-frontend + connect wallet via UI ───────
+  // Fails the test on any console.error or uncaught exception from an app page
+  // this context opens from here on; wallet extension pages are skipped by design.
+  const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
 
-  // Collect uncaught pageerrors + unfiltered console.errors and fail
-  // the test at the end if any surfaced. Covers rule §11 (browser
-  // errors fail the test) of ~/Work/ordpool/E2E_BEST_PRACTICES.md.
-  // Known-noise entries stay filtered so real JS regressions can't
-  // hide behind them:
-  //   - 404s / net::* failures on regtest-absent endpoints
-  //   - SDK diagnostics that use console.error for visibility, not
-  //     for signalling a bug (e.g. `[sdk:inscribe] connectedWallet$
-  //     emit w=null lastAddr=undefined`)
-  //   - CORS blocks on side-inscription placeholder SVGs the cube
-  //     preview iframe tries to load (regtest doesn't ship those
-  //     assets; the iframe is null-origin so any /assets fetch fails)
-  // Console noise is judged by the failing resource, not by status class:
-  const browserErrors: string[] = [];
-
-  // Surface browser console errors + page errors so a silent connect
-  // failure inside sats-connect doesn't just look like "popup never
-  // opened".
-  cubes.on('console', (msg) => {
-    const t = msg.type();
-    const text = msg.text();
-    // Also surface console.warn: the BROADCAST-DEBUG interceptor uses
-    // console.warn to log every POST /api/tx round-trip. Filtering on
-    // 'error' only masked that trace entirely on prior CI runs.
-    if (t === 'error' || t === 'warning') {
-      // eslint-disable-next-line no-console
-      console.log(`[cubes console.${t}] ${text}`);
-    }
-    if (t === 'error') {
-      browserErrors.push(`console.error: ${text}`);
-    }
-  });
   const requestFailures = trackRequestFailures(cubes);
-  cubes.on('pageerror', (err) => {
-    // eslint-disable-next-line no-console
-    console.log(`[cubes pageerror] ${err.message}`);
-    browserErrors.push(`pageerror: ${err.message}`);
-  });
   // Stub /api/v1/fees/recommended — regtest stack has no ordpool-backend,
   // so this endpoint would 404 otherwise. Fixed values so the fee-tier
   // button assertions below have deterministic content to check.
@@ -797,14 +780,8 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  // Rule §11 assertion: after the full mint arc is proven, fail the
-  // test if any unfiltered browser console.error or pageerror surfaced
-  // during the run. Every JS regression in the mint flow becomes a
-  // regtest failure — no more "test green, feature broken" gap.
-  if (browserErrors.length) {
-    throw new Error(
-      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
-       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
-    );
-  }
+  // After the full mint arc is proven, fail the test if any console.error or
+  // uncaught exception surfaced on an app page during the run, so a JS
+  // regression in the mint flow is a regtest failure.
+  assertBrowserClean(errorGuard, requestFailures);
 });

@@ -17,10 +17,16 @@ Playwright loads without a transpile step. `global-setup.ts` pulls the
 Xverse onboarder (`onboardXverse`, `primeAndSwitchToRegtest`,
 `overrideRegtestElectrsUrl`) from the same barrel.
 
+The chain, electrs and ord helpers (`rpc`, `mineBlocks`, `fundCommonSats`,
+`waitForElectrsSync`, `getUtxos`, `getStockOrdContent`, …) and the
+browser-error guard (`installContextErrorGuard`) come from the same barrel.
+
 Kept local to this suite (genesis-specific, not sourced from the SDK):
-`regtest-helpers.ts` (carries the cubes-only `openDetails` helper),
-`global-setup.ts` (Xverse seed hydration), `wait-helpers.ts`,
-`playwright.config.ts`, and the `*-bootstrap.sh` scripts.
+`regtest-helpers.ts` (cubes-only helpers such as `openDetails` and
+`fillCubeSides`, each marked app-specific or `// local:`),
+`global-setup.ts` (Xverse seed hydration), `wait-helpers.ts` (a re-export
+of the SDK's wait helpers for `global-setup.ts`), `playwright.config.ts`,
+and the `*-bootstrap.sh` scripts.
 `playwright-bootstrap.sh <wallet>` fetches the wallet `.crx` from private
 `ordpool-sdk` releases (needs `GH_TOKEN`).
 

@@ -1,3 +1,12 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend); no wallet extension, a
+ *         per-run watch-only xpub account
+ * Faked:  nothing
+ * Proves: a coin just above the measured funding requirement is reported as over-paying, by
+ *         the folded amount
+ */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 import { HDKey } from '@scure/bip32';
 import * as btc from '@scure/btc-signer';
@@ -11,18 +20,21 @@ import {
   simulateInscribeFees,
   toScureNetwork,
 } from 'ordpool-sdk';
-import { seedDirtyCoin } from 'ordpool-sdk/e2e';
 import {
+  seedDirtyCoin,
   fundCommonSats,
   mineBlocks,
+  rpc,
+  waitForElectrsSync,
+  waitForUtxoAt,
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
+import {
   fillCubeSides,
   expectedRegtestCubeHtml,
   openDetails,
   openMintCheckout,
   RENDERABLE_SIDE_IDS,
-  rpc,
-  waitForElectrsSync,
-  waitForUtxoAt,
 } from '../regtest-helpers';
 
 /**
@@ -121,11 +133,10 @@ test('funding-dust-band: a coin just above the requirement says it over-pays, an
   expect(band.value).toBe(bandSats);
   await waitForElectrsSync(mineBlocks(1));
 
-  const page: Page = await browser.newPage();
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(m.text());
-  });
+  const context = await browser.newContext();
+  // Fails the test on any console.error or uncaught exception from a page of this context.
+  const errorGuard = installContextErrorGuard(context);
+  const page: Page = await context.newPage();
 
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
@@ -171,6 +182,6 @@ test('funding-dust-band: a coin just above the requirement says it over-pays, an
   const folded = Math.floor(floor / 2);
   await expect(overpay).toContainText(`over-pays ${folded}`);
 
-  expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([]);
-  await page.close();
+  errorGuard.assertClean();
+  await context.close();
 });

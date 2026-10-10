@@ -1,28 +1,44 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), OKX 4.1.0 (.crx)
+ * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
+ *         overridden to 5 / 3 / 1 sat/vB
+ * Proves: clicking through the mint form with OKX signing confirms a commit and reveal whose
+ *         ord-indexed body equals getCubeHtml() for the typed sides (the app's own generator,
+ *         so this half shares code), parses back to the typed side ids, and pays the tip
+ *         exactly once; any console.error or uncaught exception on an app page fails it
+ */
 /* eslint-disable no-console */
 import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
-  waitForElectrsSync,
-  fundCommonSats,
   expectTipPaid,
-  openWalletPopover,
   readWalletPopoverAddress,
-  waitForTxConfirmed,
-  rpc,
-  mineBlocks,
-  waitForOrdStockSync,
-  getStockOrdContent,
-  isVisibleWithin,
   fillCubeSides,
   trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
+  assertBrowserClean,
 } from '../regtest-helpers';
-import { clickUntilEffect, closeLeftoverExtensionPages, onboardOkx } from 'ordpool-sdk/e2e';
+import {
+  clickUntilEffect,
+  closeLeftoverExtensionPages,
+  onboardOkx,
+  waitForElectrsSync,
+  fundCommonSats,
+  waitForTxConfirmed,
+  rpc,
+  mineBlocks,
+  waitForOrdStockSync,
+  getStockOrdContent,
+  isVisibleWithin,
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -32,8 +48,7 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
  * signer shim); same cubes self-send gate skip.
  *
  * OKX-specific tricks (all from the SDK's proven okx-mint spec):
- *   - Onboarding uses the shared onboard-okx helper (already vendored
- *     into cubes-frontend/e2e/regtest/onboard-okx.ts).
+ *   - Onboarding uses `onboardOkx` from ordpool-sdk/e2e.
  *   - Chromium arg `--disable-blink-features=AutomationControlled`
  *     required — OKX's popup detection sniffs for automation.
  *   - Context launched with `chromium.launchPersistentContext('')`
@@ -53,7 +68,6 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
  *     drifted across releases).
  *   - "Asset transfer pending" promo modal may cover Confirm —
  *     dismiss via close button first.
- *   - Playwright config's retries=2 applies (OKX historically flaky).
  */
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/okx');
@@ -74,6 +88,7 @@ async function shot(p: Page, name: string): Promise<void> {
   }).catch(() => undefined);
 }
 
+// local: no SDK counterpart; scans already-open pages' body text, where SDK waitForPageShowing waits on a locator and keeps no extension-page filter.
 /**
  * Polls the pages that EXIST rather than waiting for a new one.
  *
@@ -114,6 +129,7 @@ async function approveOkxConnectPopup(ctx: BrowserContext): Promise<void> {
   await approval.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
 }
 
+// local: no SDK counterpart; polls every extension page's body text for the OKX sign headings and dismisses its promo modal.
 async function approveOkxSignPopup(ctx: BrowserContext): Promise<void> {
   const deadline = Date.now() + 120_000;
   let approval: Page | null = null;
@@ -212,22 +228,11 @@ test.afterAll(async () => {
 test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
   test.setTimeout(360_000);
 
+  // Fails the test on any console.error or uncaught exception from an app page
+  // this context opens from here on; wallet extension pages are skipped by design.
+  const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const browserErrors: string[] = [];
-  // Console noise is judged by the failing resource, not by status class:
-  cubes.on('console', (msg) => {
-    if (msg.type() !== 'error') return;
-    const text = msg.text();
-    console.log(`[okx-mint console.error] ${text}`);
-    {
-      browserErrors.push(`console.error: ${text}`);
-    }
-  });
   const requestFailures = trackRequestFailures(cubes);
-  cubes.on('pageerror', (err) => {
-    console.log(`[okx-mint pageerror] ${err.message}`);
-    browserErrors.push(`pageerror: ${err.message}`);
-  });
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -382,10 +387,5 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  if (browserErrors.length) {
-    throw new Error(
-      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
-       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
-    );
-  }
+  assertBrowserClean(errorGuard, requestFailures);
 });

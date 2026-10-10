@@ -1,3 +1,13 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend); no wallet extension, a
+ *         per-run watch-only xpub account
+ * Faked:  nothing
+ * Proves: a one-address wallet whose only coin carries an inscription, cat, rune or rare sat
+ *         keeps the mint button disabled, shows the warning and a coin picker naming the
+ *         seeded asset, and enables only after an explicit pick
+ */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
@@ -5,15 +15,16 @@ import { HDKey } from '@scure/bip32';
 import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
 
+import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 import {
+  clickUntilEffect,
+  seedDirtyCoin,
+  type DirtyCoinAsset,
   mineBlocks,
-  fillCubeSides,
-  openDetails,
-  RENDERABLE_SIDE_IDS,
   rpc,
   waitForElectrsSync,
-} from '../regtest-helpers';
-import { clickUntilEffect, seedDirtyCoin, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 
 /**
  * What the reader is TOLD when the only coin that can fund the mint carries
@@ -86,13 +97,10 @@ for (const asset of ASSETS) {
   const dirty = await seedDirtyCoin({ asset, address, valueSats: DIRTY_SATS });
   await waitForElectrsSync(mineBlocks(1));
 
-  const page: Page = await browser.newPage();
-  const errors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error') {
-      errors.push(m.text());
-    }
-  });
+  const context = await browser.newContext();
+  // Fails the test on any console.error or uncaught exception from a page of this context.
+  const errorGuard = installContextErrorGuard(context);
+  const page: Page = await context.newPage();
 
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
@@ -269,7 +277,7 @@ for (const asset of ASSETS) {
     }
   }
 
-  expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([]);
-  await page.close();
+  errorGuard.assertClean();
+  await context.close();
   });
 }

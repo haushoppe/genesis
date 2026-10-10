@@ -1,3 +1,13 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend); no wallet extension, a
+ *         per-run watch-only xpub account signed offline in the spec
+ * Faked:  nothing
+ * Proves: with a dirty coin that is the best-fit candidate and a clean coin above it, the
+ *         confirmed commit's inputs read from the chain exclude the dirty outpoint and the
+ *         asset coin still exists, per asset class
+ */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
@@ -6,21 +16,21 @@ import { HDKey } from '@scure/bip32';
 import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
 
+import { fillCubeSides, expectedRegtestCubeHtml, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 import {
+  clickUntilEffect,
+  seedDirtyCoin,
+  assertDirtyCoinIsBestFit,
+  type DirtyCoinAsset,
   fundCommonSats,
   mineBlocks,
-  fillCubeSides,
-  expectedRegtestCubeHtml,
-  openDetails,
-  openMintCheckout,
-  RENDERABLE_SIDE_IDS,
   rpc,
   getUtxos,
   waitForElectrsSync,
   waitForTxConfirmed,
   waitForUtxoAt,
-} from '../regtest-helpers';
-import { clickUntilEffect, seedDirtyCoin, assertDirtyCoinIsBestFit, type DirtyCoinAsset } from 'ordpool-sdk/e2e';
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 import { simulateInscribeFees, prepareInscribeFundingInput, changeDustFloor, Network } from 'ordpool-sdk';
 
 /**
@@ -199,13 +209,10 @@ for (const asset of ASSETS) {
     const preferred = (fundingRequirementSats as number) + changeDustFloor(address);
     assertDirtyCoinIsBestFit(pool, `${dirty.txid}:${dirty.vout}`, fundingRequirementSats as number, preferred);
 
-    const page: Page = await browser.newPage();
-    const errors: string[] = [];
-    page.on('console', (m) => {
-      if (m.type() === 'error') {
-        errors.push(m.text());
-      }
-    });
+    const context = await browser.newContext();
+    // Fails the test on any console.error or uncaught exception from a page of this context.
+    const errorGuard = installContextErrorGuard(context);
+    const page: Page = await context.newPage();
 
     // ─── connect watch-only ──────────────────────────────────────
     await page.goto(APP_URL);
@@ -305,7 +312,7 @@ for (const asset of ASSETS) {
     const stillThere = await waitForUtxoAt(address, DIRTY_SATS).catch(() => undefined);
     expect(stillThere, `the ${asset} coin no longer exists at ${address}`).toBeTruthy();
 
-    expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([]);
-    await page.close();
+    errorGuard.assertClean();
+    await context.close();
   });
 }

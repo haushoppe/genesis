@@ -1,6 +1,18 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend)
+ * Faked:  nothing
+ * Proves: side ids typed over the boot-time suggestion keep their values. It does NOT place
+ *         the suggestion: on regtest the suggestion has no network step (stand-in galleries
+ *         from the environment) and has filled all six sides before any release, and the held
+ *         ordpool-space.github.io pattern matches no request the regtest build makes. Any
+ *         console.error or uncaught exception on the page fails it
+ */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 
-import { openDetails, RENDERABLE_SIDE_IDS, rpc } from '../regtest-helpers';
+import { installContextErrorGuard, rpc } from 'ordpool-sdk/e2e';
+import { openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 
 /**
  * PLACES the moment a suggestion lands, instead of racing it.
@@ -44,7 +56,10 @@ test.afterAll(async () => {
 
 test('suggestion-repro: a suggestion landing after the fill must not replace typed sides', async () => {
   test.setTimeout(180_000);
-  const page: Page = await browser.newPage();
+  const context = await browser.newContext();
+  // Fails the test on any console.error or uncaught exception from a page of this context.
+  const errorGuard = installContextErrorGuard(context);
+  const page: Page = await context.newPage();
 
   let release: (() => void) | undefined;
   const held = new Promise<void>((r) => { release = r; });
@@ -79,7 +94,8 @@ test('suggestion-repro: a suggestion landing after the fill must not replace typ
     ).toHaveValue(RENDERABLE_SIDE_IDS[i]);
   }
 
-  await page.close();
+  errorGuard.assertClean();
+  await context.close();
 });
 
 /**
@@ -145,7 +161,10 @@ test('suggestion-repro: a suggestion landing across the first fill must not drop
   const observed: number[] = [];
 
   for (const offset of RELEASE_OFFSETS_MS) {
-    const page: Page = await browser.newPage();
+    const context = await browser.newContext();
+    // Fails the pass on any console.error or uncaught exception from a page of this context.
+    const errorGuard = installContextErrorGuard(context);
+    const page: Page = await context.newPage();
     let release: (() => void) | undefined;
     const held = new Promise<void>((r) => { release = r; });
     await page.route(CUBES_INDEX, async (route) => {
@@ -187,7 +206,8 @@ test('suggestion-repro: a suggestion landing across the first fill must not drop
         console.log(`[repro +${offset}ms] side ${i + 1} holds "${v}", typed "${RENDERABLE_SIDE_IDS[i]}"`);
       }
     }
-    await page.close();
+    errorGuard.assertClean();
+    await context.close();
 
     expect(
       lost.map(({ i }) => i + 1),

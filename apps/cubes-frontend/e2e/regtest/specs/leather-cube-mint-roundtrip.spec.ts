@@ -1,27 +1,46 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), Leather 6.102.0 (.crx)
+ * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
+ *         overridden to 5 / 3 / 1 sat/vB
+ * Proves: clicking through the mint form with Leather signing confirms a commit and reveal
+ *         whose ord-indexed body equals getCubeHtml() for the typed sides (the app's own
+ *         generator, so this half shares code), parses back to the typed side ids, and pays
+ *         the tip exactly once; any console.error or uncaught exception on an app page fails
+ *         it
+ */
 /* eslint-disable no-console */
 import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
-  waitForElectrsSync,
-  fundCommonSats,
   expectTipPaid,
-  openWalletPopover,
   readWalletPopoverAddress,
-  waitForTxConfirmed,
-  rpc,
-  mineBlocks,
-  waitForOrdStockSync,
-  getStockOrdContent,
   fillCubeSides,
   trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
+  assertBrowserClean,
 } from '../regtest-helpers';
-import { clickApprovalAndRequireClose, clickUntilEffect, closeLeftoverExtensionPages, onboardLeather, waitForApprovalPopup } from 'ordpool-sdk/e2e';
+import {
+  clickApprovalAndRequireClose,
+  clickUntilEffect,
+  closeLeftoverExtensionPages,
+  onboardLeather,
+  waitForApprovalPopup,
+  waitForElectrsSync,
+  fundCommonSats,
+  waitForTxConfirmed,
+  rpc,
+  mineBlocks,
+  waitForOrdStockSync,
+  getStockOrdContent,
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -80,26 +99,6 @@ async function shot(p: Page, name: string): Promise<void> {
   }).catch(() => undefined);
 }
 
-/**
- * Click the sign-approval button on a Leather popup. `noWaitAfter` is
- * cheap insurance against a self-close race — Leather closes its own
- * popup on sign completion; the default post-click stability wait would
- * race against the teardown. Same trick as cat21-wallet.
- */
-async function clickLeatherApproval(popup: Page): Promise<void> {
-  const btn = popup.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
-  await expect(btn).toBeVisible({ timeout: 10_000 });
-  // `noWaitAfter` is not the escape it reads as: on a recent Playwright it
-  // no longer suppresses the post-click bookkeeping that throws once the
-  // popup is gone, which surfaced as "Target page, context or browser has
-  // been closed" after the element was reported visible, enabled and stable.
-  // The shared helper tolerates that error (for an approval popup it IS the
-  // success signal), then REQUIRES the popup to close so a click that never
-  // landed is named here rather than later as a missing broadcast. It never
-  // re-clicks: a second click on a signing popup is a second signature.
-  await clickApprovalAndRequireClose(btn, popup, { label: 'leather sign' });
-}
-
 test.beforeAll(async () => {
   if (!fs.existsSync(path.join(EXT_PATH, 'manifest.json'))) {
     throw new Error(
@@ -145,22 +144,11 @@ test.afterAll(async () => {
 test('mint a cube via Leather: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
   test.setTimeout(360_000);
 
+  // Fails the test on any console.error or uncaught exception from an app page
+  // this context opens from here on; wallet extension pages are skipped by design.
+  const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const browserErrors: string[] = [];
-  // Console noise is judged by the failing resource, not by status class:
-  cubes.on('console', (msg) => {
-    if (msg.type() !== 'error') return;
-    const text = msg.text();
-    console.log(`[leather-mint console.error] ${text}`);
-    {
-      browserErrors.push(`console.error: ${text}`);
-    }
-  });
   const requestFailures = trackRequestFailures(cubes);
-  cubes.on('pageerror', (err) => {
-    console.log(`[leather-mint pageerror] ${err.message}`);
-    browserErrors.push(`pageerror: ${err.message}`);
-  });
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -323,7 +311,11 @@ test('mint a cube via Leather: fill form → sign in wallet → broadcast → or
     },
   });
   await shot(signPopup, '05a-sign-popup');
-  await clickLeatherApproval(signPopup);
+  const signBtn = signPopup.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
+  await expect(signBtn).toBeVisible({ timeout: 10_000 });
+  // Tolerates the popup closing under the click (an accepted approval), then
+  // requires it to close; never re-clicks, a second click is a second signature.
+  await clickApprovalAndRequireClose(signBtn, signPopup, { label: 'leather sign' });
   console.log('[leather-mint] sign approved; waiting for mint-success');
 
   await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
@@ -359,10 +351,5 @@ test('mint a cube via Leather: fill form → sign in wallet → broadcast → or
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  if (browserErrors.length) {
-    throw new Error(
-      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
-       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
-    );
-  }
+  assertBrowserClean(errorGuard, requestFailures);
 });

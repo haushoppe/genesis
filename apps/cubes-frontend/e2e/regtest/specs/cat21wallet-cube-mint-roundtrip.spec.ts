@@ -1,27 +1,47 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), cat21-wallet (.crx
+ *         built from source)
+ * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
+ *         overridden to 5 / 3 / 1 sat/vB
+ * Proves: clicking through the mint form with cat21-wallet signing confirms a commit and
+ *         reveal whose ord-indexed body equals getCubeHtml() for the typed sides (the app's
+ *         own generator, so this half shares code), parses back to the typed side ids, and
+ *         pays the tip exactly once; any console.error or uncaught exception on an app page
+ *         fails it
+ */
 /* eslint-disable no-console */
 import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
-  waitForElectrsSync,
-  fundCommonSats,
   expectTipPaid,
-  openWalletPopover,
   readWalletPopoverAddress,
-  waitForTxConfirmed,
-  rpc,
-  mineBlocks,
-  waitForOrdStockSync,
-  getStockOrdContent,
   fillCubeSides,
   trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
+  assertBrowserClean,
 } from '../regtest-helpers';
-import { clickApprovalAndRequireClose, clickUntilEffect, closeLeftoverExtensionPages, onboardCat21Wallet, waitForApprovalPopup } from 'ordpool-sdk/e2e';
+import {
+  clickApprovalAndRequireClose,
+  clickUntilEffect,
+  closeLeftoverExtensionPages,
+  onboardCat21Wallet,
+  waitForApprovalPopup,
+  waitForElectrsSync,
+  fundCommonSats,
+  waitForTxConfirmed,
+  rpc,
+  mineBlocks,
+  waitForOrdStockSync,
+  getStockOrdContent,
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -83,24 +103,6 @@ async function shot(p: Page, name: string): Promise<void> {
   }).catch(() => undefined);
 }
 
-/**
- * Click the sign-approval button on a cat21-wallet popup with the
- * `noWaitAfter` race-avoidance from cat21-indexer's spec.
- */
-async function clickCat21WalletApproval(popup: Page): Promise<void> {
-  const btn = popup.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
-  await expect(btn).toBeVisible({ timeout: 10_000 });
-  // `noWaitAfter` is not the escape it reads as: on a recent Playwright it
-  // no longer suppresses the post-click bookkeeping that throws once the
-  // popup is gone, which surfaced as "Target page, context or browser has
-  // been closed" after the element was reported visible, enabled and stable.
-  // The shared helper tolerates that error (for an approval popup it IS the
-  // success signal), then REQUIRES the popup to close so a click that never
-  // landed is named here rather than later as a missing broadcast. It never
-  // re-clicks: a second click on a signing popup is a second signature.
-  await clickApprovalAndRequireClose(btn, popup, { label: 'cat21-wallet sign' });
-}
-
 test.beforeAll(async () => {
   if (!fs.existsSync(path.join(EXT_PATH, 'manifest.json'))) {
     throw new Error(
@@ -152,22 +154,11 @@ test.afterAll(async () => {
 test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
   test.setTimeout(360_000);
 
+  // Fails the test on any console.error or uncaught exception from an app page
+  // this context opens from here on; wallet extension pages are skipped by design.
+  const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const browserErrors: string[] = [];
-  // Console noise is judged by the failing resource, not by status class:
-  cubes.on('console', (msg) => {
-    if (msg.type() !== 'error') return;
-    const text = msg.text();
-    console.log(`[cat21wallet-mint console.error] ${text}`);
-    {
-      browserErrors.push(`console.error: ${text}`);
-    }
-  });
   const requestFailures = trackRequestFailures(cubes);
-  cubes.on('pageerror', (err) => {
-    console.log(`[cat21wallet-mint pageerror] ${err.message}`);
-    browserErrors.push(`pageerror: ${err.message}`);
-  });
 
   // Stub /api/v1/fees/recommended — regtest has no ordpool-backend,
   // so this endpoint would 404 without the stub. Deterministic
@@ -335,8 +326,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
     }
   }
 
-  // Sign popup: cat21-wallet lands on a Confirm-flavoured button; use
-  // the shared clickCat21WalletApproval helper (noWaitAfter trick).
+  // Sign popup: cat21-wallet lands on a Confirm-flavoured button.
   const signPopup = await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeSign,
@@ -349,7 +339,11 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
     },
   });
   await shot(signPopup, '05a-sign-popup');
-  await clickCat21WalletApproval(signPopup);
+  const signBtn = signPopup.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
+  await expect(signBtn).toBeVisible({ timeout: 10_000 });
+  // Tolerates the popup closing under the click (an accepted approval), then
+  // requires it to close; never re-clicks, a second click is a second signature.
+  await clickApprovalAndRequireClose(signBtn, signPopup, { label: 'cat21-wallet sign' });
   console.log('[cat21wallet-mint] sign approved; waiting for mint-success');
 
   await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
@@ -390,10 +384,5 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
   // Rule §11: fail if any unfiltered browser error surfaced.
-  if (browserErrors.length) {
-    throw new Error(
-      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
-       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
-    );
-  }
+  assertBrowserClean(errorGuard, requestFailures);
 });

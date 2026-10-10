@@ -1,27 +1,46 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), Wizz 2.13.4 (.crx)
+ * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
+ *         overridden to 5 / 3 / 1 sat/vB; Wizz's vendor backend -> installWizzOfflineRoutes
+ *         (ordpool-sdk)
+ * Proves: clicking through the mint form with Wizz signing confirms a commit and reveal whose
+ *         ord-indexed body equals getCubeHtml() for the typed sides (the app's own generator,
+ *         so this half shares code), parses back to the typed side ids, and pays the tip
+ *         exactly once; any console.error or uncaught exception on an app page fails it
+ */
 /* eslint-disable no-console */
 import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
-  waitForElectrsSync,
-  fundCommonSats,
   expectTipPaid,
-  openWalletPopover,
   readWalletPopoverAddress,
-  waitForTxConfirmed,
-  rpc,
-  mineBlocks,
-  waitForOrdStockSync,
-  getStockOrdContent,
   fillCubeSides,
   trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
+  assertBrowserClean,
 } from '../regtest-helpers';
-import { clickUntilEffect, closeLeftoverExtensionPages, installWizzOfflineRoutes, onboardWizz, waitForApprovalPopup } from 'ordpool-sdk/e2e';
+import {
+  clickUntilEffect,
+  closeLeftoverExtensionPages,
+  installWizzOfflineRoutes,
+  onboardWizz,
+  waitForApprovalPopup,
+  waitForElectrsSync,
+  fundCommonSats,
+  waitForTxConfirmed,
+  rpc,
+  mineBlocks,
+  waitForOrdStockSync,
+  getStockOrdContent,
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -65,6 +84,7 @@ async function shot(p: Page, name: string): Promise<void> {
   }).catch(() => undefined);
 }
 
+// local: no SDK counterpart; the SDK exports a Wizz sign helper only.
 async function approveWizzConnectPopup(ctx: BrowserContext, knownPages: Set<Page>): Promise<void> {
   const approval = await waitForApprovalPopup({
     context: ctx,
@@ -81,6 +101,7 @@ async function approveWizzConnectPopup(ctx: BrowserContext, knownPages: Set<Page
   await approval.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
 }
 
+// local: differs from SDK approveWizzSignPopup: URL-only gate, strips every spinner glyph, checks and clicks in one evaluate, 90s sign budget.
 async function approveWizzSignPopup(ctx: BrowserContext, knownPages: Set<Page>): Promise<void> {
   const approval = await waitForApprovalPopup({
     context: ctx,
@@ -167,22 +188,11 @@ test.afterAll(async () => {
 test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
   test.setTimeout(360_000);
 
+  // Fails the test on any console.error or uncaught exception from an app page
+  // this context opens from here on; wallet extension pages are skipped by design.
+  const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const browserErrors: string[] = [];
-  // Console noise is judged by the failing resource, not by status class:
-  cubes.on('console', (msg) => {
-    if (msg.type() !== 'error') return;
-    const text = msg.text();
-    console.log(`[wizz-mint console.error] ${text}`);
-    {
-      browserErrors.push(`console.error: ${text}`);
-    }
-  });
   const requestFailures = trackRequestFailures(cubes);
-  cubes.on('pageerror', (err) => {
-    console.log(`[wizz-mint pageerror] ${err.message}`);
-    browserErrors.push(`pageerror: ${err.message}`);
-  });
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -351,10 +361,5 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  if (browserErrors.length) {
-    throw new Error(
-      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
-       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
-    );
-  }
+  assertBrowserClean(errorGuard, requestFailures);
 });

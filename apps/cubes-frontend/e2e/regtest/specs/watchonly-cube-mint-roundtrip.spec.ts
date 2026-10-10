@@ -1,3 +1,14 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend); no wallet extension, a
+ *         per-run xpub account signed offline in the spec with @scure/btc-signer
+ * Faked:  nothing
+ * Proves: the watch-only path (paste xpub, export the unsigned PSBT, paste it back signed)
+ *         confirms a cube whose ord-indexed body equals getCubeHtml() for the typed sides,
+ *         parses back to the typed side ids and the typed title, pays the tip once, and the
+ *         mint preview paints dark
+ */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 import { base64 } from '@scure/base';
 import { HDKey } from '@scure/bip32';
@@ -8,6 +19,14 @@ import {
   fundCommonSats,
   getStockOrdContent,
   mineBlocks,
+  rpc,
+  waitForElectrsSync,
+  waitForOrdStockSync,
+  waitForTxConfirmed,
+  waitForUtxoAt,
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
+import {
   fillCubeSides,
   trackRequestFailures,
   expectedRegtestCubeHtml,
@@ -15,13 +34,9 @@ import {
   openDetails,
   openMintCheckout,
   RENDERABLE_SIDE_IDS,
-  rpc,
-  waitForElectrsSync,
-  waitForOrdStockSync,
   expectTipPaid,
   openWalletPopover,
-  waitForTxConfirmed,
-  waitForUtxoAt,
+  assertBrowserClean,
 } from '../regtest-helpers';
 
 /**
@@ -130,9 +145,9 @@ let offlineKey: HDKey;
 let accountTpub: string;
 let fundedAddress: string;
 
-const browserErrors: string[] = [];
-// Assigned when the page is created (below); the throw site is in the test
-// body, a different scope from the setup that installs the listener.
+// Both assigned when the page is created (below); the assertion is in the
+// test body, a different scope from the setup that installs them.
+let errorGuard: ReturnType<typeof installContextErrorGuard>;
 let requestFailures: () => string[] = () => [];
 
 /**
@@ -182,13 +197,10 @@ test.beforeAll(async () => {
 
   browser = await chromium.launch({ headless: false, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   const context = await browser.newContext();
+  // Fails the test on any console.error or uncaught exception from a page of this context.
+  errorGuard = installContextErrorGuard(context);
   cubes = await context.newPage();
-  cubes.on('console', (m) => {
-    if (m.type() !== 'error') return;
-    browserErrors.push(`console.error: ${m.text()} @ ${m.location()?.url ?? '?'}`);
-  });
   requestFailures = trackRequestFailures(cubes);
-  cubes.on('pageerror', (e) => browserErrors.push(String(e)));
 });
 
 test.afterAll(async () => {
@@ -398,7 +410,5 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   const parsedTitle = parsed!.find((t) => t.trait_type === 'Title')?.value;
   expect(parsedTitle).toBe(CUBE_TITLE);
 
-  if (browserErrors.length) {
-    throw new Error(['browser errors during the watch-only mint:', ...browserErrors, ...requestFailures()].join('\n'));
-  }
+  assertBrowserClean(errorGuard, requestFailures);
 });

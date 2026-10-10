@@ -1,59 +1,32 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), Leather 6.102.0 (.crx)
+ * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
+ *         overridden to 5 / 3 / 1 sat/vB
+ * Proves: a separate-address wallet whose only coin carries a seeded inscription gets an
+ *         enabled CTA and a notice naming that inscription, both inside one viewport; any
+ *         console.error or uncaught exception on an app page fails it
+ */
 /* eslint-disable no-console */
 import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
-import { parseCube } from '../../../src/shared/ordinals/parse-cube';
+import { openWalletPopover, fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 import {
+  clickUntilEffect,
+  closeLeftoverExtensionPages,
+  onboardLeather,
+  waitForApprovalPopup,
+  seedDirtyCoin,
   getUtxos,
   waitForElectrsSync,
-  fundCommonSats,
-  expectTipPaid,
-  openWalletPopover,
-  waitForTxConfirmed,
   rpc,
   mineBlocks,
-  waitForOrdStockSync,
-  getStockOrdContent,
-  fillCubeSides,
-  openDetails,
-  RENDERABLE_SIDE_IDS,
-} from '../regtest-helpers';
-import { clickApprovalAndRequireClose, clickUntilEffect, closeLeftoverExtensionPages, onboardLeather, waitForApprovalPopup, seedDirtyCoin } from 'ordpool-sdk/e2e';
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
-
-/**
- * Full user-flow proof for the Leather wallet — cubes.haushoppe.art
- * end-to-end on regtest. Structurally identical to the cat21-wallet
- * spec (cat21-wallet IS a Leather fork with the same onboard/popup
- * DOM). The one meaningful delta is the regtest-address path:
- *
- *   - Leather's SDK connector ignores its `network` arg and returns
- *     mainnet bc1q / bc1p addresses. The SDK's new
- *     `network-address-shim` (ordpool-sdk 8c52db7) intercepts on
- *     `Network.Regtest` and re-derives bcrt equivalents from the same
- *     pubkeys before the WalletInfo reaches the app. Consumers see
- *     bcrt addresses directly — this spec is the first real proof
- *     that the shim works end-to-end at the cubes-frontend level.
- *   - Signer-side, Leather's signPsbt takes a `network` arg. The SDK
- *     signer routes it through `toWireNetworkFor(leather, appNetwork)`
- *     so Regtest → 'mainnet' on the wire (script bytes are
- *     HRP-independent; the wallet's mainnet-derived key signs bytes
- *     that verify against the equivalent bcrt scriptPubKey).
- *
- * Same runtime tricks apply as cat21-wallet's spec:
- *   - `get-addresses-approve-button` testid (shared Leather DOM).
- *   - Wait for popup's own close after approve (both wallets sometimes
- *     need a brief post-approve delay before addresses dispatch).
- *   - Sign click uses `{ noWaitAfter: true }` — cheap insurance
- *     against a self-close race even if Leather doesn't strictly
- *     need it.
- *
- * If mint-success + on-chain byte-for-byte HTML check both pass,
- * we've proved: user clicked → Leather signed a regtest PSBT with
- * `network: 'mainnet'` → chain accepted → ord indexed → the bytes
- * on-chain are exactly the cube the preview iframe rendered.
- */
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/leather');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
@@ -85,26 +58,6 @@ async function shot(p: Page, name: string): Promise<void> {
     path: path.resolve(RESULTS_DIR, `leather-cube-mint-${name}.png`),
     fullPage: true,
   }).catch(() => undefined);
-}
-
-/**
- * Click the sign-approval button on a Leather popup. `noWaitAfter` is
- * cheap insurance against a self-close race — Leather closes its own
- * popup on sign completion; the default post-click stability wait would
- * race against the teardown. Same trick as cat21-wallet.
- */
-async function clickLeatherApproval(popup: Page): Promise<void> {
-  const btn = popup.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
-  await expect(btn).toBeVisible({ timeout: 10_000 });
-  // `noWaitAfter` is not the escape it reads as: on a recent Playwright it
-  // no longer suppresses the post-click bookkeeping that throws once the
-  // popup is gone, which surfaced as "Target page, context or browser has
-  // been closed" after the element was reported visible, enabled and stable.
-  // The shared helper tolerates that error (for an approval popup it IS the
-  // success signal), then REQUIRES the popup to close so a click that never
-  // landed is named here rather than later as a missing broadcast. It never
-  // re-clicks: a second click on a signing popup is a second signature.
-  await clickApprovalAndRequireClose(btn, popup, { label: 'leather sign' });
 }
 
 test.beforeAll(async () => {
@@ -174,6 +127,9 @@ test.afterAll(async () => {
 test('funding-notice: a separate-address wallet is told what the coin carries and may proceed', async () => {
   test.setTimeout(300_000);
 
+  // Fails the test on any console.error or uncaught exception from an app page
+  // this context opens from here on; wallet extension pages are skipped by design.
+  const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
   await closeLeftoverExtensionPages(context, [cubes]);
 
@@ -307,5 +263,6 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
     `viewport is ${viewport!.height}: the reader cannot see the reason and the button together`,
   ).toBeLessThanOrEqual(viewport!.height);
 
+  errorGuard.assertClean();
   await cubes.close();
 });

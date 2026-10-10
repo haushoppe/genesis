@@ -1,27 +1,43 @@
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), Alby 3.14.2 (.crx)
+ * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
+ *         overridden to 5 / 3 / 1 sat/vB
+ * Proves: clicking through the mint form with Alby signing confirms a commit and reveal whose
+ *         ord-indexed body equals getCubeHtml() for the typed sides (the app's own generator,
+ *         so this half shares code), parses back to the typed side ids, and pays the tip
+ *         exactly once; any console.error or uncaught exception on an app page fails it
+ */
 /* eslint-disable no-console */
 import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
-  waitForElectrsSync,
-  fundCommonSats,
   expectTipPaid,
-  openWalletPopover,
   readWalletPopoverAddress,
-  waitForTxConfirmed,
-  rpc,
-  mineBlocks,
-  waitForOrdStockSync,
-  getStockOrdContent,
   fillCubeSides,
   trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
+  assertBrowserClean,
 } from '../regtest-helpers';
-import { clickUntilEffect, installAlbyAutoApprove, seedAlbyAccount } from 'ordpool-sdk/e2e';
+import {
+  clickUntilEffect,
+  installAlbyAutoApprove,
+  seedAlbyAccount,
+  waitForElectrsSync,
+  fundCommonSats,
+  waitForTxConfirmed,
+  rpc,
+  mineBlocks,
+  waitForOrdStockSync,
+  getStockOrdContent,
+  installContextErrorGuard,
+} from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
@@ -135,27 +151,16 @@ test.afterAll(async () => {
 test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadcast → ord indexes the HTML byte-for-byte', async () => {
   test.setTimeout(360_000);
 
+  // Fails the test on any console.error or uncaught exception from an app page
+  // this context opens from here on; wallet extension pages are skipped by design.
+  const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
 
   // Auto-approve every Alby popup (enable permission + the REAL
   // ConfirmSignPsbt at mint time) with the shared state-based handler.
   installAlbyAutoApprove(context);
 
-  const browserErrors: string[] = [];
-  // Console noise is judged by the failing resource, not by status class:
-  cubes.on('console', (msg) => {
-    if (msg.type() !== 'error') return;
-    const text = msg.text();
-    console.log(`[alby-mint console.error] ${text}`);
-    {
-      browserErrors.push(`console.error: ${text}`);
-    }
-  });
   const requestFailures = trackRequestFailures(cubes);
-  cubes.on('pageerror', (err) => {
-    console.log(`[alby-mint pageerror] ${err.message}`);
-    browserErrors.push(`pageerror: ${err.message}`);
-  });
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -305,10 +310,5 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  if (browserErrors.length) {
-    throw new Error(
-      [`Test passed the mint arc but ${browserErrors.length} unfiltered browser error(s) surfaced:`,
-       ...browserErrors.map((e) => `  - ${e}`), ...requestFailures()].join('\n'),
-    );
-  }
+  assertBrowserClean(errorGuard, requestFailures);
 });

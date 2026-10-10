@@ -1,4 +1,14 @@
-import { test, expect, chromium, Browser, Page } from '@playwright/test';
+/**
+ * @test-kind e2e
+ * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
+ *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend)
+ * Faked:  nothing; the side probe's ord /content/** requests are held, then continued
+ *         unchanged
+ * Proves: while the side-image probe is pending the mint CTA is disabled, looks disabled and
+ *         the page says why; once the probe answers the reason disappears and the CTA enables
+ */
+import { test, expect, chromium, Browser } from '@playwright/test';
+import { installContextErrorGuard } from 'ordpool-sdk/e2e';
 
 import { environment as regtestEnvironment } from '../../../src/environments/environment.regtest';
 import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
@@ -29,7 +39,6 @@ const APP_URL = 'http://localhost:4203/';
 const PROBE_HOST = regtestEnvironment.sideImageProbeBase;
 
 let browser: Browser;
-let page: Page;
 
 test.beforeAll(async () => {
   browser = await chromium.launch();
@@ -42,30 +51,29 @@ test.afterAll(async () => {
 test('mint-cta: while the side probe runs, the page says why the button is off', async () => {
   test.setTimeout(120_000);
 
-  page = await browser.newPage();
+  const context = await browser.newContext();
+  // Fails the test on any console.error or uncaught exception from a page of this context.
+  const errorGuard = installContextErrorGuard(context);
+  const page = await context.newPage();
 
-  // Navigate FIRST, then start holding. The hold below blocks every request to
-  // the probe host, and the page's own load pulls images from that same host,
-  // so installing the route first makes `page.goto` wait for a load event that
-  // the route itself is preventing. That is a deadlock of the spec's own making
-  // and it timed out at 30s in CI while passing locally on timing.
+  // Installed BEFORE navigation: the suggestion pre-fills six ids on load and
+  // the probe resolves them at once, so a route installed after goto arrives
+  // when the results are already cached and the "checking" state never
+  // appears. The probe host is the stack's own ord, which serves none of the
+  // page's own assets, so holding it cannot block the page's load.
   //
-  // `domcontentloaded` for the same reason: this spec deliberately leaves
-  // requests outstanding, so waiting for a quiet load is waiting for something
-  // it has decided will not happen.
-  // Installed BEFORE navigation. The suggestion now pre-fills six ids on load
-  // and the probe resolves them immediately, so a route installed after goto
-  // arrives too late: the results are already cached and the "checking" state
-  // this spec observes never appears. Installing it first is safe now that the
-  // probe host is the stack's own ord and no longer serves the page's assets,
-  // which is what made an early route deadlock goto previously.
-  // Hold every probe image until released. The probe loads each side from
-  // `sideImageProbeBase`, which is the same host the cubes index uses.
-  let release: (() => void) | undefined;
+  // `domcontentloaded` because this spec deliberately leaves requests
+  // outstanding while it observes the checking state.
+  //
+  // Each held request is CONTINUED on release, never aborted: an aborted image
+  // logs "Failed to load resource" as a console error, which the guard above
+  // fails on, and the released sides must load for real so the button can
+  // become usable.
+  let release: () => void = () => undefined;
   const held = new Promise<void>((resolve) => { release = resolve; });
   await page.route(`${PROBE_HOST}/content/**`, async (route) => {
     await held;
-    await route.abort();
+    await route.continue();
   });
 
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
@@ -97,6 +105,10 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
 
   // Released, the probe answers and the button becomes usable. Asserted so the
   // message cannot be a permanent fixture that merely happens to be present.
-  release!();
+  release();
   await expect(checking).toBeHidden({ timeout: 30_000 });
+  await expect(cta).toBeEnabled();
+
+  errorGuard.assertClean();
+  await context.close();
 });

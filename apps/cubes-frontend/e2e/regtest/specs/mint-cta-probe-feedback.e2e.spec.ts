@@ -11,7 +11,7 @@ import { test, expect, chromium, Browser } from '@playwright/test';
 import { installContextErrorGuard } from 'ordpool-sdk/e2e';
 
 import { environment as regtestEnvironment } from '../../../src/environments/environment.regtest';
-import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
+import { CUBES_URL, fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 
 /**
  * The disabled Mint button has to say why it is disabled.
@@ -31,7 +31,6 @@ import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-help
  * only ever sample the settled state.
  */
 
-const APP_URL = 'http://localhost:4203/';
 // Read from the regtest environment rather than repeated here: the probe host
 // moved to the stack's own ord when the mainnet reaches were removed, and a
 // hardcoded copy silently stopped intercepting anything, so the state this
@@ -49,8 +48,6 @@ test.afterAll(async () => {
 });
 
 test('mint-cta: while the side probe runs, the page says why the button is off', async () => {
-  test.setTimeout(120_000);
-
   const context = await browser.newContext();
   // Fails the test on any console.error or uncaught exception from a page of this context.
   const errorGuard = installContextErrorGuard(context);
@@ -76,9 +73,8 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
     await route.continue();
   });
 
-  await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
-
+  await page.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
 
   await openDetails(page, 'configurator-advanced');
   await fillCubeSides(page, RENDERABLE_SIDE_IDS);
@@ -86,7 +82,7 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
   // The state a reader meets: button off, and a reason on screen.
   const cta = page.locator('[data-testid="mint-cta"]');
   const checking = page.locator('[data-testid="mint-checking-sides"]');
-  await expect(checking).toBeVisible({ timeout: 20_000 });
+  await expect(checking).toBeVisible();
   await expect(cta).toBeDisabled();
   await expect(checking).toHaveText(/checking that all six sides render/i);
 
@@ -106,7 +102,7 @@ test('mint-cta: while the side probe runs, the page says why the button is off',
   // Released, the probe answers and the button becomes usable. Asserted so the
   // message cannot be a permanent fixture that merely happens to be present.
   release();
-  await expect(checking).toBeHidden({ timeout: 30_000 });
+  await expect(checking).toBeHidden();
   await expect(cta).toBeEnabled();
 
   errorGuard.assertClean();

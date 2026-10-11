@@ -16,21 +16,27 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
+  CUBES_URL,
+  expectMintSuccess,
   expectTipPaid,
   readWalletPopoverAddress,
   fillCubeSides,
-  trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
+  openMintCheckout,
   RENDERABLE_SIDE_IDS,
-  assertBrowserClean,
+  signPopupOrMintError,
 } from '../regtest-helpers';
 import {
+  approvalGate,
+  approveWizzSignPopup,
+  clickApprovalAndRequireClose,
   clickUntilEffect,
   closeLeftoverExtensionPages,
   installWizzOfflineRoutes,
   onboardWizz,
+  raceApprovalPopup,
   waitForApprovalPopup,
   waitForElectrsSync,
   fundCommonSats,
@@ -68,7 +74,6 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/wizz');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
-const CUBES_URL = 'http://localhost:4203/';
 
 const FUND_AMOUNT_BTC = 0.002;
 
@@ -84,56 +89,18 @@ async function shot(p: Page, name: string): Promise<void> {
   }).catch(() => undefined);
 }
 
-// local: no SDK counterpart; the SDK exports a Wizz sign helper only.
-async function approveWizzConnectPopup(ctx: BrowserContext, knownPages: Set<Page>): Promise<void> {
-  const approval = await waitForApprovalPopup({
-    context: ctx,
-    knownPages,
-    timeoutMs: 60_000,
-    isApproval: async (p) => {
-      await p.waitForURL(/notification\.html#\/approval/, { timeout: 60_000 });
-      return true;
-    },
-  });
-  await shot(approval, '03a-connect-popup');
-  // Wizz inherits Unisat's connect-approval — Connect is a styled div.
-  await approval.getByText(/^Connect$/).first().click();
-  await approval.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
-}
+/** Wizz inherits Unisat's connect approval: Connect is a styled div, matched by text. */
+const wizzConnectButton = (p: Page) => p.getByText(/^Connect$/).first();
+const wizzConnectApproval = approvalGate({
+  url: /notification\.html#\/approval/,
+  control: wizzConnectButton,
+});
 
-// local: differs from SDK approveWizzSignPopup: URL-only gate, strips every spinner glyph, checks and clicks in one evaluate, 90s sign budget.
-async function approveWizzSignPopup(ctx: BrowserContext, knownPages: Set<Page>): Promise<void> {
-  const approval = await waitForApprovalPopup({
-    context: ctx,
-    knownPages,
-    timeoutMs: 120_000,
-    isApproval: async (p) => {
-      await p.waitForURL(/notification\.html#\/approval/, { timeout: 120_000 });
-      return true;
-    },
-  });
-  await shot(approval, '05a-sign-popup');
-  // Sign button carries a spinner overlay + custom braille chars in
-  // textContent while Wizz analyses the PSBT — atomically match +
-  // click inside page.evaluate to sidestep the pointer-events race.
-  await approval.waitForFunction(() => {
-    const isSignButton = (el: Element) => {
-      // Strip any spinner glyphs (braille/bullets, one OR many) before
-      // matching, so we find the button whatever its loading overlay
-      // renders in textContent.
-      const text = (el.textContent || '').replace(/[^\x20-\x7E]/g, '').trim();
-      return /^Sign$/i.test(text);
-    };
-    const els = Array.from(document.querySelectorAll<HTMLElement>('button, [role="button"], div'));
-    const candidate = els.find(isSignButton);
-    if (!candidate) return null;
-    const style = getComputedStyle(candidate);
-    if (style.pointerEvents === 'none') return null;
-    if (parseFloat(style.opacity) < 0.7) return null;
-    candidate.click();
-    return { text: candidate.textContent };
-  }, undefined, { timeout: 90_000, polling: 250 });
-  console.log('[wizz-mint] clicked sign-button (popup may have closed)');
+// local: Wizz's connect approval; ordpool-sdk/e2e exports a Wizz sign helper only.
+/** Click Connect and require the popup to close: Wizz closes it once it accepts. */
+async function approveWizzConnect(approval: Page): Promise<void> {
+  await shot(approval, '03a-connect-popup');
+  await clickApprovalAndRequireClose(wizzConnectButton(approval), approval, { label: 'Wizz connect popup' });
 }
 
 test.beforeAll(async () => {
@@ -172,7 +139,7 @@ test.beforeAll(async () => {
   await installWizzOfflineRoutes(context);
 
   let [worker] = context.serviceWorkers();
-  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];
 
   const primer = await context.newPage();
@@ -186,13 +153,10 @@ test.afterAll(async () => {
 });
 
 test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
-  test.setTimeout(360_000);
-
   // Fails the test on any console.error or uncaught exception from an app page
   // this context opens from here on; wallet extension pages are skipped by design.
   const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const requestFailures = trackRequestFailures(cubes);
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -208,23 +172,15 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await shot(cubes, '02a-form-filled');
 
   // Pre-connect: this click opens the WALLET PICKER, not the checkout drawer,
-
   // so it must not wait for a drawer that cannot appear yet.
-
-  const suggLog = await cubes.evaluate(() => (window as unknown as { __sugg?: unknown[] }).__sugg ?? []);
-
-
-  console.log('[sugg]', JSON.stringify(suggLog, null, 1));
-
-
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled();
 
   // `mint-cta` is bound to funding state that settles after first paint, so
   // it can re-render between the locator resolving and the event landing.
@@ -235,17 +191,20 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
     cubes.locator('[data-testid="wallet-picker-detected"]'),
     { label: 'mint-cta -> wallet-picker-detected' },
   );
-  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-wizz"]');
-  await expect(connectLink).toBeVisible({ timeout: 10_000 });
+  await expect(connectLink).toBeVisible();
   await shot(cubes, '02b-wallet-picker-open');
 
   const knownPagesBeforeConnect = new Set(context.pages());
   await connectLink.click();
-  await approveWizzConnectPopup(context, knownPagesBeforeConnect);
+  await approveWizzConnect(await waitForApprovalPopup({
+    context,
+    knownPages: knownPagesBeforeConnect,
+    isApproval: wizzConnectApproval,
+  }));
   await cubes.bringToFront();
 
-  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
 
   const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   expect(paymentAddr).toMatch(/^bcrt1q/);
@@ -254,41 +213,27 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
 
   await fundCommonSats(paymentAddr, FUND_AMOUNT_BTC);
 
+  const knownPagesBeforeReconnect = new Set(context.pages());
   await cubes.reload({ waitUntil: 'domcontentloaded' });
 
-  const knownPagesBeforeReconnect = new Set(context.pages());
-  const reapprovePromise = waitForApprovalPopup({
+  // Wizz may ask to approve the connection again after the reload, or
+  // reconnect silently. The header's connected button exists only once the
+  // reconnect resolved, so it is the state that means no popup is coming.
+  const reconnect = await raceApprovalPopup({
     context,
     knownPages: knownPagesBeforeReconnect,
-    timeoutMs: 15_000,
-    isApproval: async (p) => {
-      await p.waitForURL(/notification\.html#\/approval/, { timeout: 15_000 });
-      return true;
-    },
-  }).catch(() => null);
-  const reapprove = await reapprovePromise;
-  if (reapprove) {
-    await reapprove.getByText(/^Connect$/).first().click();
-    await reapprove.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
-  }
+    isApproval: wizzConnectApproval,
+    noPopupState: cubes.locator('[data-testid="wallet-connected-btn"]'),
+  });
+  if (reconnect.outcome === 'popup') await approveWizzConnect(reconnect.page);
   await cubes.bringToFront();
-  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  // `mint-cta` is bound to funding state that settles after first paint, so
-  // it can re-render between the locator resolving and the event landing.
-  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
-  // as this effect simply never appearing.
-  await clickUntilEffect(
-    cubes.locator('[data-testid="mint-cta"]'),
-    cubes.locator('[data-testid="mint-checkout"]'),
-    { label: 'mint-cta -> mint-checkout' },
-  );
-  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+  await openMintCheckout(cubes);
   await openDetails(cubes, 'mint-advanced');
-  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible();
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-drawer-open');
 
@@ -311,25 +256,30 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
   expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(mintBtn).toBeEnabled();
 
   await closeLeftoverExtensionPages(context, [cubes]);
   const knownPagesBeforeSign = new Set(context.pages());
   await mintBtn.click();
 
-  const errLocator = cubes.locator('[data-testid="mint-error-message"]');
-  await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
-  if (await errLocator.isVisible()) {
-    const postMintErr = (await errLocator.textContent())?.trim() ?? '';
-    if (postMintErr && !postMintErr.includes('cancel')) {
-      throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
-    }
-  }
+  // The race only proves a sign popup opened instead of a mint error;
+  // approveWizzSignPopup then finds that same popup, since it is not in
+  // knownPagesBeforeSign either.
+  await signPopupOrMintError(cubes, {
+    context,
+    knownPages: knownPagesBeforeSign,
+    isApproval: approvalGate({
+      url: /notification\.html#\/approval/,
+      control: (p) => p.getByRole('button', { name: 'Sign' }),
+    }),
+  });
+  await approveWizzSignPopup({
+    context,
+    knownPages: knownPagesBeforeSign,
+    onScreenshot: (p, name) => shot(p, `05a-${name}`),
+  });
 
-  await approveWizzSignPopup(context, knownPagesBeforeSign);
-
-  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
-  await expect(cubes.locator('[data-testid="mint-btn"]')).toHaveAttribute('aria-busy', 'false');
+  await expectMintSuccess(cubes);
   await shot(cubes, '06-success');
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
@@ -361,5 +311,5 @@ test('mint a cube via Wizz: fill form → sign in wallet → broadcast → ord i
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  assertBrowserClean(errorGuard, requestFailures);
+  errorGuard.assertClean();
 });

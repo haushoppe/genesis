@@ -17,22 +17,26 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
+  CUBES_URL,
+  expectMintSuccess,
   expectTipPaid,
   readWalletPopoverAddress,
   fillCubeSides,
-  trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
+  openMintCheckout,
   RENDERABLE_SIDE_IDS,
-  assertBrowserClean,
+  signPopupOrMintError,
 } from '../regtest-helpers';
 import {
-  clickApprovalAndRequireClose,
+  approvalGate,
+  approveCat21WalletConnectPopup,
+  approveCat21WalletSignPopup,
   clickUntilEffect,
   closeLeftoverExtensionPages,
   onboardCat21Wallet,
-  waitForApprovalPopup,
+  raceApprovalPopup,
   waitForElectrsSync,
   fundCommonSats,
   waitForTxConfirmed,
@@ -61,18 +65,11 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
  *     regtest-derivation shim needed on the cubes side (Leather /
  *     other wallets are blocked on this until their connectors
  *     grow the same mapping — see WALLET-COMPATIBILITY.md).
- *   - Approval popups: `get-addresses-approve-button` testid
- *     (Leather-derived DOM). DO NOT `.close()` the popup after
- *     clicking — cat21-wallet's `userApprovesGetAddresses` runs a
- *     ~400 ms animation before the addresses actually dispatch back
- *     to the dapp; a manual close cuts the dispatch. Wait for the
- *     popup's own close event instead.
- *   - Sign-approval clicks use `{ noWaitAfter: true }` — cat21-wallet
- *     self-closes its sign popup the moment `signPsbt` reaches the
- *     service worker. Playwright's default click waits for post-
- *     click stability; that races against the popup teardown and
- *     surfaces as "Target page, context or browser has been closed".
- *     The close IS the success signal.
+ *   - Approval popups go through the SDK's `approveCat21WalletConnectPopup`
+ *     and `approveCat21WalletSignPopup`. cat21-wallet closes each popup
+ *     itself once it accepts the click (the connect after a short animation
+ *     that dispatches the addresses, which a manual close would cut), so the
+ *     close IS the success signal and both helpers require it.
  *
  * If the mint-success assertion + on-chain byte-for-byte HTML check
  * both pass at the end, we've proved: user clicked → cat21-wallet
@@ -82,7 +79,6 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/cat21wallet');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
-const CUBES_URL = 'http://localhost:4203/';
 
 /** Same 0.002 BTC budget as the Xverse spec — comfortably covers
  *  commit + reveal fees + postage + tip at 5 sat/vB. */
@@ -136,7 +132,7 @@ test.beforeAll(async () => {
     ],
   });
   let [worker] = context.serviceWorkers();
-  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];
 
   // Onboard once for the whole suite (only one test today; sets the
@@ -152,13 +148,10 @@ test.afterAll(async () => {
 });
 
 test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
-  test.setTimeout(360_000);
-
   // Fails the test on any console.error or uncaught exception from an app page
   // this context opens from here on; wallet extension pages are skipped by design.
   const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const requestFailures = trackRequestFailures(cubes);
 
   // Stub /api/v1/fees/recommended — regtest has no ordpool-backend,
   // so this endpoint would 404 without the stub. Deterministic
@@ -177,7 +170,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
 
   // Fill six sides via the Customize details.
   await openDetails(cubes, 'configurator-advanced');
@@ -186,7 +179,7 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Click mint-cta — triggers the top-right wallet-connect widget when
   // no wallet is connected yet.
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled();
   // `mint-cta` re-renders from funding state that settles after first paint,
   // so the click can be swallowed: measured on the alby lane in 3 of 6 runs.
   await clickUntilEffect(
@@ -196,36 +189,19 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
   );
 
   // Wallet picker opens.
-  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-cat21wallet"]');
-  await expect(connectLink).toBeVisible({ timeout: 10_000 });
+  await expect(connectLink).toBeVisible();
   await shot(cubes, '02b-wallet-picker-open');
 
-  // Snapshot pages BEFORE the connect click so waitForApprovalPopup
+  // Snapshot pages BEFORE the connect click so the popup search
   // doesn't false-positive on an already-open extension page.
   const knownPagesBeforeConnect = new Set(context.pages());
   await connectLink.click();
 
-  const connectPopup = await waitForApprovalPopup({
-    context,
-    knownPages: knownPagesBeforeConnect,
-    timeoutMs: 60_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByTestId('get-addresses-approve-button')
-        .waitFor({ state: 'visible', timeout: 60_000 });
-      return true;
-    },
-  });
-  await shot(connectPopup, '03a-connect-popup');
-  await connectPopup.getByTestId('get-addresses-approve-button').click();
-  // Do NOT explicitly .close() — cat21-wallet's userApprovesGetAddresses
-  // runs a ~400 ms animation before dispatching addresses. Manual close
-  // cuts the dispatch. Wait for the popup's own close instead.
-  await connectPopup.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
+  await approveCat21WalletConnectPopup(context, knownPagesBeforeConnect);
   await cubes.bringToFront();
 
-  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
 
   // Extract the regtest payment address from the header popover — the
   // full-address element, not the shortened wallet-connected label.
@@ -240,51 +216,35 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Reload so the orchestrator's utxos$ chain re-fires against the
   // now-funded address (same reason as Xverse spec).
+  const knownPagesBeforeReconnect = new Set(context.pages());
   await cubes.reload({ waitUntil: 'domcontentloaded' });
 
-  // On reload, the picker will re-prompt for connection approval.
-  // Approve it if it appears.
-  const knownPagesBeforeReconnect = new Set(context.pages());
-  const reapprovePromise = waitForApprovalPopup({
+  // On reload the wallet may re-prompt for connection approval, or reconnect
+  // silently. Post-reload the mint drawer is closed, so [data-testid="wallet-connected"]
+  // (which lives INSIDE the drawer's connected-wallet block) isn't rendered
+  // yet; the always-visible header button is the reconnected state, and it
+  // exists only once the reconnect resolved: the state that means no popup
+  // is coming. A popup that won the race is not in knownPagesBeforeReconnect,
+  // so the SDK helper finds it again.
+  const reconnect = await raceApprovalPopup({
     context,
     knownPages: knownPagesBeforeReconnect,
-    timeoutMs: 15_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByTestId('get-addresses-approve-button')
-        .waitFor({ state: 'visible', timeout: 15_000 });
-      return true;
-    },
-  }).catch(() => null);
-  const reapprove = await reapprovePromise;
-  if (reapprove) {
-    await reapprove.getByTestId('get-addresses-approve-button').click();
-    await reapprove.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
-  }
+    isApproval: approvalGate({
+      url: /^chrome-extension:\/\//,
+      control: (p) => p.getByTestId('get-addresses-approve-button'),
+    }),
+    noPopupState: cubes.locator('[data-testid="wallet-connected-btn"]'),
+  });
+  if (reconnect.outcome === 'popup') await approveCat21WalletConnectPopup(context, knownPagesBeforeReconnect);
   await cubes.bringToFront();
-  // Post-reload the mint drawer is closed, so [data-testid="wallet-connected"]
-  // (which lives INSIDE the drawer's connected-wallet block, start.html:121)
-  // isn't rendered yet. Use the always-visible header button as the
-  // reconnected-state gate; the drawer's own testid gets re-asserted
-  // after we click mint-cta below.
-  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible();
 
-  // Re-fill the six sides — form state doesn't survive reload.
+  // Re-fill the six sides: form state doesn't survive reload.
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  // `mint-cta` is bound to funding state that settles after first paint, so
-  // it can re-render between the locator resolving and the event landing.
-  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
-  // as this effect simply never appearing.
-  await clickUntilEffect(
-    cubes.locator('[data-testid="mint-cta"]'),
-    cubes.locator('[data-testid="mint-checkout"]'),
-    { label: 'mint-cta -> mint-checkout' },
-  );
-  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+  await openMintCheckout(cubes);
   await openDetails(cubes, 'mint-advanced');
-  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible();
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-drawer-open');
 
@@ -310,44 +270,31 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
 
   // Wait for mint-btn to unlock (canMint = true after simulations$).
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(mintBtn).toBeEnabled();
 
   await closeLeftoverExtensionPages(context, [cubes]);
   const knownPagesBeforeSign = new Set(context.pages());
   await mintBtn.click();
 
-  // Check for a synchronous mint-error (rule §11 escape hatch).
-  const errLocator = cubes.locator('[data-testid="mint-error-message"]');
-  await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
-  if (await errLocator.isVisible()) {
-    const postMintErr = (await errLocator.textContent())?.trim() ?? '';
-    if (postMintErr && !postMintErr.includes('cancel')) {
-      throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
-    }
-  }
-
-  // Sign popup: cat21-wallet lands on a Confirm-flavoured button.
-  const signPopup = await waitForApprovalPopup({
+  // Sign popup: cat21-wallet lands on a Confirm-flavoured button. The race
+  // only proves a popup opened instead of a mint error; the SDK helper then
+  // finds that same popup, since it is not in knownPagesBeforeSign either.
+  await signPopupOrMintError(cubes, {
     context,
     knownPages: knownPagesBeforeSign,
-    timeoutMs: 120_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first()
-        .waitFor({ state: 'visible', timeout: 60_000 });
-      return true;
-    },
+    isApproval: approvalGate({
+      url: /^chrome-extension:\/\//,
+      control: (p) => p.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first(),
+    }),
   });
-  await shot(signPopup, '05a-sign-popup');
-  const signBtn = signPopup.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
-  await expect(signBtn).toBeVisible({ timeout: 10_000 });
-  // Tolerates the popup closing under the click (an accepted approval), then
-  // requires it to close; never re-clicks, a second click is a second signature.
-  await clickApprovalAndRequireClose(signBtn, signPopup, { label: 'cat21-wallet sign' });
+  await approveCat21WalletSignPopup({
+    context,
+    knownPages: knownPagesBeforeSign,
+    screenshot: (p) => shot(p, '05a-sign-popup'),
+  });
   console.log('[cat21wallet-mint] sign approved; waiting for mint-success');
 
-  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
-  await expect(cubes.locator('[data-testid="mint-btn"]')).toHaveAttribute('aria-busy', 'false');
+  await expectMintSuccess(cubes);
   await shot(cubes, '06-success');
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
@@ -383,6 +330,6 @@ test('mint a cube via CAT-21 wallet: fill form → sign in wallet → broadcast 
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  // Rule §11: fail if any unfiltered browser error surfaced.
-  assertBrowserClean(errorGuard, requestFailures);
+  // Fail if any browser error surfaced on an app page.
+  errorGuard.assertClean();
 });

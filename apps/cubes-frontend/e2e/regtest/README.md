@@ -23,10 +23,8 @@ browser-error guard (`installContextErrorGuard`) come from the same barrel.
 
 Kept local to this suite (genesis-specific, not sourced from the SDK):
 `regtest-helpers.ts` (cubes-only helpers such as `openDetails` and
-`fillCubeSides`, each marked app-specific or `// local:`),
-`global-setup.ts` (Xverse seed hydration), `wait-helpers.ts` (a re-export
-of the SDK's wait helpers for `global-setup.ts`), `playwright.config.ts`,
-and the `*-bootstrap.sh` scripts.
+`fillCubeSides`, each marked app-specific), `global-setup.ts` (Xverse seed
+hydration), `playwright.config.ts`, and the `*-bootstrap.sh` scripts.
 `playwright-bootstrap.sh <wallet>` fetches the wallet `.crx` from private
 `ordpool-sdk` releases (needs `GH_TOKEN`).
 
@@ -84,7 +82,7 @@ every push to `main` + on PRs that touch `apps/cubes-frontend/**`.
 
 ## Coverage
 
-One `<wallet>-cube-mint-roundtrip.spec.ts` per supported wallet:
+One `<wallet>-cube-mint-roundtrip.e2e.spec.ts` per supported wallet:
 Xverse, Leather, Unisat, Wizz, OKX, CAT-21 Wallet, Alby. (Oyl was
 removed 2026-08-06 after its vendor decommissioned the backend infra;
 re-add if a successor ships.)

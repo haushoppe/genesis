@@ -8,8 +8,6 @@
  *         the folded amount
  */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
-import { HDKey } from '@scure/bip32';
-import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
 
 import {
@@ -21,6 +19,7 @@ import {
   toScureNetwork,
 } from 'ordpool-sdk';
 import {
+  makeWatchOnlyTestAccount,
   seedDirtyCoin,
   fundCommonSats,
   mineBlocks,
@@ -30,6 +29,8 @@ import {
   installContextErrorGuard,
 } from 'ordpool-sdk/e2e';
 import {
+  connectWatchOnly,
+  CUBES_URL,
   fillCubeSides,
   expectedRegtestCubeHtml,
   openDetails,
@@ -56,10 +57,6 @@ import {
  * someone guessed once and never re-checked.
  */
 
-const REGTEST = { bech32: 'bcrt', pubKeyHash: 0x6f, scriptHash: 0xc4, wif: 0xef };
-const TESTNET_VERSIONS = { private: 0x04358394, public: 0x043587cf };
-const ACCOUNT_PATH = "m/86'/1'/0'";
-const APP_URL = 'http://localhost:4203/';
 const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
 const APP_FEE_RATE = 10;
 const TIP_ADDRESS = 'bcrt1pgnmqsy3m04999vwvczfuuualuptlcwnlqx7yrf7y2xwzyswdxpvq92zqwq';
@@ -82,12 +79,8 @@ test.afterAll(async () => {
 });
 
 test('funding-dust-band: a coin just above the requirement says it over-pays, and by how much', async () => {
-  test.setTimeout(240_000);
-
-  const master = HDKey.fromMasterSeed(randomBytes(32), TESTNET_VERSIONS);
-  const account = master.derive(ACCOUNT_PATH);
-  const leaf = account.derive('m/0/0');
-  const address = btc.p2tr(leaf.publicKey!.slice(1, 33), undefined, REGTEST).address!;
+  const account = makeWatchOnlyTestAccount({ seed: randomBytes(32) });
+  const address = account.addressAt(0);
 
   // A roomy coin first, so the wallet can mint at all and the band coin is a
   // CHOICE rather than the only option.
@@ -112,7 +105,7 @@ test('funding-dust-band: a coin just above the requirement says it over-pays, an
     contentType: 'text/html;charset=utf-8',
     fundingInput: prepareInscribeFundingInput({
       utxo: { txid: 'a'.repeat(64), vout: 0, value: ROOMY_SATS, status: { confirmed: true } },
-      paymentPublicKey: leaf.publicKey!,
+      paymentPublicKey: account.p2trAt(0).tapInternalKey,
       paymentAddress: address,
       isSimulation: true,
       network: Network.Regtest,
@@ -138,26 +131,12 @@ test('funding-dust-band: a coin just above the requirement says it over-pays, an
   const errorGuard = installContextErrorGuard(context);
   const page: Page = await context.newPage();
 
-  await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
-  await page.locator('[data-testid="wallet-connect-btn"]').click();
-  await expect(page.locator('[data-testid="wallet-picker-list"]')).toBeVisible({ timeout: 10_000 });
-  await page.locator('[data-testid="wallet-connect-xpub"]').click();
-  await expect(page.locator('[data-testid="wallet-xpub-form"]')).toBeVisible();
-  await page.locator('[data-testid="wallet-xpub-input"]').fill(account.publicExtendedKey);
-  await page.locator('[data-testid="wallet-xpub-connect"]').click();
-  const scriptType = page.locator('[data-testid="wallet-xpub-script-type"]');
-  await scriptType.waitFor({ state: 'visible', timeout: 15_000 });
-  await scriptType.selectOption('p2tr');
-  // Confirm the selection STUCK. A selection that silently does not take
-  // derives a different script type, and the failure then surfaces much
-  // later as an address with no funds rather than as a wrong choice here.
-  await expect(scriptType).toHaveValue('p2tr');
-  await page.locator('[data-testid="wallet-xpub-connect"]').click();
-  await expect(page.locator('[data-testid="wallet-connected-address"]')).toBeVisible({ timeout: 30_000 });
+  await page.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
+  await connectWatchOnly(page, account.accountExtendedPublicKey);
 
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
   await openDetails(page, 'configurator-advanced');
   await fillCubeSides(page, CUBE_SIDE_IDS);
 
@@ -168,13 +147,13 @@ test('funding-dust-band: a coin just above the requirement says it over-pays, an
   // Wait for the picker to HAVE rows before reading them: querying straight
   // after opening samples an empty list and reports the badge missing, which
   // looks like the feature is absent rather than not rendered yet.
-  await expect(page.locator('[data-testid^="mint-expert-row-"]').first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-testid^="mint-expert-row-"]').first()).toBeVisible();
 
   const overpay = page.locator('[data-testid="mint-row-overpay"]').first();
   await expect(
     overpay,
     `a coin at ${bandSats} sat (measured requirement ${fundingRequirementSats} + half the ${floor}-sat dust floor) must land in the fold band`,
-  ).toBeVisible({ timeout: 30_000 });
+  ).toBeVisible();
 
   // The AMOUNT, not just the badge. The fold is the difference between this
   // coin's realised fee and a roomy coin's, so asserting it names a real

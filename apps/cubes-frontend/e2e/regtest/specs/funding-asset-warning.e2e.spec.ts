@@ -11,13 +11,18 @@
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import { HDKey } from '@scure/bip32';
-import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
 
-import { fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 import {
-  clickUntilEffect,
+  connectWatchOnly,
+  CUBES_URL,
+  fillCubeSides,
+  openDetails,
+  openMintCheckout,
+  RENDERABLE_SIDE_IDS,
+} from '../regtest-helpers';
+import {
+  makeWatchOnlyTestAccount,
   seedDirtyCoin,
   type DirtyCoinAsset,
   mineBlocks,
@@ -44,10 +49,6 @@ import {
  * allowed to proceed) needs an extension wallet and lives with those specs.
  */
 
-const REGTEST = { bech32: 'bcrt', pubKeyHash: 0x6f, scriptHash: 0xc4, wif: 0xef };
-const TESTNET_VERSIONS = { private: 0x04358394, public: 0x043587cf };
-const ACCOUNT_PATH = "m/86'/1'/0'";
-const APP_URL = 'http://localhost:4203/';
 const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
 
 /** Covers the ~6 300-sat requirement many times over, so nothing here turns on size. */
@@ -86,12 +87,8 @@ test.afterAll(async () => {
 
 for (const asset of ASSETS) {
   test(`funding-warning: a one-address wallet whose only coin carries ${asset} is BLOCKED and told why`, async () => {
-  test.setTimeout(240_000);
-
-  const master = HDKey.fromMasterSeed(randomBytes(32), TESTNET_VERSIONS);
-  const account = master.derive(ACCOUNT_PATH);
-  const leaf = account.derive('m/0/0');
-  const address = btc.p2tr(leaf.publicKey!.slice(1, 33), undefined, REGTEST).address!;
+  const account = makeWatchOnlyTestAccount({ seed: randomBytes(32) });
+  const address = account.addressAt(0);
 
   // The ONLY coin. No clean coin anywhere, which is what forces the decision.
   const dirty = await seedDirtyCoin({ asset, address, valueSats: DIRTY_SATS });
@@ -102,53 +99,19 @@ for (const asset of ASSETS) {
   const errorGuard = installContextErrorGuard(context);
   const page: Page = await context.newPage();
 
-  await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
-
-  await page.locator('[data-testid="wallet-connect-btn"]').click();
-  await expect(page.locator('[data-testid="wallet-picker-list"]')).toBeVisible({ timeout: 10_000 });
-  await page.locator('[data-testid="wallet-connect-xpub"]').click();
-  await expect(page.locator('[data-testid="wallet-xpub-form"]')).toBeVisible();
-  await page.locator('[data-testid="wallet-xpub-input"]').fill(account.publicExtendedKey);
-  await page.locator('[data-testid="wallet-xpub-connect"]').click();
-  const scriptType = page.locator('[data-testid="wallet-xpub-script-type"]');
-  await scriptType.waitFor({ state: 'visible', timeout: 15_000 });
-  await scriptType.selectOption('p2tr');
-  // Confirm the selection STUCK. A selection that silently does not take
-  // derives a different script type, and the failure then surfaces much
-  // later as an address with no funds rather than as a wrong choice here.
-  await expect(scriptType).toHaveValue('p2tr');
-  await page.locator('[data-testid="wallet-xpub-connect"]').click();
-  await expect(page.locator('[data-testid="wallet-connected-address"]')).toBeVisible({ timeout: 30_000 });
+  await page.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
+  await connectWatchOnly(page, account.accountExtendedPublicKey);
 
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
   await openDetails(page, 'configurator-advanced');
   await fillCubeSides(page, CUBE_SIDE_IDS);
-
-  await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  // `mint-cta` is bound to funding state that settles after first paint, so
-  // it can re-render between the locator resolving and the event landing.
-  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
-  // as this effect simply never appearing.
-  await clickUntilEffect(
-    page.locator('[data-testid="mint-cta"]'),
-    page.locator('[data-testid="mint-checkout"]'),
-    { label: 'mint-cta -> mint-checkout' },
-  );
-  await expect(page.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 30_000 });
+  await openMintCheckout(page);
 
   // The warning, not the notice: this wallet cannot separate the two lanes.
-  const emits = await page.evaluate(() => {
-    const w = window as unknown as { __walletEmits?: number; __walletRefs?: unknown[] };
-    const refs = w.__walletRefs ?? [];
-    const distinct = new Set(refs).size;
-    return { emissions: w.__walletEmits ?? 0, distinctRefs: distinct };
-  });
-  console.log('[wallet-emit]', JSON.stringify(emits));
-
   const warning = page.locator('[data-testid="mint-expert-required"]');
-  await expect(warning).toBeVisible({ timeout: 60_000 });
+  await expect(warning).toBeVisible();
   await expect(page.locator('[data-testid="mint-asset-notice"]')).toHaveCount(0);
 
   // BLOCKED. The whole point: an asset-bearing coin is never spent by default.
@@ -215,7 +178,7 @@ for (const asset of ASSETS) {
   // CTA must become usable, or "Use anyway" is a button that does nothing.
   if (asset === 'inscription') {
     await page.locator('[data-testid="mint-expert-details"]').getByRole('button', { name: /use anyway/i }).first().click();
-    await expect(page.locator('[data-testid="mint-btn"]')).toBeEnabled({ timeout: 30_000 });
+    await expect(page.locator('[data-testid="mint-btn"]')).toBeEnabled();
     await expect(page.locator('[data-testid="mint-checkout"]')).toContainText(/You picked this funding coin/i);
     fs.mkdirSync(STATE_SHOTS, { recursive: true });
     await page.locator('[data-testid="mint-checkout"]').screenshot({

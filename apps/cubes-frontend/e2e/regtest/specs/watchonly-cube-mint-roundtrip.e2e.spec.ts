@@ -2,7 +2,7 @@
  * @test-kind e2e
  * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
  *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend); no wallet extension, a
- *         per-run xpub account signed offline in the spec with @scure/btc-signer
+ *         per-run xpub account (makeWatchOnlyTestAccount, ordpool-sdk) signed offline
  * Faked:  nothing
  * Proves: the watch-only path (paste xpub, export the unsigned PSBT, paste it back signed)
  *         confirms a cube whose ord-indexed body equals getCubeHtml() for the typed sides,
@@ -10,14 +10,12 @@
  *         mint preview paints dark
  */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
-import { base64 } from '@scure/base';
-import { HDKey } from '@scure/bip32';
-import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
 
 import {
   fundCommonSats,
   getStockOrdContent,
+  makeWatchOnlyTestAccount,
   mineBlocks,
   rpc,
   waitForElectrsSync,
@@ -25,10 +23,13 @@ import {
   waitForTxConfirmed,
   waitForUtxoAt,
   installContextErrorGuard,
+  type WatchOnlyTestAccount,
 } from 'ordpool-sdk/e2e';
 import {
+  connectWatchOnly,
+  CUBES_URL,
+  expectMintSuccess,
   fillCubeSides,
-  trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
@@ -36,7 +37,6 @@ import {
   RENDERABLE_SIDE_IDS,
   expectTipPaid,
   openWalletPopover,
-  assertBrowserClean,
 } from '../regtest-helpers';
 
 /**
@@ -55,10 +55,11 @@ import {
  * address the connect derives, the modal that carries the PSBT out and back,
  * and the submit that resumes the mint are all cubes' own code.
  *
- * What stands in for the offline wallet is deliberately NOT our code. The
- * private half derives and signs through `@scure/bip32` and `@scure/btc-signer`
- * directly, so the address this test funds is an independent answer to the same
- * derivation question the app answers, and step 3 asserts the two agree. If the
+ * What stands in for the offline wallet is deliberately NOT the app's code.
+ * `makeWatchOnlyTestAccount` derives and signs through `@scure/bip32` and
+ * `@scure/btc-signer` directly, not through the connector the app uses, so the
+ * address this test funds is an independent answer to the same derivation
+ * question the app answers, and step 3 asserts the two agree. If the
  * app ever derives a different address, the mint would silently be funded from
  * a coin the reader does not own, and that assertion is what catches it.
  *
@@ -77,27 +78,7 @@ import {
  * from outside the browser by construction.
  */
 
-/**
- * Regtest's address parameters, spelled out rather than imported.
- *
- * Two reasons. The SDK's ESM build uses directory imports, which a bundler
- * resolves and Node's own loader does not, so a Playwright spec cannot import
- * it at all. And the offline half of this test should not lean on our code
- * anyway: these four values are the independent answer that step 3 checks the
- * app's derivation against. Regtest shares testnet's key and script prefixes
- * and differs only in the bech32 prefix.
- */
-const REGTEST = { bech32: 'bcrt', pubKeyHash: 0x6f, scriptHash: 0xc4, wif: 0xef };
-
-/** Testnet key versions; regtest shares them, so the account serialises as a tpub. */
-const TESTNET_VERSIONS = { private: 0x04358394, public: 0x043587cf };
-
-/** BIP-86 taproot account, testnet coin type. */
-const ACCOUNT_PATH = "m/86'/1'/0'";
-
 const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
-/** Same as the seven wallet specs. The dev server binds IPv6 loopback only. */
-const APP_URL = 'http://localhost:4203/';
 /**
  * In BTC, because that is what `fundCommonSats` takes. Worth stating: the
  * parameter is a number either way, so passing sats compiles and funds the
@@ -140,15 +121,13 @@ const FUND_SATS = 200_000;
 let browser: Browser;
 let cubes: Page;
 
-/** The offline wallet's private half. Never reaches the browser. */
-let offlineKey: HDKey;
-let accountTpub: string;
+/** The offline wallet. Its private half never reaches the browser. */
+let offline: WatchOnlyTestAccount;
 let fundedAddress: string;
 
-// Both assigned when the page is created (below); the assertion is in the
-// test body, a different scope from the setup that installs them.
+// Assigned when the page is created (below); the assertion is in the test
+// body, a different scope from the setup that installs it.
 let errorGuard: ReturnType<typeof installContextErrorGuard>;
-let requestFailures: () => string[] = () => [];
 
 /**
  * Mean luminance of a PNG screenshot, 0 (black) to 255 (white).
@@ -186,21 +165,14 @@ test.beforeAll(async () => {
 
   // A fresh account every run: nothing is pinned to a committed key, and a
   // leftover UTXO from a previous run cannot make a broken derivation pass.
-  const master = HDKey.fromMasterSeed(randomBytes(32), TESTNET_VERSIONS);
-  const account = master.derive(ACCOUNT_PATH);
-  accountTpub = account.publicExtendedKey;
-  offlineKey = account.deriveChild(0).deriveChild(0); // m/86'/1'/0'/0/0
-
-  // The x-only key is the taproot internal key; p2tr tweaks it itself.
-  const xOnly = offlineKey.publicKey!.slice(1, 33);
-  fundedAddress = btc.p2tr(xOnly, undefined, REGTEST).address!;
+  offline = makeWatchOnlyTestAccount({ seed: randomBytes(32) });
+  fundedAddress = offline.addressAt(0);
 
   browser = await chromium.launch({ headless: false, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   const context = await browser.newContext();
   // Fails the test on any console.error or uncaught exception from a page of this context.
   errorGuard = installContextErrorGuard(context);
   cubes = await context.newPage();
-  requestFailures = trackRequestFailures(cubes);
 });
 
 test.afterAll(async () => {
@@ -208,8 +180,6 @@ test.afterAll(async () => {
 });
 
 test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → paste it back → ord indexes the HTML byte-for-byte', async () => {
-  test.setTimeout(360_000);
-
   // ─── Step 1: fund the offline wallet's receive address ─────────
   // fundCommonSats, not a raw coinbase: a block's first sat reads as an
   // uncommon rare sat, which correctly forces expert mode and would take this
@@ -218,43 +188,14 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   await waitForUtxoAt(fundedAddress, FUND_SATS);
 
   // ─── Step 2: connect watch-only, through the real form ─────────
-  await cubes.goto(APP_URL);
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await cubes.goto(CUBES_URL);
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
 
-  await cubes.locator('[data-testid="wallet-connect-btn"]').click();
-  await expect(cubes.locator('[data-testid="wallet-picker-list"]')).toBeVisible({ timeout: 10_000 });
-  await cubes.locator('[data-testid="wallet-connect-xpub"]').click();
-  await expect(cubes.locator('[data-testid="wallet-xpub-form"]')).toBeVisible();
-
-  await cubes.locator('[data-testid="wallet-xpub-input"]').fill(accountTpub);
-
-  // A bare tpub does not say which script type it is for, so the app asks, and
-  // it asks only AFTER a connect attempt: the ambiguity is reported by the SDK,
-  // not guessed from the prefix. So this is the real two-step the reader walks,
-  // not a workaround for the test.
-  await cubes.locator('[data-testid="wallet-xpub-connect"]').click();
-  const scriptType = cubes.locator('[data-testid="wallet-xpub-script-type"]');
-  await scriptType.waitFor({ state: 'visible', timeout: 15_000 });
-  await scriptType.selectOption('p2tr');
-  // Confirm the selection STUCK. A selection that silently does not take
-  // derives a different script type, and the failure then surfaces much
-  // later as an address with no funds rather than as a wrong choice here.
-  await expect(scriptType).toHaveValue('p2tr');
-  await cubes.locator('[data-testid="wallet-xpub-connect"]').click();
-
-  // Any error surviving the second attempt is a real rejection, and surfaces
-  // here rather than as a timeout three steps later.
-  const xpubError = cubes.locator('[data-testid="wallet-xpub-error"]');
-  await xpubError.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
-  if (await xpubError.isVisible()) {
-    throw new Error(`the app rejected the pasted xpub: ${(await xpubError.textContent())?.trim()}`);
-  }
+  await connectWatchOnly(cubes, offline.accountExtendedPublicKey);
 
   // ─── Step 3: the app's derivation must equal the offline one ───
   // The load-bearing assertion of this spec. If these disagree, the app is
   // watching an address the reader does not control.
-  await expect(cubes.locator('[data-testid="wallet-connected-address"]')).toBeVisible({ timeout: 30_000 });
-
   // The trigger carries a SHORTENED address, so the full one is read from the
   // popover it opens. Both addresses are asserted: a watch-only taproot account
   // is single-address by construction, and if the app ever derived a different
@@ -266,8 +207,8 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   // The popover renders after the click, so read only once it is on screen.
   // Without the wait, textContent returns '' and the comparison fails on an
   // empty string, which reads like a derivation mismatch and is not one.
-  await expect(paymentLocator).toBeVisible({ timeout: 10_000 });
-  await expect(ordinalsLocator).toBeVisible({ timeout: 10_000 });
+  await expect(paymentLocator).toBeVisible();
+  await expect(ordinalsLocator).toBeVisible();
   // The VISIBLE text is elided in the middle for width ("bcrt1p…l6dj"), so the
   // comparison reads the title, which carries the address in full. Comparing
   // the elided form would pass on any address sharing six characters at each
@@ -280,7 +221,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
 
   // ─── Step 4: fill the form and open the drawer ─────────────────
   await cubes.reload();
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
   // Same helper the seven wallet specs use: a <details> is opened by setting
   // its `open` property, because clicking the summary is subject to the
   // element being scrolled into view and not covered, and this one sits below
@@ -292,7 +233,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   await openMintCheckout(cubes);
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(mintBtn).toBeEnabled();
 
   // The exact bytes this form will inscribe. `getCubeHtml` is the pure
   // function the component encodes as the inscription body, so this is an
@@ -320,28 +261,20 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
 
   // ─── Step 5: the PSBT goes out, gets signed offline, comes back ─
   const unsignedBox = cubes.locator('[data-testid="watch-only-unsigned-psbt"]');
-  await expect(unsignedBox).toBeVisible({ timeout: 60_000 });
+  await expect(unsignedBox).toBeVisible();
   const unsignedPsbt = (await unsignedBox.inputValue()).trim();
   expect(unsignedPsbt.length).toBeGreaterThan(0);
 
   // The offline wallet's half: parse, sign input 0 key-path, re-serialise.
-  // Nothing here is our code, which is the whole point of the path.
-  const offline = btc.Transaction.fromPSBT(base64.decode(unsignedPsbt));
-  offline.signIdx(offlineKey.privateKey!, 0);
-  const signedPsbt = base64.encode(offline.toPSBT());
+  // None of it is the app's code, which is the whole point of the path.
+  const signedPsbt = offline.signExportedPsbt(unsignedPsbt);
   expect(signedPsbt).not.toBe(unsignedPsbt);
 
   await cubes.locator('[data-testid="watch-only-signed-psbt"]').fill(signedPsbt);
   await cubes.locator('[data-testid="watch-only-submit"]').click();
 
   // ─── Step 6: the mint resumes and broadcasts ───────────────────
-  const mintError = cubes.locator('[data-testid="mint-error-message"]');
-  await mintError.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => undefined);
-  if (await mintError.isVisible()) {
-    throw new Error(`the mint failed after the signed PSBT was submitted: ${(await mintError.textContent())?.trim()}`);
-  }
-
-  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
+  await expectMintSuccess(cubes);
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
   const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').getAttribute('aria-label'))?.trim() ?? '';
   expect(commitTxId).toMatch(/^[0-9a-f]{64}$/);
@@ -364,7 +297,18 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   // here can assert that a cube appears, and one claiming to would be
   // asserting the stage and calling it the cube.
   const preview = cubes.locator('[data-testid="mint-success-preview"]');
-  await expect(preview).toHaveAttribute('srcdoc', /<meta name="color-scheme" content="dark">/, { timeout: 30_000 });
+  // Waits for the cube document's BASE, not for the dark meta: the placeholder
+  // document carries that same meta by design, and the cube document then
+  // replaces the iframe element, so a wait on the meta is met by a placeholder
+  // that is about to be swapped out and the box read below finds nothing.
+  // The iframe loads its bytes on intersection, so the success panel around it
+  // is scrolled in first. The panel, not the iframe: the iframe element is
+  // replaced when the cube document arrives, and a scroll that resolved the
+  // old element fails on a detached node.
+  await cubes.locator('[data-testid="mint-success"]').scrollIntoViewIfNeeded();
+  await expect(preview).toHaveAttribute('srcdoc', /<base href="http:\/\/[^"]+:8999\/">/);
+  await expect(preview).toHaveAttribute('srcdoc', /<meta name="color-scheme" content="dark">/);
+  await expect(preview).toBeVisible();
 
   const box = await preview.boundingBox();
   expect(box, 'the preview must have a rendered box, not zero height').toBeTruthy();
@@ -410,5 +354,5 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   const parsedTitle = parsed!.find((t) => t.trait_type === 'Title')?.value;
   expect(parsedTitle).toBe(CUBE_TITLE);
 
-  assertBrowserClean(errorGuard, requestFailures);
+  errorGuard.assertClean();
 });

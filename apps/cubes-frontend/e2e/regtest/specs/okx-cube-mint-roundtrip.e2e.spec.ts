@@ -3,7 +3,8 @@
  * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
  *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), OKX 4.1.0 (.crx)
  * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
- *         overridden to 5 / 3 / 1 sat/vB
+ *         overridden to 5 / 3 / 1 sat/vB; OKX's welcome tab -> installOkxOfflineRoutes
+ *         (ordpool-sdk)
  * Proves: clicking through the mint form with OKX signing confirms a commit and reveal whose
  *         ord-indexed body equals getCubeHtml() for the typed sides (the app's own generator,
  *         so this half shares code), parses back to the typed side ids, and pays the tip
@@ -15,20 +16,29 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
+  CUBES_URL,
+  expectMintSuccess,
   expectTipPaid,
   readWalletPopoverAddress,
   fillCubeSides,
-  trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
+  openMintCheckout,
   RENDERABLE_SIDE_IDS,
-  assertBrowserClean,
+  signPopupOrMintError,
 } from '../regtest-helpers';
 import {
+  approvalGate,
+  clickApprovalAndRequireClose,
   clickUntilEffect,
   closeLeftoverExtensionPages,
+  dismissOkxAssetTransferPromo,
+  extensionOnboardingPage,
+  installOkxOfflineRoutes,
   onboardOkx,
+  raceApprovalPopup,
+  waitForApprovalPopup,
   waitForElectrsSync,
   fundCommonSats,
   waitForTxConfirmed,
@@ -36,7 +46,6 @@ import {
   mineBlocks,
   waitForOrdStockSync,
   getStockOrdContent,
-  isVisibleWithin,
   installContextErrorGuard,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
@@ -52,34 +61,28 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
  *   - Chromium arg `--disable-blink-features=AutomationControlled`
  *     required — OKX's popup detection sniffs for automation.
  *   - Context launched with `chromium.launchPersistentContext('')`
- *     (empty user-data-dir string) — OKX auto-opens its welcome
- *     page on extension install; the spec REUSES that page as
- *     onboardPage via `context.waitForEvent('page')`. Using a
- *     filesystem-path workingDir + fresh `context.newPage()`
- *     bypasses the auto-opened onboarding and lands on about:blank.
+ *     (empty user-data-dir string): OKX auto-opens its welcome page on
+ *     extension install, and the SDK's `extensionOnboardingPage` returns
+ *     that page for onboarding.
  *   - Connect popup anchored on "Connect account" HEADER text (not
- *     just any Connect button — OKX pre-emptively opens a "Confirm
+ *     just any Connect button: OKX pre-emptively opens a "Confirm
  *     Trade" sign popup during connect that would false-match).
- *   - Sign popup: OKX reuses the connect popup's Page for sign, so
- *     waitForApprovalPopup's knownPages filter skips it. Poll every
- *     chrome-extension page for the sign-popup heading regardless of
- *     when the page was created. Match "Signature request",
- *     "Confirm Trade", or "Asset transfer pending" (OKX's copy has
- *     drifted across releases).
- *   - "Asset transfer pending" promo modal may cover Confirm —
- *     dismiss via close button first.
+ *   - OKX reuses one `notification.html` page across approvals, and it
+ *     may already be open when the click lands, so every search excludes
+ *     only the app's own page, never the extension pages already open.
+ *   - "Asset transfer pending" promo modal may cover Confirm: the SDK's
+ *     `dismissOkxAssetTransferPromo` closes it first.
  */
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/okx');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
-const CUBES_URL = 'http://localhost:4203/';
 const FUND_AMOUNT_BTC = 0.002;
 
 const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
 
 let context: BrowserContext;
 let extensionId: string;
-let onboardPage: Page | null = null;
+let onboardPage: Page;
 
 async function shot(p: Page, name: string): Promise<void> {
   await p.screenshot({
@@ -88,85 +91,17 @@ async function shot(p: Page, name: string): Promise<void> {
   }).catch(() => undefined);
 }
 
-// local: no SDK counterpart; scans already-open pages' body text, where SDK waitForPageShowing waits on a locator and keeps no extension-page filter.
-/**
- * Polls the pages that EXIST rather than waiting for a new one.
- *
- * OKX reuses a single `notification.html` page, and it is frequently already
- * open when the connect click lands: opened during onboarding, or opened fast
- * enough to precede the snapshot of known pages. `waitForApprovalPopup` filters
- * known pages out and resolves only on a NEW page event, so in that case it
- * waits its full budget for a page that is already on screen and then reports
- * that no popup appeared. It is not intermittent: it depends entirely on
- * whether that page pre-exists, which is why it failed every local run and
- * passed in CI, where the profile is fresh.
- *
- * The sign path in this file already polls for this reason. This is the same
- * shape, applied to the connect step.
- */
-async function approveOkxConnectPopup(ctx: BrowserContext): Promise<void> {
-  const deadline = Date.now() + 60_000;
-  let approval: Page | null = null;
-  while (Date.now() < deadline) {
-    for (const p of ctx.pages()) {
-      if (!p.url().startsWith('chrome-extension://')) continue;
-      const text = await p.locator('body').innerText().catch(() => '');
-      if (/Connect account/i.test(text)) {
-        approval = p;
-        break;
-      }
-    }
-    if (approval) break;
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  if (approval === null) {
-    throw new Error(
-      'OKX connect popup never showed "Connect account" within 60s, on a new page or an existing one.',
-    );
-  }
+const okxConnectApproval = approvalGate({
+  url: /^chrome-extension:\/\//,
+  control: (p) => p.getByText('Connect account').first(),
+});
+const okxConnectButton = (p: Page) => p.getByRole('button', { name: /^connect$/i }).first();
+
+// local: OKX's connect approval; ordpool-sdk/e2e has OKX sign helpers only.
+/** Click Connect and require the popup to close: OKX closes it once it accepts. */
+async function approveOkxConnect(approval: Page): Promise<void> {
   await shot(approval, '03a-connect-popup');
-  await approval.getByRole('button', { name: /^connect$/i }).first().click();
-  await approval.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
-}
-
-// local: no SDK counterpart; polls every extension page's body text for the OKX sign headings and dismisses its promo modal.
-async function approveOkxSignPopup(ctx: BrowserContext): Promise<void> {
-  const deadline = Date.now() + 120_000;
-  let approval: Page | null = null;
-  const seen = new Set<string>();
-  while (Date.now() < deadline) {
-    for (const p of ctx.pages()) {
-      if (!p.url().startsWith('chrome-extension://')) continue;
-      const text = await p.locator('body').innerText().catch(() => '');
-      if (/Signature request|Confirm Trade|Asset transfer pending/i.test(text)) {
-        approval = p;
-        break;
-      }
-      const snippet = (text.split('\n').find((s) => s.trim().length > 0) ?? '').slice(0, 80);
-      const key = `${p.url()}|${snippet}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        console.log(`[okx-mint:diag] page url=${p.url().slice(0, 100)} first-line="${snippet}"`);
-      }
-    }
-    if (approval) break;
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  if (!approval) throw new Error('OKX sign popup never showed Signature request | Confirm Trade within 120s');
-  await shot(approval, '05a-sign-popup');
-
-  // Promo modal may cover Confirm.
-  const promo = approval.getByText('Asset transfer pending');
-  if (await isVisibleWithin(promo, 2_000)) {
-    const closeBtn = approval.locator('button:has(svg), [aria-label="close" i], [aria-label="Close" i]').first();
-    if (await isVisibleWithin(closeBtn, 2_000)) {
-      await closeBtn.click({ force: true }).catch(() => undefined);
-    }
-    await promo.waitFor({ state: 'hidden', timeout: 10_000 }).catch(() => undefined);
-  }
-
-  await shot(approval, '05b-post-promo-dismiss');
-  await approval.getByText('Confirm', { exact: true }).first().click();
+  await clickApprovalAndRequireClose(okxConnectButton(approval), approval, { label: 'OKX connect popup' });
 }
 
 test.beforeAll(async () => {
@@ -185,12 +120,8 @@ test.beforeAll(async () => {
     );
   }
 
-  // SDK spec parity: empty user-data-dir string (Chromium auto-creates
-  // a fresh in-memory profile), and REUSE OKX's auto-opened welcome
-  // page instead of creating a fresh newPage(). OKX opens its
-  // onboarding tab on extension install; my earlier version's
-  // `context.newPage()` landed on about:blank and the onboarding
-  // never surfaced.
+  // SDK spec parity: empty user-data-dir string (Chromium creates a fresh
+  // profile), and onboarding on the welcome tab OKX opens on install.
   context = await chromium.launchPersistentContext('', {
     headless: false,
     args: [
@@ -201,20 +132,14 @@ test.beforeAll(async () => {
       '--disable-blink-features=AutomationControlled',
     ],
   });
+  // Hermetic OKX: the vendor web page its onboarding opens in a normal tab is
+  // answered locally, so no marketing page or its trackers run in the test.
+  await installOkxOfflineRoutes(context);
   let [worker] = context.serviceWorkers();
-  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];
 
-  try {
-    onboardPage = await context.waitForEvent('page', {
-      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}`),
-      timeout: 15_000,
-    });
-  } catch {
-    /* fall through to newPage below */
-  }
-  test.setTimeout(240_000);
-  if (!onboardPage) onboardPage = await context.newPage();
+  onboardPage = await extensionOnboardingPage(context, extensionId);
   await onboardOkx(onboardPage, extensionId);
   await shot(onboardPage, '00-onboarded');
   // Do NOT close onboardPage — the OKX suite reuses it for the
@@ -226,13 +151,12 @@ test.afterAll(async () => {
 });
 
 test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
-  test.setTimeout(360_000);
-
   // Fails the test on any console.error or uncaught exception from an app page
   // this context opens from here on; wallet extension pages are skipped by design.
   const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const requestFailures = trackRequestFailures(cubes);
+  /** OKX may serve an approval from a page that is already open: only the app's page is excluded. */
+  const appPageOnly = () => new Set<Page>([cubes]);
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -248,17 +172,15 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await shot(cubes, '02a-form-filled');
 
   // Pre-connect: this click opens the WALLET PICKER, not the checkout drawer,
-
   // so it must not wait for a drawer that cannot appear yet.
-
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled();
 
   // `mint-cta` is bound to funding state that settles after first paint, so
   // it can re-render between the locator resolving and the event landing.
@@ -269,17 +191,19 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
     cubes.locator('[data-testid="wallet-picker-detected"]'),
     { label: 'mint-cta -> wallet-picker-detected' },
   );
-  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-okx"]');
-  await expect(connectLink).toBeVisible({ timeout: 10_000 });
+  await expect(connectLink).toBeVisible();
   await shot(cubes, '02b-wallet-picker-open');
 
-
   await connectLink.click();
-  await approveOkxConnectPopup(context);
+  await approveOkxConnect(await waitForApprovalPopup({
+    context,
+    knownPages: appPageOnly(),
+    isApproval: okxConnectApproval,
+  }));
   await cubes.bringToFront();
 
-  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
 
   const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   // OKX's default is BIP-86 Taproot (bcrt1p on regtest).
@@ -291,30 +215,24 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
 
   await cubes.reload({ waitUntil: 'domcontentloaded' });
 
-
-  try {
-    await approveOkxConnectPopup(context);
-  } catch {
-    // No reconnect popup — OKX cached the auth.
-  }
+  // OKX may ask to approve the connection again after the reload, or reuse
+  // its cached authorisation. The header's connected button exists only once
+  // the reconnect resolved, so it is the state that means no popup is coming.
+  const reconnect = await raceApprovalPopup({
+    context,
+    knownPages: appPageOnly(),
+    isApproval: okxConnectApproval,
+    noPopupState: cubes.locator('[data-testid="wallet-connected-btn"]'),
+  });
+  if (reconnect.outcome === 'popup') await approveOkxConnect(reconnect.page);
   await cubes.bringToFront();
-  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  // `mint-cta` is bound to funding state that settles after first paint, so
-  // it can re-render between the locator resolving and the event landing.
-  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
-  // as this effect simply never appearing.
-  await clickUntilEffect(
-    cubes.locator('[data-testid="mint-cta"]'),
-    cubes.locator('[data-testid="mint-checkout"]'),
-    { label: 'mint-cta -> mint-checkout' },
-  );
-  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+  await openMintCheckout(cubes);
   await openDetails(cubes, 'mint-advanced');
-  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible();
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-drawer-open');
 
@@ -337,25 +255,24 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(mintBtn).toBeEnabled();
 
   await closeLeftoverExtensionPages(context, [cubes]);
   await mintBtn.click();
 
-  const errLocator = cubes.locator('[data-testid="mint-error-message"]');
-  await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
-  if (await errLocator.isVisible()) {
-    const postMintErr = (await errLocator.textContent())?.trim() ?? '';
-    if (postMintErr && !postMintErr.includes('cancel')) {
-      throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
-    }
-  }
-
-  await approveOkxSignPopup(context);
+  const confirmButton = (p: Page) => p.getByText('Confirm', { exact: true }).first();
+  const signPopup = await signPopupOrMintError(cubes, {
+    context,
+    knownPages: appPageOnly(),
+    isApproval: approvalGate({ url: /^chrome-extension:\/\//, control: confirmButton }),
+  });
+  await shot(signPopup, '05a-sign-popup');
+  await dismissOkxAssetTransferPromo(signPopup);
+  await shot(signPopup, '05b-post-promo-dismiss');
+  await clickApprovalAndRequireClose(confirmButton(signPopup), signPopup, { label: 'OKX sign popup' });
   console.log('[okx-mint] sign approved; waiting for mint-success');
 
-  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
-  await expect(cubes.locator('[data-testid="mint-btn"]')).toHaveAttribute('aria-busy', 'false');
+  await expectMintSuccess(cubes);
   await shot(cubes, '06-success');
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
@@ -387,5 +304,5 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  assertBrowserClean(errorGuard, requestFailures);
+  errorGuard.assertClean();
 });

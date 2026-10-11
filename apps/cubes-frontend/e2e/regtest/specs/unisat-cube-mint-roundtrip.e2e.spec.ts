@@ -3,7 +3,8 @@
  * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
  *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), Unisat 1.7.15 (.crx)
  * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
- *         overridden to 5 / 3 / 1 sat/vB
+ *         overridden to 5 / 3 / 1 sat/vB; UniSat's wallet API -> installUnisatOfflineRoutes
+ *         (ordpool-sdk)
  * Proves: clicking through the mint form with Unisat signing confirms a commit and reveal
  *         whose ord-indexed body equals getCubeHtml() for the typed sides (the app's own
  *         generator, so this half shares code), parses back to the typed side ids, and pays
@@ -17,21 +18,27 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
+  CUBES_URL,
+  expectMintSuccess,
   expectTipPaid,
   readWalletPopoverAddress,
   fillCubeSides,
-  trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
+  openMintCheckout,
   RENDERABLE_SIDE_IDS,
   NON_IMAGE_SIDE_ID,
-  assertBrowserClean,
+  signPopupOrMintError,
 } from '../regtest-helpers';
 import {
+  approvalGate,
+  clickApprovalAndRequireClose,
   clickUntilEffect,
   closeLeftoverExtensionPages,
+  installUnisatOfflineRoutes,
   onboardUnisat,
+  raceApprovalPopup,
   waitForApprovalPopup,
   waitForElectrsSync,
   fundCommonSats,
@@ -45,23 +52,6 @@ import {
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
 /**
- * Poll the real ordpool-backend for an inscription's rendered bytes. It
- * decodes the inscription from the parent tx's witness over bitcoind RPC and
- * reads the mempool first, so this returns for an UNCONFIRMED tx. A short
- * retry covers the moment between broadcast and bitcoind holding the tx.
- */
-async function pollForOrdpoolContent(url: string): Promise<string> {
-  let lastStatus = 'no response';
-  for (let i = 0; i < 30; i++) {
-    const res = await fetch(url).catch(() => null);
-    if (res?.ok) return res.text();
-    lastStatus = res ? `HTTP ${res.status}` : 'no response';
-    await new Promise((r) => setTimeout(r, 1_000));
-  }
-  throw new Error(`ordpool-backend did not render ${url} within 30s (last: ${lastStatus})`);
-}
-
-/**
  * Full user-flow proof for Unisat — cubes.haushoppe.art end-to-end on
  * regtest. Same SDK regtest shim as Leather (ordpool-sdk 586bde5)
  * takes care of the mainnet→bcrt address rewrite; the interesting
@@ -72,9 +62,9 @@ async function pollForOrdpoolContent(url: string): Promise<string> {
  *     restore-wallet-type-option-0 → 12x mnemonic-import-word-N →
  *     mnemonic-import-continue-button, optionally followed by
  *     address-type-continue-button + notice-checkbox-1/notice-ok-button.
- *   - Approval-popup detection is URL-anchored: Unisat renders every
- *     dapp approval at `notification.html#/approval` on its extension
- *     origin. Cheaper + less flaky than element-anchored waits.
+ *   - Unisat renders every dapp approval at `notification.html#/approval`
+ *     on its extension origin; the search is anchored on the control it
+ *     clicks, with the URL as a pre-filter.
  *   - Connect click uses a styled `<div>` matched by text (Unisat
  *     doesn't render Connect as a <button>).
  *   - Sign click uses the stable `sign-psbt-button` testid.
@@ -91,7 +81,6 @@ async function pollForOrdpoolContent(url: string): Promise<string> {
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/unisat');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
-const CUBES_URL = 'http://localhost:4203/';
 
 const FUND_AMOUNT_BTC = 0.002;
 
@@ -105,6 +94,20 @@ async function shot(p: Page, name: string): Promise<void> {
     path: path.resolve(RESULTS_DIR, `unisat-cube-mint-${name}.png`),
     fullPage: true,
   }).catch(() => undefined);
+}
+
+/** Unisat renders Connect as a styled <div>, not a <button>: matched by text. */
+const unisatConnectButton = (p: Page) => p.getByText(/^Connect$/).first();
+const unisatConnectApproval = approvalGate({
+  url: /notification\.html#\/approval/,
+  control: unisatConnectButton,
+});
+
+// local: Unisat's connect approval; ordpool-sdk/e2e has no Unisat approval helper.
+/** Click Connect and require the popup to close: Unisat closes it once it accepts. */
+async function approveUnisatConnect(approval: Page): Promise<void> {
+  await shot(approval, '03a-connect-popup');
+  await clickApprovalAndRequireClose(unisatConnectButton(approval), approval, { label: 'Unisat connect popup' });
 }
 
 test.beforeAll(async () => {
@@ -135,8 +138,11 @@ test.beforeAll(async () => {
       '--disable-dev-shm-usage',
     ],
   });
+  // Hermetic Unisat: its wallet API is answered locally from shapes the SDK
+  // captured, so connect and sign never wait on the vendor's servers.
+  await installUnisatOfflineRoutes(context);
   let [worker] = context.serviceWorkers();
-  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];
 
   const primer = await context.newPage();
@@ -150,13 +156,10 @@ test.afterAll(async () => {
 });
 
 test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
-  test.setTimeout(360_000);
-
   // Fails the test on any console.error or uncaught exception from an app page
   // this context opens from here on; wallet extension pages are skipped by design.
   const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const requestFailures = trackRequestFailures(cubes);
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -172,53 +175,45 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await shot(cubes, '02a-form-filled');
 
   const mintCta = cubes.locator('[data-testid="mint-cta"]');
-  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
+  await expect(mintCta).toBeEnabled();
 
   // The black-face check: a side that is JSON on chain loads with 200 but
   // never decodes as an image; the form names the face and keeps Mint off
   // until the side is replaced.
   await cubes.locator('[data-testid="cube-side-2"]').fill(NON_IMAGE_SIDE_ID);
-  await expect(cubes.locator('[data-testid="mint-black-faces"]')).toContainText('Side 2 does not render as an image', { timeout: 10_000 });
+  await expect(cubes.locator('[data-testid="mint-black-faces"]')).toContainText('Side 2 does not render as an image');
   await expect(mintCta).toBeDisabled();
   await cubes.locator('[data-testid="cube-side-2"]').fill(CUBE_SIDE_IDS[1]);
-  await expect(cubes.locator('[data-testid="mint-black-faces"]')).toHaveCount(0, { timeout: 10_000 });
-  await expect(mintCta).toBeEnabled({ timeout: 10_000 });
+  await expect(cubes.locator('[data-testid="mint-black-faces"]')).toHaveCount(0);
+  await expect(mintCta).toBeEnabled();
 
-  await mintCta.click();
-
-  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
+  // `mint-cta` re-renders while the side probe settles, so the click can be
+  // swallowed; clickUntilEffect re-clicks only while it is still untouched.
+  await clickUntilEffect(mintCta, cubes.locator('[data-testid="wallet-picker-detected"]'), {
+    label: 'mint-cta -> wallet-picker-detected',
+  });
   const connectLink = cubes.locator('[data-testid="wallet-connect-unisat"]');
-  await expect(connectLink).toBeVisible({ timeout: 10_000 });
+  await expect(connectLink).toBeVisible();
   await shot(cubes, '02b-wallet-picker-open');
 
   const knownPagesBeforeConnect = new Set(context.pages());
   await connectLink.click();
 
-  // Unisat's approval popup is URL-anchored at
-  // `notification.html#/approval`; cheaper than element-anchored.
-  const connectPopup = await waitForApprovalPopup({
+  await approveUnisatConnect(await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeConnect,
-    timeoutMs: 60_000,
-    isApproval: async (p) => {
-      await p.waitForURL(/notification\.html#\/approval/, { timeout: 60_000 });
-      return true;
-    },
-  });
-  await shot(connectPopup, '03a-connect-popup');
-  // Unisat renders Connect as a styled <div>, not a <button> — match by text.
-  await connectPopup.getByText(/^Connect$/).first().click();
-  await connectPopup.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
+    isApproval: unisatConnectApproval,
+  }));
   await cubes.bringToFront();
 
-  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
 
   const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   // Unisat's default address type is BIP-84 P2WPKH (bc1q…); SDK shim
@@ -231,41 +226,27 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
 
   await fundCommonSats(paymentAddr, FUND_AMOUNT_BTC);
 
+  const knownPagesBeforeReconnect = new Set(context.pages());
   await cubes.reload({ waitUntil: 'domcontentloaded' });
 
-  const knownPagesBeforeReconnect = new Set(context.pages());
-  const reapprovePromise = waitForApprovalPopup({
+  // Unisat may ask to approve the connection again after the reload, or
+  // reconnect silently. The header's connected button exists only once the
+  // reconnect resolved, so it is the state that means no popup is coming.
+  const reconnect = await raceApprovalPopup({
     context,
     knownPages: knownPagesBeforeReconnect,
-    timeoutMs: 15_000,
-    isApproval: async (p) => {
-      await p.waitForURL(/notification\.html#\/approval/, { timeout: 15_000 });
-      return true;
-    },
-  }).catch(() => null);
-  const reapprove = await reapprovePromise;
-  if (reapprove) {
-    await reapprove.getByText(/^Connect$/).first().click();
-    await reapprove.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
-  }
+    isApproval: unisatConnectApproval,
+    noPopupState: cubes.locator('[data-testid="wallet-connected-btn"]'),
+  });
+  if (reconnect.outcome === 'popup') await approveUnisatConnect(reconnect.page);
   await cubes.bringToFront();
-  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  // `mint-cta` is bound to funding state that settles after first paint, so
-  // it can re-render between the locator resolving and the event landing.
-  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
-  // as this effect simply never appearing.
-  await clickUntilEffect(
-    cubes.locator('[data-testid="mint-cta"]'),
-    cubes.locator('[data-testid="mint-checkout"]'),
-    { label: 'mint-cta -> mint-checkout' },
-  );
-  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+  await openMintCheckout(cubes);
   await openDetails(cubes, 'mint-advanced');
-  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible();
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-drawer-open');
 
@@ -288,40 +269,27 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(mintBtn).toBeEnabled();
 
   await closeLeftoverExtensionPages(context, [cubes]);
   const knownPagesBeforeSign = new Set(context.pages());
   await mintBtn.click();
 
-  const errLocator = cubes.locator('[data-testid="mint-error-message"]');
-  await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
-  if (await errLocator.isVisible()) {
-    const postMintErr = (await errLocator.textContent())?.trim() ?? '';
-    if (postMintErr && !postMintErr.includes('cancel')) {
-      throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
-    }
-  }
-
-  // Sign popup: Unisat uses stable `sign-psbt-button` testid on the
+  // Sign popup: Unisat uses the stable `sign-psbt-button` testid on the
   // approval page.
-  const signPopup = await waitForApprovalPopup({
+  const signButton = (p: Page) => p.getByTestId('sign-psbt-button');
+  const signPopup = await signPopupOrMintError(cubes, {
     context,
     knownPages: knownPagesBeforeSign,
-    timeoutMs: 120_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByTestId('sign-psbt-button')
-        .waitFor({ state: 'visible', timeout: 60_000 });
-      return true;
-    },
+    isApproval: approvalGate({ url: /^chrome-extension:\/\//, control: signButton }),
   });
   await shot(signPopup, '05a-sign-popup');
-  await signPopup.getByTestId('sign-psbt-button').click();
+  // Unisat closes the sign popup the moment it accepts the click, so the
+  // close is the proof the click landed.
+  await clickApprovalAndRequireClose(signButton(signPopup), signPopup, { label: 'Unisat sign popup' });
   console.log('[unisat-mint] sign approved; waiting for mint-success');
 
-  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
-  await expect(cubes.locator('[data-testid="mint-btn"]')).toHaveAttribute('aria-busy', 'false');
+  await expectMintSuccess(cubes);
   await shot(cubes, '06-success');
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
@@ -336,9 +304,13 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   // The real ordpool-backend (:8999) decodes the inscription from the still-
   // unconfirmed reveal tx's witness — the whole anti-waiting feature. Its bytes
   // must equal exactly what we minted, and the success panel must reflect it.
-  const mempoolHtml = await pollForOrdpoolContent(`http://localhost:8999/content/${inscriptionId}`);
-  expect(mempoolHtml).toBe(expectedCubeHtml);
-  await expect(cubes.locator('[data-testid="mint-status-badge"]')).toContainText(/mempool/i, { timeout: 30_000 });
+  // It reads the parent tx's witness over bitcoind RPC, mempool first, so it
+  // answers for an UNCONFIRMED tx once bitcoind holds it.
+  await expect.poll(async () => {
+    const res = await fetch(`http://localhost:8999/content/${inscriptionId}`);
+    return res.ok ? res.text() : `HTTP ${res.status}`;
+  }, { message: 'ordpool-backend renders the minted cube from the mempool' }).toBe(expectedCubeHtml);
+  await expect(cubes.locator('[data-testid="mint-status-badge"]')).toContainText(/mempool/i);
   // The success preview shows the cube's bytes as srcdoc (dark canvas from the
   // first frame), fetched from the ordpool-backend's /content. The minted body
   // must land in the iframe byte-for-byte, wrapped only with the display-only
@@ -355,7 +327,7 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   // off-screen preview holds the placeholder indefinitely and no wait can
   // rescue it. Scrolling it in is part of the scenario, not a workaround.
   await preview.scrollIntoViewIfNeeded();
-  await expect(preview).toHaveAttribute('srcdoc', /<base href="http:\/\/[^"]+:8999\/">/, { timeout: 30_000 });
+  await expect(preview).toHaveAttribute('srcdoc', /<base href="http:\/\/[^"]+:8999\/">/);
   const previewSrcdoc = (await preview.getAttribute('srcdoc')) ?? '';
   expect(previewSrcdoc).toMatch(/<base href="http:\/\/[^"]+:8999\/">/);
   expect(previewSrcdoc.endsWith(expectedCubeHtml.slice(expectedCubeHtml.indexOf('<body>')))).toBe(true);
@@ -369,7 +341,7 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   expect(revealTx.status.block_hash).toBeTruthy();
 
   // --- PROOF: once mined, the status badge flips to "confirmed" ---
-  await expect(cubes.locator('[data-testid="mint-status-badge"]')).toContainText(/confirmed/i, { timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="mint-status-badge"]')).toContainText(/confirmed/i);
   console.log('[unisat-mint] status badge flipped to confirmed after mining ✓');
 
   await waitForOrdStockSync(Number(rpc('getblockcount').trim()));
@@ -387,5 +359,5 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  assertBrowserClean(errorGuard, requestFailures);
+  errorGuard.assertClean();
 });

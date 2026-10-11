@@ -5,42 +5,25 @@
  * Faked:  nothing
  * Proves: side ids typed over the boot-time suggestion keep their values. It does NOT place
  *         the suggestion: on regtest the suggestion has no network step (stand-in galleries
- *         from the environment) and has filled all six sides before any release, and the held
- *         ordpool-space.github.io pattern matches no request the regtest build makes. Any
- *         console.error or uncaught exception on the page fails it
+ *         from the environment), so there is no request to hold and it has filled all six
+ *         sides before the first fill. Any console.error or uncaught exception on the page
+ *         fails it
  */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 
-import { installContextErrorGuard, rpc } from 'ordpool-sdk/e2e';
-import { openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
+import { installContextErrorGuard, rpc, workaroundWaitForTimeout } from 'ordpool-sdk/e2e';
+import { CUBES_URL, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 
 /**
- * PLACES the moment a suggestion lands, instead of racing it.
+ * Typed side ids must survive the boot-time suggestion.
  *
  * CI caught a suggestion replacing side ids the spec had typed, on a page whose
- * `suggestionMayReplace` guard exists to forbid exactly that. Locally the
- * suggestion's data source is unreachable, so the window never opens and the
- * race cannot be reproduced by running the lane again.
- *
- * So the suggestion's fetches are HELD, the form is filled, and only then are
- * they released. That makes the landing moment a decision rather than a
- * coincidence.
- *
- * THREE orderings have been placed and all three leave the guard correctly
- * refusing: after a settled fill, mid-fill released at the fourth side, and an
- * earliest-possible fill that does not wait for the page to settle (navigating
- * with `waitUntil: 'commit'` and typing as soon as the inputs exist). None is
- * the CI mechanism.
- *
- * The earliest-fill variant is not kept, because Playwright's actionability
- * wait means `fill` does not type into a form that is not ready anyway, so it
- * reaches no earlier than this and only makes the spec more fragile. What this
- * spec is worth is ruling three candidates out and locking in the behaviour for
- * the orderings it covers.
+ * `suggestionMayReplace` guard exists to forbid exactly that. On mainnet the
+ * suggestion's data comes from the network and could be held to place its
+ * landing; on regtest it comes from the environment's stand-in galleries, with
+ * no request to hold, so these specs lock in the behaviour for the orderings
+ * they can reach rather than placing the write.
  */
-
-const APP_URL = 'http://localhost:4203/';
-const CUBES_INDEX = 'https://ordpool-space.github.io/**';
 
 let browser: Browser;
 
@@ -55,36 +38,25 @@ test.afterAll(async () => {
 });
 
 test('suggestion-repro: a suggestion landing after the fill must not replace typed sides', async () => {
-  test.setTimeout(180_000);
   const context = await browser.newContext();
   // Fails the test on any console.error or uncaught exception from a page of this context.
   const errorGuard = installContextErrorGuard(context);
   const page: Page = await context.newPage();
 
-  let release: (() => void) | undefined;
-  const held = new Promise<void>((r) => { release = r; });
-  let heldCount = 0;
-  await page.route(CUBES_INDEX, async (route) => {
-    heldCount += 1;
-    await held;
-    await route.continue();
-  });
-
-  await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await page.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
 
   await openDetails(page, 'configurator-advanced');
-  // MID-FILL: release the suggestion after three sides, which is the ordering a
-  // settled-fill repro cannot reach and the one a slow CI runner is most likely
-  // to produce.
   for (let i = 0; i < 6; i++) {
-    if (i === 3) release!();
     await page.locator(`[data-testid="cube-side-${i + 1}"]`).fill(RENDERABLE_SIDE_IDS[i]);
   }
-  // Give the suggestion chain time to resolve and the effect time to run.
-  await page.waitForTimeout(5_000);
-
-  console.log(`[repro] held ${heldCount} index requests until after the fill`);
+  // The suggestion effect exposes no "landed" state, so a late write can only
+  // be given time; the values are read after it, not right after the fill.
+  await workaroundWaitForTimeout(
+    page,
+    5_000,
+    'a late suggestion write after the fill; the suggestion effect exposes no landed state',
+  );
 
   // The claim under test: typed sides survive a late suggestion.
   for (let i = 0; i < 6; i++) {
@@ -99,13 +71,7 @@ test('suggestion-repro: a suggestion landing after the fill must not replace typ
 });
 
 /**
- * PLACES the suggestion at the blank-to-first-fill boundary, which is the one
- * region the three orderings above never touched.
- *
- * Those three all released the suggestion onto a form that was ALREADY
- * non-blank, so `suggestionMayReplace` correctly refused, no whole-form write
- * happened, and nothing re-rendered. They therefore rule out a guard defect,
- * and say nothing at all about the mechanism CI actually shows.
+ * Sweeps the first fill across the blank-to-first-fill boundary.
  *
  * The measured baseline (23 occurrences in one green matrix run) is that the
  * suggestion normally lands on the still-blank form BEFORE a spec types, which
@@ -114,9 +80,9 @@ test('suggestion-repro: a suggestion landing after the fill must not replace typ
  * click landing while a popover re-renders, and it needs no writer: the value
  * is simply never committed.
  *
- * So the release is placed across a SWEEP of offsets around the first fill
- * rather than at one guessed instant. Each pass reloads, re-holds the index
- * fetches, releases, waits its offset, then types. If a fill is lost, the
+ * So the first fill is placed across a SWEEP of offsets after the form is
+ * ready rather than at one guessed instant. Each pass loads the page fresh,
+ * waits its offset, then types. If a fill is lost, the
  * assertion below fails and names the offset, which turns the correlation the
  * `fillCubeSides` log reports into a placement that can be repeated.
  *
@@ -147,39 +113,37 @@ test('suggestion-repro: a suggestion landing after the fill must not replace typ
  */
 // A search range covering the window, not measured constants. The upper end
 // matters most: locally the suggestion's chain resolves far enough after the
-// release that only the larger offsets put the write inside the first fill,
+// form is ready that only the larger offsets put the write inside the first fill,
 // and a CI runner is slower, so the range reaches well past what is needed
 // here rather than being tuned to this machine.
-const RELEASE_OFFSETS_MS = [0, 100, 200, 300, 400, 600, 900, 1200, 1600, 2000];
+const FILL_OFFSETS_MS = [0, 100, 200, 300, 400, 600, 900, 1200, 1600, 2000];
 
 test('suggestion-repro: a suggestion landing across the first fill must not drop it', async () => {
-  test.setTimeout(300_000);
-
   // Offsets at which a whole-form write was actually observed. An empty list
   // means the pass exercised nothing, and it says so rather than passing
   // quietly.
   const observed: number[] = [];
 
-  for (const offset of RELEASE_OFFSETS_MS) {
+  for (const offset of FILL_OFFSETS_MS) {
     const context = await browser.newContext();
     // Fails the pass on any console.error or uncaught exception from a page of this context.
     const errorGuard = installContextErrorGuard(context);
     const page: Page = await context.newPage();
-    let release: (() => void) | undefined;
-    const held = new Promise<void>((r) => { release = r; });
-    await page.route(CUBES_INDEX, async (route) => {
-      await held;
-      await route.continue();
-    });
 
-    await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+    await page.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
     await openDetails(page, 'configurator-advanced');
 
-    // Release, wait the offset, then type. The suggestion's chain resolves
-    // while the typing happens, which is the window under test.
-    release!();
-    await page.waitForTimeout(offset);
+    // Wait the offset, then type. The offset IS the placement under test, so
+    // it is a duration by design: the suggestion's whole-form write has no
+    // signal to type against.
+    if (offset > 0) {
+      await workaroundWaitForTimeout(
+        page,
+        offset,
+        'placing the first fill at a swept offset after the form is ready; the suggestion write has no signal',
+      );
+    }
     await page.locator('[data-testid="cube-side-1"]').fill(RENDERABLE_SIDE_IDS[0]);
 
     // Did a whole-form write actually happen in this pass? The not-yet-typed
@@ -211,15 +175,15 @@ test('suggestion-repro: a suggestion landing across the first fill must not drop
 
     expect(
       lost.map(({ i }) => i + 1),
-      `release +${offset}ms after the form was ready: these sides did not keep the typed value`,
+      `first fill +${offset}ms after the form was ready: these sides did not keep the typed value`,
     ).toEqual([]);
   }
 
   console.log(observed.length === 0
-    ? `[repro] no suggestion landed at any of the ${RELEASE_OFFSETS_MS.length} offsets; ` +
+    ? `[repro] no suggestion landed at any of the ${FILL_OFFSETS_MS.length} offsets; ` +
       'this pass proved NOTHING about placement'
     : `[repro] a whole-form write was observed at ${observed.length} of ` +
-      `${RELEASE_OFFSETS_MS.length} offsets (${observed.join(', ')} ms); ` +
+      `${FILL_OFFSETS_MS.length} offsets (${observed.join(', ')} ms); ` +
       'the window was exercised and the typed values survived it');
 });
 

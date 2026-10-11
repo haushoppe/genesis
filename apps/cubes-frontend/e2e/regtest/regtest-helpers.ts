@@ -1,16 +1,22 @@
 // Cubes-specific helpers for the regtest e2e specs: the mint form's controls,
 // the cube body's renderer-id bridge, and the tip assertion. Generic chain,
 // electrs and ord helpers (rpc, mineBlocks, fundCommonSats, waitForElectrsSync,
-// getUtxos, getStockOrdContent, isVisibleWithin, ...) come from
+// getUtxos, getStockOrdContent, ...) come from
 // `ordpool-sdk/e2e`, which reads the REGTEST_* container and wallet names that
 // playwright.config.ts sets for this stack.
 
 import { expect, type Page } from '@playwright/test';
-import type { EsploraTx } from 'ordpool-sdk/e2e';
+import { clickUntilEffect, raceApprovalPopup, type ApprovalPopupSearch, type EsploraTx } from 'ordpool-sdk/e2e';
 
 import { regtestInscriptions } from '../../src/environments/regtest-inscriptions.generated';
 import { getCubeHtml } from '../../src/app/services/cube-html';
 import { parseCube } from '../../src/shared/ordinals/parse-cube';
+
+/**
+ * The regtest dev server the specs drive. The port comes from the runner
+ * config (`CUBES_E2E_PORT`), which also starts the server on it.
+ */
+export const CUBES_URL = `http://localhost:${process.env.CUBES_E2E_PORT ?? '4203'}/`;
 
 /** When `configurator-advanced` was last opened, per page, for `fillCubeSides`. */
 const detailsOpenedAt = new WeakMap<Page, number>();
@@ -100,99 +106,141 @@ export function expectTipPaid(commitTx: EsploraTx, revealTx: EsploraTx): void {
  * settles after a connect or a reload. A click that lands on the node being
  * replaced is swallowed: the popover never opens, and the spec fails on the
  * address element rather than on the click, which reads like a missing element
- * instead of a lost click. Re-clicking until the content appears is what makes
- * it deterministic; a single click is correct only if the timing happens to be.
- *
- * Deliberately does NOT swallow the end state: if the popover never opens
- * within the budget, the caller's own expectation fails as it would have.
+ * instead of a lost click. `clickUntilEffect` re-clicks only while the toggle
+ * never flipped: ngbPopover sets `aria-describedby` on its trigger while the
+ * popover is open, so a trigger without it is still in its pre-click state,
+ * and a second click can never close what the first one opened.
  */
-export async function openWalletPopover(page: Page, timeoutMs = 20_000): Promise<void> {
-  const trigger = page.locator('[data-testid="wallet-connected-btn"]');
-  const content = page.locator('[data-testid="wallet-popover-payment-address"]');
-  const deadline = Date.now() + timeoutMs;
-
-  await trigger.waitFor({ state: 'visible', timeout: timeoutMs });
-  let clicks = 0;
-  while (Date.now() < deadline) {
-    if (await content.isVisible().catch(() => false)) {
-      if (clicks > 1) console.log(`[openWalletPopover] opened only after ${clicks} clicks`);
-      return;
-    }
-    clicks += 1;
-    await trigger.click().catch(() => undefined);
-    // waitFor, NOT isVisible({timeout}). `isVisible` takes no timeout and
-    // answers instantly, so the old code checked before the popover had
-    // rendered, looped, and clicked again — which TOGGLED THE POPOVER SHUT.
-    // The retry counts that produced were this helper opening and closing it,
-    // not a control ignoring clicks.
-    if (await content.waitFor({ state: 'visible', timeout: 2_000 }).then(() => true).catch(() => false)) {
-      if (clicks > 1) console.log(`[openWalletPopover] opened only after ${clicks} clicks`);
-      return;
-    }
-  }
+export async function openWalletPopover(page: Page): Promise<void> {
+  const trigger = page.getByTestId('wallet-connected-btn');
+  const content = page.getByTestId('wallet-popover-payment-address');
+  await expect(trigger).toBeVisible();
+  // Already open: a click would close it.
+  if (await content.isVisible()) return;
+  const { clicks } = await clickUntilEffect(trigger, content, {
+    label: 'wallet-connected-btn -> wallet popover',
+    stillPreClick: async () => (await trigger.getAttribute('aria-describedby')) === null,
+  });
+  if (clicks > 1) console.log(`[openWalletPopover] opened only after ${clicks} clicks`);
 }
 
 // App-specific: reads the cubes header's connected-wallet popover.
 /**
- * Read an address out of the connected-wallet popover, re-opening if it closes.
- *
- * `openWalletPopover` makes OPENING deterministic; reading is still two steps,
- * and the wallet row re-renders as its state settles, so an element that passed
- * `toBeVisible` can be gone by the time `getAttribute` runs. That surfaces as a
- * getAttribute timeout on a locator the previous line just asserted visible,
- * which reads like a Playwright fault and is a re-render.
- *
- * The VISIBLE text is elided in the middle, so the address comes from `title`.
+ * Read an address out of the connected-wallet popover. The VISIBLE text is
+ * elided in the middle, so the address comes from `title`.
  */
 export async function readWalletPopoverAddress(
   page: Page,
   testId: 'wallet-popover-payment-address' | 'wallet-popover-ordinals-address',
-  timeoutMs = 30_000,
 ): Promise<string> {
-  const deadline = Date.now() + timeoutMs;
-  let last = '';
-  while (Date.now() < deadline) {
-    await openWalletPopover(page, Math.max(2_000, deadline - Date.now()));
-    last = (await page.locator(`[data-testid="${testId}"]`).getAttribute('title').catch(() => null))?.trim() ?? '';
-    if (last.length > 0) return last;
-  }
-  throw new Error(`could not read ${testId} within ${timeoutMs}ms (last value: "${last}")`);
+  await openWalletPopover(page);
+  const field = page.getByTestId(testId);
+  await expect(field).toHaveAttribute('title', /\S/);
+  return ((await field.getAttribute('title')) ?? '').trim();
 }
 
 // App-specific: the cubes mint CTA and its checkout drawer.
 /**
  * Click the top-level mint CTA until the checkout drawer is actually open.
  *
- * Same shape as `openWalletPopover`: the CTA's own disabled state depends on a
- * probe that resolves asynchronously, so the button can be re-rendered around
- * the moment it is clicked and the click is swallowed. The spec then fails on
- * `mint-btn` not existing, which reads as a missing element and is a lost
- * click. One click is correct only when the timing happens to be.
+ * The CTA's own disabled state depends on a probe that resolves asynchronously,
+ * so the button can be re-rendered around the moment it is clicked and the
+ * click is swallowed. `clickUntilEffect` re-clicks only while the CTA is still
+ * visible and enabled with no drawer, the swallowed-click signature, and the
+ * click count is reported: more than one names a defect to chase, not a
+ * harness detail.
  */
-export async function openMintCheckout(page: Page, timeoutMs = 60_000): Promise<void> {
-  const cta = page.locator('[data-testid="mint-cta"]');
-  const drawer = page.locator('[data-testid="mint-checkout"]');
-  const deadline = Date.now() + timeoutMs;
+export async function openMintCheckout(page: Page): Promise<void> {
+  const cta = page.getByTestId('mint-cta');
+  await expect(cta).toBeEnabled();
+  const { clicks } = await clickUntilEffect(cta, page.getByTestId('mint-checkout'), {
+    label: 'mint-cta -> mint-checkout',
+  });
+  if (clicks > 1) console.log(`[openMintCheckout] drawer opened only after ${clicks} clicks`);
+}
 
-  await expect(cta).toBeEnabled({ timeout: timeoutMs });
-  let attempts = 0;
-  while (Date.now() < deadline) {
-    if (await drawer.isVisible().catch(() => false)) {
-      // Reported, never swallowed. A helper that retries in silence makes a
-      // genuinely broken control look merely slow, and then nobody ever learns
-      // which one it was. If this line appears, the first click did NOT open the
-      // drawer and that is a defect to chase, not a harness detail.
-      if (attempts > 1) console.log(`[openMintCheckout] drawer opened only after ${attempts} clicks`);
-      return;
-    }
-    attempts += 1;
-    await cta.click().catch(() => undefined);
-    if (await drawer.waitFor({ state: 'visible', timeout: 3_000 }).then(() => true).catch(() => false)) {
-      if (attempts > 1) console.log(`[openMintCheckout] drawer opened only after ${attempts} clicks`);
-      return;
-    }
+// App-specific: the cubes watch-only (xpub) connect form.
+/**
+ * Connect a watch-only account through the header's xpub form, as a taproot
+ * account, and return once the header shows it connected.
+ *
+ * The first connect click reveals the script-type picker, the second connects.
+ * A rejected xpub shows `wallet-xpub-error` and never connects, so both waits
+ * race the error against the state they expect: the error is reported with its
+ * text instead of the picker or the connected address simply never appearing.
+ */
+export async function connectWatchOnly(page: Page, accountTpub: string): Promise<void> {
+  await page.getByTestId('wallet-connect-btn').click();
+  await expect(page.getByTestId('wallet-picker-list')).toBeVisible();
+  await page.getByTestId('wallet-connect-xpub').click();
+  await expect(page.getByTestId('wallet-xpub-form')).toBeVisible();
+  await page.getByTestId('wallet-xpub-input').fill(accountTpub);
+
+  // A bare tpub does not say which script type it is for, so the app asks, and
+  // it asks only AFTER a connect attempt: the ambiguity is reported by the SDK,
+  // not guessed from the prefix. This is the real two-step the reader walks.
+  // The ambiguity shows the picker together with a message asking for the
+  // type; a key the app rejects shows the message alone. So the wait is on
+  // either, and a message without a picker is the rejection, reported here.
+  const xpubError = page.getByTestId('wallet-xpub-error');
+  const scriptType = page.getByTestId('wallet-xpub-script-type');
+  await page.getByTestId('wallet-xpub-connect').click();
+  await expect(scriptType.or(xpubError).first()).toBeVisible();
+  if (!(await scriptType.isVisible())) {
+    throw new Error(`the app rejected the pasted xpub: ${(await xpubError.textContent())?.trim()}`);
   }
-  await expect(drawer, 'the checkout drawer never opened').toBeVisible({ timeout: 1_000 });
+  await scriptType.selectOption('p2tr');
+  // Confirm the selection STUCK. A selection that silently does not take
+  // derives a different script type, and the failure then surfaces much
+  // later as an address with no funds rather than as a wrong choice here.
+  await expect(scriptType).toHaveValue('p2tr');
+  await page.getByTestId('wallet-xpub-connect').click();
+
+  const connected = page.getByTestId('wallet-connected-address');
+  await expect(xpubError.or(connected).first()).toBeVisible();
+  if (await xpubError.isVisible()) {
+    throw new Error(`the app rejected the pasted xpub: ${(await xpubError.textContent())?.trim()}`);
+  }
+}
+
+// App-specific: the cubes mint result panel.
+/**
+ * Wait for the mint to finish, and fail with the app's own message when it
+ * reports an error instead.
+ *
+ * Success and failure are two exclusive states of the same panel, so the wait
+ * is on either of them: a mint that fails is reported with its error text at
+ * once, rather than as a success that never arrived.
+ */
+export async function expectMintSuccess(page: Page): Promise<void> {
+  const success = page.getByTestId('mint-success');
+  const error = page.getByTestId('mint-error-message');
+  await expect(success.or(error).first()).toBeVisible();
+  if (await error.isVisible()) {
+    throw new Error(`the mint reported an error: ${(await error.textContent())?.trim()}`);
+  }
+  await expect(page.getByTestId('mint-btn')).toHaveAttribute('aria-busy', 'false');
+}
+
+// App-specific: the cubes mint error message raced against a wallet's sign popup.
+/**
+ * After the Mint click, wait for the wallet's sign popup, or fail with the
+ * app's message when the mint errors before asking the wallet.
+ *
+ * `mint-error-message` exists only on the path where no popup is coming, so it
+ * is the state `raceApprovalPopup` needs: a simulation or PSBT build that
+ * throws is reported with its text, instead of as a popup that never opened.
+ */
+export async function signPopupOrMintError(
+  page: Page,
+  search: ApprovalPopupSearch,
+): Promise<Page> {
+  const error = page.getByTestId('mint-error-message');
+  const race = await raceApprovalPopup({ ...search, noPopupState: error });
+  if (race.outcome === 'no-popup') {
+    throw new Error(`the mint reported an error before the sign popup opened: ${(await error.textContent())?.trim()}`);
+  }
+  return race.page;
 }
 
 // App-specific: the six cube-side inputs of the mint form.
@@ -233,7 +281,7 @@ export async function openMintCheckout(page: Page, timeoutMs = 60_000): Promise<
 export async function fillCubeSides(page: Page, ids: readonly string[]): Promise<void> {
   const readAll = () =>
     Promise.all(ids.map((_, i) =>
-      page.locator(`[data-testid="cube-side-${i + 1}"]`).inputValue().catch(() => '')));
+      page.locator(`[data-testid="cube-side-${i + 1}"]`).inputValue()));
 
   /**
    * Report only if a side at or before `typedUpTo` lost its typed value; the
@@ -292,8 +340,7 @@ export async function fillCubeSides(page: Page, ids: readonly string[]): Promise
     const before = nodesBefore[i];
     if (!before) return null;
     return page.locator(`[data-testid="cube-side-${i + 1}"]`)
-      .evaluate((el, prev) => el === prev, before)
-      .catch(() => null);
+      .evaluate((el, prev) => el === prev, before);
   };
 
   const openedAt = detailsOpenedAt.get(page);
@@ -330,51 +377,6 @@ export async function fillCubeSides(page: Page, ids: readonly string[]): Promise
     }
   }
   throw new Error(`side inputs did not hold the typed ids after 3 attempts: ${JSON.stringify(await readAll())}`);
-}
-
-// local: no SDK counterpart; installContextErrorGuard reports errors without the failed requests behind them.
-/**
- * Record every request the browser failed to complete, so a bare
- * `Uncaught (in promise) TypeError: Failed to fetch` can be attributed.
- *
- * A `pageerror` from a rejected fetch carries no URL, which makes the most
- * common browser error in this suite undiagnosable: twice now a lane has died
- * on exactly that line while the dev server logged `read ECONNRESET` beside it
- * (alby on `95aa368`, watchonly on `7c4e119`), and there was no way to tell
- * from the failure whether the fetch was the app talking to its own dev server
- * or to a real upstream.
- *
- * This deliberately does NOT widen what the specs tolerate. The returned
- * reader is meant to be appended to a message that is already being thrown, so
- * a failing gate says WHICH requests failed, and nothing that passes today
- * starts failing. Deciding that some of these are harness noise is a separate
- * decision, and it needs this evidence first.
- */
-export function trackRequestFailures(page: Page): () => string[] {
-  const failures: string[] = [];
-  page.on('requestfailed', (r) => {
-    failures.push(`${r.failure()?.errorText ?? 'failed'} ${r.method()} ${r.url()}`);
-  });
-  return () => failures.length
-    ? ['', 'requests that failed in this page (context for any "Failed to fetch" above):', ...failures.map((f) => `  - ${f}`)]
-    : [];
-}
-
-// local: no SDK counterpart; appends trackRequestFailures' list to the SDK guard's failure, which it cannot carry itself.
-/**
- * `installContextErrorGuard(...).assertClean()`, with the page's failed
- * requests added to the message when it throws. Rethrows every time it
- * catches: the request list is context for the error, never a reason to drop it.
- */
-export function assertBrowserClean(
-  guard: { assertClean: () => void },
-  requestFailures: () => string[],
-): void {
-  try {
-    guard.assertClean();
-  } catch (e) {
-    throw new Error([(e as Error).message, ...requestFailures()].join('\n'));
-  }
 }
 
 // App-specific: bridges the app's mainnet renderer id to the regtest one.

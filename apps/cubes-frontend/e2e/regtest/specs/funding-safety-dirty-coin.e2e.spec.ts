@@ -11,14 +11,20 @@
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import { base64 } from '@scure/base';
-import { HDKey } from '@scure/bip32';
-import * as btc from '@scure/btc-signer';
 import { randomBytes } from '@noble/hashes/utils';
 
-import { fillCubeSides, expectedRegtestCubeHtml, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
+import {
+  connectWatchOnly,
+  CUBES_URL,
+  expectMintSuccess,
+  fillCubeSides,
+  expectedRegtestCubeHtml,
+  openDetails,
+  RENDERABLE_SIDE_IDS,
+} from '../regtest-helpers';
 import {
   clickUntilEffect,
+  makeWatchOnlyTestAccount,
   seedDirtyCoin,
   assertDirtyCoinIsBestFit,
   type DirtyCoinAsset,
@@ -68,10 +74,6 @@ import { simulateInscribeFees, prepareInscribeFundingInput, changeDustFloor, Net
  * asset class. Recorded in the commit that added this file.
  */
 
-const REGTEST = { bech32: 'bcrt', pubKeyHash: 0x6f, scriptHash: 0xc4, wif: 0xef };
-const TESTNET_VERSIONS = { private: 0x04358394, public: 0x043587cf };
-const ACCOUNT_PATH = "m/86'/1'/0'";
-const APP_URL = 'http://localhost:4203/';
 const CUBE_SIDE_IDS = RENDERABLE_SIDE_IDS;
 
 /**
@@ -132,16 +134,13 @@ for (const asset of ASSETS) {
   // `--grep "<matrix value>"`, so a title that does not contain it is a spec
   // that only ever runs on someone's laptop.
   test(`funding-safety: a coin carrying ${asset} is never spent to fund a mint`, async () => {
-    test.setTimeout(360_000);
-
     // A fresh account per asset: no leftover coin from a previous case can
     // stand in for the clean one, and no previous dirty coin can be the thing
     // that survives.
-    const master = HDKey.fromMasterSeed(randomBytes(32), TESTNET_VERSIONS);
-    const account = master.derive(ACCOUNT_PATH);
-    const accountTpub = account.publicExtendedKey;
-    const leaf = account.derive('m/0/0');
-    const address = btc.p2tr(leaf.publicKey!.slice(1, 33), undefined, REGTEST).address!;
+    const account = makeWatchOnlyTestAccount({ seed: randomBytes(32) });
+    const address = account.addressAt(0);
+    /** The untweaked x-only key of that address, the key a taproot input carries. */
+    const internalKey = account.p2trAt(0).tapInternalKey;
 
     // The clean coin first, so the wallet is fundable on its own merits.
     await fundCommonSats(address, CLEAN_BTC);
@@ -180,14 +179,14 @@ for (const asset of ASSETS) {
       contentType: 'text/html;charset=utf-8',
       fundingInput: prepareInscribeFundingInput({
         utxo: { txid: dirty.txid, vout: dirty.vout, value: dirty.value, status: { confirmed: true } },
-        paymentPublicKey: leaf.publicKey!,
+        paymentPublicKey: internalKey,
         paymentAddress: address,
         isSimulation: true,
         network: Network.Regtest,
       } as never),
       senderChangeAddress: address,
       recipientAddress: address,
-      ephemeralPubkeyXonly: leaf.publicKey!.slice(1, 33),
+      ephemeralPubkeyXonly: internalKey,
       network: 'regtest',
       tip: { address: TIP_ADDRESS, value: TIP_SATS },
     } as never);
@@ -215,39 +214,17 @@ for (const asset of ASSETS) {
     const page: Page = await context.newPage();
 
     // ─── connect watch-only ──────────────────────────────────────
-    await page.goto(APP_URL);
-    await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
-    await page.locator('[data-testid="wallet-connect-btn"]').click();
-    await expect(page.locator('[data-testid="wallet-picker-list"]')).toBeVisible({ timeout: 10_000 });
-    await page.locator('[data-testid="wallet-connect-xpub"]').click();
-    await expect(page.locator('[data-testid="wallet-xpub-form"]')).toBeVisible();
-    await page.locator('[data-testid="wallet-xpub-input"]').fill(accountTpub);
-    // A bare tpub does not say which script type it is for, so the app asks
-    // after the first attempt. Same two-step a reader walks.
-    await page.locator('[data-testid="wallet-xpub-connect"]').click();
-    const scriptType = page.locator('[data-testid="wallet-xpub-script-type"]');
-    await scriptType.waitFor({ state: 'visible', timeout: 15_000 });
-    await scriptType.selectOption('p2tr');
-    // Confirm the selection STUCK. A selection that silently does not take
-    // derives a different script type, and the failure then surfaces much
-    // later as an address with no funds rather than as a wrong choice here.
-    await expect(scriptType).toHaveValue('p2tr');
-    await page.locator('[data-testid="wallet-xpub-connect"]').click();
-
-    const xpubError = page.locator('[data-testid="wallet-xpub-error"]');
-    await xpubError.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
-    if (await xpubError.isVisible()) {
-      throw new Error(`the app rejected the pasted xpub: ${(await xpubError.textContent())?.trim()}`);
-    }
-    await expect(page.locator('[data-testid="wallet-connected-address"]')).toBeVisible({ timeout: 30_000 });
+    await page.goto(CUBES_URL);
+    await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
+    await connectWatchOnly(page, account.accountExtendedPublicKey);
 
     // ─── fill the form and mint ──────────────────────────────────
     await page.reload();
-    await expect(page.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-testid="page-title"]')).toBeVisible();
     await openDetails(page, 'configurator-advanced');
     await fillCubeSides(page, CUBE_SIDE_IDS);
 
-    await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+    await expect(page.locator('[data-testid="mint-cta"]')).toBeEnabled();
     // `mint-btn` lives inside the drawer this click opens, so it IS an
     // appears-once effect and the guard fits. Left plain at first on the
     // reasoning that the next assertion might already be satisfied; it is
@@ -260,23 +237,15 @@ for (const asset of ASSETS) {
     );
 
     const mintBtn = page.locator('[data-testid="mint-btn"]');
-    await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+    await expect(mintBtn).toBeEnabled();
     await mintBtn.click();
 
     const unsignedBox = page.locator('[data-testid="watch-only-unsigned-psbt"]');
-    await expect(unsignedBox).toBeVisible({ timeout: 60_000 });
+    await expect(unsignedBox).toBeVisible();
     const unsignedPsbt = (await unsignedBox.inputValue()).trim();
 
-    const offline = btc.Transaction.fromPSBT(base64.decode(unsignedPsbt));
-    offline.signIdx(leaf.privateKey!, 0);
-    await page.locator('[data-testid="watch-only-signed-psbt"]').fill(base64.encode(offline.toPSBT()));
+    await page.locator('[data-testid="watch-only-signed-psbt"]').fill(account.signExportedPsbt(unsignedPsbt));
     await page.locator('[data-testid="watch-only-submit"]').click();
-
-    const mintError = page.locator('[data-testid="mint-error-message"]');
-    await mintError.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => undefined);
-    if (await mintError.isVisible()) {
-      throw new Error(`the mint failed: ${(await mintError.textContent())?.trim()}`);
-    }
 
     // The SAFE state, photographed once: a clean coin covers, so the guard
     // auto-picks it and says nothing at all. The quiet default is a state worth
@@ -290,7 +259,7 @@ for (const asset of ASSETS) {
       });
     }
 
-    await expect(page.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
+    await expectMintSuccess(page);
     const commitTxId = (await page.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
     expect(commitTxId).toMatch(/^[0-9a-f]{64}$/);
 
@@ -309,8 +278,8 @@ for (const asset of ASSETS) {
 
     // The asset still sits where it was seeded, read back off the chain rather
     // than inferred from the input list.
-    const stillThere = await waitForUtxoAt(address, DIRTY_SATS).catch(() => undefined);
-    expect(stillThere, `the ${asset} coin no longer exists at ${address}`).toBeTruthy();
+    const unspent = (await getUtxos(address)).map((u) => `${u.txid}:${u.vout}`);
+    expect(unspent, `the ${asset} coin no longer exists at ${address}`).toContain(dirty.outpoint);
 
     errorGuard.assertClean();
     await context.close();

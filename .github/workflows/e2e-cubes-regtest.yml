@@ -60,7 +60,7 @@ jobs:
       matrix:
         wallet:
           # Adding a wallet: create
-          # `apps/cubes-frontend/e2e/regtest/specs/<name>-cube-mint-roundtrip.spec.ts`
+          # `apps/cubes-frontend/e2e/regtest/specs/<name>-cube-mint-roundtrip.e2e.spec.ts`
           # + add it here + add a matching Cache/Download step in
           # the .crx block below.
           #

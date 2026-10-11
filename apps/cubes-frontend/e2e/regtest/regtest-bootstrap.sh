@@ -29,16 +29,14 @@ export ORDPOOL_SRC="${ORDPOOL_SRC:-$(cd "$HERE/../../../../.." && pwd)/ordpool}"
 # Provide an empty dir in the docker/backend build context so the COPY resolves.
 mkdir -p "$ORDPOOL_SRC/docker/backend/GeoIP" 2>/dev/null || true
 
-# `-p` is load-bearing, not cosmetic. The compose file sets no project name, so
-# the project defaults to the directory it lives in, which is `e2e` for EVERY
-# consumer of the SDK's stack. Two repos bringing it up on one daemon then share
-# a project: compose treats the other's running containers as its own services
-# and will recreate or remove them, and the named volumes resolve to the same
-# `e2e_*` for both, so even a differently-prefixed stack shares its index.
-# E2E_PREFIX does not help; it only renames containers. Measured the hard way on
-# 2026-09-14, when another session's isolated-looking stack deleted this one's
-# chain. Pinning the project makes the isolation real.
-COMPOSE="docker compose -p cubes-e2e -f $HERE/../../node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml"
+# `-p` is load-bearing, not cosmetic. Without it the project defaults to the
+# directory the compose file lives in, which is `e2e` for EVERY consumer of the
+# SDK's stack: two repos on one daemon then share a project, compose recreates or
+# removes the other's containers, and the named volumes resolve to the same
+# `e2e_*`, so even a differently-prefixed stack shares its index. Naming the
+# project after E2E_PREFIX makes the isolation real: a stack with another prefix
+# shares no container and no volume with this one.
+COMPOSE="docker compose -p ${E2E_PREFIX} -f $HERE/../../node_modules/ordpool-sdk/e2e/docker-compose.regtest.yml"
 RPC="docker exec ${E2E_PREFIX}-bitcoind bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool"
 
 # --- bring containers up if not already running ---
@@ -98,10 +96,10 @@ fi
 # A descriptor wallet (the only kind Bitcoin Core 29+ can create — the
 # legacy/BDB backend was removed). It owns the mined coinbases the SDK
 # specs spend from; it does NOT hold the funder signing key below.
-$RPC -named createwallet wallet_name=cubes-e2e load_on_startup=true >/dev/null 2>&1 || \
-  $RPC loadwallet cubes-e2e >/dev/null 2>&1 || true
+$RPC -named createwallet wallet_name="${E2E_PREFIX}" load_on_startup=true >/dev/null 2>&1 || \
+  $RPC loadwallet "${E2E_PREFIX}" >/dev/null 2>&1 || true
 
-MINING_ADDR=$($RPC -rpcwallet=cubes-e2e getnewaddress)
+MINING_ADDR=$($RPC -rpcwallet="${E2E_PREFIX}" getnewaddress)
 
 # --- funder keypair the SDK specs sign with ---
 # Supplied as a fixed regtest keypair instead of dumped from bitcoind:
@@ -116,7 +114,7 @@ WIF="cNvr6PMcpe862cZuaxP4kqMDodEUxLXSW7DGxW6c7PiYTZ5sWQcK"
 TIP=$($RPC getblockcount)
 if [ "$TIP" -lt 101 ]; then
   NEEDED=$((101 - TIP))
-  $RPC -rpcwallet=cubes-e2e generatetoaddress "$NEEDED" "$MINING_ADDR" >/dev/null
+  $RPC -rpcwallet="${E2E_PREFIX}" generatetoaddress "$NEEDED" "$MINING_ADDR" >/dev/null
 fi
 
 # --- wait for electrs to catch up to bitcoind's tip ---
@@ -143,7 +141,7 @@ done
 "$HERE/inscribe-fixtures.sh" >&2
 
 # --- emit the credentials as JSON ---
-BALANCE=$($RPC -rpcwallet=cubes-e2e getbalance)
+BALANCE=$($RPC -rpcwallet="${E2E_PREFIX}" getbalance)
 jq -n \
   --arg address "$ADDR" \
   --arg wif "$WIF" \

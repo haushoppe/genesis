@@ -13,8 +13,10 @@ import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
-import { openWalletPopover, fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
+import { CUBES_URL, readWalletPopoverAddress, fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 import {
+  approvalGate,
+  clickApprovalAndRequireClose,
   clickUntilEffect,
   closeLeftoverExtensionPages,
   onboardLeather,
@@ -30,7 +32,6 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/leather');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
-const CUBES_URL = 'http://localhost:4203/';
 
 /** Same 0.002 BTC budget as the other cubes specs — covers commit +
  *  reveal fees + postage + tip at 5 sat/vB. */
@@ -89,7 +90,7 @@ test.beforeAll(async () => {
     ],
   });
   let [worker] = context.serviceWorkers();
-  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];
 
   const primer = await context.newPage();
@@ -125,8 +126,6 @@ test.afterAll(async () => {
  * inscription is on screen, and photographs them together.
  */
 test('funding-notice: a separate-address wallet is told what the coin carries and may proceed', async () => {
-  test.setTimeout(300_000);
-
   // Fails the test on any console.error or uncaught exception from an app page
   // this context opens from here on; wallet extension pages are skipped by design.
   const errorGuard = installContextErrorGuard(context);
@@ -143,7 +142,7 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
@@ -152,7 +151,7 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
 
   // so it must not wait for a drawer that cannot appear yet.
 
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled();
 
   // `mint-cta` is bound to funding state that settles after first paint, so
   // it can re-render between the locator resolving and the event landing.
@@ -163,28 +162,23 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
     cubes.locator('[data-testid="wallet-picker-detected"]'),
     { label: 'mint-cta -> wallet-picker-detected' },
   );
-  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const knownPagesBeforeConnect = new Set(context.pages());
   await cubes.locator('[data-testid="wallet-connect-leather"]').click();
 
+  const approveButton = (p: Page) => p.getByTestId('get-addresses-approve-button');
   const connectPopup = await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeConnect,
-    timeoutMs: 60_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByTestId('get-addresses-approve-button').waitFor({ state: 'visible', timeout: 60_000 });
-      return true;
-    },
+    isApproval: approvalGate({ url: /^chrome-extension:\/\//, control: approveButton }),
   });
-  await connectPopup.getByTestId('get-addresses-approve-button').click();
-  await connectPopup.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
+  // Leather closes the popup once it accepts the approval, so the close is the
+  // proof the click landed.
+  await clickApprovalAndRequireClose(approveButton(connectPopup), connectPopup, { label: 'Leather connect popup' });
   await cubes.bringToFront();
-  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
 
-  await openWalletPopover(cubes);
-  const paymentAddr = ((await cubes.locator('[data-testid="wallet-popover-payment-address"]').getAttribute('title')) ?? '').trim();
-  const ordinalsAddr = ((await cubes.locator('[data-testid="wallet-popover-ordinals-address"]').getAttribute('title')) ?? '').trim();
+  const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
+  const ordinalsAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-ordinals-address');
   // The premise of this spec, asserted rather than assumed: if these ever
   // collapsed to one address the wallet would be the blocking topology and this
   // spec would be testing the other case while still looking like this one.
@@ -212,10 +206,10 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
   ).toEqual([`${dirty.txid}:${dirty.vout}`]);
 
   await cubes.reload({ waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled();
   // The notice renders inside the drawer this click opens, so it is an
   // appears-once effect and the swallow guard fits.
   await clickUntilEffect(
@@ -226,7 +220,7 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
 
   // INFORMED, not blocked.
   const notice = cubes.locator('[data-testid="mint-asset-notice"]');
-  await expect(notice).toBeVisible({ timeout: 60_000 });
+  await expect(notice).toBeVisible();
   await expect(cubes.locator('[data-testid="mint-expert-required"]')).toHaveCount(0);
   await expect(cubes.locator('[data-testid="mint-btn"]')).toBeEnabled();
 

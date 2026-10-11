@@ -16,21 +16,25 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
+  CUBES_URL,
+  expectMintSuccess,
   expectTipPaid,
   readWalletPopoverAddress,
   fillCubeSides,
-  trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
+  openMintCheckout,
   RENDERABLE_SIDE_IDS,
-  assertBrowserClean,
+  signPopupOrMintError,
 } from '../regtest-helpers';
 import {
+  approvalGate,
   clickApprovalAndRequireClose,
   clickUntilEffect,
   closeLeftoverExtensionPages,
   onboardLeather,
+  raceApprovalPopup,
   waitForApprovalPopup,
   waitForElectrsSync,
   fundCommonSats,
@@ -62,13 +66,11 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
  *     HRP-independent; the wallet's mainnet-derived key signs bytes
  *     that verify against the equivalent bcrt scriptPubKey).
  *
- * Same runtime tricks apply as cat21-wallet's spec:
+ * Same runtime facts as cat21-wallet's spec:
  *   - `get-addresses-approve-button` testid (shared Leather DOM).
- *   - Wait for popup's own close after approve (both wallets sometimes
- *     need a brief post-approve delay before addresses dispatch).
- *   - Sign click uses `{ noWaitAfter: true }` — cheap insurance
- *     against a self-close race even if Leather doesn't strictly
- *     need it.
+ *   - Leather closes each approval popup itself once it accepts the click,
+ *     so every approval requires that close rather than closing the popup
+ *     from the test, which would cut the address dispatch short.
  *
  * If mint-success + on-chain byte-for-byte HTML check both pass,
  * we've proved: user clicked → Leather signed a regtest PSBT with
@@ -78,7 +80,6 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/leather');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
-const CUBES_URL = 'http://localhost:4203/';
 
 /** Same 0.002 BTC budget as the other cubes specs — covers commit +
  *  reveal fees + postage + tip at 5 sat/vB. */
@@ -97,6 +98,16 @@ async function shot(p: Page, name: string): Promise<void> {
     path: path.resolve(RESULTS_DIR, `leather-cube-mint-${name}.png`),
     fullPage: true,
   }).catch(() => undefined);
+}
+
+const leatherApproveButton = (p: Page) => p.getByTestId('get-addresses-approve-button');
+const leatherConnectApproval = approvalGate({ url: /^chrome-extension:\/\//, control: leatherApproveButton });
+
+// local: Leather's connect approval; ordpool-sdk/e2e has no Leather approval helper.
+/** Approve the address request and require the popup to close. */
+async function approveLeatherConnect(approval: Page): Promise<void> {
+  await shot(approval, '03a-connect-popup');
+  await clickApprovalAndRequireClose(leatherApproveButton(approval), approval, { label: 'Leather connect popup' });
 }
 
 test.beforeAll(async () => {
@@ -128,7 +139,7 @@ test.beforeAll(async () => {
     ],
   });
   let [worker] = context.serviceWorkers();
-  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];
 
   const primer = await context.newPage();
@@ -142,13 +153,10 @@ test.afterAll(async () => {
 });
 
 test('mint a cube via Leather: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
-  test.setTimeout(360_000);
-
   // Fails the test on any console.error or uncaught exception from an app page
   // this context opens from here on; wallet extension pages are skipped by design.
   const errorGuard = installContextErrorGuard(context);
   const cubes = await context.newPage();
-  const requestFailures = trackRequestFailures(cubes);
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -164,17 +172,15 @@ test('mint a cube via Leather: fill form → sign in wallet → broadcast → or
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await shot(cubes, '02a-form-filled');
 
   // Pre-connect: this click opens the WALLET PICKER, not the checkout drawer,
-
   // so it must not wait for a drawer that cannot appear yet.
-
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled();
 
   // `mint-cta` is bound to funding state that settles after first paint, so
   // it can re-render between the locator resolving and the event landing.
@@ -185,34 +191,21 @@ test('mint a cube via Leather: fill form → sign in wallet → broadcast → or
     cubes.locator('[data-testid="wallet-picker-detected"]'),
     { label: 'mint-cta -> wallet-picker-detected' },
   );
-  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-leather"]');
-  await expect(connectLink).toBeVisible({ timeout: 10_000 });
+  await expect(connectLink).toBeVisible();
   await shot(cubes, '02b-wallet-picker-open');
 
   const knownPagesBeforeConnect = new Set(context.pages());
   await connectLink.click();
 
-  const connectPopup = await waitForApprovalPopup({
+  await approveLeatherConnect(await waitForApprovalPopup({
     context,
     knownPages: knownPagesBeforeConnect,
-    timeoutMs: 60_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByTestId('get-addresses-approve-button')
-        .waitFor({ state: 'visible', timeout: 60_000 });
-      return true;
-    },
-  });
-  await shot(connectPopup, '03a-connect-popup');
-  await connectPopup.getByTestId('get-addresses-approve-button').click();
-  // Same reasoning as cat21-wallet: wait for the popup's own close
-  // rather than force-closing after approve. Leather's dispatch is
-  // fast but the pattern is idempotent and cheap.
-  await connectPopup.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
+    isApproval: leatherConnectApproval,
+  }));
   await cubes.bringToFront();
 
-  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
 
   const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   // The shim's whole point: Leather returns mainnet at the connector,
@@ -223,45 +216,28 @@ test('mint a cube via Leather: fill form → sign in wallet → broadcast → or
 
   await fundCommonSats(paymentAddr, FUND_AMOUNT_BTC);
 
+  const knownPagesBeforeReconnect = new Set(context.pages());
   await cubes.reload({ waitUntil: 'domcontentloaded' });
 
-  const knownPagesBeforeReconnect = new Set(context.pages());
-  const reapprovePromise = waitForApprovalPopup({
+  // Leather may ask to approve the addresses again after the reload, or
+  // reconnect silently. Post-reload the mint drawer is closed, so the
+  // always-visible header button is the reconnected state, and it exists
+  // only once the reconnect resolved: the state that means no popup is coming.
+  const reconnect = await raceApprovalPopup({
     context,
     knownPages: knownPagesBeforeReconnect,
-    timeoutMs: 15_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByTestId('get-addresses-approve-button')
-        .waitFor({ state: 'visible', timeout: 15_000 });
-      return true;
-    },
-  }).catch(() => null);
-  const reapprove = await reapprovePromise;
-  if (reapprove) {
-    await reapprove.getByTestId('get-addresses-approve-button').click();
-    await reapprove.waitForEvent('close', { timeout: 30_000 }).catch(() => undefined);
-  }
+    isApproval: leatherConnectApproval,
+    noPopupState: cubes.locator('[data-testid="wallet-connected-btn"]'),
+  });
+  if (reconnect.outcome === 'popup') await approveLeatherConnect(reconnect.page);
   await cubes.bringToFront();
-  // Post-reload the mint drawer is closed; use the always-visible
-  // header button as the reconnected gate (same fix as cat21-wallet).
-  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 45_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
-  // `mint-cta` is bound to funding state that settles after first paint, so
-  // it can re-render between the locator resolving and the event landing.
-  // Measured on the alby lane: swallowed in 3 of 6 observations, surfacing
-  // as this effect simply never appearing.
-  await clickUntilEffect(
-    cubes.locator('[data-testid="mint-cta"]'),
-    cubes.locator('[data-testid="mint-checkout"]'),
-    { label: 'mint-cta -> mint-checkout' },
-  );
-  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
+  await openMintCheckout(cubes);
   await openDetails(cubes, 'mint-advanced');
-  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible();
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-drawer-open');
 
@@ -284,42 +260,25 @@ test('mint a cube via Leather: fill form → sign in wallet → broadcast → or
   expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(mintBtn).toBeEnabled();
 
   await closeLeftoverExtensionPages(context, [cubes]);
   const knownPagesBeforeSign = new Set(context.pages());
   await mintBtn.click();
 
-  const errLocator = cubes.locator('[data-testid="mint-error-message"]');
-  await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
-  if (await errLocator.isVisible()) {
-    const postMintErr = (await errLocator.textContent())?.trim() ?? '';
-    if (postMintErr && !postMintErr.includes('cancel')) {
-      throw new Error(`orchestrator.mint() reported an error before the sign popup opened: ${postMintErr}`);
-    }
-  }
-
-  const signPopup = await waitForApprovalPopup({
+  const signButton = (p: Page) => p.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
+  const signPopup = await signPopupOrMintError(cubes, {
     context,
     knownPages: knownPagesBeforeSign,
-    timeoutMs: 120_000,
-    isApproval: async (p) => {
-      if (!p.url().startsWith('chrome-extension://')) return false;
-      await p.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first()
-        .waitFor({ state: 'visible', timeout: 60_000 });
-      return true;
-    },
+    isApproval: approvalGate({ url: /^chrome-extension:\/\//, control: signButton }),
   });
   await shot(signPopup, '05a-sign-popup');
-  const signBtn = signPopup.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
-  await expect(signBtn).toBeVisible({ timeout: 10_000 });
   // Tolerates the popup closing under the click (an accepted approval), then
   // requires it to close; never re-clicks, a second click is a second signature.
-  await clickApprovalAndRequireClose(signBtn, signPopup, { label: 'leather sign' });
+  await clickApprovalAndRequireClose(signButton(signPopup), signPopup, { label: 'leather sign' });
   console.log('[leather-mint] sign approved; waiting for mint-success');
 
-  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
-  await expect(cubes.locator('[data-testid="mint-btn"]')).toHaveAttribute('aria-busy', 'false');
+  await expectMintSuccess(cubes);
   await shot(cubes, '06-success');
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
@@ -351,5 +310,5 @@ test('mint a cube via Leather: fill form → sign in wallet → broadcast → or
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  assertBrowserClean(errorGuard, requestFailures);
+  errorGuard.assertClean();
 });

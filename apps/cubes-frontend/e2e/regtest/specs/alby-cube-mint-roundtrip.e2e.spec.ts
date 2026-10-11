@@ -15,15 +15,15 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 
 import {
+  CUBES_URL,
+  expectMintSuccess,
   expectTipPaid,
   readWalletPopoverAddress,
   fillCubeSides,
-  trackRequestFailures,
   expectedRegtestCubeHtml,
   parseRegtestCube,
   openDetails,
   RENDERABLE_SIDE_IDS,
-  assertBrowserClean,
 } from '../regtest-helpers';
 import {
   clickUntilEffect,
@@ -65,7 +65,6 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/alby');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
-const CUBES_URL = 'http://localhost:4203/';
 
 /** Pinned per SDK spec — Alby v3.14.2's m/86'/1'/0'/0/0 for the
  *  abandon×11+about seed under `bitcoinNetwork:'regtest'`. Value
@@ -117,7 +116,7 @@ test.beforeAll(async () => {
     ],
   });
   let [worker] = context.serviceWorkers();
-  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
+  if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];
 
   // seedPage: extension-origin page kept alive for SW-message fires.
@@ -135,11 +134,17 @@ test.beforeAll(async () => {
     } catch { /* ignore */ }
   });
   await seedPage.goto(`chrome-extension://${extensionId}/options.html`, { waitUntil: 'domcontentloaded' });
-  // Let the SW finish its init state machine before we start firing messages.
-  await seedPage.waitForFunction(() => true, undefined, { timeout: 2_000 }).catch(() => undefined);
+  // seedAlbyAccount talks to the extension over `chrome.runtime.sendMessage`,
+  // so wait for that to exist rather than for a duration.
+  await seedPage.waitForFunction(
+    () => typeof (globalThis as { chrome?: { runtime?: { sendMessage?: unknown } } })
+      .chrome?.runtime?.sendMessage === 'function',
+    undefined,
+    { polling: 100 },
+  );
 
   await seedAlbyAccount(seedPage);
-  await shot(seedPage, '00-after-seed').catch(() => undefined);
+  await shot(seedPage, '00-after-seed');
   // Seeding done — signing goes through the in-page provider + real popup.
   await seedPage.close();
 });
@@ -149,8 +154,6 @@ test.afterAll(async () => {
 });
 
 test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadcast → ord indexes the HTML byte-for-byte', async () => {
-  test.setTimeout(360_000);
-
   // Fails the test on any console.error or uncaught exception from an app page
   // this context opens from here on; wallet extension pages are skipped by design.
   const errorGuard = installContextErrorGuard(context);
@@ -159,8 +162,6 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   // Auto-approve every Alby popup (enable permission + the REAL
   // ConfirmSignPsbt at mint time) with the shared state-based handler.
   installAlbyAutoApprove(context);
-
-  const requestFailures = trackRequestFailures(cubes);
 
   await cubes.route('**/api/v1/fees/recommended', async (route) => {
     await route.fulfill({
@@ -176,17 +177,15 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   });
 
   await cubes.goto(CUBES_URL, { waitUntil: 'domcontentloaded' });
-  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible({ timeout: 15_000 });
+  await expect(cubes.locator('[data-testid="page-title"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
   await shot(cubes, '02a-form-filled');
 
   // Pre-connect: this click opens the WALLET PICKER, not the checkout drawer,
-
   // so it must not wait for a drawer that cannot appear yet.
-
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled();
 
   // HYPOTHESIS UNDER TEST: this click is being swallowed. `mint-cta` is bound
   // to funding state that settles after first paint, so it can re-render
@@ -201,15 +200,14 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   );
   console.log(`[alby-mint] mint-cta took ${ctaClick.clicks} click(s) to open the picker`);
 
-  await expect(cubes.locator('[data-testid="wallet-picker-detected"]')).toBeVisible({ timeout: 10_000 });
   const connectLink = cubes.locator('[data-testid="wallet-connect-alby"]');
-  await expect(connectLink).toBeVisible({ timeout: 10_000 });
+  await expect(connectLink).toBeVisible();
   await shot(cubes, '02b-wallet-picker-open');
   await connectLink.click();
   // alby.enable() + webbtc.getAddress() may open a permission popup.
   // Auto-clicker (installed above) handles it.
 
-  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible({ timeout: 60_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
 
   const paymentAddr = await readWalletPopoverAddress(cubes, 'wallet-popover-payment-address');
   // Alby is Taproot-only on regtest — bcrt1p prefix, and specifically
@@ -223,11 +221,11 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   await cubes.reload({ waitUntil: 'domcontentloaded' });
 
   await cubes.bringToFront();
-  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible({ timeout: 60_000 });
+  await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible();
 
   await openDetails(cubes, 'configurator-advanced');
   await fillCubeSides(cubes, CUBE_SIDE_IDS);
-  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled({ timeout: 60_000 });
+  await expect(cubes.locator('[data-testid="mint-cta"]')).toBeEnabled();
   // Same control, same swallow: measured at 2 clicks on the pre-connect one,
   // and this post-connect click failed at `mint-checkout` in the same run that
   // proved it. Both clicks on `mint-cta` go through the guard.
@@ -237,9 +235,8 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
     { label: 'mint-cta -> checkout drawer' },
   );
   console.log(`[alby-mint] mint-cta took ${drawerClick.clicks} click(s) to open the drawer`);
-  await expect(cubes.locator('[data-testid="mint-checkout"]')).toBeVisible({ timeout: 10_000 });
   await openDetails(cubes, 'mint-advanced');
-  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible({ timeout: 30_000 });
+  await expect(cubes.locator('[data-testid="cube-fee-rate"]')).toBeVisible();
   await cubes.locator('[data-testid="cube-fee-rate"]').fill('5');
   await shot(cubes, '04-drawer-open');
 
@@ -262,23 +259,13 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
   expect(expectedCubeHtml).toContain('cubes.haushoppe.art');
 
   const mintBtn = cubes.locator('[data-testid="mint-btn"]');
-  await expect(mintBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(mintBtn).toBeEnabled();
   await mintBtn.click();
   // Sign step: cubes' orchestrator calls the SDK Alby signer →
   // alby.webbtc.signPsbt(hex) → Alby's REAL ConfirmSignPsbt popup →
   // auto-approved state-based → wire-tx hex returned → cubes broadcasts.
 
-  const errLocator = cubes.locator('[data-testid="mint-error-message"]');
-  await errLocator.waitFor({ state: 'visible', timeout: 3_000 }).catch(() => undefined);
-  if (await errLocator.isVisible()) {
-    const postMintErr = (await errLocator.textContent())?.trim() ?? '';
-    if (postMintErr && !postMintErr.includes('cancel')) {
-      throw new Error(`orchestrator.mint() reported an error: ${postMintErr}`);
-    }
-  }
-
-  await expect(cubes.locator('[data-testid="mint-success"]')).toBeVisible({ timeout: 120_000 });
-  await expect(cubes.locator('[data-testid="mint-btn"]')).toHaveAttribute('aria-busy', 'false');
+  await expectMintSuccess(cubes);
   await shot(cubes, '06-success');
 
   const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
@@ -310,5 +297,5 @@ test('mint a cube via Alby: fill form → sign in the REAL Alby popup → broadc
     .map((t) => t.value);
   expect(parsedSides).toEqual(CUBE_SIDE_IDS);
 
-  assertBrowserClean(errorGuard, requestFailures);
+  errorGuard.assertClean();
 });

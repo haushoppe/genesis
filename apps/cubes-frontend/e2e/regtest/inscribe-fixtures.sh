@@ -50,9 +50,14 @@ wait_for_ord_sync
 # file would be pure waste. Idempotence is decided by the CHAIN, not by the
 # file existing: after a `down -v` the ids in it are dead and every one 404s,
 # which is exactly the state that produced a red lane with a green bootstrap.
+# The placeholder scripts/ensure-regtest-inscriptions.mjs writes carries no
+# inscription id at all, so a file with none is never "alive".
 if [ -f "$OUT" ]; then
-  alive=1
-  for id in $(grep -oE "'[0-9a-f]{64}i[0-9]+'" "$OUT" | tr -d "'"); do
+  # grep exits 1 on no match, which is the placeholder's answer, not a failure.
+  ids="$(grep -oE "'[0-9a-f]{64}i[0-9]+'" "$OUT" | tr -d "'" || true)"
+  alive=0
+  [ -n "$ids" ] && alive=1
+  for id in $ids; do
     [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${ORD_PORT}/content/$id")" = "200" ] || { alive=0; break; }
   done
   if [ "$alive" = "1" ]; then

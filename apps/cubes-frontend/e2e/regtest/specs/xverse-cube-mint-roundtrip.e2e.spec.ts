@@ -11,7 +11,7 @@
  *         the tip exactly once; any console.error or uncaught exception on an app page fails
  *         it; the fee tiers and the found-funds breakdown render
  */
-import { test, expect, chromium, BrowserContext, Locator, Page } from '@playwright/test';
+import { test, expect, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
@@ -36,9 +36,11 @@ import {
   clickApprovalAndRequireClose,
   clickUntilEffect,
   closeLeftoverExtensionPages,
+  approveXverseConnect,
+  approveXverseSignPopup,
   installXverseOfflineRoutes,
+  unlockXverse,
   raceApprovalPopup,
-  waitForApprovalPopup,
   waitForElectrsSync,
   fundCommonSats,
   waitForTxConfirmed,
@@ -47,6 +49,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   installContextErrorGuard,
+  launchWalletContext,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
@@ -91,7 +94,6 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
 
 const EXT_PATH = path.resolve(__dirname, '../extensions/xverse');
 const RESULTS_DIR = path.resolve(__dirname, '../../../test-results-regtest');
-const TEST_PASSWORD = 'TestPassword123!';
 
 /**
  * ~200k sats, comfortably covers postage (546) + reveal fee + tip
@@ -116,23 +118,6 @@ async function shot(p: Page, name: string): Promise<void> {
 /** Xverse's address request: a Connect button on an extension page. */
 const xverseConnectButton = (p: Page) => p.getByRole('button', { name: /^connect$/i }).first();
 const xverseConnectApproval = approvalGate({ url: /^chrome-extension:\/\//, control: xverseConnectButton });
-
-// local: Xverse's address-request approval; ordpool-sdk/e2e has no Xverse approval helper.
-/**
- * Approve an Xverse address request. Xverse keeps the popup open after the
- * approval, so the click's effect is the app state `connected`, and the popup
- * is closed only after it: leaving it open pollutes the extension page list,
- * and Xverse may reuse it for the sign popup, hiding it behind the knownPages
- * filter later in the flow.
- */
-async function approveXverseConnect(popup: Page, connected: Locator): Promise<void> {
-  await shot(popup, '03a-xverse-popup');
-  const connect = xverseConnectButton(popup);
-  await expect(connect).toBeEnabled();
-  await connect.click();
-  await expect(connected).toBeVisible();
-  if (!popup.isClosed()) await popup.close();
-}
 
 test.beforeAll(async () => {
   if (!fs.existsSync(path.join(EXT_PATH, 'manifest.json'))) {
@@ -166,14 +151,10 @@ test.beforeAll(async () => {
     fs.rmSync(path.join(workingDir, stale), { force: true });
   }
 
-  context = await chromium.launchPersistentContext(workingDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${EXT_PATH}`,
-      `--load-extension=${EXT_PATH}`,
-      '--no-sandbox',
-      '--disable-dev-shm-usage',
-    ],
+  context = await launchWalletContext({
+    wallet: 'xverse',
+    extensionPath: EXT_PATH,
+    userDataDir: workingDir,
   });
   // Hermetic Xverse: its vendor backends (Xverse API, its esplora, Spark,
   // Mixpanel, …) are answered locally or refused, so the wallet's popups
@@ -190,25 +171,7 @@ test.afterAll(async () => {
 
 test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord indexes the HTML byte-for-byte', async () => {
   // ─── Step 1: unlock Xverse from the primer popup ───────────────
-  const primer = await context.newPage();
-  await primer.setViewportSize({ width: 400, height: 800 });
-  await primer.goto(`chrome-extension://${extensionId}/popup.html`, { waitUntil: 'domcontentloaded' });
-  await primer.waitForFunction(() => {
-    const t = (document.body.innerText || '').toLowerCase();
-    return t.includes('unlock') || t.includes('account 1');
-  }, undefined, { polling: 250 });
-  if (/unlock/i.test(await primer.locator('body').innerText())) {
-    await primer.locator('input[type="password"]').first().fill(TEST_PASSWORD);
-    await primer.getByRole('button', { name: /^unlock$/i }).first().click();
-    await primer.waitForFunction(() => {
-      const t = (document.body.innerText || '').toLowerCase();
-      return t.includes('account 1') || t.includes('not now') || t.includes('zest');
-    }, undefined, { polling: 250 });
-  }
-  // The wait above ends on the dashboard or on its "Not now" prompt, so the
-  // prompt is either on screen now or not coming.
-  const notNow = primer.getByText('Not now', { exact: true }).first();
-  if (await notNow.isVisible()) await notNow.click();
+  const primer = await unlockXverse(context, extensionId);
   await shot(primer, '01-xverse-unlocked');
   // Close the dashboard immediately after unlock: cat21-indexer's proven
   // regtest spec does this, and keeping it open confuses Xverse's SW when it
@@ -264,12 +227,8 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
 
   // Click "Xverse": the SDK's WalletService.connectWallet fires
   // xverseConnector.connect, which spawns Xverse's approval popup.
-  const knownPagesBeforeConnect = new Set(context.pages());
-  await connectLink.click();
-  await approveXverseConnect(
-    await waitForApprovalPopup({ context, knownPages: knownPagesBeforeConnect, isApproval: xverseConnectApproval }),
-    cubes.locator('[data-testid="wallet-connected"]'),
-  );
+  await approveXverseConnect(context, () => connectLink.click());
+  await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
   await cubes.bringToFront();
 
   // Read paymentAddress from the DOM (start.component renders it via
@@ -391,37 +350,22 @@ test('mint a cube via xverse: fill form → sign in wallet → broadcast → ord
   await shot(firstPopup, '05a-xverse-first-popup');
 
   // The gate above resolved on one of the two controls, so this reads which.
-  let signPopup = firstPopup;
+  // An address request first is approved, and the sign popup Xverse opens
+  // after it is searched among the pages opened from then on.
+  let knownPagesBeforeSign = knownPagesBeforeMint;
   if (await xverseConnectButton(firstPopup).isVisible()) {
     console.log('[cube-mint] first post-mint popup is address-select; approving to unlock sign popup');
-    const knownPagesBeforeSign = new Set(context.pages());
+    knownPagesBeforeSign = new Set(context.pages());
     await xverseConnectButton(firstPopup).click();
-    signPopup = await waitForApprovalPopup({
-      context,
-      knownPages: knownPagesBeforeSign,
-      isApproval: approvalGate({ url: /^chrome-extension:\/\//, control: reviewTransaction }),
-    });
   }
-  await shot(signPopup, '05-xverse-sign-approval');
-
-  // Wait for a rendered + enabled Confirm button: Xverse's Vite SPA renders
-  // the button before its click handler wires up, so a click on a button that
-  // does not yet take pointer events is swallowed.
-  await signPopup.waitForFunction(() => {
-    const buttons = Array.from(document.querySelectorAll('button'));
-    return buttons.some((b) => {
-      if (!/^confirm$/i.test(b.textContent?.trim() ?? '')) return false;
-      if (b.hasAttribute('disabled')) return false;
-      const style = getComputedStyle(b);
-      return style.pointerEvents !== 'none' && style.visibility !== 'hidden';
-    });
-  }, undefined, { polling: 250 });
-  const confirm = signPopup.getByRole('button', { name: /^confirm$/i }).first();
-  await expect(confirm).toBeEnabled();
-  console.log('[cube-mint] clicking Confirm on sign popup');
-  // Tolerates the popup closing under the click (an accepted approval), then
-  // requires it to close; never re-clicks, a second click is a second signature.
-  await clickApprovalAndRequireClose(confirm, signPopup, { label: 'Xverse sign popup' });
+  console.log('[cube-mint] approving the sign popup');
+  // Waits until Confirm takes clicks, then requires the popup to close; never
+  // re-clicks, a second click is a second signature.
+  await approveXverseSignPopup({
+    context,
+    knownPages: knownPagesBeforeSign,
+    onScreenshot: (p) => shot(p, '05-xverse-sign-approval'),
+  });
   console.log('[cube-mint] Confirm clicked, waiting for mint-success');
 
   // Success, plus the ARIA-state proof that the mint button dropped out of
@@ -499,7 +443,9 @@ async function reloadAndReconnect(cubes: Page): Promise<void> {
     isApproval: xverseConnectApproval,
     noPopupState: connectedBtn,
   });
-  if (reconnect.outcome === 'popup') await approveXverseConnect(reconnect.page, connectedBtn);
+  if (reconnect.outcome === 'popup') {
+    await clickApprovalAndRequireClose(xverseConnectButton(reconnect.page), reconnect.page, { label: 'Xverse reconnect popup' });
+  }
   await cubes.bringToFront();
   await expect(connectedBtn).toBeVisible();
 }

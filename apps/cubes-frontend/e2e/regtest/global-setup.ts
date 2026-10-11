@@ -1,10 +1,10 @@
-import { chromium } from '@playwright/test';
 import * as path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 
 import {
   installXverseOfflineRoutes,
+  launchWalletContext,
   onboardXverse,
   overrideRegtestElectrsUrl,
   primeAndSwitchToRegtest,
@@ -80,14 +80,10 @@ export default async function globalSetup(): Promise<void> {
   fs.rmSync(SEED_USER_DATA_DIR, { recursive: true, force: true });
   fs.rmSync(VERSION_MARKER, { force: true });
   fs.mkdirSync(SEED_USER_DATA_DIR, { recursive: true });
-  const context = await chromium.launchPersistentContext(SEED_USER_DATA_DIR, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${EXT_PATH}`,
-      `--load-extension=${EXT_PATH}`,
-      '--no-sandbox',
-      '--disable-dev-shm-usage',
-    ],
+  const context = await launchWalletContext({
+    wallet: 'xverse',
+    extensionPath: EXT_PATH,
+    userDataDir: SEED_USER_DATA_DIR,
   });
   await installXverseOfflineRoutes(context);
 

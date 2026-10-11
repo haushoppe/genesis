@@ -29,6 +29,9 @@ import {
   rpc,
   waitForElectrsSync,
   installContextErrorGuard,
+  netLogArgs,
+  offlineLaunchArgs,
+  reachableHosts,
 } from 'ordpool-sdk/e2e';
 
 /**
@@ -78,7 +81,10 @@ test.beforeAll(async () => {
   if (tip < 101) {
     throw new Error(`regtest tip is ${tip} (<101). Run: bash e2e/regtest/regtest-bootstrap.sh`);
   }
-  browser = await chromium.launch();
+  // No wallet extension, so no launchWalletContext, but the same switches it
+  // passes: nothing but loopback and the regtest stack resolves, and with
+  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
+  browser = await chromium.launch({ args: [...offlineLaunchArgs(reachableHosts()), ...netLogArgs('funding-warning')] });
 });
 
 test.afterAll(async () => {

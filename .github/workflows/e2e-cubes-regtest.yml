@@ -104,6 +104,10 @@ jobs:
           # arrival can be PLACED after the form is filled, and asserts typed
           # sides survive it. No extension, no wallet connect.
           - suggestion-repro
+          # Not a wallet: the start page, /faq, /presskit, the wildcard route
+          # and the banner's route-driven visibility on the regtest build.
+          # Needs no extension.
+          - site-routes
           # Oyl removed 2026-08-06: vendor decommissioned the mainnet.ordit.io
           # relay-validator backend the extension calls during signPsbt
           # (DNS NXDOMAIN). The .crx still installs but every sign attempt
@@ -132,30 +136,53 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # cat21-ord source is needed as the build context for ord-stock
-      # (the docker-compose file inlines the Dockerfile; the checkout
-      # supplies the Rust source tree). Public repo, so anonymous
-      # `git clone` works — actions/checkout with the workflow's
-      # GITHUB_TOKEN fails on cross-repo access even for public
-      # repos, because the token is scoped to haushoppe/genesis only.
-      - name: Clone cat21-ord for the ord-stock image build
-        # cat21-ord's default branch is `index-cat21` (force-pushed
-        # squashed history per its HARD RULE), not `main`.
-        # Override the job-level working-directory so the clone lands
-        # at $GITHUB_WORKSPACE/_cat21-ord (where the docker step's
-        # CAT21_ORD_SRC env var points), not
-        # $GITHUB_WORKSPACE/apps/cubes-frontend/_cat21-ord.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: apps/cubes-frontend/package-lock.json
+
+      # Scripts must run: ordpool-sdk builds its dist/ (ESM main entry) via
+      # its `prepare` hook at install time; it is not checked in. This
+      # matches build-cubes-frontend.yml (plain `npm ci`) and the workspace
+      # .npmrc (`ignore-scripts=false`, the supply-chain posture is lockfile
+      # discipline, not script-blocking).
+      - run: npm ci
+
+      # The source revisions this lane builds (our electrs, cat21-ord, Cat21
+      # Wallet), from the SDK copy that matches package-lock.json. Full shas,
+      # never branch names, so the lane builds exactly what the pinned SDK was
+      # proven with.
+      - name: Read the SDK's build pins
+        run: grep -E '^[A-Z0-9_]+=' node_modules/ordpool-sdk/e2e/build-pins.env >> "$GITHUB_ENV"
+
+      # Anonymous fetch of one commit by sha: the job token is scoped to this
+      # repo, and both forks are public. cat21-ord is the build context for
+      # cat21-ord and ord-stock (the compose file inlines the Dockerfile).
+      - name: Check out cat21-ord at the pinned sha
         working-directory: ${{ github.workspace }}
-        run: git clone --depth 1 --branch index-cat21 https://github.com/ordpool-space/cat21-ord _cat21-ord
+        run: |
+          git init -q _cat21-ord
+          git -C _cat21-ord fetch -q --depth 1 https://github.com/ordpool-space/cat21-ord "$CAT21_ORD_SHA"
+          git -C _cat21-ord checkout -q FETCH_HEAD
 
       # OUR electrs. docker-compose.regtest.yml builds the electrs service
-      # from the ordpool-electrs fork (not the upstream mempool/electrs
-      # image); ELECTRS_SRC points its build context at this checkout.
-      # Same anonymous-clone reasoning as cat21-ord above (the job token
-      # can't reach a sibling org repo). Branch is `ordpool`.
-      - name: Clone ordpool-electrs for the electrs image build
+      # from the ordpool-electrs fork (not the upstream mempool/electrs image);
+      # ELECTRS_SRC points its build context at this checkout.
+      - name: Check out ordpool-electrs at the pinned sha
         working-directory: ${{ github.workspace }}
-        run: git clone --depth 1 --branch ordpool https://github.com/ordpool-space/ordpool-electrs _ordpool-electrs
+        run: |
+          git init -q _ordpool-electrs
+          git -C _ordpool-electrs fetch -q --depth 1 https://github.com/ordpool-space/ordpool-electrs "$ORDPOOL_ELECTRS_SHA"
+          git -C _ordpool-electrs checkout -q FETCH_HEAD
+
+      # The same comparison the SDK's bootstraps make: a checkout at another
+      # revision fails here, before anything is built from it.
+      - name: Verify the checkouts against the build pins
+        run: |
+          . node_modules/ordpool-sdk/e2e/build-pins.sh
+          check_build_pin ordpool-electrs "$ELECTRS_SRC" "$ORDPOOL_ELECTRS_SHA"
+          check_build_pin cat21-ord "$CAT21_ORD_SRC" "$CAT21_ORD_SHA"
 
       # OUR backend, built for the ordpool-backend service (mempool-witness
       # renderer): its build context is _ordpool/backend + _ordpool/rust.
@@ -191,19 +218,6 @@ jobs:
           # empty GeoIP dir in the docker/backend context so that COPY resolves.
           mkdir -p "$GITHUB_WORKSPACE/_ordpool/docker/backend/GeoIP"
           touch "$GITHUB_WORKSPACE/_ordpool/docker/backend/GeoIP/.gitkeep"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: apps/cubes-frontend/package-lock.json
-
-      # Scripts must run: ordpool-sdk builds its dist/ (ESM main entry) via
-      # its `prepare` hook at install time — it is not checked in. This
-      # matches build-cubes-frontend.yml (plain `npm ci`) and the workspace
-      # .npmrc (`ignore-scripts=false`, the supply-chain posture is lockfile
-      # discipline, not script-blocking).
-      - run: npm ci
 
       - name: Install Playwright chromium + system deps
         run: ./node_modules/.bin/playwright install --with-deps chromium
@@ -244,7 +258,12 @@ jobs:
       - name: Checkout cat21-wallet (extension source)
         if: matrix.wallet == 'cat21wallet'
         working-directory: ${{ github.workspace }}
-        run: git clone --depth 1 --branch main https://github.com/ordpool-space/cat21-wallet _cat21-wallet-src
+        run: |
+          git init -q _cat21-wallet-src
+          git -C _cat21-wallet-src fetch -q --depth 1 https://github.com/ordpool-space/cat21-wallet "$CAT21_WALLET_SHA"
+          git -C _cat21-wallet-src checkout -q FETCH_HEAD
+          . "$GITHUB_WORKSPACE/apps/cubes-frontend/node_modules/ordpool-sdk/e2e/build-pins.sh"
+          check_build_pin cat21-wallet _cat21-wallet-src "$CAT21_WALLET_SHA"
 
       - name: Setup pnpm for cat21-wallet build
         if: matrix.wallet == 'cat21wallet'
@@ -268,10 +287,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: _cat21-wallet-src/apps/extension/dist
-          # Rebuild only when wallet source changes. Keys off the
-          # source files themselves so a wallet-repo push invalidates
-          # the cache automatically.
-          key: cubes-cat21wallet-dist-${{ hashFiles('_cat21-wallet-src/pnpm-lock.yaml', '_cat21-wallet-src/apps/extension/**/*.ts', '_cat21-wallet-src/apps/extension/**/*.tsx', '_cat21-wallet-src/packages/**/*.ts') }}
+          # One build per pinned wallet revision.
+          key: cubes-cat21wallet-dist-${{ env.CAT21_WALLET_SHA }}
 
       - name: Install cat21-wallet dependencies
         if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'
@@ -431,9 +448,26 @@ jobs:
       - name: Run ${{ matrix.wallet }} cube-mint roundtrip under xvfb
         # Playwright wants a real X server for headed Chromium.
         # xvfb-run supplies a virtual one.
+        env:
+          ORDPOOL_E2E_NET_LOG_DIR: ${{ github.workspace }}/net-log
         run: |
           xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" \
             npm run e2e:regtest -- --grep "${{ matrix.wallet }}"
+
+      # Every browser the specs launch writes Chrome's net log; this fails on
+      # any connection, datagram or DNS lookup that left the machine. Runs on
+      # a failed spec run too: what reached the network belongs in the report.
+      - name: Check the net logs for traffic that left the machine
+        if: success() || failure()
+        run: node node_modules/ordpool-sdk/scripts/check-net-log.mjs "$GITHUB_WORKSPACE/net-log"
+
+      - name: Upload the net logs
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.wallet }}-net-log
+          path: net-log/
+          retention-days: 7
 
       - name: Dump docker logs on failure
         if: failure()

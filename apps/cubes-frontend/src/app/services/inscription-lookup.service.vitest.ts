@@ -1,3 +1,12 @@
+/**
+ * @test-kind unit
+ * Real:   InscriptionLookupService with Angular's HttpClient
+ * Faked:  the network -> HttpTestingController answering ord's `/inscription/<number>` with a
+ *         hand-written `{ id }` body, an empty body or a 404 (no capture); cat21Config ->
+ *         test.ord.example
+ * Proves: a lookup by number returns ord's inscription id, and null when ord answers no id
+ *         or an error
+ */
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';

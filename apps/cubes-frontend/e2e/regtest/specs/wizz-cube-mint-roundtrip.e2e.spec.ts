@@ -11,7 +11,7 @@
  *         exactly once; any console.error or uncaught exception on an app page fails it
  */
 /* eslint-disable no-console */
-import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
+import { test, expect, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
@@ -46,6 +46,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   installContextErrorGuard,
+  launchWalletContext,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
@@ -122,14 +123,10 @@ test.beforeAll(async () => {
   const workingDir = path.resolve(RESULTS_DIR, `wizz-user-data-dir-${process.pid}-${Date.now()}`);
   fs.mkdirSync(workingDir, { recursive: true });
 
-  context = await chromium.launchPersistentContext(workingDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${EXT_PATH}`,
-      `--load-extension=${EXT_PATH}`,
-      '--no-sandbox',
-      '--disable-dev-shm-usage',
-    ],
+  context = await launchWalletContext({
+    wallet: 'wizz',
+    extensionPath: EXT_PATH,
+    userDataDir: workingDir,
   });
   // Hermetic Wizz: abort the hanging configs.wizz.cash remote-config fetch
   // and stub the wallet's third-party balance/asset backends so the sign

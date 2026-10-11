@@ -36,6 +36,29 @@ suite's helpers expect) plus `ELECTRS_SRC` / `CAT21_ORD_SRC` (build
 contexts). The `regtest-bootstrap.sh` script sets those defaults for a
 standalone local run; CI sets them at the job level.
 
+## Offline browsers and the net log
+
+Every wallet browser starts through `launchWalletContext` (ordpool-sdk/e2e),
+which resolves nothing but loopback and the regtest stack's hosts
+(`reachableHosts`) and sends every other request to a dead proxy. The specs
+without an extension launch `chromium.launch` with the same switches
+(`offlineLaunchArgs(reachableHosts())`). A wallet vendor's backend is answered
+or aborted by the SDK's shield for that wallet (`installXverseOfflineRoutes`,
+`installLeatherOfflineRoutes`, `installCat21WalletOrdRoutes`, ...), installed
+right after the launch.
+
+With `ORDPOOL_E2E_NET_LOG_DIR` set, every launch writes Chrome's net log into
+that directory, and `node node_modules/ordpool-sdk/scripts/check-net-log.mjs
+<dir>` fails on any connection, datagram or DNS lookup that left the machine.
+CI runs it after the specs of every lane and uploads the logs.
+
+## Build pins
+
+ordpool-electrs, cat21-ord and Cat21 Wallet are built from the full shas in
+`node_modules/ordpool-sdk/e2e/build-pins.env`, the copy that matches
+`package-lock.json`. CI checks them out by sha; `regtest-bootstrap.sh` compares
+`ELECTRS_SRC` / `CAT21_ORD_SRC` with the pins and fails under CI on a mismatch.
+
 ## The mint round-trip a spec must exercise
 
 1. **beforeAll** — clone the Xverse seed user-data-dir, launch headed

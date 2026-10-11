@@ -8,7 +8,7 @@
  *         the page says why; once the probe answers the reason disappears and the CTA enables
  */
 import { test, expect, chromium, Browser } from '@playwright/test';
-import { installContextErrorGuard } from 'ordpool-sdk/e2e';
+import { installContextErrorGuard, netLogArgs, offlineLaunchArgs, reachableHosts } from 'ordpool-sdk/e2e';
 
 import { environment as regtestEnvironment } from '../../../src/environments/environment.regtest';
 import { CUBES_URL, fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
@@ -40,7 +40,10 @@ const PROBE_HOST = regtestEnvironment.sideImageProbeBase;
 let browser: Browser;
 
 test.beforeAll(async () => {
-  browser = await chromium.launch();
+  // No wallet extension, so no launchWalletContext, but the same switches it
+  // passes: nothing but loopback and the regtest stack resolves, and with
+  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
+  browser = await chromium.launch({ args: [...offlineLaunchArgs(reachableHosts()), ...netLogArgs('mint-cta')] });
 });
 
 test.afterAll(async () => {

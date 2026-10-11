@@ -11,7 +11,7 @@
  *         exactly once; any console.error or uncaught exception on an app page fails it
  */
 /* eslint-disable no-console */
-import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
+import { test, expect, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
@@ -47,6 +47,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   installContextErrorGuard,
+  launchWalletContext,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
@@ -58,12 +59,11 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
  *
  * OKX-specific tricks (all from the SDK's proven okx-mint spec):
  *   - Onboarding uses `onboardOkx` from ordpool-sdk/e2e.
- *   - Chromium arg `--disable-blink-features=AutomationControlled`
- *     required — OKX's popup detection sniffs for automation.
- *   - Context launched with `chromium.launchPersistentContext('')`
- *     (empty user-data-dir string): OKX auto-opens its welcome page on
- *     extension install, and the SDK's `extensionOnboardingPage` returns
- *     that page for onboarding.
+ *   - Context launched by `launchWalletContext({ wallet: 'okx' })`, which
+ *     hides `navigator.webdriver` (OKX's popup detection sniffs for
+ *     automation), on a fresh temporary profile (`userDataDir: ''`): OKX
+ *     auto-opens its welcome page on extension install, and the SDK's
+ *     `extensionOnboardingPage` returns that page for onboarding.
  *   - Connect popup anchored on "Connect account" HEADER text (not
  *     just any Connect button: OKX pre-emptively opens a "Confirm
  *     Trade" sign popup during connect that would false-match).
@@ -122,15 +122,10 @@ test.beforeAll(async () => {
 
   // SDK spec parity: empty user-data-dir string (Chromium creates a fresh
   // profile), and onboarding on the welcome tab OKX opens on install.
-  context = await chromium.launchPersistentContext('', {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${EXT_PATH}`,
-      `--load-extension=${EXT_PATH}`,
-      '--no-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-blink-features=AutomationControlled',
-    ],
+  context = await launchWalletContext({
+    wallet: 'okx',
+    extensionPath: EXT_PATH,
+    userDataDir: '',
   });
   // Hermetic OKX: the vendor web page its onboarding opens in a normal tab is
   // answered locally, so no marketing page or its trackers run in the test.

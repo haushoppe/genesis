@@ -13,7 +13,7 @@
  *         mempool preview carries the minted body before confirmation
  */
 /* eslint-disable no-console */
-import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
+import { test, expect, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
@@ -48,6 +48,7 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   installContextErrorGuard,
+  launchWalletContext,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
@@ -129,14 +130,10 @@ test.beforeAll(async () => {
   const workingDir = path.resolve(RESULTS_DIR, `unisat-user-data-dir-${process.pid}-${Date.now()}`);
   fs.mkdirSync(workingDir, { recursive: true });
 
-  context = await chromium.launchPersistentContext(workingDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${EXT_PATH}`,
-      `--load-extension=${EXT_PATH}`,
-      '--no-sandbox',
-      '--disable-dev-shm-usage',
-    ],
+  context = await launchWalletContext({
+    wallet: 'unisat',
+    extensionPath: EXT_PATH,
+    userDataDir: workingDir,
   });
   // Hermetic Unisat: its wallet API is answered locally from shapes the SDK
   // captured, so connect and sign never wait on the vendor's servers.

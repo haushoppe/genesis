@@ -1,3 +1,12 @@
+/**
+ * @test-kind unit
+ * Real:   CubesDataService with Angular's HttpClient (ordering, slicing, rarity fallback)
+ * Faked:  the network -> HttpTestingController; cubes.json rows hand-written in the public
+ *         index's row shape (`cube()` below, no capture); rarity.json -> `{ rules: {}, cubes: [] }`
+ *         or a 500
+ * Proves: a page past the end clamps to the last page, and a failed rarity index is
+ *         reported rather than breaking the list
+ */
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';

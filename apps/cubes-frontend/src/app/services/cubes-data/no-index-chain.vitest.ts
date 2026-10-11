@@ -1,3 +1,12 @@
+/**
+ * @test-kind unit
+ * Real:   RarityService and ArchiveDataService with Angular's HttpClient
+ * Faked:  environment -> the real one with cubesIndexBase and archiveBase emptied (vi.mock
+ *         spreading vi.importActual); the network -> HttpTestingController, global fetch
+ *         spied on
+ * Proves: a chain without a cubes index or an archive answers an empty rarity index and
+ *         rejects archive reads without making a single request
+ */
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';

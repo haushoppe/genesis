@@ -1,3 +1,11 @@
+/**
+ * @test-kind unit
+ * Real:   MintStatusService with Angular's HttpClient (URL assembly, polling, backoff)
+ * Faked:  the network -> HttpTestingController answering esplora's `/tx/<txid>` with
+ *         hand-written `{ status }` bodies or a 404 (no capture); the clock -> vitest fake timers
+ * Proves: one request per txid in flight, backoff for a reveal that never confirms,
+ *         confirmed with its block height ends the polling, a 404 changes nothing
+ */
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';

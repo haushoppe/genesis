@@ -24,6 +24,9 @@ import {
   waitForUtxoAt,
   installContextErrorGuard,
   type WatchOnlyTestAccount,
+  netLogArgs,
+  offlineLaunchArgs,
+  reachableHosts,
 } from 'ordpool-sdk/e2e';
 import {
   connectWatchOnly,
@@ -168,7 +171,13 @@ test.beforeAll(async () => {
   offline = makeWatchOnlyTestAccount({ seed: randomBytes(32) });
   fundedAddress = offline.addressAt(0);
 
-  browser = await chromium.launch({ headless: false, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  // No wallet extension, so no launchWalletContext, but the same switches it
+  // passes: nothing but loopback and the regtest stack resolves, and with
+  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
+  browser = await chromium.launch({
+    headless: false,
+    args: ['--no-sandbox', '--disable-dev-shm-usage', ...offlineLaunchArgs(reachableHosts()), ...netLogArgs('watchonly')],
+  });
   const context = await browser.newContext();
   // Fails the test on any console.error or uncaught exception from a page of this context.
   errorGuard = installContextErrorGuard(context);

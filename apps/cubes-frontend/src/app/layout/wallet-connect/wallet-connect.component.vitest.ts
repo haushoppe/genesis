@@ -1,3 +1,14 @@
+/**
+ * @test-kind unit
+ * Real:   WalletConnectComponent class through Angular DI (no template), detectWalletPlatform
+ *         and the connect strings from ordpool-sdk
+ * Faked:  WalletService -> hand-built object with the members the component reads and a
+ *         connectXpub spy (shape: the fields the component touches, no capture); NgbModal and
+ *         ChangeDetectorRef -> empty stand-ins; cat21Config -> example.test ord URLs
+ * Proves: watch-only connect hands the pasted key and the picked script type to
+ *         connectXpub, re-asks on an ambiguous key, guards an empty key; detectWalletPlatform
+ *         classifies iPad, Mac, iPhone and Windows user agents
+ */
 import { ChangeDetectorRef, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';

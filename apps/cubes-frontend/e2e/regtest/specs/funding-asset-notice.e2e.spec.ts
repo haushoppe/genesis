@@ -3,13 +3,14 @@
  * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
  *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), Leather 6.102.0 (.crx)
  * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
- *         overridden to 5 / 3 / 1 sat/vB
+ *         overridden to 5 / 3 / 1 sat/vB; Leather's vendor backends -> installLeatherOfflineRoutes
+ *         (ordpool-sdk)
  * Proves: a separate-address wallet whose only coin carries a seeded inscription gets an
  *         enabled CTA and a notice naming that inscription, both inside one viewport; any
  *         console.error or uncaught exception on an app page fails it
  */
 /* eslint-disable no-console */
-import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
+import { test, expect, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
@@ -27,6 +28,8 @@ import {
   rpc,
   mineBlocks,
   installContextErrorGuard,
+  launchWalletContext,
+  installLeatherOfflineRoutes,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
@@ -80,15 +83,14 @@ test.beforeAll(async () => {
   const workingDir = path.resolve(RESULTS_DIR, `leather-user-data-dir-${process.pid}-${Date.now()}`);
   fs.mkdirSync(workingDir, { recursive: true });
 
-  context = await chromium.launchPersistentContext(workingDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${EXT_PATH}`,
-      `--load-extension=${EXT_PATH}`,
-      '--no-sandbox',
-      '--disable-dev-shm-usage',
-    ],
+  context = await launchWalletContext({
+    wallet: 'leather',
+    extensionPath: EXT_PATH,
+    userDataDir: workingDir,
   });
+  // Leather's vendor backends are answered locally or aborted, so the wallet
+  // renders and signs without a server outside the test.
+  await installLeatherOfflineRoutes(context);
   let [worker] = context.serviceWorkers();
   if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];

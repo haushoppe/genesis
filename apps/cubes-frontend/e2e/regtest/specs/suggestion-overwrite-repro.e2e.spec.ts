@@ -11,7 +11,9 @@
  */
 import { test, expect, chromium, Browser, Page } from '@playwright/test';
 
-import { installContextErrorGuard, rpc, workaroundWaitForTimeout } from 'ordpool-sdk/e2e';
+import {
+  installContextErrorGuard, netLogArgs, offlineLaunchArgs, reachableHosts, rpc, workaroundWaitForTimeout,
+} from 'ordpool-sdk/e2e';
 import { CUBES_URL, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 
 /**
@@ -30,7 +32,10 @@ let browser: Browser;
 test.beforeAll(async () => {
   const tip = Number(rpc('getblockcount').trim());
   if (tip < 101) throw new Error(`regtest tip is ${tip} (<101)`);
-  browser = await chromium.launch();
+  // No wallet extension, so no launchWalletContext, but the same switches it
+  // passes: nothing but loopback and the regtest stack resolves, and with
+  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
+  browser = await chromium.launch({ args: [...offlineLaunchArgs(reachableHosts()), ...netLogArgs('suggestion-repro')] });
 });
 
 test.afterAll(async () => {

@@ -1,3 +1,18 @@
+/**
+ * @test-kind unit
+ * Real:   StartComponent class through Angular DI (no template), InscribeMintOrchestrator
+ *         (constructed by the component; its setters and mint spied on per test)
+ * Faked:  environment -> the real one with both ord URLs and a regtest tip address
+ *         (vi.mock spreading vi.importActual); WalletService, Cat21Service and
+ *         UtxoContentScanner (ordpool-sdk) -> hand-built objects; CubesDataService,
+ *         CubeSuggestionService, InscriptionLookupService, PriceService, PastMintsService and
+ *         SideImageProbeService -> hand-built objects; NgbModal -> { open: vi.fn() }; shapes:
+ *         the members the component reads, no capture
+ * Proves: the watch-only mint wiring (psbtPrompt reaches orchestrator.mint, the signed PSBT
+ *         closes the export modal), the fee-rate guard, the funding gate on the effective
+ *         coin, a non-rendering side naming its face, the fees-error degradation, the
+ *         craft-another-cube hand-over and the one-address custody caveat
+ */
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { SideImageProbeService } from './side-image-probe.service';

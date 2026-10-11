@@ -1,3 +1,13 @@
+/**
+ * @test-kind unit
+ * Real:   cube-srcdoc (wrapping, stage colours, ord root, srcdoc cache) and getCubeHtml /
+ *         parseCube for the cube bodies
+ * Faked:  global fetch -> vi.fn returning a minimal Response (`ok`, `status`, `text()`) with a
+ *         getCubeHtml body or an error status
+ * Proves: the preview srcdoc carries the dark colour-scheme meta, the ord root base and the
+ *         cube's own stage colours, is never a mintable cube, and fetchCubeSrcdoc fetches the
+ *         sibling /content/<id> once per source and retries after a failure
+ */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {

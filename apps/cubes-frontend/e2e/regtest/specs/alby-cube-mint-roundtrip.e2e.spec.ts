@@ -3,14 +3,15 @@
  * Real:   cubes app on the Angular dev server (ng serve -c regtest), regtest stack (bitcoind
  *         30, ordpool-electrs, cat21-ord, stock ord, ordpool-backend), Alby 3.14.2 (.crx)
  * Faked:  /api/v1/fees/recommended -> recommendedFeesFixture (ordpool-sdk, captured), tiers
- *         overridden to 5 / 3 / 1 sat/vB
+ *         overridden to 5 / 3 / 1 sat/vB; the seeded account's placeholder LNDHub ->
+ *         aborted by installAlbyOfflineRoutes (ordpool-sdk)
  * Proves: clicking through the mint form with Alby signing confirms a commit and reveal whose
  *         ord-indexed body equals getCubeHtml() for the typed sides (the app's own generator,
  *         so this half shares code), parses back to the typed side ids, and pays the tip
  *         exactly once; any console.error or uncaught exception on an app page fails it
  */
 /* eslint-disable no-console */
-import { test, expect, chromium, BrowserContext, Page } from '@playwright/test';
+import { test, expect, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
@@ -37,6 +38,8 @@ import {
   waitForOrdStockSync,
   getStockOrdContent,
   installContextErrorGuard,
+  launchWalletContext,
+  installAlbyOfflineRoutes,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
@@ -106,15 +109,13 @@ test.beforeAll(async () => {
   const workingDir = path.resolve(RESULTS_DIR, `alby-user-data-dir-${process.pid}-${Date.now()}`);
   fs.mkdirSync(workingDir, { recursive: true });
 
-  context = await chromium.launchPersistentContext(workingDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${EXT_PATH}`,
-      `--load-extension=${EXT_PATH}`,
-      '--no-sandbox',
-      '--disable-dev-shm-usage',
-    ],
+  context = await launchWalletContext({
+    wallet: 'alby',
+    extensionPath: EXT_PATH,
+    userDataDir: workingDir,
   });
+  // The seeded account's placeholder LNDHub is aborted, never looked up.
+  await installAlbyOfflineRoutes(context);
   let [worker] = context.serviceWorkers();
   if (!worker) worker = await context.waitForEvent('serviceworker');
   extensionId = worker.url().split('/')[2];

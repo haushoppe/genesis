@@ -25,13 +25,14 @@ export CAT21_ORD_SRC="${CAT21_ORD_SRC:-$(cd "$HERE/../../../../.." && pwd)/cat21
 # the ordpool checkout (backend/ + rust/); CI sets ORDPOOL_SRC itself.
 export ORDPOOL_SRC="${ORDPOOL_SRC:-$(cd "$HERE/../../../../.." && pwd)/ordpool}"
 
-# The electrs and cat21-ord checkouts the compose builds from, compared with the
-# SDK's build-pins.env (the copy matching package-lock.json): a mismatch fails
-# under CI and is reported locally.
+# The electrs, cat21-ord and ordpool checkouts the compose builds from, compared
+# with the SDK's build-pins.env (the copy matching package-lock.json): a mismatch
+# fails under CI and is reported locally.
 # shellcheck source=/dev/null
 . "$HERE/../../node_modules/ordpool-sdk/e2e/build-pins.sh"
 check_build_pin ordpool-electrs "$ELECTRS_SRC" "$ORDPOOL_ELECTRS_SHA"
 check_build_pin cat21-ord "$CAT21_ORD_SRC" "$CAT21_ORD_SHA"
+check_build_pin ordpool "$ORDPOOL_SRC" "$ORDPOOL_SHA"
 # The backend Dockerfile's runtime stage COPYs /build/GeoIP, which nothing in
 # the build creates (GeoIP = MaxMind geolocation, unused by /content+/preview).
 # Provide an empty dir in the docker/backend build context so the COPY resolves.

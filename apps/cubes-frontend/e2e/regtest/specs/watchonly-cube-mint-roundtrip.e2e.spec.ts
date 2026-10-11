@@ -9,7 +9,7 @@
  *         parses back to the typed side ids and the typed title, pays the tip once, and the
  *         mint preview paints dark
  */
-import { test, expect, chromium, Browser, Page } from '@playwright/test';
+import { test, expect, Browser, Page } from '@playwright/test';
 import { randomBytes } from '@noble/hashes/utils';
 
 import {
@@ -24,9 +24,7 @@ import {
   waitForUtxoAt,
   installContextErrorGuard,
   type WatchOnlyTestAccount,
-  netLogArgs,
-  offlineLaunchArgs,
-  reachableHosts,
+  launchOfflineBrowser,
 } from 'ordpool-sdk/e2e';
 import {
   connectWatchOnly,
@@ -171,13 +169,11 @@ test.beforeAll(async () => {
   offline = makeWatchOnlyTestAccount({ seed: randomBytes(32) });
   fundedAddress = offline.addressAt(0);
 
-  // No wallet extension, so no launchWalletContext, but the same switches it
-  // passes: nothing but loopback and the regtest stack resolves, and with
-  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
-  browser = await chromium.launch({
-    headless: false,
-    args: ['--no-sandbox', '--disable-dev-shm-usage', ...offlineLaunchArgs(reachableHosts()), ...netLogArgs('watchonly')],
-  });
+  // No wallet extension, so launchOfflineBrowser instead of launchWalletContext,
+  // with the same guarantees: the dead proxy is checked first, nothing but
+  // loopback and the regtest stack resolves, and with ORDPOOL_E2E_NET_LOG_DIR
+  // set the net log records what the browser sent.
+  browser = await launchOfflineBrowser({ name: 'watchonly', headless: false });
   const context = await browser.newContext();
   // Fails the test on any console.error or uncaught exception from a page of this context.
   errorGuard = installContextErrorGuard(context);

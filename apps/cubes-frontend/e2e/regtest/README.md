@@ -41,11 +41,13 @@ standalone local run; CI sets them at the job level.
 Every wallet browser starts through `launchWalletContext` (ordpool-sdk/e2e),
 which resolves nothing but loopback and the regtest stack's hosts
 (`reachableHosts`) and sends every other request to a dead proxy. The specs
-without an extension launch `chromium.launch` with the same switches
-(`offlineLaunchArgs(reachableHosts())`). A wallet vendor's backend is answered
+without an extension start through `launchOfflineBrowser`, under the same
+guarantees, the dead-proxy check included. A wallet vendor's backend is answered
 or aborted by the SDK's shield for that wallet (`installXverseOfflineRoutes`,
 `installLeatherOfflineRoutes`, `installCat21WalletOrdRoutes`, ...), installed
-right after the launch.
+right after the launch. A Cat21 Wallet page is closed with
+`closeCat21WalletPage`, which navigates it away first so its pending cat21-ord
+reads are cancelled instead of reaching the network.
 
 With `ORDPOOL_E2E_NET_LOG_DIR` set, every launch writes Chrome's net log into
 that directory, and `node node_modules/ordpool-sdk/scripts/check-net-log.mjs
@@ -54,10 +56,11 @@ CI runs it after the specs of every lane and uploads the logs.
 
 ## Build pins
 
-ordpool-electrs, cat21-ord and Cat21 Wallet are built from the full shas in
-`node_modules/ordpool-sdk/e2e/build-pins.env`, the copy that matches
-`package-lock.json`. CI checks them out by sha; `regtest-bootstrap.sh` compares
-`ELECTRS_SRC` / `CAT21_ORD_SRC` with the pins and fails under CI on a mismatch.
+ordpool-electrs, cat21-ord, Cat21 Wallet and the ordpool backend are built from
+the full shas in `node_modules/ordpool-sdk/e2e/build-pins.env`, the copy that
+matches `package-lock.json`. CI checks them out by sha; `regtest-bootstrap.sh`
+compares `ELECTRS_SRC` / `CAT21_ORD_SRC` / `ORDPOOL_SRC` with the pins and fails
+under CI on a mismatch.
 
 ## The mint round-trip a spec must exercise
 

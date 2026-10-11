@@ -8,7 +8,7 @@
  *         keeps the mint button disabled, shows the warning and a coin picker naming the
  *         seeded asset, and enables only after an explicit pick
  */
-import { test, expect, chromium, Browser, Page } from '@playwright/test';
+import { test, expect, Browser, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { randomBytes } from '@noble/hashes/utils';
@@ -29,9 +29,7 @@ import {
   rpc,
   waitForElectrsSync,
   installContextErrorGuard,
-  netLogArgs,
-  offlineLaunchArgs,
-  reachableHosts,
+  launchOfflineBrowser,
 } from 'ordpool-sdk/e2e';
 
 /**
@@ -81,10 +79,11 @@ test.beforeAll(async () => {
   if (tip < 101) {
     throw new Error(`regtest tip is ${tip} (<101). Run: bash e2e/regtest/regtest-bootstrap.sh`);
   }
-  // No wallet extension, so no launchWalletContext, but the same switches it
-  // passes: nothing but loopback and the regtest stack resolves, and with
-  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
-  browser = await chromium.launch({ args: [...offlineLaunchArgs(reachableHosts()), ...netLogArgs('funding-warning')] });
+  // No wallet extension, so launchOfflineBrowser instead of launchWalletContext,
+  // with the same guarantees: the dead proxy is checked first, nothing but
+  // loopback and the regtest stack resolves, and with ORDPOOL_E2E_NET_LOG_DIR
+  // set the net log records what the browser sent.
+  browser = await launchOfflineBrowser({ name: 'funding-warning' });
 });
 
 test.afterAll(async () => {

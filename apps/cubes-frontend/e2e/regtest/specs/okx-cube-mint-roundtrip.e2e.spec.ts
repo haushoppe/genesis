@@ -30,15 +30,16 @@ import {
 } from '../regtest-helpers';
 import {
   approvalGate,
+  approveOkxConnectPopup,
   clickApprovalAndRequireClose,
   clickUntilEffect,
   closeLeftoverExtensionPages,
   dismissOkxAssetTransferPromo,
   extensionOnboardingPage,
   installOkxOfflineRoutes,
+  isOkxConnectApproval,
   onboardOkx,
   raceApprovalPopup,
-  waitForApprovalPopup,
   waitForElectrsSync,
   fundCommonSats,
   waitForTxConfirmed,
@@ -64,9 +65,9 @@ import { recommendedFeesFixture } from 'ordpool-sdk';
  *     automation), on a fresh temporary profile (`userDataDir: ''`): OKX
  *     auto-opens its welcome page on extension install, and the SDK's
  *     `extensionOnboardingPage` returns that page for onboarding.
- *   - Connect popup anchored on "Connect account" HEADER text (not
- *     just any Connect button: OKX pre-emptively opens a "Confirm
- *     Trade" sign popup during connect that would false-match).
+ *   - The connect request goes through the SDK's `approveOkxConnectPopup`,
+ *     which finds it by OKX's `#/connect` route, so the "Confirm Trade" sign
+ *     popup OKX may open during a connect never matches.
  *   - OKX reuses one `notification.html` page across approvals, and it
  *     may already be open when the click lands, so every search excludes
  *     only the app's own page, never the extension pages already open.
@@ -89,19 +90,6 @@ async function shot(p: Page, name: string): Promise<void> {
     path: path.resolve(RESULTS_DIR, `okx-cube-mint-${name}.png`),
     fullPage: true,
   }).catch(() => undefined);
-}
-
-const okxConnectApproval = approvalGate({
-  url: /^chrome-extension:\/\//,
-  control: (p) => p.getByText('Connect account').first(),
-});
-const okxConnectButton = (p: Page) => p.getByRole('button', { name: /^connect$/i }).first();
-
-// local: OKX's connect approval; ordpool-sdk/e2e has OKX sign helpers only.
-/** Click Connect and require the popup to close: OKX closes it once it accepts. */
-async function approveOkxConnect(approval: Page): Promise<void> {
-  await shot(approval, '03a-connect-popup');
-  await clickApprovalAndRequireClose(okxConnectButton(approval), approval, { label: 'OKX connect popup' });
 }
 
 test.beforeAll(async () => {
@@ -191,11 +179,7 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   await shot(cubes, '02b-wallet-picker-open');
 
   await connectLink.click();
-  await approveOkxConnect(await waitForApprovalPopup({
-    context,
-    knownPages: appPageOnly(),
-    isApproval: okxConnectApproval,
-  }));
+  await approveOkxConnectPopup({ context });
   await cubes.bringToFront();
 
   await expect(cubes.locator('[data-testid="wallet-connected"]')).toBeVisible();
@@ -216,10 +200,12 @@ test('mint a cube via OKX: fill form → sign in wallet → broadcast → ord in
   const reconnect = await raceApprovalPopup({
     context,
     knownPages: appPageOnly(),
-    isApproval: okxConnectApproval,
+    isApproval: isOkxConnectApproval,
     noPopupState: cubes.locator('[data-testid="wallet-connected-btn"]'),
   });
-  if (reconnect.outcome === 'popup') await approveOkxConnect(reconnect.page);
+  // The SDK helper finds that same page again: its search is by URL, not by
+  // which pages were open before.
+  if (reconnect.outcome === 'popup') await approveOkxConnectPopup({ context });
   await cubes.bringToFront();
   await expect(cubes.locator('[data-testid="wallet-connected-btn"]')).toBeVisible();
 

@@ -150,9 +150,9 @@ jobs:
       - run: npm ci
 
       # The source revisions this lane builds (our electrs, cat21-ord, Cat21
-      # Wallet), from the SDK copy that matches package-lock.json. Full shas,
-      # never branch names, so the lane builds exactly what the pinned SDK was
-      # proven with.
+      # Wallet, the ordpool backend), from the SDK copy that matches
+      # package-lock.json. Full shas, never branch names, so the lane builds
+      # exactly what the pinned SDK was proven with.
       - name: Read the SDK's build pins
         run: grep -E '^[A-Z0-9_]+=' node_modules/ordpool-sdk/e2e/build-pins.env >> "$GITHUB_ENV"
 
@@ -176,6 +176,16 @@ jobs:
           git -C _ordpool-electrs fetch -q --depth 1 https://github.com/ordpool-space/ordpool-electrs "$ORDPOOL_ELECTRS_SHA"
           git -C _ordpool-electrs checkout -q FETCH_HEAD
 
+      # OUR backend, built for the ordpool-backend service (mempool-witness
+      # renderer): its build context is _ordpool/backend + _ordpool/rust.
+      # Same anonymous fetch of one pinned commit as the forks above.
+      - name: Check out ordpool at the pinned sha
+        working-directory: ${{ github.workspace }}
+        run: |
+          git init -q _ordpool
+          git -C _ordpool fetch -q --depth 1 https://github.com/ordpool-space/ordpool "$ORDPOOL_SHA"
+          git -C _ordpool checkout -q FETCH_HEAD
+
       # The same comparison the SDK's bootstraps make: a checkout at another
       # revision fails here, before anything is built from it.
       - name: Verify the checkouts against the build pins
@@ -183,13 +193,7 @@ jobs:
           . node_modules/ordpool-sdk/e2e/build-pins.sh
           check_build_pin ordpool-electrs "$ELECTRS_SRC" "$ORDPOOL_ELECTRS_SHA"
           check_build_pin cat21-ord "$CAT21_ORD_SRC" "$CAT21_ORD_SHA"
-
-      # OUR backend, built for the ordpool-backend service (mempool-witness
-      # renderer): its build context is _ordpool/backend + _ordpool/rust.
-      # Same anonymous-clone reasoning as the forks above. Branch is `main`.
-      - name: Clone ordpool for the ordpool-backend image build
-        working-directory: ${{ github.workspace }}
-        run: git clone --depth 1 --branch main https://github.com/ordpool-space/ordpool _ordpool
+          check_build_pin ordpool "$ORDPOOL_SRC" "$ORDPOOL_SHA"
 
       # buildx gha cache: reuse the compiled electrs + cat21-ord images
       # across runs instead of recompiling Rust every run. A docker-container

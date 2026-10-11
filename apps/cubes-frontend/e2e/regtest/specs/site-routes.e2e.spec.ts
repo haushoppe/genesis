@@ -8,8 +8,8 @@
  *         route render; the detail route drops the banner; any console.error
  *         or uncaught exception on an app page fails it
  */
-import { test, expect, chromium, Browser, BrowserContext, Page } from '@playwright/test';
-import { installContextErrorGuard, netLogArgs, offlineLaunchArgs, reachableHosts } from 'ordpool-sdk/e2e';
+import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
+import { installContextErrorGuard, launchOfflineBrowser } from 'ordpool-sdk/e2e';
 
 import { CUBES_URL, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 
@@ -27,10 +27,11 @@ import { CUBES_URL, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers'
 let browser: Browser;
 
 test.beforeAll(async () => {
-  // No wallet extension, so no launchWalletContext, but the same switches it
-  // passes: nothing but loopback and the regtest stack resolves, and with
-  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
-  browser = await chromium.launch({ args: [...offlineLaunchArgs(reachableHosts()), ...netLogArgs('site-routes')] });
+  // No wallet extension, so launchOfflineBrowser instead of launchWalletContext,
+  // with the same guarantees: the dead proxy is checked first, nothing but
+  // loopback and the regtest stack resolves, and with ORDPOOL_E2E_NET_LOG_DIR
+  // set the net log records what the browser sent.
+  browser = await launchOfflineBrowser({ name: 'site-routes' });
 });
 
 test.afterAll(async () => {

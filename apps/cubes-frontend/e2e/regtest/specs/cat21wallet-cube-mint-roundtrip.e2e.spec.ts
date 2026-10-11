@@ -36,6 +36,7 @@ import {
   approveCat21WalletConnectPopup,
   approveCat21WalletSignPopup,
   clickUntilEffect,
+  closeCat21WalletPage,
   closeLeftoverExtensionPages,
   onboardCat21Wallet,
   raceApprovalPopup,
@@ -145,7 +146,9 @@ test.beforeAll(async () => {
   const primer = await context.newPage();
   await onboardCat21Wallet(primer, extensionId);
   await shot(primer, '00-onboarded');
-  await primer.close();
+  // Navigate away before closing, so the page's pending cat21-ord reads are
+  // cancelled instead of continuing to the network once it is gone.
+  await closeCat21WalletPage(primer);
 });
 
 test.afterAll(async () => {

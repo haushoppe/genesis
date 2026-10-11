@@ -7,8 +7,8 @@
  * Proves: while the side-image probe is pending the mint CTA is disabled, looks disabled and
  *         the page says why; once the probe answers the reason disappears and the CTA enables
  */
-import { test, expect, chromium, Browser } from '@playwright/test';
-import { installContextErrorGuard, netLogArgs, offlineLaunchArgs, reachableHosts } from 'ordpool-sdk/e2e';
+import { test, expect, Browser } from '@playwright/test';
+import { installContextErrorGuard, launchOfflineBrowser } from 'ordpool-sdk/e2e';
 
 import { environment as regtestEnvironment } from '../../../src/environments/environment.regtest';
 import { CUBES_URL, fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
@@ -40,10 +40,11 @@ const PROBE_HOST = regtestEnvironment.sideImageProbeBase;
 let browser: Browser;
 
 test.beforeAll(async () => {
-  // No wallet extension, so no launchWalletContext, but the same switches it
-  // passes: nothing but loopback and the regtest stack resolves, and with
-  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
-  browser = await chromium.launch({ args: [...offlineLaunchArgs(reachableHosts()), ...netLogArgs('mint-cta')] });
+  // No wallet extension, so launchOfflineBrowser instead of launchWalletContext,
+  // with the same guarantees: the dead proxy is checked first, nothing but
+  // loopback and the regtest stack resolves, and with ORDPOOL_E2E_NET_LOG_DIR
+  // set the net log records what the browser sent.
+  browser = await launchOfflineBrowser({ name: 'mint-cta' });
 });
 
 test.afterAll(async () => {

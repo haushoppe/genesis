@@ -8,7 +8,7 @@
  *         confirmed commit's inputs read from the chain exclude the dirty outpoint and the
  *         asset coin still exists, per asset class
  */
-import { test, expect, chromium, Browser, Page } from '@playwright/test';
+import { test, expect, Browser, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { randomBytes } from '@noble/hashes/utils';
@@ -36,9 +36,7 @@ import {
   waitForTxConfirmed,
   waitForUtxoAt,
   installContextErrorGuard,
-  netLogArgs,
-  offlineLaunchArgs,
-  reachableHosts,
+  launchOfflineBrowser,
 } from 'ordpool-sdk/e2e';
 import { simulateInscribeFees, prepareInscribeFundingInput, changeDustFloor, Network } from 'ordpool-sdk';
 
@@ -125,10 +123,11 @@ test.beforeAll(async () => {
   if (tip < 101) {
     throw new Error(`regtest tip is ${tip} (<101). Run: bash e2e/regtest/regtest-bootstrap.sh`);
   }
-  // No wallet extension, so no launchWalletContext, but the same switches it
-  // passes: nothing but loopback and the regtest stack resolves, and with
-  // ORDPOOL_E2E_NET_LOG_DIR set the net log records what the browser sent.
-  browser = await chromium.launch({ args: [...offlineLaunchArgs(reachableHosts()), ...netLogArgs('funding-safety')] });
+  // No wallet extension, so launchOfflineBrowser instead of launchWalletContext,
+  // with the same guarantees: the dead proxy is checked first, nothing but
+  // loopback and the regtest stack resolves, and with ORDPOOL_E2E_NET_LOG_DIR
+  // set the net log records what the browser sent.
+  browser = await launchOfflineBrowser({ name: 'funding-safety' });
 });
 
 test.afterAll(async () => {

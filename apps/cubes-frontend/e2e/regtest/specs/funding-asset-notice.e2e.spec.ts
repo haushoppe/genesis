@@ -6,15 +6,26 @@
  *         overridden to 5 / 3 / 1 sat/vB; Leather's vendor backends -> installLeatherOfflineRoutes
  *         (ordpool-sdk)
  * Proves: a separate-address wallet whose only coin carries a seeded inscription gets an
- *         enabled CTA and a notice naming that inscription, both inside one viewport; any
- *         console.error or uncaught exception on an app page fails it
+ *         enabled CTA and a notice naming that inscription, both inside one viewport, and
+ *         the Mint click after the notice confirms a commit whose only input is that coin
+ *         and a reveal ord indexes as the cube's HTML; any console.error or uncaught
+ *         exception on an app page fails it
  */
 /* eslint-disable no-console */
 import { test, expect, BrowserContext, Page } from '@playwright/test';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 
-import { CUBES_URL, readWalletPopoverAddress, fillCubeSides, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
+import {
+  CUBES_URL,
+  expectMintSuccess,
+  expectTipPaid,
+  readWalletPopoverAddress,
+  fillCubeSides,
+  openDetails,
+  RENDERABLE_SIDE_IDS,
+  signPopupOrMintError,
+} from '../regtest-helpers';
 import {
   approvalGate,
   clickApprovalAndRequireClose,
@@ -30,6 +41,9 @@ import {
   installContextErrorGuard,
   launchWalletContext,
   installLeatherOfflineRoutes,
+  waitForTxConfirmed,
+  waitForOrdStockSync,
+  getStockOrdContent,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
@@ -127,7 +141,7 @@ test.afterAll(async () => {
  * This asserts the CTA is enabled AND the notice naming the specific seeded
  * inscription is on screen, and photographs them together.
  */
-test('funding-notice: a separate-address wallet is told what the coin carries and may proceed', async () => {
+test('funding-notice: a separate-address wallet is told what the coin carries and mints with it', async () => {
   // Fails the test on any console.error or uncaught exception from an app page
   // this context opens from here on; wallet extension pages are skipped by design.
   const errorGuard = installContextErrorGuard(context);
@@ -258,6 +272,42 @@ test('funding-notice: a separate-address wallet is told what the coin carries an
     `notice ends at ${noticeBox!.y + noticeBox!.height}, CTA ends at ${ctaBox!.y + ctaBox!.height}, ` +
     `viewport is ${viewport!.height}: the reader cannot see the reason and the button together`,
   ).toBeLessThanOrEqual(viewport!.height);
+
+  // PROCEEDS, not only enabled: the click after the notice mints, and the coin
+  // it spends is the one the notice named. An enabled button whose click
+  // throws before asking the wallet would pass every assertion above.
+  const mintBtn = cubes.locator('[data-testid="mint-btn"]');
+  await closeLeftoverExtensionPages(context, [cubes]);
+  const knownPagesBeforeSign = new Set(context.pages());
+  await mintBtn.click();
+
+  const signButton = (p: Page) => p.getByRole('button', { name: /^(confirm|sign|approve)$/i }).first();
+  const signPopup = await signPopupOrMintError(cubes, {
+    context,
+    knownPages: knownPagesBeforeSign,
+    isApproval: approvalGate({ url: /^chrome-extension:\/\//, control: signButton }),
+  });
+  // Tolerates the popup closing under the click (an accepted approval), then
+  // requires it to close; never re-clicks, a second click is a second signature.
+  await clickApprovalAndRequireClose(signButton(signPopup), signPopup, { label: 'leather sign' });
+  await expectMintSuccess(cubes);
+
+  const commitTxId = (await cubes.locator('[data-testid="mint-commit-txid"]').textContent())?.trim() ?? '';
+  const revealTxId = (await cubes.locator('[data-testid="mint-reveal-txid"]').getAttribute('aria-label'))?.trim() ?? '';
+  expect(commitTxId).toMatch(/^[0-9a-f]{64}$/);
+  expect(revealTxId).toMatch(/^[0-9a-f]{64}$/);
+
+  await waitForElectrsSync(mineBlocks(1));
+  const commitTx = await waitForTxConfirmed(commitTxId);
+  // The commit spends exactly the coin the notice named.
+  expect(commitTx.vin.map((i) => `${i.txid}:${i.vout}`)).toEqual([`${dirty.txid}:${dirty.vout}`]);
+  await waitForElectrsSync(mineBlocks(1));
+  const revealTx = await waitForTxConfirmed(revealTxId);
+  expectTipPaid(commitTx, revealTx);
+
+  await waitForOrdStockSync(Number(rpc('getblockcount').trim()));
+  const { contentType } = await getStockOrdContent(`${revealTxId}i0`);
+  expect(contentType).toBe('text/html;charset=utf-8');
 
   errorGuard.assertClean();
   await cubes.close();

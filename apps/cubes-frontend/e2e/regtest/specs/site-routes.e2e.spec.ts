@@ -14,14 +14,13 @@ import { installContextErrorGuard, launchOfflineBrowser } from 'ordpool-sdk/e2e'
 import { CUBES_URL, openDetails, RENDERABLE_SIDE_IDS } from '../regtest-helpers';
 
 /**
- * The pages and routes of the app that need no wallet and no cubes index: the
- * start page's fixed structure, the FAQ, the presskit, the wildcard route and
- * the banner's route-driven visibility.
+ * The pages and routes of the app that need no wallet and no minted cube: the
+ * start page's fixed structure, the FAQ, the wildcard route and the banner's
+ * route-driven visibility.
  *
- * The regtest build has no cubes index (`cubesIndexBase: ''`), so the minted
- * gallery, a cube's detail data and the keyboard navigation between cubes are
- * not reachable here; this spec covers what renders without them. The presskit
- * is left out: its media load from GitHub releases, which no regtest run reaches.
+ * The minted gallery, a cube's detail data and the keyboard navigation between
+ * cubes need cubes in the index, which cube-navigation.e2e.spec.ts mints and
+ * indexes. The presskit is not tested.
  */
 
 let browser: Browser;

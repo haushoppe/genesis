@@ -56,12 +56,12 @@ export const environment = {
   // Both hold the same six images because that is every image the fixture set
   // inscribes; they differ by name, symbol and side order, so a switch between
   // them produces a different cube and a different collection name.
-  // No cubes index exists for a regtest chain. The gallery previously read the
-  // MAINNET index here and rendered every one of those cubes from the local
-  // ord, which cannot serve them: one 404 per listed cube, every page load.
-  // Empty means the gallery lists nothing and fetches nothing; the cubes a run
-  // mints still appear through past-mints, and those DO resolve on this chain.
-  cubesIndexBase: '',
+  // The cubes index of THIS chain: e2e/regtest/build-cubes-index.sh runs the
+  // production indexer (ordinal-cubes-index's grind and rarity) against the
+  // regtest stack, and the regtest build serves its output here (angular.json).
+  // It lists the cubes minted on this chain up to the last index run, so every
+  // listed cube resolves from the local ord.
+  cubesIndexBase: '/regtest-cubes-index',
   suggestionGalleries: [
     {
       symbol: 'regtest-digits-ascending',

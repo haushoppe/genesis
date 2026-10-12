@@ -78,6 +78,16 @@
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true,
+              "assets": [
+                "src/assets",
+                "src/_redirects",
+                "src/_headers",
+                {
+                  "glob": "*.json",
+                  "input": "e2e/regtest/.cubes-index/data",
+                  "output": "regtest-cubes-index"
+                }
+              ],
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",

@@ -54,6 +54,24 @@ that directory, and `node node_modules/ordpool-sdk/scripts/check-net-log.mjs
 <dir>` fails on any connection, datagram or DNS lookup that left the machine.
 CI runs it after the specs of every lane and uploads the logs.
 
+## The cubes index
+
+The regtest build reads its gallery and cube navigation from
+`/regtest-cubes-index` (`cubesIndexBase` in `environment.regtest.ts`), which
+`angular.json`'s regtest configuration serves from `.cubes-index/data/`.
+`build-cubes-index.sh` writes it by running the production indexer,
+`ordpool-space/ordinal-cubes-index`'s `grind.mjs` and `rarity.mjs`, against this
+stack: the same code that builds the mainnet index, pointed at the regtest ord
+and electrs through its environment variables, with the regtest renderer in the
+v3 slot. The commit is pinned in `cubes-index.env`; the script extracts exactly
+that commit from `CUBES_INDEX_SRC` (the workspace sibling by default, CI fetches
+it), so a checkout on another revision still runs the pinned code.
+
+`regtest-bootstrap.sh` runs it once, so every lane starts with the index of its
+chain (empty on a fresh one). `cube-navigation.e2e.spec.ts` mints cubes through
+the SDK's inscribe orchestrator in its setup and runs it again, which picks them
+up incrementally, as the production grind does.
+
 ## Build pins
 
 ordpool-electrs, cat21-ord, Cat21 Wallet and the ordpool backend are built from
@@ -107,6 +125,10 @@ cached per version. Timeout ~45 min. Runs the whole wallet matrix on
 every push to `main` + on PRs that touch `apps/cubes-frontend/**`.
 
 ## Coverage
+
+`cube-navigation.e2e.spec.ts` covers the cube detail page and arrow-key
+navigation between cubes and between list pages, on an index of cubes minted
+on the lane's own chain.
 
 One `<wallet>-cube-mint-roundtrip.e2e.spec.ts` per supported wallet:
 Xverse, Leather, Unisat, Wizz, OKX, CAT-21 Wallet, Alby. (Oyl was

@@ -50,6 +50,7 @@ readonly cubesResource = rxResourceFixed({
 
 - Inscription ids that production reads from mainnet come from the environment, never from module constants: `cubeRendererInscriptionId`, `previewFallbackSides`, `bannerCubeSides`, `cubesIndexBase`, `suggestionGalleries`, `sideImageProbeBase`.
 - On regtest they resolve to fixtures inscribed on that chain by `e2e/regtest/inscribe-fixtures.sh`, which writes `src/environments/regtest-inscriptions.generated.ts` (gitignored; `scripts/ensure-regtest-inscriptions.mjs` writes a loud placeholder from `pretypecheck`/`prebuild` so a missing file cannot break the production build).
+- `cubesIndexBase` on regtest is the index of that chain, built by the production indexer (`e2e/regtest/build-cubes-index.sh`, ordinal-cubes-index at the sha in `e2e/regtest/cubes-index.env`) and served by the regtest build. Never hand-write index JSON: mint the cubes and run the script.
 - `parse-cube.ts`'s known-versions list takes `environment.cubeRendererInscriptionId` in its v3 SLOT, never a fourth entry: an appended entry reports the cube as v4 and breaks the Version trait.
 - A Node-side importer of app code (a Playwright spec) resolves `environments/environment` WITHOUT Angular's fileReplacements, so it sees mainnet values while the running app sees regtest ones. `expectedRegtestCubeHtml` and `parseRegtestCube` in `e2e/regtest/regtest-helpers.ts` bridge that, and throw rather than pass through if the id they substitute is absent.
 

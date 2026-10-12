@@ -149,6 +149,12 @@ done
 # environment and the spec helpers both read.
 "$HERE/inscribe-fixtures.sh" >&2
 
+# --- the cubes index of this chain ----------------------------------------
+# The regtest build reads its gallery from the index build-cubes-index.sh
+# writes, so it has to exist before the app starts: empty on a fresh chain,
+# listing whatever a lane mints once that lane re-runs the script.
+"$HERE/build-cubes-index.sh" >&2
+
 # --- emit the credentials as JSON ---
 BALANCE=$($RPC -rpcwallet="${E2E_PREFIX}" getbalance)
 jq -n \

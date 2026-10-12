@@ -104,10 +104,14 @@ jobs:
           # arrival can be PLACED after the form is filled, and asserts typed
           # sides survive it. No extension, no wallet connect.
           - suggestion-repro
-          # Not a wallet: the start page, /faq, /presskit, the wildcard route
-          # and the banner's route-driven visibility on the regtest build.
-          # Needs no extension.
+          # Not a wallet: the start page, /faq, the wildcard route and the
+          # banner's route-driven visibility on the regtest build. Needs no
+          # extension.
           - site-routes
+          # Not a wallet: mints cubes through the SDK in its setup, indexes them
+          # with the production indexer, and walks the detail page and the list
+          # with the arrow keys. Needs no extension.
+          - cube-navigation
           # Oyl removed 2026-08-06: vendor decommissioned the mainnet.ordit.io
           # relay-validator backend the extension calls during signPsbt
           # (DNS NXDOMAIN). The .crx still installs but every sign attempt
@@ -129,6 +133,9 @@ jobs:
       # Build context for the real ordpool-backend (mempool-witness renderer)
       # that serves the just-minted cube before confirmation.
       ORDPOOL_SRC: ${{ github.workspace }}/_ordpool
+      # The production cubes indexer, run against this lane's chain by
+      # regtest-bootstrap.sh (build-cubes-index.sh).
+      CUBES_INDEX_SRC: ${{ github.workspace }}/_ordinal-cubes-index
     defaults:
       run:
         working-directory: apps/cubes-frontend
@@ -185,6 +192,16 @@ jobs:
           git init -q _ordpool
           git -C _ordpool fetch -q --depth 1 https://github.com/ordpool-space/ordpool "$ORDPOOL_SHA"
           git -C _ordpool checkout -q FETCH_HEAD
+
+      # The production cubes indexer (grind.mjs, rarity.mjs) at the sha this
+      # repo pins in cubes-index.env. build-cubes-index.sh extracts exactly that
+      # commit, so fetching the one object is enough. Public repo, anonymous.
+      - name: Fetch ordinal-cubes-index at the pinned sha
+        working-directory: ${{ github.workspace }}
+        run: |
+          . apps/cubes-frontend/e2e/regtest/cubes-index.env
+          git init -q _ordinal-cubes-index
+          git -C _ordinal-cubes-index fetch -q --depth 1 https://github.com/ordpool-space/ordinal-cubes-index "$ORDINAL_CUBES_INDEX_SHA"
 
       # The same comparison the SDK's bootstraps make: a checkout at another
       # revision fails here, before anything is built from it.

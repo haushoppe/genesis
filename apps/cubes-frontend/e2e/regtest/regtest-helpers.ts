@@ -6,17 +6,25 @@
 // playwright.config.ts sets for this stack.
 
 import { expect, type Page } from '@playwright/test';
-import { clickUntilEffect, raceApprovalPopup, type ApprovalPopupSearch, type EsploraTx } from 'ordpool-sdk/e2e';
+import { clickUntilEffect, raceApprovalPopup, regtestServiceUrls, stackPort, type ApprovalPopupSearch, type EsploraTx } from 'ordpool-sdk/e2e';
 
 import { regtestInscriptions } from '../../src/environments/regtest-inscriptions.generated';
 import { getCubeHtml } from '../../src/app/services/cube-html';
 import { parseCube } from '../../src/shared/ordinals/parse-cube';
 
 /**
- * The regtest dev server the specs drive. The port comes from the runner
- * config (`CUBES_E2E_PORT`), which also starts the server on it.
+ * The regtest dev server the specs drive, on the slot's app port, where the
+ * runner config starts it.
  */
-export const CUBES_URL = `http://localhost:${process.env.CUBES_E2E_PORT ?? '4203'}/`;
+export const CUBES_URL = `${regtestServiceUrls().app}/`;
+
+// App-specific: the base href cubes' srcdoc preview carries for its own preview host.
+/**
+ * The `<base>` a mint-success preview document carries: the root of the
+ * ordpool backend behind `ownPreviewIframe`, on the slot's port, so a relative
+ * `/content/<id>` in the cube body resolves against this stack's backend.
+ */
+export const OWN_PREVIEW_BASE_HREF = new RegExp(`<base href="http://[^"]+:${stackPort('ordpoolBackend')}/">`);
 
 /** When `configurator-advanced` was last opened, per page, for `fillCubeSides`. */
 const detailsOpenedAt = new WeakMap<Page, number>();

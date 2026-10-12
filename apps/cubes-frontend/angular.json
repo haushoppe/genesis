@@ -125,7 +125,7 @@
             },
             "regtest": {
               "buildTarget": "cubes-frontend:build:regtest",
-              "proxyConfig": "src/proxy.conf.regtest.json",
+              "proxyConfig": "src/proxy.conf.regtest.mjs",
               "headers": {
                 "Access-Control-Allow-Origin": "*"
               }

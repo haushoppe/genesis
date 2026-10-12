@@ -1,4 +1,14 @@
 import { regtestInscriptions } from './regtest-inscriptions.generated';
+import { regtestStack } from './regtest-stack.generated';
+
+/**
+ * The stack's host ports come from the slot it runs in (base + 10 N), written
+ * by scripts/write-regtest-stack.mjs before every regtest serve, so slot N's
+ * build addresses slot N's stack without anyone editing this file.
+ */
+const ordStock = `http://localhost:${regtestStack.ordStock}`;
+const cat21Ord = `http://localhost:${regtestStack.ord}`;
+const ordpoolBackend = `http://127.0.0.1:${regtestStack.ordpoolBackend}`;
 
 /**
  * Regtest environment — e2e/regtest/ specs boot the frontend with this.
@@ -20,7 +30,7 @@ export const environment = {
   // regtest chain builds bc1 addresses.
   network: 'regtest' as 'mainnet' | 'regtest',
   // Same-origin so the dev-server proxy handles CORS + path rewrites:
-  // `proxy.conf.regtest.json` maps `/api/*` → `http://localhost:3010/*`
+  // `proxy.conf.regtest.mjs` maps `/api/*` to the stack's electrs
   // (stripping the `/api` prefix, since electrs's Esplora endpoints
   // live at the root — /address/{}/utxo, /tx, /tx/{}/hex, etc.).
   mempoolApiUrl: '',
@@ -28,16 +38,16 @@ export const environment = {
   // exists on THIS chain, inscribed from the committed fixtures by
   // e2e/regtest/inscribe-fixtures.sh, so a regtest run makes no request to
   // mainnet at all.
-  sideImageProbeBase: 'http://localhost:8081',
+  sideImageProbeBase: ordStock,
   // The SDK UtxoContentScanner's funding-safety scan hits both real regtest ord
-  // instances the docker stack brings up: ordApiUrl -> stock ord (:8081,
-  // --index-sats; inscriptions/runes/rare-sats) and cat21OrdApiUrl -> cat21-ord
-  // (:8080, --index-cat21; cats). A funding coin auto-picks only when BOTH report
+  // instances the docker stack brings up: ordApiUrl -> stock ord (--index-sats;
+  // inscriptions/runes/rare-sats) and cat21OrdApiUrl -> cat21-ord
+  // (--index-cat21; cats). A funding coin auto-picks only when BOTH report
   // no inscription, rune, cat, or rare sat. The specs fund via `fundCommonSats`
   // so the payment lands on common mid-block sats: a raw coinbase's block-first
   // sat reads as an "uncommon" rare sat, which would (correctly) force expert-mode.
-  ordApiUrl: 'http://localhost:8081',
-  cat21OrdApiUrl: 'http://localhost:8080',
+  ordApiUrl: ordStock,
+  cat21OrdApiUrl: cat21Ord,
   haushoppeTipAddress: 'bcrt1pgnmqsy3m04999vwvczfuuualuptlcwnlqx7yrf7y2xwzyswdxpvq92zqwq',
   haushoppeTipSats: 1000,
   // Inscribed by e2e/regtest/inscribe-fixtures.sh from the committed fixtures,
@@ -92,14 +102,14 @@ export const environment = {
     'b53e29d74eb41d7720760cb9c1b93eb9be0eaadbcf086aea0172672f6cce82aei0',
   ],
   previewFallbackSides: regtestInscriptions.fallbackSides,
-  ordinalsExplorerIframe: 'http://localhost:8081/preview/',
+  ordinalsExplorerIframe: `${ordStock}/preview/`,
   // Witness-capable preview = the real ordpool-backend in the regtest stack
-  // (docker-compose.regtest.yml, `ordpool-backend` profile, port 8999). It
+  // (docker-compose.regtest.yml, `ordpool-backend` profile). It
   // renders a cube from the mempool witness before any block is mined, the
-  // same path prod's api.ordpool.space/preview uses. stock-ord (:8081 above)
+  // same path prod's api.ordpool.space/preview uses. stock-ord (above)
   // only serves confirmed inscriptions, so the mempool preview needs this.
-  ownPreviewIframe: 'http://127.0.0.1:8999/preview/',
-  ordinalsExplorerDetails: 'http://localhost:8081/inscription/',
+  ownPreviewIframe: `${ordpoolBackend}/preview/`,
+  ordinalsExplorerDetails: `${ordStock}/inscription/`,
   satflowMarketplace: 'https://www.satflow.com/ordinal/',
   ordNetMarketplace: 'https://ord.net/inscription/'
 };

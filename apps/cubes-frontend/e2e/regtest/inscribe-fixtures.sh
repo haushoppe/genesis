@@ -11,21 +11,25 @@
 # the generated file is gitignored and rewritten on every run.
 #
 # Usage:  ./e2e/regtest/inscribe-fixtures.sh
-# Reads:  E2E_PREFIX (default cubes-e2e), E2E_ORD_STOCK_HOST_PORT (default 8081)
+# Reads:  the slot environment (E2E_SLOT, REGTEST_BITCOIND_CONTAINER,
+#         REGTEST_ORD_STOCK_CONTAINER, E2E_ORD_STOCK_HOST_PORT), anything unset
+#         filled in from slot E2E_SLOT (default 0) by the SDK's slot CLI;
+#         REGTEST_WALLET (default ordpool-e2e, as the SDK's helpers).
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 APP="$(cd "$HERE/../.." && pwd)"
-PREFIX="${E2E_PREFIX:-cubes-e2e}"
-ORD_PORT="${E2E_ORD_STOCK_HOST_PORT:-8081}"
+eval "$(node "$APP/node_modules/ordpool-sdk/scripts/e2e-slots.mjs" env --slot "${E2E_SLOT:-0}" --kind regtest --format sh)"
+WALLET="${REGTEST_WALLET:-ordpool-e2e}"
+ORD_PORT="$E2E_ORD_STOCK_HOST_PORT"
 OUT="$APP/src/environments/regtest-inscriptions.generated.ts"
 
-BTC() { docker exec "${PREFIX}-bitcoind" bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool "$@"; }
+BTC() { docker exec "$REGTEST_BITCOIND_CONTAINER" bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool "$@"; }
 # `--no-backup` is load-bearing: ord's recovery-key import (`importdescriptors`
 # of the commit key) fails against Bitcoin Core v30 with "commit tx recovery key
 # import failed", and the backup is worthless for a throwaway regtest chain.
 ORD() {
-  docker exec "${PREFIX}-ord-stock" ord --regtest \
+  docker exec "$REGTEST_ORD_STOCK_CONTAINER" ord --regtest \
     --bitcoin-rpc-url=bitcoind:18443 --bitcoin-rpc-username=ordpool --bitcoin-rpc-password=ordpool \
     --data-dir=/data wallet --server-url http://127.0.0.1:8080 "$@"
 }
@@ -97,14 +101,14 @@ if ! ORD_PROBE="$(ORD balance 2>&1)"; then
 fi
 if [ "$(ord_json ORD balance | python3 -c 'import sys,json;print(json.load(sys.stdin)["cardinal"])')" -lt 10000000 ]; then
   ADDR="$(ord_json ORD receive | python3 -c 'import sys,json;print(json.load(sys.stdin)["addresses"][0])')"
-  BTC -rpcwallet="${PREFIX}" sendtoaddress "$ADDR" 1 >/dev/null
-  BTC -rpcwallet="${PREFIX}" -generate 1 >/dev/null
+  BTC -rpcwallet="$WALLET" sendtoaddress "$ADDR" 1 >/dev/null
+  BTC -rpcwallet="$WALLET" -generate 1 >/dev/null
   wait_for_ord_sync
 fi
 
 # --- inscribe every fixture ----------------------------------------------
-docker exec "${PREFIX}-ord-stock" rm -rf /fixtures
-docker cp "$HERE/fixtures" "${PREFIX}-ord-stock:/fixtures" >/dev/null
+docker exec "$REGTEST_ORD_STOCK_CONTAINER" rm -rf /fixtures
+docker cp "$HERE/fixtures" "$REGTEST_ORD_STOCK_CONTAINER:/fixtures" >/dev/null
 
 # ord only spends CONFIRMED cardinal utxos, so every inscription's change has
 # to be mined before the next one can be funded from it. Without the mine the
@@ -114,7 +118,7 @@ inscribe() {
   local id
   id="$(ord_json ORD inscribe --fee-rate 1 --no-backup --file "/fixtures/$1" \
     | python3 -c 'import sys,json;print(json.load(sys.stdin)["inscriptions"][0]["id"])')"
-  BTC -rpcwallet="${PREFIX}" -generate 1 >/dev/null
+  BTC -rpcwallet="$WALLET" -generate 1 >/dev/null
   wait_for_ord_sync
   echo "$id"
 }
@@ -138,7 +142,7 @@ grep -q "$MAINNET_DEPS_ID" "$RENDERER_SRC" || {
   echo "cube-renderer.js no longer references $MAINNET_DEPS_ID; the substitution below is stale" >&2
   exit 1
 }
-docker exec "${PREFIX}-ord-stock" sh -c \
+docker exec "$REGTEST_ORD_STOCK_CONTAINER" sh -c \
   "sed 's|$MAINNET_DEPS_ID|$DEPS|g' /fixtures/cube-renderer.js > /fixtures/cube-renderer.regtest.js"
 RENDERER="$(inscribe cube-renderer.regtest.js)"
 SIDES=()

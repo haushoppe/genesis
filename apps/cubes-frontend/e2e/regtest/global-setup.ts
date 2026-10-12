@@ -8,6 +8,7 @@ import {
   onboardXverse,
   overrideRegtestElectrsUrl,
   primeAndSwitchToRegtest,
+  regtestServiceUrls,
   waitForChromeStorageKey,
   waitForSingletonLockGone,
 } from 'ordpool-sdk/e2e';
@@ -25,8 +26,8 @@ import {
  * run is a fresh machine with no persisted seed cache, so globalSetup
  * re-runs the real onboarding every push and a wallet version bump that
  * breaks a selector fails it loudly. Locally the seed is reused while the
- * Xverse version it was made with is the one unpacked; set
- * XVERSE_FORCE_REONBOARD to re-run it anyway.
+ * Xverse version it was made with is the one unpacked and its electrs URL is
+ * this slot's; set XVERSE_FORCE_REONBOARD to re-run it anyway.
  *
  * The test seed is the well-known BIP-39 abandon×11 + about vector and
  * the password is public. Both are deliberately unsuited for production
@@ -43,8 +44,13 @@ const SEED_CACHE_DIR = path.resolve(__dirname, './.xverse-seed');
 // fresh context without the onboarding click flow.
 export const SEED_USER_DATA_DIR = process.env.XVERSE_SEED_USER_DATA_DIR
   ?? path.join(SEED_CACHE_DIR, 'xverse-seed-user-data-dir');
-/** The Xverse version the seed was made with; a different one re-onboards. */
-const VERSION_MARKER = path.join(SEED_CACHE_DIR, 'xverse-ext-version');
+/**
+ * The Xverse version the seed was made with and the electrs URL it was pointed
+ * at; either one different re-onboards. The URL is part of the key because it
+ * is written into the wallet's own storage and differs per stack slot, so a
+ * seed made against another slot would broadcast to that slot's electrs.
+ */
+const SEED_MARKER = path.join(SEED_CACHE_DIR, 'xverse-seed-key');
 
 export default async function globalSetup(): Promise<void> {
   // Inscribe the fixture bytes on THIS chain and write their ids to
@@ -66,19 +72,24 @@ export default async function globalSetup(): Promise<void> {
   }
 
   const extVersion = (JSON.parse(fs.readFileSync(path.join(EXT_PATH, 'manifest.json'), 'utf8')) as { version: string }).version;
+  // Point Xverse's Regtest network at the slot's electrs the mint spec hits.
+  // Without this override Xverse would broadcast against its own default
+  // regtest esplora.
+  const electrsUrl = regtestServiceUrls().electrs;
+  const seedKey = `${extVersion} ${electrsUrl}`;
   if (
     fs.existsSync(path.join(SEED_USER_DATA_DIR, 'Default')) &&
-    fs.existsSync(VERSION_MARKER) &&
-    fs.readFileSync(VERSION_MARKER, 'utf8') === extVersion &&
+    fs.existsSync(SEED_MARKER) &&
+    fs.readFileSync(SEED_MARKER, 'utf8') === seedKey &&
     !process.env.XVERSE_FORCE_REONBOARD
   ) {
-    console.log(`[globalSetup] reusing seed user-data-dir (Xverse ${extVersion}) at ${SEED_USER_DATA_DIR}`);
+    console.log(`[globalSetup] reusing seed user-data-dir (Xverse ${extVersion}, electrs ${electrsUrl}) at ${SEED_USER_DATA_DIR}`);
     return;
   }
 
   console.log('[globalSetup] onboarding Xverse + switching to Regtest…');
   fs.rmSync(SEED_USER_DATA_DIR, { recursive: true, force: true });
-  fs.rmSync(VERSION_MARKER, { force: true });
+  fs.rmSync(SEED_MARKER, { force: true });
   fs.mkdirSync(SEED_USER_DATA_DIR, { recursive: true });
   const context = await launchWalletContext({
     wallet: 'xverse',
@@ -94,10 +105,6 @@ export default async function globalSetup(): Promise<void> {
   try {
     await onboardXverse(context, extensionId);
     await primeAndSwitchToRegtest(context, extensionId);
-    // Point Xverse's Regtest network at the local electrs the mint spec hits.
-    // Without this override Xverse would broadcast against its own default
-    // regtest esplora.
-    const electrsUrl = process.env.XVERSE_REGTEST_ELECTRS_URL ?? 'http://localhost:3010';
     await overrideRegtestElectrsUrl(context, extensionId, electrsUrl);
     console.log(`[globalSetup] overrode bitcoin-regtest.electrsApiUrl = ${electrsUrl}`);
     // Gate the close on the wallet state having materialised in
@@ -111,5 +118,5 @@ export default async function globalSetup(): Promise<void> {
   // After close, wait for Chrome to release its singleton lock so the spec
   // can safely clone the user-data-dir.
   await waitForSingletonLockGone(SEED_USER_DATA_DIR);
-  fs.writeFileSync(VERSION_MARKER, extVersion);
+  fs.writeFileSync(SEED_MARKER, seedKey);
 }

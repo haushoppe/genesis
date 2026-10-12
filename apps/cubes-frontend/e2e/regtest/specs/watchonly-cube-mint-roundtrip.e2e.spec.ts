@@ -38,6 +38,7 @@ import {
   RENDERABLE_SIDE_IDS,
   expectTipPaid,
   openWalletPopover,
+  OWN_PREVIEW_BASE_HREF,
 } from '../regtest-helpers';
 
 /**
@@ -311,7 +312,7 @@ test('watchonly: mint a cube by pasting an xpub → sign the PSBT offline → pa
   // replaced when the cube document arrives, and a scroll that resolved the
   // old element fails on a detached node.
   await cubes.locator('[data-testid="mint-success"]').scrollIntoViewIfNeeded();
-  await expect(preview).toHaveAttribute('srcdoc', /<base href="http:\/\/[^"]+:8999\/">/);
+  await expect(preview).toHaveAttribute('srcdoc', OWN_PREVIEW_BASE_HREF);
   await expect(preview).toHaveAttribute('srcdoc', /<meta name="color-scheme" content="dark">/);
   await expect(preview).toBeVisible();
 

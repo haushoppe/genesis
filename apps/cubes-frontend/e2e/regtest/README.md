@@ -28,13 +28,32 @@ hydration), `playwright.config.ts`, and the `*-bootstrap.sh` scripts.
 `playwright-bootstrap.sh <wallet>` fetches the wallet `.crx` from private
 `ordpool-sdk` releases (needs `GH_TOKEN`).
 
-The regtest Docker stack (bitcoind + electrs + ord-stock) is the SDK's
-shipped `docker-compose.regtest.yml`, loaded from
-`node_modules/ordpool-sdk/e2e/` — no local copy. It is parametrized via
-`E2E_PREFIX=cubes-e2e` (keeps the `cubes-e2e-*` container names this
-suite's helpers expect) plus `ELECTRS_SRC` / `CAT21_ORD_SRC` (build
-contexts). The `regtest-bootstrap.sh` script sets those defaults for a
-standalone local run; CI sets them at the job level.
+The regtest Docker stack (bitcoind + electrs + ord-stock + cat21-ord +
+ordpool-backend) is the SDK's shipped `docker-compose.regtest.yml`, loaded
+from `node_modules/ordpool-sdk/e2e/`, no local copy. `ELECTRS_SRC` /
+`CAT21_ORD_SRC` / `ORDPOOL_SRC` point its build contexts at the fork checkouts;
+`regtest-bootstrap.sh` defaults them to the workspace siblings for a local run,
+CI sets them at the job level.
+
+## Slots: where the stack runs and which ports it has
+
+Every stack runs in a machine-wide slot (the SDK's `scripts/e2e-slots.mjs`,
+section "Slots" of `node_modules/ordpool-sdk/e2e/README.md`). At most
+`ORDPOOL_E2E_MAX_STACKS` stacks run on one machine (default 1); a run that finds
+every slot held waits in line and says who holds them.
+
+Slot N publishes every service at its base port + 10 N (slot 0: electrs 3010,
+cat21-ord 8080, stock ord 8081, ordpool backend 8999, the app 4200) under the
+prefix `ordpool-e2e` (slot 0) or `ordpool-e2e-s<N>`. Nothing here names a port:
+
+- the shell scripts read `E2E_*_HOST_PORT` and `REGTEST_*_CONTAINER` from the
+  slot environment;
+- the specs and helpers read them through `regtestServiceUrls` / `stackPort`
+  (`ordpool-sdk/e2e`); the app is served on the slot's app port (`CUBES_URL`);
+- the regtest build reads them from `src/environments/regtest-stack.generated.ts`,
+  which `scripts/write-regtest-stack.mjs` writes from the slot environment before
+  every `npm run start:regtest`; `environment.regtest.ts` builds its URLs from it
+  and `src/proxy.conf.regtest.mjs` its proxy targets.
 
 ## Offline browsers and the net log
 
@@ -85,7 +104,7 @@ under CI on a mismatch.
 1. **beforeAll** — clone the Xverse seed user-data-dir, launch headed
    Chromium with the wallet .crx loaded, extract extension id from the
    service worker URL.
-2. **Open cubes-frontend** at `http://localhost:4203/`.
+2. **Open cubes-frontend** at `CUBES_URL`, the slot's app port.
 3. **Fund** the wallet's regtest payment address via `bitcoin-cli
    sendtoaddress`. Mine 1 block. Wait for electrs to index.
 4. **Click Connect [Xverse]** in the UI. Handle the wallet's approval
@@ -107,9 +126,10 @@ under CI on a mismatch.
 ## Commands
 
 ```bash
-npm run e2e:regtest:up      # bring up bitcoind + electrs + ord-stock, mine 101 blocks
-npm run e2e:regtest         # run the Playwright suite (needs :up first)
-npm run e2e:regtest:down    # stop + wipe the stack
+npm run e2e:regtest:run -- --grep watchonly   # slot, stack, specs, teardown in one command
+npm run e2e:slots -- list                     # who holds which slot
+npm run e2e:regtest:up                        # a stack that keeps its slot after the script exits
+npm run e2e:regtest:down                      # tear down YOUR stack in slot $E2E_SLOT and release it
 ```
 
 `playwright-bootstrap.sh <wallet>` downloads and unpacks the .crx into

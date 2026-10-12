@@ -69,3 +69,7 @@ apps/cubes-frontend/src/environments/environment.prod.generated.ts
 # Written by apps/cubes-frontend/e2e/regtest/inscribe-fixtures.sh: regtest
 # inscription ids change with every fresh chain.
 apps/cubes-frontend/src/environments/regtest-inscriptions.generated.ts
+
+# Written by apps/cubes-frontend/scripts/write-regtest-stack.mjs from the slot
+# environment: the host ports of the regtest stack this machine runs.
+apps/cubes-frontend/src/environments/regtest-stack.generated.ts

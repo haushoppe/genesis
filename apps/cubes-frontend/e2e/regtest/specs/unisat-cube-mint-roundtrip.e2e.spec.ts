@@ -29,6 +29,7 @@ import {
   openMintCheckout,
   RENDERABLE_SIDE_IDS,
   NON_IMAGE_SIDE_ID,
+  OWN_PREVIEW_BASE_HREF,
   signPopupOrMintError,
 } from '../regtest-helpers';
 import {
@@ -49,6 +50,7 @@ import {
   getStockOrdContent,
   installContextErrorGuard,
   launchWalletContext,
+  regtestServiceUrls,
 } from 'ordpool-sdk/e2e';
 import { recommendedFeesFixture } from 'ordpool-sdk';
 
@@ -298,20 +300,20 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   const inscriptionId = `${revealTxId}i0`;
 
   // --- PROOF: the cube renders from the MEMPOOL, before any block is mined ---
-  // The real ordpool-backend (:8999) decodes the inscription from the still-
+  // The real ordpool-backend decodes the inscription from the still-
   // unconfirmed reveal tx's witness — the whole anti-waiting feature. Its bytes
   // must equal exactly what we minted, and the success panel must reflect it.
   // It reads the parent tx's witness over bitcoind RPC, mempool first, so it
   // answers for an UNCONFIRMED tx once bitcoind holds it.
   await expect.poll(async () => {
-    const res = await fetch(`http://localhost:8999/content/${inscriptionId}`);
+    const res = await fetch(`${regtestServiceUrls().ordpoolBackend}/content/${inscriptionId}`);
     return res.ok ? res.text() : `HTTP ${res.status}`;
   }, { message: 'ordpool-backend renders the minted cube from the mempool' }).toBe(expectedCubeHtml);
   await expect(cubes.locator('[data-testid="mint-status-badge"]')).toContainText(/mempool/i);
   // The success preview shows the cube's bytes as srcdoc (dark canvas from the
   // first frame), fetched from the ordpool-backend's /content. The minted body
   // must land in the iframe byte-for-byte, wrapped only with the display-only
-  // dark meta and a base at the :8999 ord root.
+  // dark meta and a base at the ordpool backend's root.
   const preview = cubes.locator('[data-testid="mint-success-preview"]');
   // Waits for the BASE, not for the dark meta. The placeholder document this
   // iframe shows before the bytes arrive carries that same meta by design
@@ -324,9 +326,9 @@ test('mint a cube via Unisat: fill form → sign in wallet → broadcast → ord
   // off-screen preview holds the placeholder indefinitely and no wait can
   // rescue it. Scrolling it in is part of the scenario, not a workaround.
   await preview.scrollIntoViewIfNeeded();
-  await expect(preview).toHaveAttribute('srcdoc', /<base href="http:\/\/[^"]+:8999\/">/);
+  await expect(preview).toHaveAttribute('srcdoc', OWN_PREVIEW_BASE_HREF);
   const previewSrcdoc = (await preview.getAttribute('srcdoc')) ?? '';
-  expect(previewSrcdoc).toMatch(/<base href="http:\/\/[^"]+:8999\/">/);
+  expect(previewSrcdoc).toMatch(OWN_PREVIEW_BASE_HREF);
   expect(previewSrcdoc.endsWith(expectedCubeHtml.slice(expectedCubeHtml.indexOf('<body>')))).toBe(true);
   console.log('[unisat-mint] ordpool-backend rendered the cube from the mempool (pre-confirmation) ✓');
 

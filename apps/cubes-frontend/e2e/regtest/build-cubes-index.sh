@@ -12,14 +12,16 @@
 #
 # Usage:  ./e2e/regtest/build-cubes-index.sh
 # Reads:  CUBES_INDEX_SRC (an ordinal-cubes-index checkout that has the pinned
-#         commit; default: the workspace sibling), E2E_ORD_STOCK_HOST_PORT
-#         (default 8081), E2E_ELECTRS_HOST_PORT (default 3010)
+#         commit; default: the workspace sibling), the slot environment
+#         (E2E_ORD_STOCK_HOST_PORT, E2E_ELECTRS_HOST_PORT), anything unset
+#         filled in from slot E2E_SLOT (default 0) by the SDK's slot CLI
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 APP="$(cd "$HERE/../.." && pwd)"
-ORD="http://127.0.0.1:${E2E_ORD_STOCK_HOST_PORT:-8081}"
-ESPLORA="http://127.0.0.1:${E2E_ELECTRS_HOST_PORT:-3010}"
+eval "$(node "$APP/node_modules/ordpool-sdk/scripts/e2e-slots.mjs" env --slot "${E2E_SLOT:-0}" --kind regtest --format sh)"
+ORD="http://127.0.0.1:${E2E_ORD_STOCK_HOST_PORT}"
+ESPLORA="http://127.0.0.1:${E2E_ELECTRS_HOST_PORT}"
 SRC="${CUBES_INDEX_SRC:-$(cd "$APP/../../.." && pwd)/ordinal-cubes-index}"
 WORK="$HERE/.cubes-index"
 CODE="$WORK/code"

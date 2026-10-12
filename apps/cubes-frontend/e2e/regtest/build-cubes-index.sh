@@ -108,13 +108,22 @@ CHROME="$(cd "$APP" && node -e "
   const m = full.match(/^(.*)[\\\\/]chromium-(\\d+)[\\\\/]/);
   if (!m) { console.error('cannot read the Chromium revision from ' + full); process.exit(1); }
   const dir = path.join(m[1], 'chromium_headless_shell-' + m[2]);
-  const sub = fs.existsSync(dir) ? fs.readdirSync(dir).find((d) => fs.existsSync(path.join(dir, d, 'chrome-headless-shell'))) : undefined;
-  if (!sub) { console.error('no chrome-headless-shell under ' + dir + '; run playwright install chromium'); process.exit(1); }
-  process.stdout.write(path.join(dir, sub, 'chrome-headless-shell'));
+  // The binary is chrome-headless-shell on linux64 and macOS, headless_shell
+  // on arm64 Linux, each in its own platform directory.
+  const found = (fs.existsSync(dir) ? fs.readdirSync(dir) : [])
+    .flatMap((d) => ['chrome-headless-shell', 'headless_shell'].map((b) => path.join(dir, d, b)))
+    .find((f) => fs.existsSync(f));
+  if (!found) { console.error('no headless shell under ' + dir + '; run playwright install chromium'); process.exit(1); }
+  process.stdout.write(found);
 ")"
-# Background services (component updates, sync, GCM) would reach Google's
-# hosts; the probe needs nothing but the regtest ord.
-export CHROME_EXTRA_ARGS="--disable-background-networking --disable-component-update --disable-sync"
+# --no-sandbox: Ubuntu 23.10 and later (the CI runner) forbid the unprivileged
+# user namespaces Chromium's sandbox needs, and the browser aborts at start
+# ("No usable sandbox!"). Playwright launches this same binary with
+# --no-sandbox unless told otherwise, so the probe runs it as every test
+# browser in this suite runs; it loads only the regtest ord's own content.
+# The rest: background services (component updates, sync, GCM) would reach
+# Google's hosts, and the probe needs nothing but the regtest ord.
+export CHROME_EXTRA_ARGS="--no-sandbox --disable-background-networking --disable-component-update --disable-sync"
 
 
 export DATA_DIR="$DATA"

@@ -255,6 +255,13 @@
             }
           </div>
 
+          <!-- Above the breakdown, outside it: when the SDK resolves no coin
+               (expert-required, nothing covers) there is no breakdown, and the
+               reader still has to learn that the coin they chose is not used. -->
+          @if (droppedSelection(); as dropped) {
+            <app-funding-dropped-selection [dropped]="dropped" [replacement]="effectiveFundingUtxo()" />
+          }
+
           @if (effectiveFundingUtxo(); as sel) {
             <div class="p-3 border rounded mb-3 bg-body">
               <p class="fw-bold small mb-2">Breakdown</p>
@@ -286,8 +293,8 @@
                   </div>
                 }
               }
-              @if (selectedUtxo()) {
-                <p class="mb-0 mt-2 text-muted small">✓ You picked this funding coin.</p>
+              @if (pickHonoured()) {
+                <p class="mb-0 mt-2 text-muted small" data-testid="mint-picked-note">✓ You picked this funding coin.</p>
               } @else if (fundingAssetNotice()) {
                 <!-- The clean-pick sentence would contradict the notice directly
                      below it, which names what this very coin carries. Saying
@@ -382,7 +389,7 @@
                         {{ bucketLabel(row.bucket) }}
                       </span>
                       @if (effectiveFundingUtxo()?.txid === row.utxo.txid && effectiveFundingUtxo()?.vout === row.utxo.vout) {
-                        <span class="badge bg-secondary ms-2">{{ selectedUtxo() ? 'Selected' : 'Auto-picked' }}</span>
+                        <span class="badge bg-secondary ms-2">{{ pickHonoured() ? 'Selected' : 'Auto-picked' }}</span>
                       }
                     </div>
                     <div class="text-nowrap">

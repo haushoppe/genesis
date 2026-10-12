@@ -51,6 +51,7 @@ import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.se
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
 import { assetDetailRows, FundingAssetRow, fundingAssetRows } from './funding-asset-rows';
 import { bucketLabel } from './funding-bucket-label';
+import { FundingDroppedSelection } from './funding-dropped-selection';
 import { FundingExpertRequired } from './funding-expert-required';
 import { RuneEtchingService } from './rune-etching.service';
 import { allSidesRender, blackFaces } from './side-image-check';
@@ -194,6 +195,7 @@ const FEE_TIERS: readonly FeeTier[] = [
     DecimalPipe,
     DatePipe,
     SlicePipe,
+    FundingDroppedSelection,
     FundingExpertRequired,
   ],
   host: {
@@ -406,6 +408,14 @@ export class StartComponent {
   protected readonly mintState = computed(() => this.snap().state);
   /** The user's explicit funding pick (expert mode), off the snapshot. */
   protected readonly selectedUtxo = computed(() => this.snap().selectedUtxo);
+  /**
+   * The explicit pick the SDK replaced, with why (`gone`, `below-requirement`),
+   * off the snapshot. `selectedUtxo` keeps recording what was asked for, so it
+   * alone cannot say whether the mint still spends that coin.
+   */
+  protected readonly droppedSelection = computed(() => this.snap().droppedSelection);
+  /** The reader picked a coin and the mint spends exactly that coin. */
+  protected readonly pickHonoured = computed(() => this.selectedUtxo() !== null && this.droppedSelection() === null);
   /** Orchestrator error message + success result, off the snapshot. */
   protected readonly mintError = computed(() => this.snap().errorMessage);
   protected readonly mintSuccess = computed(() => this.snap().successResult);

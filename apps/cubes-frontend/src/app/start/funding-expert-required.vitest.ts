@@ -3,7 +3,7 @@
  * Real:   StartComponent class through Angular DI (no template), its own InscribeMintOrchestrator,
  *         Cat21Service, UtxoContentScanner and WalletService (ordpool-sdk, constructed as in
  *         app.config.ts), FundingExpertRequired rendered through TestBed
- * Faked:  fetch -> the esplora UTXO list, the fee estimate (recommendedFeesFixture, ordpool-sdk
+ * Faked:  fetch -> the esplora UTXO list (electrsConfirmedUtxoFixture, ordpool-sdk/testing), the fee estimate (recommendedFeesFixture, ordpool-sdk
  *         /testing) and both ord `/output` answers (inscribedOutputFixture,
  *         notIndexedOutputFixture, ordpool-sdk); WalletService storage -> an in-memory map
  *         holding a persisted watch-only identity; environment -> the real one with loopback
@@ -12,7 +12,10 @@
  *         decode it fronts); HttpClient -> HttpTestingController, nothing answered
  * Proves: each expert-required cause (named assets on a one-address wallet, assets the scan
  *         does not name, content the scan could not check) keeps Mint disabled with no coin
- *         picked or marked, and renders its own warning text naming the badge it points at
+ *         picked or marked, and renders its own warning text naming the badge it points at;
+ *         named assets on a separate-payment-address wallet are a notice, Mint is enabled,
+ *         and the component's orchestrator mints from that coin, reaching the signature with
+ *         it as the commit's only input
  */
 import { Input, provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
@@ -67,8 +70,9 @@ import {
   UtxoContentScanner,
   WalletService,
 } from 'ordpool-sdk';
-import { recommendedFeesFixture } from 'ordpool-sdk/testing';
-import { hex } from '@scure/base';
+import { electrsConfirmedUtxoFixture, recommendedFeesFixture } from 'ordpool-sdk/testing';
+import { base64, hex } from '@scure/base';
+import { Transaction } from '@scure/btc-signer';
 
 import { environment } from '../../environments/environment';
 import { bitcoinNetwork, cat21Config } from '../shared/sdk-tokens';
@@ -100,7 +104,7 @@ const ONE_ADDRESS = { ordinals: dummy.addressP2TR, payment: dummy.addressP2TR };
 const SEPARATE = { ordinals: dummy.addressP2TR, payment: dummy.addressP2WPKH };
 
 /** The only coin the wallet holds; covers the mint many times over. */
-const COIN: TxnOutput = { txid: 'c'.repeat(64), vout: 0, value: 300_000, status: { confirmed: true } };
+const COIN: TxnOutput = electrsConfirmedUtxoFixture({ txid: 'c'.repeat(64), vout: 0, value: 300_000 });
 const COIN_OUTPOINT = `${COIN.txid}:${COIN.vout}`;
 
 const VALID_SIDE = `${'a'.repeat(64)}i0`;
@@ -143,8 +147,10 @@ function storageWith(identity: { ordinals: string; payment: string }) {
   };
 }
 
-/** The component's protected members this spec reads. */
+/** The component's protected and private members this spec reads. */
 interface StartView {
+  orch: InscribeMintOrchestrator;
+  fundingAssetNotice(): boolean;
   fundingRecommendation(): InscribeSnapshot['fundingRecommendation'];
   fundingExpertCause(): ExpertRequiredCause | null;
   effectiveFundingUtxo(): TxnOutput | null;
@@ -372,6 +378,51 @@ describe('expert-required: the warning names its cause, and Mint stays disabled'
       const badge = badgeOf(el);
       expect(collapsed(badge)).toBe(EXPECTED_BADGE['unnamed-assets'].text);
       expect([...badge.classList]).toEqual(expect.arrayContaining(EXPECTED_BADGE['unnamed-assets'].classes));
+    });
+  });
+
+  /**
+   * The notice half of the ruling: the wallet keeps its spending money on a
+   * separate address and the only coin carries a named inscription, so the
+   * reader is told what the coin carries and the mint proceeds with it.
+   */
+  describe('named assets on a separate-payment-address wallet', () => {
+    let component: StartView;
+
+    beforeEach(async () => {
+      stubNetwork(SEPARATE.payment, inscribedOutputFixture());
+      component = startComponent(SEPARATE);
+      await settledRecommendation(component);
+    });
+
+    it('the SDK answers asset-notice naming the inscription, and no warning applies', () => {
+      expect(component.fundingRecommendation().status).toBe('asset-notice');
+      expect(component.fundingAssetNotice()).toBe(true);
+      expect(component.fundingExpertCause()).toBeNull();
+      expect(component.fundingRecommendation().recommended?.assets?.inscriptionIds).toEqual([`${'a'.repeat(64)}i0`]);
+    });
+
+    it('Mint is enabled with the named-asset coin as the funding coin', () => {
+      expect(component.effectiveFundingUtxo()).toMatchObject({ txid: COIN.txid, vout: COIN.vout });
+      expect(component.canMint()).toBe(true);
+    });
+
+    it('the mint reaches the signature with that coin as the commit\'s only input', async () => {
+      // The watch-only signature is the IO boundary: the prompt receives the
+      // unsigned commit and the spec stops there, before any broadcast.
+      const prompted: string[] = [];
+      const stop = new Error('the spec stops at the signature');
+      await expect(component.orch.mint(async ({ base64: psbt }) => {
+        prompted.push(psbt);
+        throw stop;
+      })).rejects.toBe(stop);
+
+      expect(prompted).toHaveLength(1);
+      const commit = Transaction.fromPSBT(base64.decode(prompted[0]));
+      expect(commit.inputsLength).toBe(1);
+      const input = commit.getInput(0);
+      expect(input.txid && hex.encode(input.txid)).toBe(COIN.txid);
+      expect(input.index).toBe(COIN.vout);
     });
   });
 

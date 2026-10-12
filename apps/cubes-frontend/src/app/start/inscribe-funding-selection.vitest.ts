@@ -1,8 +1,18 @@
+/**
+ * @test-kind unit
+ * Real:   InscribeMintOrchestrator and its funding selection (ordpool-sdk)
+ * Faked:  getUtxos -> electrsConfirmedUtxoFixture rows (ordpool-sdk/testing) with the txid and
+ *         value each case needs; scan port -> every coin clean; broadcast transport -> throws
+ *         on any send
+ * Proves: in a pool holding a tight dust-cliff coin and a larger headroom coin, the inscribe
+ *         auto-pick takes the headroom coin
+ */
 import { describe, expect, it } from 'vitest';
 import {
   getDummyKeypair, InscribeBroadcastTransport, InscribeMintOrchestrator, InscribeSnapshot,
   KnownOrdinalWalletType, Network, toScureNetwork, TxnOutput,
 } from 'ordpool-sdk';
+import { electrsConfirmedUtxoFixture } from 'ordpool-sdk/testing';
 import { hex } from '@scure/base';
 
 /** These specs never reach a broadcast; any send is a test bug. */
@@ -47,7 +57,7 @@ describe('inscribe funding selection: mixed pool auto-picks the headroom coin', 
   };
 
   function coin(txid: string, value: number): TxnOutput {
-    return { txid: txid.repeat(64).slice(0, 64), vout: 0, value, status: { confirmed: true } };
+    return electrsConfirmedUtxoFixture({ txid: txid.repeat(64).slice(0, 64), vout: 0, value });
   }
 
   async function snapshotFor(utxos: TxnOutput[], feeRate: number): Promise<InscribeSnapshot> {

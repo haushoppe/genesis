@@ -10,7 +10,8 @@
  *         the members the component reads, no capture
  * Proves: the watch-only mint wiring (psbtPrompt reaches orchestrator.mint, the signed PSBT
  *         closes the export modal), the fee-rate guard, the funding gate on the effective
- *         coin, a non-rendering side naming its face, the fees-error degradation, the
+ *         coin the SDK resolves (a stale pick gives way to the recommendation, or to none on
+ *         expert-required), a non-rendering side naming its face, the fees-error degradation, the
  *         craft-another-cube hand-over and the one-address custody caveat
  */
 import { provideZonelessChangeDetection } from '@angular/core';
@@ -48,8 +49,9 @@ vi.mock('../../environments/environment', async () => {
 
 import {
   Cat21Service, getDummyKeypair, InscribeBroadcastTransport, InscribeMintOrchestrator, InscribeSnapshot, KnownOrdinalWalletType, Network,
-  toScureNetwork, UtxoContentScanner, WalletService,
+  resolveFundingPick, toScureNetwork, UtxoContentScanner, WalletService,
 } from 'ordpool-sdk';
+import { electrsConfirmedUtxoFixture } from 'ordpool-sdk/testing';
 import { hex } from '@scure/base';
 import { CubesDataService } from '../services/cubes-data/cubes-data.service';
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
@@ -81,8 +83,9 @@ describe('StartComponent: watch-only mint wiring', () => {
   const VALID_ID = `${'a'.repeat(64)}i0`;
   const dummy = getDummyKeypair(toScureNetwork(Network.Regtest));
   const walletAddress = dummy.addressP2TR; // valid bcrt1p (regtest taproot)
-  const fakeUtxo = { txid: 'b'.repeat(64), vout: 0, value: 500_000, status: { confirmed: true } };
-  const viableSim = { utxo: fakeUtxo, simulation: { fundingRequirementSats: 3000 }, insufficient: false };
+  const FUNDING_REQUIREMENT_SATS = 3000;
+  const fakeUtxo = electrsConfirmedUtxoFixture({ txid: 'b'.repeat(64), vout: 0, value: 500_000 });
+  const viableSim = { utxo: fakeUtxo, simulation: { fundingRequirementSats: FUNDING_REQUIREMENT_SATS }, insufficient: false };
 
   /**
    * A snapshot in the shape InscribeMintOrchestrator emits, for driving derived
@@ -105,12 +108,23 @@ describe('StartComponent: watch-only mint wiring', () => {
     return captured;
   })();
 
+  /**
+   * `resolvedFundingUtxo` is what the orchestrator writes next to the
+   * recommendation: the SDK's own `resolveFundingPick` over it, the funding
+   * requirement and the selection, so the coin the component reads is the one
+   * the SDK would resolve for the snapshot a test describes.
+   */
   function snapshot(over: Partial<InscribeSnapshot>): InscribeSnapshot {
-    return {
+    const base: InscribeSnapshot = {
       ...emptySnapshot,
       state: 'ready', feeRate: 10,
       simulations: [viableSim] as unknown as InscribeSnapshot['simulations'],
       fundingRecommendation: { status: 'auto', recommended: fakeUtxo, candidates: [fakeUtxo] } as unknown as InscribeSnapshot['fundingRecommendation'],
+      ...over,
+    };
+    return {
+      ...base,
+      resolvedFundingUtxo: resolveFundingPick(base.fundingRecommendation, FUNDING_REQUIREMENT_SATS, base.selectedUtxo),
       ...over,
     };
   }
@@ -281,6 +295,30 @@ describe('StartComponent: watch-only mint wiring', () => {
     // reader has to pick) → the row clears; the pre-connect estimate reappears.
     setSnap({ selectedUtxo: null, fundingRecommendation: { status: 'expert-required', recommended: null, candidates: [fakeUtxo] } as unknown as InscribeSnapshot['fundingRecommendation'] });
     expect(c.selectedRow()).toBeNull();
+  });
+
+  it('funds from the coin the SDK resolves: a pick that no longer covers gives way to the recommendation', () => {
+    const c = component as unknown as { effectiveFundingUtxo(): { txid: string; vout: number } | null; canMint(): boolean };
+    // The reader picked a coin that covered at an earlier fee rate and no longer
+    // does. The SDK's mint() drops such a pick for the recommendation, so the
+    // coin the summary, the breakdown and the Mint button describe has to be
+    // the recommendation too, not the stale pick.
+    const tooSmall = electrsConfirmedUtxoFixture({ txid: 'd'.repeat(64), vout: 1, value: FUNDING_REQUIREMENT_SATS - 1 });
+    setSnap({
+      selectedUtxo: tooSmall,
+      fundingRecommendation: { status: 'auto', recommended: fakeUtxo, candidates: [fakeUtxo, tooSmall] } as unknown as InscribeSnapshot['fundingRecommendation'],
+    });
+    expect(c.effectiveFundingUtxo()).toEqual({ ...fakeUtxo });
+    expect(c.canMint()).toBe(true);
+
+    // On expert-required the same stale pick leaves no coin at all: the SDK
+    // spends nothing it was not explicitly given, so Mint stays disabled.
+    setSnap({
+      selectedUtxo: tooSmall,
+      fundingRecommendation: { status: 'expert-required', recommended: fakeUtxo, candidates: [fakeUtxo, tooSmall] } as unknown as InscribeSnapshot['fundingRecommendation'],
+    });
+    expect(c.effectiveFundingUtxo()).toBeNull();
+    expect(c.canMint()).toBe(false);
   });
 
   it('a fees-endpoint error degrades recommendedFees to null and never breaks the checkout total', () => {

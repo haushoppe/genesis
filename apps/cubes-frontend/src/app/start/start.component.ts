@@ -528,21 +528,16 @@ export class StartComponent {
   protected readonly fundingRecommendation = computed(() => this.snap().fundingRecommendation);
 
   /**
-   * The coin that will actually fund the mint: the user's explicit pick (expert
-   * mode) or, when unset, the SDK's recommendation on `auto` and
-   * `asset-notice`. Null on `expert-required`: the SDK still names a
-   * recommended coin there, but spending it has to be the reader's explicit
-   * pick, so it is neither used nor marked as picked.
+   * The coin that will actually fund the mint, as the SDK resolves it
+   * (`resolvedFundingUtxo`, the same `resolveFundingPick` its `mint()` runs):
+   * the reader's explicit pick while it still covers, else the recommendation
+   * on `auto` and `asset-notice`. Null on `expert-required` without a pick: the
+   * SDK still names a recommended coin there, but spending it has to be the
+   * reader's explicit choice, so it is neither used nor marked as picked.
+   * Read from the snapshot rather than derived here, so the coin the summary,
+   * the breakdown and the Mint button describe is the coin `mint()` spends.
    */
-  protected readonly effectiveFundingUtxo = computed<TxnOutput | null>(() => {
-    const manual = this.selectedUtxo();
-    if (manual) return manual;
-    const rec = this.fundingRecommendation();
-    // `asset-notice` resolves to a coin exactly like `auto` does: the reader is
-    // TOLD what is on it and proceeds. Only `expert-required` withholds the
-    // coin, because there it must be an explicit choice.
-    return rec.status === 'auto' || rec.status === 'asset-notice' ? rec.recommended : null;
-  });
+  protected readonly effectiveFundingUtxo = computed<TxnOutput | null>(() => this.snap().resolvedFundingUtxo);
 
   /**
    * No clean coin covers, the recommended coin's assets are NAMED, and this

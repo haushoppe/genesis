@@ -54,8 +54,6 @@ const TEST_TIMEOUT_MS = 240_000;
  * "the button click works".
  *
  * Structural mirror of ordpool-sdk/e2e/playwright/playwright.config.ts.
- * Kept separate from the shell smoke suite (../smoke.spec.ts)
- * so unit-CI stays fast and regtest CI stays comprehensive.
  */
 export default defineConfig({
   testDir: path.resolve(__dirname, 'specs'),

@@ -277,8 +277,8 @@ describe('StartComponent: watch-only mint wiring', () => {
     setSnap({ selectedUtxo: null, fundingRecommendation: { status: 'auto', recommended: fakeUtxo, candidates: [fakeUtxo] } as unknown as InscribeSnapshot['fundingRecommendation'] });
     expect(c.selectedRow()).not.toBeNull();
 
-    // No manual pick AND nothing safe to auto-pick (expert-required: only
-    // asset-bearing coins cover) → the row clears; the pre-connect estimate reappears.
+    // No manual pick AND nothing safe to auto-pick (expert-required: the
+    // reader has to pick) → the row clears; the pre-connect estimate reappears.
     setSnap({ selectedUtxo: null, fundingRecommendation: { status: 'expert-required', recommended: null, candidates: [fakeUtxo] } as unknown as InscribeSnapshot['fundingRecommendation'] });
     expect(c.selectedRow()).toBeNull();
   });

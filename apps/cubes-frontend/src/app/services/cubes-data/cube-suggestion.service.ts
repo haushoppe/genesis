@@ -33,11 +33,8 @@ const SIDE_TRAIT_TYPES = new Set(['Side 1', 'Side 2', 'Side 3', 'Side 4', 'Side 
 export class CubeSuggestionService {
 
   private readonly pastMints = inject(PastMintsService);
-
-  constructor(
-    private cubesData: CubesDataService,
-    private archive: ArchiveDataService,
-  ) {}
+  private readonly cubesData = inject(CubesDataService);
+  private readonly archive = inject(ArchiveDataService);
 
   getCubeSuggestion(onlyCollectionSymbol?: string): Observable<CubeSuggestion> {
     return defer(() => from(this.pick(onlyCollectionSymbol)));

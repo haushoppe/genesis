@@ -5,8 +5,8 @@
  *         per-run watch-only xpub account
  * Faked:  nothing
  * Proves: a one-address wallet whose only coin carries an inscription, cat, rune or rare sat
- *         keeps the mint button disabled, shows the warning and a coin picker naming the
- *         seeded asset, and enables only after an explicit pick
+ *         keeps the mint button disabled, shows the named-assets warning and a coin picker
+ *         naming the seeded asset, and enables only after an explicit pick
  */
 import { test, expect, Browser, Page } from '@playwright/test';
 import * as path from 'node:path';
@@ -118,6 +118,12 @@ for (const asset of ASSETS) {
   const warning = page.locator('[data-testid="mint-expert-required"]');
   await expect(warning).toBeVisible();
   await expect(page.locator('[data-testid="mint-asset-notice"]')).toHaveCount(0);
+  // Worded for THIS cause: the scan named the asset, and the wallet keeps it on
+  // the address that pays. The page passes the SDK's cause through to the
+  // warning, so a wrong or fixed cause shows the reader another reason.
+  await expect(warning).toHaveAttribute('data-cause', 'named-assets');
+  await expect(warning).toContainText('this wallet keeps those on the same address as its spending money');
+  await expect(warning.locator('.badge')).toHaveText('⚠ asset found');
 
   // BLOCKED. The whole point: an asset-bearing coin is never spent by default.
   await expect(page.locator('[data-testid="mint-btn"]')).toBeDisabled();

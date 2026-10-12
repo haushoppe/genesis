@@ -328,14 +328,11 @@
             </div>
           }
 
-          @if (fundingExpertRequired()) {
-            <div class="alert alert-warning py-2 px-3 small" role="alert" data-testid="mint-expert-required">
-              None of your spendable coins are verified clear of ordinal-bound
-              assets, so the safe auto-pick won't spend one for you. Choose a
-              funding coin below. A coin marked
-              <span class="badge bg-danger-subtle text-danger-emphasis">{{ bucketLabel('assets') }}</span> WILL be spent
-              (and its inscription / cat / rare sat moved) if you pick it.
-            </div>
+          <!-- Worded by the SDK's cause: named assets on a one-address wallet,
+               assets the scan could not name, or content the scan could not
+               check. Each points at the badge the reader finds in the picker. -->
+          @if (fundingExpertCause(); as cause) {
+            <app-funding-expert-required [cause]="cause" />
           }
 
           @if (viableRows().length > 0) {

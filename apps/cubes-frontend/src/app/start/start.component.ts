@@ -22,6 +22,8 @@ import {
   WalletService,
   bucketOf,
   esploraInscribeTransport,
+  ExpertRequiredCause,
+  expertRequiredCause,
   classifyCandidateFee,
   formatSatsWithUsd,
   getAddressNetwork,
@@ -48,6 +50,8 @@ import { cubeListQueryParams, CubeSort, toCubePage, toCubeSort } from '../servic
 import { CubeSuggestionService } from '../services/cubes-data/cube-suggestion.service';
 import { allSidesFilled, pickSides, SIDE_KEYS, SideValues, suggestionMayReplace } from './suggestion-replaces';
 import { assetDetailRows, FundingAssetRow, fundingAssetRows } from './funding-asset-rows';
+import { bucketLabel } from './funding-bucket-label';
+import { FundingExpertRequired } from './funding-expert-required';
 import { RuneEtchingService } from './rune-etching.service';
 import { allSidesRender, blackFaces } from './side-image-check';
 import { SideImageProbeService } from './side-image-probe.service';
@@ -190,6 +194,7 @@ const FEE_TIERS: readonly FeeTier[] = [
     DecimalPipe,
     DatePipe,
     SlicePipe,
+    FundingExpertRequired,
   ],
   host: {
     '(window:keydown)': 'onKeydown($event)',
@@ -225,9 +230,10 @@ export class StartComponent {
    * Angular). We construct it with our I/O ports and mirror its snapshot into
    * a signal; the SDK owns the select -> fee -> build -> sign -> broadcast flow.
    * `UtxoContentScanner` implements `ContentScanPort`, so it IS the scan port:
-   * its `classify` is fail-closed (scan-failed -> has-assets, the safety map
-   * lives in the SDK) and reuses the scanner's dedup+cache, so the force-scan
-   * shares the picker's per-row buckets (one scan per outpoint).
+   * its `classify` names what a scan found and rejects when the content is
+   * unknown (scan failed), which the SDK buckets as `failed` and never
+   * auto-spends. It reuses the scanner's dedup+cache, so the force-scan shares
+   * the picker's per-row buckets (one scan per outpoint).
    */
   private readonly orch = new InscribeMintOrchestrator({
     getUtxos: (address) => firstValueFrom(this.cat21.getUtxos(address)),
@@ -511,16 +517,22 @@ export class StartComponent {
    * "probably clean".
    *
    * `auto` = a content-clean covering coin was auto-picked, the invisible
-   * comfortable default; `expert-required` = only asset-bearing coins cover, so
-   * the SDK refuses to auto-spend and the UI surfaces the picker.
+   * comfortable default; `asset-notice` = no clean coin covers, the
+   * recommended coin's assets are NAMED and the wallet keeps a separate payment
+   * address, so the mint proceeds behind a notice listing them;
+   * `expert-required` = no clean coin covers and one of three causes holds
+   * (`expertRequiredCause`): named assets on a one-address wallet, assets the
+   * scan could not name, or content unknown because the scan failed. The SDK
+   * then refuses to auto-spend and the UI surfaces the picker.
    */
   protected readonly fundingRecommendation = computed(() => this.snap().fundingRecommendation);
 
   /**
    * The coin that will actually fund the mint: the user's explicit pick (expert
-   * mode) or, when unset, the SDK's content-clean auto-recommendation. Null when
-   * only asset coins cover (`expert-required`) — the picker must be surfaced so
-   * the user consciously mints on an asset-carrying coin.
+   * mode) or, when unset, the SDK's recommendation on `auto` and
+   * `asset-notice`. Null on `expert-required`: the SDK still names a
+   * recommended coin there, but spending it has to be the reader's explicit
+   * pick, so it is neither used nor marked as picked.
    */
   protected readonly effectiveFundingUtxo = computed<TxnOutput | null>(() => {
     const manual = this.selectedUtxo();
@@ -533,9 +545,11 @@ export class StartComponent {
   });
 
   /**
-   * Only asset-bearing coins cover, and this wallet keeps payments on a
-   * SEPARATE address from its ordinals, so an accidental spend is far less
-   * likely and the reader is informed rather than blocked.
+   * No clean coin covers, the recommended coin's assets are NAMED, and this
+   * wallet keeps payments on a SEPARATE address from its ordinals, so an
+   * accidental spend is far less likely and the reader is informed rather than
+   * blocked. Never true for an unnamed-asset or unknown-content coin: a notice
+   * that cannot say what is on the coin informs nobody.
    */
   protected readonly fundingAssetNotice = computed(() => this.fundingRecommendation().status === 'asset-notice');
 
@@ -554,8 +568,20 @@ export class StartComponent {
     return assetDetailRows(assets, this.runeEtchings.etchings());
   });
 
-  /** True when only asset-bearing coins cover the cost. Surfaces the picker. */
+  /** True when the SDK blocks the mint until the reader picks a coin. Surfaces the picker. */
   protected readonly fundingExpertRequired = computed(() => this.fundingRecommendation().status === 'expert-required');
+
+  /**
+   * Why the mint is blocked, which picks the warning's wording. Null unless
+   * `expert-required`. There the SDK always names a recommended coin, so the
+   * cause is always set; should it ever come back null, the warning says the
+   * content is unknown, the reading that promises the least.
+   */
+  protected readonly fundingExpertCause = computed<ExpertRequiredCause | null>(() => {
+    const rec = this.fundingRecommendation();
+    if (rec.status !== 'expert-required') return null;
+    return expertRequiredCause(rec) ?? 'unknown-content';
+  });
 
   /** The viable-row for the effective funding coin (manual pick or auto pick),
    *  for the cost breakdown. */
@@ -1203,16 +1229,9 @@ export class StartComponent {
     this.orch.setFeeRate(rate);
   }
 
-  /** The five labels are the family's, shared verbatim with ordpool.space and
-   *  cat21.space so a funding coin reads the same wherever it is shown. */
+  /** The family's bucket label for a picker row (`funding-bucket-label.ts`). */
   bucketLabel(bucket: UtxoScanBucket): string {
-    switch (bucket) {
-      case 'clean': return '✓ safe';
-      case 'assets': return '⚠ asset found';
-      case 'unscanned': return 'not scanned';
-      case 'scanning': return 'scanning…';
-      case 'failed': return 'scan failed';
-    }
+    return bucketLabel(bucket);
   }
 
   /** What a flagged coin carries, as display rows (see `funding-asset-rows.ts`).

@@ -14,13 +14,13 @@
 # Reads:  the slot environment (E2E_SLOT, REGTEST_BITCOIND_CONTAINER,
 #         REGTEST_ORD_STOCK_CONTAINER, E2E_ORD_STOCK_HOST_PORT), anything unset
 #         filled in from slot E2E_SLOT (default 0) by the SDK's slot CLI;
-#         REGTEST_WALLET (default ordpool-e2e, as the SDK's helpers).
+#         REGTEST_WALLET (the SDK's regtestWallet(), the name its helpers spend from).
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 APP="$(cd "$HERE/../.." && pwd)"
 eval "$(node "$APP/node_modules/ordpool-sdk/scripts/e2e-slots.mjs" env --slot "${E2E_SLOT:-0}" --kind regtest --format sh)"
-WALLET="${REGTEST_WALLET:-ordpool-e2e}"
+WALLET="$(cd "$APP" && node -p "require('ordpool-sdk/e2e/stack').regtestWallet()")"
 ORD_PORT="$E2E_ORD_STOCK_HOST_PORT"
 OUT="$APP/src/environments/regtest-inscriptions.generated.ts"
 

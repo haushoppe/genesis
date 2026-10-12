@@ -52,9 +52,9 @@ mkdir -p "$ORDPOOL_SRC/docker/backend/GeoIP" 2>/dev/null || true
 # image and volume carries the slot's prefix, so two slots share nothing.
 COMPOSE="docker compose -f $SDK_E2E/docker-compose.regtest.yml --profile ord-stock --profile cat21-ord --profile ordpool-backend"
 RPC="docker exec $REGTEST_BITCOIND_CONTAINER bitcoin-cli -regtest -rpcuser=ordpool -rpcpassword=ordpool"
-# The bitcoind wallet the SDK's regtest helpers spend from (REGTEST_WALLET,
-# their default when unset).
-WALLET="${REGTEST_WALLET:-ordpool-e2e}"
+# The bitcoind wallet the SDK's regtest helpers spend from: the SDK's
+# regtestWallet() (REGTEST_WALLET, else its default), so the name has one source.
+WALLET="$(cd "$HERE/../.." && node -p "require('ordpool-sdk/e2e/stack').regtestWallet()")"
 
 # --- bring containers up if not already running ---
 # The cube specs verify inscriptions against ord-stock and run the

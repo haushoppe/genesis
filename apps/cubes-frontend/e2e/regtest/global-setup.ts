@@ -3,6 +3,8 @@ import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 
 import {
+  E2E_TIMEOUT_ENV,
+  e2eTimeoutMs,
   installXverseOfflineRoutes,
   launchWalletContext,
   onboardXverse,
@@ -53,6 +55,13 @@ export const SEED_USER_DATA_DIR = process.env.XVERSE_SEED_USER_DATA_DIR
 const SEED_MARKER = path.join(SEED_CACHE_DIR, 'xverse-seed-key');
 
 export default async function globalSetup(): Promise<void> {
+  // playwright.config.ts sets the per-wait bound at module load, and the runner
+  // evaluates the config before this function, so the SDK helpers below
+  // (launchWalletContext, the onboarders, e2eExpect) stop at the config's bound
+  // here too, outside any test. Read it first: an unset bound throws now,
+  // before a fixture is inscribed or a browser starts.
+  console.log(`[globalSetup] per-wait bound ${e2eTimeoutMs()} ms (${E2E_TIMEOUT_ENV})`);
+
   // Inscribe the fixture bytes on THIS chain and write their ids to
   // src/environments/regtest-inscriptions.generated.ts, which both the regtest
   // environment and the spec helpers read. It has to run here rather than only

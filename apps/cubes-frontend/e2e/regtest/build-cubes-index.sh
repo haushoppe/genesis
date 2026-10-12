@@ -116,6 +116,7 @@ CHROME="$(cd "$APP" && node -e "
 # hosts; the probe needs nothing but the regtest ord.
 export CHROME_EXTRA_ARGS="--disable-background-networking --disable-component-update --disable-sync"
 
+
 export DATA_DIR="$DATA"
 export ORD_BASE="$ORD"
 export ESPLORA_BASE="$ESPLORA"
@@ -125,6 +126,22 @@ export CUBE_RENDERER_ID_V3="$RENDERER"
 export CHROME_BIN="$CHROME"
 
 STOP_AT_TIP=1 MAX_ITERATIONS=100000 node "$CODE/scripts/grind.mjs" >&2
+if [ "$(node -e "process.stdout.write(String(require(process.argv[1]).length))" "$DATA/cubes.json")" -gt 0 ]; then
+  # The probe discards the browser's stderr, so a browser that cannot start at
+  # all reads there as "incomplete". When there are sides to probe, start it once
+  # on a trivial page and fail with its own message when no DOM comes back.
+  PREFLIGHT="$(mktemp -d)"
+  echo '<html><body>preflight</body></html>' > "$PREFLIGHT/p.html"
+  # shellcheck disable=SC2086
+  if ! "$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="$PREFLIGHT/profile" \
+      $CHROME_EXTRA_ARGS --dump-dom "file://$PREFLIGHT/p.html" > "$PREFLIGHT/out" 2> "$PREFLIGHT/err" \
+      || ! grep -q preflight "$PREFLIGHT/out"; then
+    echo "the side probe's browser printed no DOM ($CHROME):" >&2
+    cat "$PREFLIGHT/err" >&2
+    exit 1
+  fi
+  rm -rf "$PREFLIGHT"
+fi
 node "$CODE/scripts/rarity.mjs" >&2
 
 echo "cubes index: $(node -e "process.stdout.write(String(require(process.argv[1]).length))" "$DATA/cubes.json") cube(s) in $DATA" >&2

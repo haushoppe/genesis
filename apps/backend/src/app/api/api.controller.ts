@@ -325,6 +325,11 @@ export class ApiController {
   /**
    * Returns the HTML page that is used for the animation_url of the token (for a mosaic)
    */
+  /* jscpd:ignore-start -- the mosaic endpoints (tokenMetadataMosaic / tokenAnimationMosaic)
+     repeat the same @ApiParam tile1-4 stack and (tileN) signature by design: each is its own
+     public REST + OpenAPI endpoint, and the generated client's shape depends on the explicit
+     per-endpoint decorators. A shared param decorator would change that client, and route
+     decorators must not be refactored into a helper, so this parallelism is marked. */
   @Get(['api/tokenAnimation/:tokenName/:tokenId/:tile1/:tile2/:tile3/:tile4'])
   @ApiOperation({ operationId: 'tokenAnimationMosaic' })
   @ApiParam({ name: 'tokenName', enum: KnownTokenName, example: KnownTokenName.genesis })
@@ -371,6 +376,8 @@ ${
 </html>
 `;
   }
+
+  /* jscpd:ignore-end */
 
   /**
    * Returns the token owners (current owner and lender) of all tokens of the collection

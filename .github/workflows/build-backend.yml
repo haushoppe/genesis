@@ -42,6 +42,10 @@ jobs:
         cache-dependency-path: apps/backend/package-lock.json
 
     - run: npm ci
+
+    - name: Duplicate check (jscpd)
+      run: npm run dupes
+
     - run: npm test --if-present
     - run: npm run build
 

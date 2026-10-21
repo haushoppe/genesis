@@ -49,6 +49,36 @@ export async function extractMintInfo(
 }
 
 /**
+ * Resolve the owner and (optional) lender NAMES and assemble the TokenOwner.
+ * Shared tail of `extractTokenOwner` and `extractSimpleTokenOwner`, which differ
+ * only in how they obtain the owner and lender addresses.
+ */
+async function buildTokenOwner(
+  tokenId: number,
+  owner: string,
+  lender: string,
+  lookupNameCallback: (address: string | null) => Promise<string>,
+): Promise<TokenOwner> {
+  const ownerName$ = lookupNameCallback(owner);
+  const lenderName$ = (lender !== ZERO_ADDRESS) ? lookupNameCallback(lender) : Promise.resolve(null);
+
+  const [ownerName, lenderName] = await Promise.all([ownerName$, lenderName$]);
+
+  const tokenOwner: TokenOwner = {
+    tokenId,
+    owner,
+    ownerName
+  }
+
+  if (lender !== ZERO_ADDRESS) {
+    tokenOwner.lender = lender;
+    tokenOwner.lenderName = lenderName;
+  }
+
+  return tokenOwner;
+}
+
+/**
  * Extracts the token owner ADDRESS AND NAME and, if applicable, the lender information for a given token ID from an Ethereum contract.
  * If the contract implements lendable functionality, the lender information will be included in the returned TokenOwner object.
  *
@@ -68,23 +98,7 @@ export async function extractTokenOwner(
 
   const [owner, lender] = await Promise.all([owner$, lender$]);
 
-  const ownerName$ = lookupNameCallback(owner);
-  const lenderName$ = (lender !== ZERO_ADDRESS) ? lookupNameCallback(lender) : Promise.resolve(null);
-
-  const [ownerName, lenderName] = await Promise.all([ownerName$, lenderName$]);
-
-  const tokenOwner: TokenOwner = {
-    tokenId,
-    owner,
-    ownerName
-  }
-
-  if (lender !== ZERO_ADDRESS) {
-    tokenOwner.lender = lender;
-    tokenOwner.lenderName = lenderName;
-  }
-
-  return tokenOwner;
+  return buildTokenOwner(tokenId, owner, lender, lookupNameCallback);
 }
 
 /**
@@ -107,23 +121,7 @@ export async function extractSimpleTokenOwner(
   const lender$: Promise<string> = implementsLendable ? contract.tokenOwnersOnLoan(tokenId) : Promise.resolve(ZERO_ADDRESS);
   const lender = await lender$;
 
-  const ownerName$ = lookupNameCallback(owner);
-  const lenderName$ = (lender !== ZERO_ADDRESS) ? lookupNameCallback(lender) : Promise.resolve(null);
-
-  const [ownerName, lenderName] = await Promise.all([ownerName$, lenderName$]);
-
-  const tokenOwner: TokenOwner = {
-    tokenId,
-    owner,
-    ownerName
-  }
-
-  if (lender !== ZERO_ADDRESS) {
-    tokenOwner.lender = lender;
-    tokenOwner.lenderName = lenderName;
-  }
-
-  return tokenOwner;
+  return buildTokenOwner(tokenId, owner, lender, lookupNameCallback);
 }
 
 /**

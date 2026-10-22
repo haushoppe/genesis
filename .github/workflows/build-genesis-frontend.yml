@@ -25,7 +25,25 @@ env:
   npm_config_fetch_timeout: "600000"
 
 jobs:
+  # jscpd runs on Node 22 (jscpd@4's deps load commander via ESM `require`, which
+  # this app's Node 18 build cannot do) and via npx, so this inactive app's
+  # package-lock is left untouched rather than regenerated to add a devDep. It
+  # reads apps/genesis-frontend/.jscpd.json and gates the build.
+  dupes:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/genesis-frontend
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Duplicate check (jscpd)
+      run: npx --yes jscpd@4.3.0
+
   build:
+    needs: dupes
     runs-on: ubuntu-latest
     defaults:
       run:

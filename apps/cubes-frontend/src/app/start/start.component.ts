@@ -180,6 +180,14 @@ const FEE_TIERS: readonly FeeTier[] = [
   { testId: 'fee-tier-fast', label: 'Fast', title: 'Next block', key: 'fastestFee'  },
 ];
 
+/** Resolve the scan state for a UTXO's outpoint, defaulting to 'not-scanned'. */
+function scanForUtxo(
+  scanMap: ReadonlyMap<string, UtxoScanState>,
+  utxo: { txid: string; vout: number },
+): UtxoScanState {
+  return scanMap.get(`${utxo.txid}:${utxo.vout}`) ?? { kind: 'not-scanned' as const };
+}
+
 @Component({
   selector: 'app-start',
   templateUrl: './start.component.html',
@@ -509,8 +517,7 @@ export class StartComponent {
       .sort((a, b) => b.utxo.value - a.utxo.value)
       .slice(0, 10)
       .map((r): ViableInscribeSimulation => {
-        const outpoint = `${r.utxo.txid}:${r.utxo.vout}`;
-        const scan = scanMap.get(outpoint) ?? { kind: 'not-scanned' as const };
+        const scan = scanForUtxo(scanMap, r.utxo);
         return { utxo: r.utxo, simulation: r.simulation, scan, bucket: bucketOf(scan) };
       });
   });
@@ -668,8 +675,7 @@ export class StartComponent {
   protected readonly pickerRows = computed<PickerRow[]>(() => {
     const scanMap = this.scanStates();
     return this.simulations().map((r): PickerRow => {
-      const outpoint = `${r.utxo.txid}:${r.utxo.vout}`;
-      const scan = scanMap.get(outpoint) ?? { kind: 'not-scanned' as const };
+      const scan = scanForUtxo(scanMap, r.utxo);
       return {
         utxo: r.utxo,
         simulation: r.insufficient ? null : r.simulation,

@@ -1,0 +1,29 @@
+{
+  "path": [
+    "src"
+  ],
+  "format": [
+    "typescript"
+  ],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/*.spec.ts",
+    "**/*.vitest.ts",
+    "**/*.test.ts",
+    "**/.angular/**",
+    "**/environments/**"
+  ],
+  "minLines": 5,
+  "minTokens": 50,
+  "maxLines": 100000,
+  "maxSize": "10mb",
+  "threshold": 0,
+  "reporters": [
+    "console"
+  ],
+  "gitignore": true,
+  "ignorePattern": [
+    "import\\s[^;]*?\\sfrom\\s'[^']+';"
+  ]
+}

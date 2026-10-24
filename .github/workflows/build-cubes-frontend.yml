@@ -44,6 +44,10 @@ jobs:
     - name: Duplicate check (jscpd)
       run: npm run dupes
 
+    # --max-warnings 0: a warning nobody fails on is a warning nobody fixes.
+    - name: Lint
+      run: npm run lint
+
     # ng test (tsconfig.spec.json → *.spec.ts) and the vitest suite
     # (vitest.config.ts → *.vitest.ts) cover disjoint file sets, so CI runs
     # BOTH. Without the second line the nine *.vitest.ts specs never execute

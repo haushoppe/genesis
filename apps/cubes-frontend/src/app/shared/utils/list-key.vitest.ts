@@ -30,7 +30,8 @@ describe('shouldIgnoreListKey', () => {
     // The listener is on the window, so a dialog's own buttons would otherwise
     // page the list behind it while the reader is using the dialog.
     document.body.innerHTML = '<div class="modal"><button id="b">Connect</button></div>';
-    const target = document.getElementById('b')!;
+    const target = document.getElementById('b');
+    if (!target) throw new Error('fixture button #b missing');
     const event = new KeyboardEvent('keydown', { key: 'ArrowRight' });
     Object.defineProperty(event, 'target', { value: target });
     expect(shouldIgnoreListKey(event)).toBe(true);

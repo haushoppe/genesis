@@ -53,7 +53,7 @@ describe('WalletConnectComponent: watch-only connect', () => {
           },
         },
         { provide: NgbModal, useValue: {} },
-        { provide: ChangeDetectorRef, useValue: { markForCheck: () => {} } },
+        { provide: ChangeDetectorRef, useValue: { markForCheck: () => undefined } },
         { provide: cat21Config, useValue: { ordApiUrl: 'https://ord.example.test', cat21OrdApiUrl: 'https://cat21.example.test' } },
       ],
     });

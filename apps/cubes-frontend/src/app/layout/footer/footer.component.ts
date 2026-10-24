@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ORDPOOL_FAMILY, ORDPOOL_FAMILY_HEADING } from 'ordpool-sdk';
 
 @Component({
-  // eslint-disable-next-line @angular-eslint/component-selector
+  // Native element selector on purpose: this component IS the page's <footer>.
   selector: 'footer',
   templateUrl: './footer.component.html',
   styleUrls: ['./footer.component.scss'],

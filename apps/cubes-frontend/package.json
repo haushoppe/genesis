@@ -2,7 +2,7 @@
   "name": "cubes-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "HAUS HOPPE — Ordinal Cubes frontend (cubes.haushoppe.art). Permissionless 3D Bitcoin cube gallery.",
+  "description": "HAUS HOPPE \u2014 Ordinal Cubes frontend (cubes.haushoppe.art). Permissionless 3D Bitcoin cube gallery.",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -10,7 +10,7 @@
     "start:regtest": "ng serve -c regtest",
     "prebuild": "node scripts/ensure-regtest-inscriptions.mjs && node scripts/write-regtest-stack.mjs && node scripts/inject-env.mjs",
     "build": "ng build",
-    "lint": "eslint 'src/**/*.ts'",
+    "lint": "eslint 'src/**/*.ts' --max-warnings 0",
     "e2e:regtest": "playwright test --config e2e/regtest/playwright.config.ts",
     "e2e:regtest:up": "bash e2e/regtest/regtest-bootstrap.sh",
     "e2e:regtest:run": "node node_modules/ordpool-sdk/scripts/e2e-slots.mjs run --kind regtest --label cubes-e2e -- bash -c 'bash e2e/regtest/regtest-bootstrap.sh >/dev/null && npm run e2e:regtest -- \"$@\"' cubes-e2e-run",

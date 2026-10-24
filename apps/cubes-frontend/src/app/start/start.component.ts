@@ -58,7 +58,7 @@ import { allSidesRender, blackFaces } from './side-image-check';
 import { SideImageProbeService } from './side-image-probe.service';
 import { blackFacesLabel } from '../services/cubes-data/rarity-labels';
 import { InscriptionLookupService } from '../services/inscription-lookup.service';
-import { MintStatusService, MintTxStatus } from '../services/mint-status.service';
+import { MintStatusService } from '../services/mint-status.service';
 import { inscriptionNumberFromInput } from './inscription-number-input';
 import { PastMintsService } from '../services/past-mints.service';
 import { PriceService } from '../services/price.service';

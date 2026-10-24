@@ -13,7 +13,7 @@ import { HeaderComponent } from './layout/header/header.component';
 import { CustomScrollService } from './custom-scroll.service';
 
 @Component({
-  // eslint-disable-next-line @angular-eslint/component-selector
+  // Native element selector on purpose: this component IS the page's <body>.
   selector: 'body',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
@@ -35,7 +35,7 @@ export class AppComponent {
   hideBanner = toSignal(
     this.router.events.pipe(
       filter((event: any) => event instanceof NavigationEnd),
-      switchMap((event: NavigationEnd) => {
+      switchMap(() => {
         let route = this.router.routerState.root;
         while (route.firstChild) {
           route = route.firstChild;

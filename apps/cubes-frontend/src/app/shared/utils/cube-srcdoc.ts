@@ -1,3 +1,6 @@
+/* eslint-disable no-useless-escape -- `<\/script>` keeps the shim safe to
+   inline: a literal </script> would close an embedding script block. The
+   escape is for the HTML context, which the rule cannot see. */
 /**
  * On-chain cube display via `srcdoc`, so the iframe shows the cube's stage
  * from its very first frame and never a white or flat canvas.

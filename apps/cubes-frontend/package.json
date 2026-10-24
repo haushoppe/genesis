@@ -2,7 +2,7 @@
   "name": "cubes-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "HAUS HOPPE \u2014 Ordinal Cubes frontend (cubes.haushoppe.art). Permissionless 3D Bitcoin cube gallery.",
+  "description": "HAUS HOPPE — Ordinal Cubes frontend (cubes.haushoppe.art). Permissionless 3D Bitcoin cube gallery.",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -49,7 +49,7 @@
     "bootstrap-icons": "^1.10.5",
     "buffer": "^6.0.3",
     "canvas-confetti": "^1.6.0",
-    "ordpool-sdk": "github:ordpool-space/ordpool-sdk#1fe9d72",
+    "ordpool-sdk": "github:ordpool-space/ordpool-sdk#8de8536967a731a3e924b11a922d3c2defd547a7",
     "process": "^0.11.10",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0",

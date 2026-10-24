@@ -10,7 +10,7 @@
     "start:regtest": "ng serve -c regtest",
     "prebuild": "node scripts/ensure-regtest-inscriptions.mjs && node scripts/write-regtest-stack.mjs && node scripts/inject-env.mjs",
     "build": "ng build",
-    "lint": "eslint 'src/**/*.ts' --max-warnings 0",
+    "lint": "eslint 'src/**/*.{ts,html}' --max-warnings 0",
     "e2e:regtest": "playwright test --config e2e/regtest/playwright.config.ts",
     "e2e:regtest:up": "bash e2e/regtest/regtest-bootstrap.sh",
     "e2e:regtest:run": "node node_modules/ordpool-sdk/scripts/e2e-slots.mjs run --kind regtest --label cubes-e2e -- bash -c 'bash e2e/regtest/regtest-bootstrap.sh >/dev/null && npm run e2e:regtest -- \"$@\"' cubes-e2e-run",
@@ -58,17 +58,21 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "22.0.6",
+    "@angular-eslint/eslint-plugin": "^22.6.0",
+    "@angular-eslint/eslint-plugin-template": "^22.6.0",
+    "@angular-eslint/template-parser": "^22.6.0",
     "@angular/cli": "22.0.6",
     "@angular/compiler-cli": "22.0.6",
     "@playwright/test": "^1.61.0",
     "@types/canvas-confetti": "^1.6.0",
     "@types/node": "^18.11.18",
-    "@typescript-eslint/eslint-plugin": "5.62.0",
-    "@typescript-eslint/parser": "5.62.0",
-    "eslint": "8.46.0",
+    "@typescript-eslint/utils": "^8.72.0",
+    "angular-eslint": "^22.6.0",
+    "eslint": "^9.39.5",
     "jscpd": "^4.3.0",
     "jsdom": "^25.0.0",
     "typescript": "6.0.3",
+    "typescript-eslint": "^8.72.0",
     "vitest": "^3.0.0"
   }
 }

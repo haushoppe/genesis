@@ -295,7 +295,11 @@ export class StartComponent {
    * missing or nonsensical value; the default view carries no parameters at
    * all. `SmartScrollService` keeps these navigations from scrolling the page.
    */
+  // The alias IS the contract: withComponentInputBinding maps these to the
+  // query parameters ?sort= and ?page=, so the name is the URL's, not ours.
+  /* eslint-disable-next-line @angular-eslint/no-input-rename */
   readonly sortParam = input<string | undefined>(undefined, { alias: 'sort' });
+  /* eslint-disable-next-line @angular-eslint/no-input-rename */
   readonly pageParam = input<string | undefined>(undefined, { alias: 'page' });
 
   protected readonly cubeSort = computed(() => toCubeSort(this.sortParam()));
@@ -1165,7 +1169,7 @@ export class StartComponent {
         `Mint refused (${gate.reason}${gate.detail ? ': ' + gate.detail : ''}). ` +
         `This is a safety check — please report if you were minting a normal cube.`,
       );
-      // eslint-disable-next-line no-console
+       
       console.warn('[cubes] mint gate rejected:', gate.reason, gate.detail);
       return;
     }
@@ -1185,7 +1189,7 @@ export class StartComponent {
       const inscriptionIds = INSCRIPTION_ID_FIELDS.map((k) => form[k]);
       this.pastMints.record(result.commitTxId, result.revealTxId, inscriptionIds);
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[cubes] mint threw:', err);
     }
   }

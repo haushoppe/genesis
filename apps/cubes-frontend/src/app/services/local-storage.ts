@@ -2,7 +2,7 @@ export function getLocalStore(key: string): string | null {
   try {
     const result = localStorage.getItem(key)
     return result
-  } catch (error) {
+  } catch (_error) {
     return null
   }
 }
@@ -10,7 +10,7 @@ export function getLocalStore(key: string): string | null {
 export function setLocalStore(key: string, value: string): void {
   try {
     localStorage.setItem(key, value)
-  } catch (error) {
+  } catch (_error) {
     return
   }
 }
@@ -18,7 +18,7 @@ export function setLocalStore(key: string, value: string): void {
 export function delLocalStore(key: string): void {
   try {
     localStorage.removeItem(key)
-  } catch (error) {
+  } catch (_error) {
     return
   }
 }

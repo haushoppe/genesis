@@ -27,41 +27,23 @@ env:
   npm_config_fetch_timeout: "600000"
 
 jobs:
-  # jscpd runs on Node 22: jscpd@4's deps use ESM `require`, which Node 18 (the
-  # backend's runtime, used by the build job below) cannot load. The check is a
-  # dev tool, not the runtime, so it gets its own newer Node and gates the build.
-  dupes:
+  build:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: apps/backend
+
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
-        node-version: 22
+        node-version: 26
         cache: 'npm'
         cache-dependency-path: apps/backend/package-lock.json
+
     - run: npm ci
     - name: Duplicate check (jscpd)
       run: npm run dupes
-
-  build:
-    needs: dupes
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/backend
-
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 18
-        cache: 'npm'
-        cache-dependency-path: apps/backend/package-lock.json
-
-    - run: npm ci
     - run: npm test --if-present
     - run: npm run build
 

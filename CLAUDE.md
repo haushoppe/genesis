@@ -14,7 +14,7 @@ Guidance for Claude Code in the `haushoppe/genesis` repo.
 | Path | What | State |
 |---|---|---|
 | `apps/cubes-frontend/` | Angular 22 SPA, zoneless, signal-first | LIVE product |
-| `apps/backend/` | NestJS API, Node 18, no database | Live, ERC-721 side only |
+| `apps/backend/` | NestJS API, Node 26, no database | Live, ERC-721 side only |
 | `apps/genesis-frontend/` | Angular 16 SPA, ERC-721 mint, Kendo UI + `@web3-onboard/*` | Inactive, never shipped |
 | `contracts/` | Solidity ERC721A + Hardhat | |
 
@@ -98,10 +98,11 @@ Why: both shipped as regressions once, green, and were fixed only after measurem
 | Workflow | Trigger | Does |
 |---|---|---|
 | `build-backend.yml` | push to `apps/backend/**` | `npm ci && npm test && npm run build`, pushes `dist/` + `package.json` + `package-lock.json` to `haushoppe/backend-build@stage_prod`. happysrv's `haushoppe-backend-deploy.timer` polls that branch every minute, runs `npm ci --omit=dev`, restarts `haushoppe-backend.service`. Under 60s from CI to live. |
-| `build-cubes-frontend.yml` | push to `apps/cubes-frontend/**` | `npm ci && npm test && npm run build`, pushes `dist/` to `haushoppe/cubes-frontend-build@main`; Cloudflare Pages auto-deploys to cubes.haushoppe.art. |
+| `build-cubes-frontend.yml` | push to `apps/cubes-frontend/**` | `npm ci`, jscpd, lint, `npm test`, `test:vitest`, `typecheck`, `npm run build`, pushes `dist/` to `haushoppe/cubes-frontend-build@main`; Cloudflare Pages auto-deploys to cubes.haushoppe.art. Every step gates the deploy, so a red lint or a failing spec keeps the live bundle. |
 | `build-genesis-frontend.yml` | push to `apps/genesis-frontend/**` | Same shape. Runs `npx kendo-ui-license activate` first. Pushes to `haushoppe/genesis-frontend-build@main`. |
+| `e2e-cubes-regtest.yml` | push to `main` and PRs touching `apps/cubes-frontend/**`, markdown excluded | One matrix job per wallet, per funding scenario and per route check, each driving the real UI in headed Chromium against a real regtest stack. Runs beside the build and gates no deploy. |
 
-Workflows run Node 18 with `npm ci`.
+Workflows run Node 26 with `npm ci`.
 
 ## Environment (apps/backend)
 

@@ -333,11 +333,15 @@ jobs:
       #
       # setup-node applies to the REST of the job, not to one step, so the
       # job's own Node is restored right after the build.
+      #
+      # `node-version-file` resolves against the workspace, so the path is
+      # relative: an absolute one gets appended to the workspace and the
+      # action looks for it twice over.
       - name: Use cat21-wallet's own Node for its build
         if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'
         uses: actions/setup-node@v4
         with:
-          node-version-file: ${{ github.workspace }}/_cat21-wallet-src/.nvmrc
+          node-version-file: _cat21-wallet-src/.nvmrc
 
       - name: Install cat21-wallet dependencies
         if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'

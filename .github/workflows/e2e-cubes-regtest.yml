@@ -326,6 +326,19 @@ jobs:
           # One build per pinned wallet revision.
           key: cubes-cat21wallet-dist-${{ env.CAT21_WALLET_SHA }}
 
+      # cat21-wallet is a foreign monorepo and targets the Node in its own
+      # `.nvmrc`, which its own CI uses and which its engines field states.
+      # Built on this job's Node 26 instead, `@leather.io/cms` dies with
+      # "require is not defined in ES module scope".
+      #
+      # setup-node applies to the REST of the job, not to one step, so the
+      # job's own Node is restored right after the build.
+      - name: Use cat21-wallet's own Node for its build
+        if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ${{ github.workspace }}/_cat21-wallet-src/.nvmrc
+
       - name: Install cat21-wallet dependencies
         if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'
         working-directory: ${{ github.workspace }}/_cat21-wallet-src
@@ -335,6 +348,12 @@ jobs:
         if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'
         working-directory: ${{ github.workspace }}/_cat21-wallet-src
         run: pnpm build:extension
+
+      - name: Back to this job's Node
+        if: matrix.wallet == 'cat21wallet' && steps.cat21wallet-dist-cache.outputs.cache-hit != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
 
       - name: Stage cat21-wallet extension via LOCAL_DIST bootstrap
         if: matrix.wallet == 'cat21wallet'

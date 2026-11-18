@@ -574,22 +574,15 @@ export class StartComponent {
   private readonly resolvedFundingStatus = computed(() => this.snap().resolvedFundingStatus);
 
   /**
-   * What the coin that WILL be spent carries, named.
-   *
-   * The SDK annotates its resolved pick with bucket and assets at runtime but
-   * types `resolvedFundingUtxo` as the bare coin, so the assets are read back
-   * type-safely from the recommendation's own candidates, matched by outpoint:
-   * `describeFundingPick` picks from exactly that list. Never from
-   * `recommended`, which is what the SDK WOULD choose and stays put when the
-   * reader picks another coin, and never a second lookup against the scanner,
-   * which answers about an outpoint rather than about the spend.
+   * What the coin that WILL be spent carries, named, as the SDK annotated the
+   * coin it resolved. Never from `recommended`, which is the coin the SDK
+   * WOULD choose and stays put when the reader picks another one, and never a
+   * second lookup against the scanner, which answers about an outpoint rather
+   * than about the spend.
    */
-  private readonly resolvedPickAssets = computed<UtxoAssetDetail | undefined>(() => {
-    const pick = this.effectiveFundingUtxo();
-    if (!pick) return undefined;
-    return this.fundingRecommendation().candidates
-      .find((c) => c.txid === pick.txid && c.vout === pick.vout)?.assets;
-  });
+  private readonly resolvedPickAssets = computed<UtxoAssetDetail | undefined>(
+    () => this.snap().resolvedFundingUtxo?.assets,
+  );
 
   /** This wallet keeps its ordinals on the same address as its spending money. */
   private readonly oneAddressWallet = computed(() => {
@@ -748,6 +741,7 @@ export class StartComponent {
 
   /** The node's reason for refusing the resend, shown with the retry. */
   protected readonly revealResendError = signal<string | null>(null);
+
 
   // ---------- Watch-only (xpub) export/paste signing bridge ----------
 

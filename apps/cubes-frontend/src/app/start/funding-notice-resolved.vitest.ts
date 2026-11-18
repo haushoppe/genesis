@@ -62,6 +62,7 @@ import {
   LAST_CONNECTED_WALLET,
   Network,
   OutputFixture,
+  RARE_SAT_MAX_RANGES,
   toScureNetwork,
   TxnOutput,
   UtxoContentScanner,
@@ -97,6 +98,19 @@ const BIG_INSCRIPTION = `${'2'.repeat(64)}i0`;
 const VALID_SIDE = `${'a'.repeat(64)}i0`;
 
 const outpoint = (u: TxnOutput) => `${u.txid}:${u.vout}`;
+
+/**
+ * A coin whose sat ranges are too many for the rare-sat check to run, built
+ * from the clean fixture so every other field stays what the classifier
+ * expects. Above `RARE_SAT_MAX_RANGES` the rarity is UNKNOWN, never common, so
+ * such a coin must not be auto-spent: a rare sat could be sitting on it.
+ */
+function tooManyRangesFixture(count: number): OutputFixture {
+  const base = cleanOutputFixture();
+  const ranges = Array.from({ length: count }, (_, i): readonly [number, number] =>
+    [1_002_000_000_001 + i * 2, 1_002_000_000_002 + i * 2]);
+  return { ord: { ...base.ord, sat_ranges: ranges }, cat21Ord: { ...base.cat21Ord, sat_ranges: ranges } };
+}
 
 /** A Response the SDK's fetch helpers read: status plus a JSON body. */
 function json(body: unknown): Response {
@@ -339,6 +353,36 @@ describe('the funding notice describes the coin that will be spent', () => {
       if (component.effectiveFundingUtxo()?.txid !== BIG.txid) throw new Error('pick not resolved yet');
     }, { timeout: 5_000, interval: 25 });
     expect(component.bestFitUnpicked()).toBeNull();
+  });
+
+  /**
+   * The seam for the SDK's rare-sat cap: the scan port cubes injects is the
+   * SDK's own `UtxoContentScanner`, so the cap decides what this page may
+   * auto-spend. Both ends are asserted, because only the pair shows the cap is
+   * what moved the answer and not something else about the fixture.
+   */
+  it('never auto-spends a coin whose rarity the scan could not check', async () => {
+    stubNetwork(SEPARATE.payment, {
+      small: tooManyRangesFixture(RARE_SAT_MAX_RANGES + 1),
+      big: tooManyRangesFixture(RARE_SAT_MAX_RANGES + 1),
+    });
+    const blocked = startComponent(SEPARATE);
+    await settled(blocked);
+    expect(blocked.fundingExpertCause()).toBe('unknown-content');
+    expect(blocked.effectiveFundingUtxo()).toBeNull();
+    expect(blocked.canMint()).toBe(false);
+
+    // One range fewer and the same coins are checked, found common, and spent.
+    TestBed.resetTestingModule();
+    vi.unstubAllGlobals();
+    stubNetwork(SEPARATE.payment, {
+      small: tooManyRangesFixture(RARE_SAT_MAX_RANGES),
+      big: tooManyRangesFixture(RARE_SAT_MAX_RANGES),
+    });
+    const spendable = startComponent(SEPARATE);
+    await settled(spendable);
+    expect(spendable.fundingRecommendation().status).toBe('auto');
+    expect(spendable.effectiveFundingUtxo()).toMatchObject({ txid: SMALL.txid, vout: SMALL.vout });
   });
 
   it('reports the scan rather than an empty wallet while the coins are being checked', async () => {

@@ -75,12 +75,20 @@ export const environment = {
     '412cb15b19496075ef9afbd07fbabe6d6e08461c30845fafe4ece083fd20d84fi0', // 5
     '81c64b1c7dfa8ce4e9e32dbcf68fbb51e004fb56be5b2253c880cd833ae74bcai0', // 6
   ],
-  ordinalsExplorerIframe: 'https://ordinals.com/preview/',
-  // Our own witness-capable preview (ordpool-backend). Unlike
-  // ordinalsExplorerIframe (ordinals.com, confirmed only), this renders an
-  // inscription straight from the tx witness the moment it hits our mempool,
-  // so a just-minted cube shows before confirmation. Used for the mint
-  // success panel + "My cubes"; the public gallery keeps ordinals.com.
+  /**
+   * The ord every on-chain cube iframe renders from: its bytes are fetched
+   * from the sibling `/content/` of this base and shown as srcdoc, and the
+   * document's `<base href>` sends the renderer script and the six faces to
+   * the same host. Ours, because a third party that answers a SUBRESOURCE
+   * request with an interactive challenge cannot be passed by one: the
+   * request is not a navigation, there is nobody to click it, and the cube
+   * stays a dark rectangle.
+   */
+  ordinalsExplorerIframe: 'https://api.ordpool.space/preview/',
+  // Our own witness-capable preview (ordpool-backend). Renders an inscription
+  // straight from the tx witness the moment it hits our mempool, so a
+  // just-minted cube shows before confirmation. Used for the mint success
+  // panel + "My cubes", where a cube may still be unconfirmed.
   ownPreviewIframe: 'https://api.ordpool.space/preview/',
   ordinalsExplorerDetails: 'https://ordinals.com/inscription/',
   // Both marketplaces render every inscription (whether listed or not).

@@ -1,6 +1,7 @@
 {
+  "//content": "Our own ord serves the cube renderer and every side the canonical cube body loads through `<script src=/content/...>`; the preview resolves them against this origin. Mirrors src/_redirects, which does the same in production.",
   "/content/*": {
-    "target": "https://ordinals.com/",
+    "target": "https://api.ordpool.space/",
     "secure": false,
     "logLevel": "debug",
     "changeOrigin": true

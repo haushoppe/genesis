@@ -3,9 +3,10 @@ import { Directive, ElementRef, effect, inject, input, DestroyRef } from '@angul
 import { environment } from '../../environments/environment';
 import { DARK_PLACEHOLDER_SRCDOC, fetchCubeSrcdoc } from '../shared/utils/cube-srcdoc';
 
-// ord's own render endpoint. Prod: https://ordinals.com/preview/ ; regtest:
-// the local ord. The cube's bytes are fetched from the sibling /content/ of
-// this base and shown as srcdoc, so the canvas is dark from its first frame.
+// An ord's own render endpoint. Prod: our own (api.ordpool.space/preview/);
+// regtest: the local ord. The cube's bytes are fetched from the sibling
+// /content/ of this base and shown as srcdoc, so the canvas is dark from its
+// first frame.
 /**
  * How long to wait before asking again for a cube whose fetch failed, and how
  * many times. Sized for the one failure that actually happens: the content
@@ -50,9 +51,9 @@ export class ToggleIframeDirective {
 
   readonly toggleInscriptionId = input('');
 
-  /** Preview base whose ord serves the cube. Defaults to the public confirmed
-   *  explorer (ordinals.com). The mint success panel + "My cubes" pass the
-   *  witness-capable base (ordpool-backend) so a still-unconfirmed cube
+  /** Preview base whose ord serves the cube. Defaults to
+   *  `environment.ordinalsExplorerIframe`. The mint success panel + "My cubes"
+   *  pass the witness-capable base explicitly, so a still-unconfirmed cube
    *  renders from the mempool. Must end with `/preview/`. */
   readonly previewBase = input<string>('');
 

@@ -1,1 +1,7 @@
-/content/* https://ordinals.com/content/:splat 301
+# The locally previewed cube (mint form, craft preview) carries the canonical
+# cube body, whose `<script src=/content/...>` and side images resolve against
+# this origin: a local preview has no `<base href>`, by design. This sends
+# those bytes to our own ord, which answers `/content/` with
+# `access-control-allow-origin: *` and needs no third party to be reachable
+# for the preview to render at all.
+/content/* https://api.ordpool.space/content/:splat 301

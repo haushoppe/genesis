@@ -6,9 +6,9 @@
     "secure": false,
     "changeOrigin": true
   },
-  "//content": "The cube renderer inscription is a mainnet inscription; load it from ordinals.com even while minting on regtest.",
+  "//content": "The cube renderer inscription is a mainnet inscription, so it comes from our own mainnet ord even while minting on regtest.",
   "/content": {
-    "target": "https://ordinals.com/",
+    "target": "https://api.ordpool.space/",
     "secure": false,
     "changeOrigin": true
   },

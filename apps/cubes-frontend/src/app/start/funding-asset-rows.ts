@@ -121,11 +121,12 @@ export function fundingAssetRows(
 
   if (rareSat) {
     // The sat NUMBER is what a holder looks up and trades on; rarity and block
-    // together do not identify it, since two sats in one block share them.
+    // together do not identify it, since two sats in one block share them. The
+    // sat page resolves it, the same target the notice rows link to.
     rows.push({
       kind: 'rare-sat',
       label: `rare sat: ${rareSat.rarity} · sat ${rareSat.sat} · block ${rareSat.block}`,
-      href: null,
+      href: SAT_BASE + rareSat.sat,
     });
   }
 

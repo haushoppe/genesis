@@ -9,6 +9,7 @@ import {
   BITCOIN_MIN_RELAY_FEE_SAT_PER_VBYTE,
   Cat21Service,
   InscribeMintOrchestrator,
+  InscribeRevealPendingError,
   InscribeSnapshot,
   InscribeUtxoSimulation,
   InscribeWalletContext,
@@ -16,6 +17,7 @@ import {
   RecommendedFees,
   SimulateInscribeFeesResult,
   TxnOutput,
+  UtxoAssetDetail,
   UtxoContentScanner,
   UtxoScanBucket,
   UtxoScanState,
@@ -236,6 +238,13 @@ export class StartComponent {
   private readonly route = inject(ActivatedRoute);
 
   /**
+   * Where commit and reveal go out. A field rather than an inline argument,
+   * because a reveal resend sends the same signed reveal over the same
+   * transport the mint used.
+   */
+  private readonly transport = esploraInscribeTransport([`${this.cat21.mempoolApiUrl}/api`]);
+
+  /**
    * The SDK's framework-agnostic inscribe orchestrator (plain class, no
    * Angular). We construct it with our I/O ports and mirror its snapshot into
    * a signal; the SDK owns the select -> fee -> build -> sign -> broadcast flow.
@@ -249,7 +258,7 @@ export class StartComponent {
     getUtxos: (address) => firstValueFrom(this.cat21.getUtxos(address)),
     scan: this.scanner,
     // Commit and reveal go out as one package, dry-run first (SDK rule).
-    transport: esploraInscribeTransport([`${this.cat21.mempoolApiUrl}/api`]),
+    transport: this.transport,
     network: this.deriveNetwork(),
     // How hard to stand in the way when only an asset-bearing coin can fund the
     // mint. 'derive' reads it off the connected wallet's own addresses: a wallet
@@ -396,10 +405,9 @@ export class StartComponent {
    * quiet info note beside the Mint button (a fact to know before the asset lands,
    * not a warning): no icon, no `role="alert"`, never blocking, no acknowledgement.
    */
-  protected readonly custodyCaveat = computed<string | null>(() => {
-    const wallet = this.connectedWallet();
-    return wallet && usesSingleAddress(wallet) ? singleAddressCaveat('cubes') : null;
-  });
+  protected readonly custodyCaveat = computed<string | null>(() =>
+    this.oneAddressWallet() ? singleAddressCaveat('cubes') : null,
+  );
   /** The orchestrator's per-UTXO fee simulations, off the snapshot. */
   protected readonly simulations = computed(() => this.snap().simulations);
   protected readonly scanStates = toSignal(this.scanner.states$, {
@@ -430,6 +438,8 @@ export class StartComponent {
   protected readonly pickHonoured = computed(() => this.selectedUtxo() !== null && this.droppedSelection() === null);
   /** Orchestrator error message + success result, off the snapshot. */
   protected readonly mintError = computed(() => this.snap().errorMessage);
+  /** The same failure written for the person minting, when the SDK has one. */
+  protected readonly mintUserMessage = computed(() => this.snap().userMessage);
   protected readonly mintSuccess = computed(() => this.snap().successResult);
 
   // ---------- Form ----------
@@ -560,43 +570,121 @@ export class StartComponent {
    */
   protected readonly effectiveFundingUtxo = computed<TxnOutput | null>(() => this.snap().resolvedFundingUtxo);
 
-  /**
-   * No clean coin covers, the recommended coin's assets are NAMED, and this
-   * wallet keeps payments on a SEPARATE address from its ordinals, so an
-   * accidental spend is far less likely and the reader is informed rather than
-   * blocked. Never true for an unnamed-asset or unknown-content coin: a notice
-   * that cannot say what is on the coin informs nobody.
-   */
-  protected readonly fundingAssetNotice = computed(() => this.fundingRecommendation().status === 'asset-notice');
+  /** The SDK's verdict for that coin, off the snapshot. `null` before the first recompute. */
+  private readonly resolvedFundingStatus = computed(() => this.snap().resolvedFundingStatus);
 
   /**
-   * What the funding coin carries, named, from the recommendation itself.
+   * What the coin that WILL be spent carries, named.
    *
-   * Deliberately NOT a second lookup against the scanner: the guard decided
-   * about one coin, and a panel that names assets from a different source can
-   * describe a different coin than the one being spent, silently. A notice
-   * that does not say WHAT is on the coin is not a notice.
+   * The SDK annotates its resolved pick with bucket and assets at runtime but
+   * types `resolvedFundingUtxo` as the bare coin, so the assets are read back
+   * type-safely from the recommendation's own candidates, matched by outpoint:
+   * `describeFundingPick` picks from exactly that list. Never from
+   * `recommended`, which is what the SDK WOULD choose and stays put when the
+   * reader picks another coin, and never a second lookup against the scanner,
+   * which answers about an outpoint rather than about the spend.
    */
+  private readonly resolvedPickAssets = computed<UtxoAssetDetail | undefined>(() => {
+    const pick = this.effectiveFundingUtxo();
+    if (!pick) return undefined;
+    return this.fundingRecommendation().candidates
+      .find((c) => c.txid === pick.txid && c.vout === pick.vout)?.assets;
+  });
+
+  /** This wallet keeps its ordinals on the same address as its spending money. */
+  private readonly oneAddressWallet = computed(() => {
+    const wallet = this.connectedWallet();
+    return !!wallet && usesSingleAddress(wallet);
+  });
+
+  /**
+   * The single value every funding reason derives from: the verdict for the
+   * coin that will be spent (`resolvedFundingStatus`), which honours an
+   * explicit pick, rather than `fundingRecommendation.status`, which answers
+   * "what would we choose" and does not move when the reader picks another
+   * coin. One source, so the Mint button and the reason beside it cannot
+   * describe different coins.
+   *
+   * `notice` names the assets on that very coin and the mint proceeds;
+   * `warning` carries the cause the SDK blocked on; `scanning` holds while the
+   * content scan runs, including before the first verdict, because a reason
+   * that claims to know something is worse than one that says it is looking.
+   */
+  private readonly fundingPanel = computed<
+    | { kind: 'ready' }
+    | { kind: 'notice'; assets: UtxoAssetDetail | undefined; oneAddress: boolean }
+    | { kind: 'warning'; cause: ExpertRequiredCause }
+    | { kind: 'insufficient' }
+    | { kind: 'scanning' }
+  >(() => {
+    const status = this.resolvedFundingStatus();
+    switch (status) {
+      case 'ready': return { kind: 'ready' };
+      case 'asset-notice':
+        return { kind: 'notice', assets: this.resolvedPickAssets(), oneAddress: this.oneAddressWallet() };
+      // The SDK always names a recommended coin here, so the cause is always
+      // set; a null would mean the content is unknown, the reading that
+      // promises the least.
+      case 'expert-required':
+        return { kind: 'warning', cause: expertRequiredCause(this.fundingRecommendation()) ?? 'unknown-content' };
+      case 'insufficient': return { kind: 'insufficient' };
+      case 'scanning': return { kind: 'scanning' };
+      case null: return { kind: 'scanning' };
+      // A widened InscribeFundingStatus is a compile error here rather than a
+      // missing reason on a money screen.
+      default: {
+        const unhandled: never = status;
+        throw new Error(`unhandled funding status: ${unhandled}`);
+      }
+    }
+  });
+
+  /**
+   * The coin being spent carries NAMED assets and the mint proceeds behind a
+   * notice listing them. Never true for an unnamed-asset or unknown-content
+   * coin: a notice that cannot say what is on the coin informs nobody.
+   */
+  protected readonly fundingAssetNotice = computed(() => this.fundingPanel().kind === 'notice');
+
+  /** True when the notice describes a wallet whose ordinals share the spending address. */
+  protected readonly noticeOneAddress = computed(() => {
+    const panel = this.fundingPanel();
+    return panel.kind === 'notice' && panel.oneAddress;
+  });
+
+  /** What that coin carries, as display rows. */
   protected readonly noticeAssetRows = computed<FundingAssetRow[]>(() => {
-    const rec = this.fundingRecommendation();
-    const assets = rec.recommended?.assets;
-    if (!assets) return [];
-    return assetDetailRows(assets, this.runeEtchings.etchings());
+    const panel = this.fundingPanel();
+    if (panel.kind !== 'notice' || !panel.assets) return [];
+    return assetDetailRows(panel.assets, this.runeEtchings.etchings());
   });
 
   /** True when the SDK blocks the mint until the reader picks a coin. Surfaces the picker. */
-  protected readonly fundingExpertRequired = computed(() => this.fundingRecommendation().status === 'expert-required');
+  protected readonly fundingExpertRequired = computed(() => this.fundingPanel().kind === 'warning');
+
+  /** Why the mint is blocked, which picks the warning's wording. */
+  protected readonly fundingExpertCause = computed<ExpertRequiredCause | null>(() => {
+    const panel = this.fundingPanel();
+    return panel.kind === 'warning' ? panel.cause : null;
+  });
 
   /**
-   * Why the mint is blocked, which picks the warning's wording. Null unless
-   * `expert-required`. There the SDK always names a recommended coin, so the
-   * cause is always set; should it ever come back null, the warning says the
-   * content is unknown, the reading that promises the least.
+   * The content scan has not answered yet. The coins are known, what they carry
+   * is not, so the panel says that instead of "send some BTC", which names a
+   * cause the wallet does not have.
    */
-  protected readonly fundingExpertCause = computed<ExpertRequiredCause | null>(() => {
-    const rec = this.fundingRecommendation();
-    if (rec.status !== 'expert-required') return null;
-    return expertRequiredCause(rec) ?? 'unknown-content';
+  protected readonly fundingScanning = computed(() => this.fundingPanel().kind === 'scanning');
+
+  /**
+   * The coin the SDK recommends while no coin is resolved, which is the
+   * `expert-required` case: the mint is blocked, the reader has to choose, and
+   * the picker owes them ord's own best fit for the amount
+   * (`select_cardinal_utxo`) as a starting point. Null once a coin is resolved,
+   * where the Selected / Auto-picked badge marks it instead.
+   */
+  protected readonly bestFitUnpicked = computed<TxnOutput | null>(() => {
+    if (this.effectiveFundingUtxo()) return null;
+    return this.fundingRecommendation().recommended ?? null;
   });
 
   /** The viable-row for the effective funding coin (manual pick or auto pick),
@@ -639,6 +727,27 @@ export class StartComponent {
    * the drawer; clears on the next successful mint attempt.
    */
   protected readonly mintGateError = signal<string | null>(null);
+
+  // ---------- Reveal resend ----------
+
+  /**
+   * The recovery data of a mint whose commit may be in a mempool while the
+   * reveal is not, plus the six sides it was built for.
+   *
+   * Only this signed reveal creates the inscription the commit already paid
+   * for: a fresh mint attempt builds a new commit with a new ephemeral key and
+   * leaves the first commit's postage and reveal fee behind. Held for the life
+   * of the page, which is what the SDK's own message asks the reader to do, and
+   * never written to storage: the recovery carries the reveal's one-time
+   * private key.
+   */
+  protected readonly revealPending = signal<{ error: InscribeRevealPendingError; sides: string[] } | null>(null);
+
+  /** Where the resend stands: `sent` once a node holds the reveal. */
+  protected readonly revealResendState = signal<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+
+  /** The node's reason for refusing the resend, shown with the retry. */
+  protected readonly revealResendError = signal<string | null>(null);
 
   // ---------- Watch-only (xpub) export/paste signing bridge ----------
 
@@ -1180,18 +1289,62 @@ export class StartComponent {
       tip: { address: HAUSHOPPE_TIP_ADDRESS, value: HAUSHOPPE_TIP_SATS },
     });
 
+    const sides = INSCRIPTION_ID_FIELDS.map((k) => this.mintFormData()[k]);
+    this.revealPending.set(null);
+    this.revealResendState.set('idle');
+    this.revealResendError.set(null);
+
     try {
       // The orchestrator's mint() is async and takes a Promise-returning prompt;
       // our `psbtPrompt` bridges the watch-only modal as an Observable, so adapt
       // it via firstValueFrom. Injected wallets never invoke the prompt.
       const result = await this.orch.mint((unsigned) => firstValueFrom(this.psbtPrompt(unsigned)));
-      const form = this.mintFormData();
-      const inscriptionIds = INSCRIPTION_ID_FIELDS.map((k) => form[k]);
-      this.pastMints.record(result.commitTxId, result.revealTxId, inscriptionIds);
+      this.pastMints.record(result.commitTxId, result.revealTxId, sides);
     } catch (err) {
-       
+      // The commit may be out and paid for while the reveal is not. Keep the
+      // signed reveal and the sides it belongs to, so the reader can send that
+      // exact reveal again instead of paying for a second commit.
+      if (err instanceof InscribeRevealPendingError) {
+        this.revealPending.set({ error: err, sides });
+      }
+
       console.warn('[cubes] mint threw:', err);
     }
+  }
+
+  /**
+   * Send the kept reveal again. The commit is already paid for, so this is the
+   * cheap half of the recovery and the only one that produces the cube.
+   *
+   * A node that already holds the reveal answers `txn-already-in-mempool`,
+   * which means the inscription is on its way: the one node answer that is a
+   * success rather than a failure, matching how the SDK reads it on its own
+   * resend path.
+   */
+  async resendReveal(): Promise<void> {
+    const pending = this.revealPending();
+    if (!pending || this.revealResendState() === 'sending') return;
+    this.revealResendState.set('sending');
+    this.revealResendError.set(null);
+    try {
+      await this.transport.sendTransaction(pending.error.revealHex);
+      this.revealSent(pending);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      if (reason.includes('txn-already-in-mempool')) {
+        this.revealSent(pending);
+        return;
+      }
+      this.revealResendState.set('failed');
+      this.revealResendError.set(reason);
+    }
+  }
+
+  /** The reveal is in a mempool: record the mint so the cube shows up as one. */
+  private revealSent(pending: { error: InscribeRevealPendingError; sides: string[] }): void {
+    this.revealResendState.set('sent');
+    this.revealResendError.set(null);
+    this.pastMints.record(pending.error.commitTxId, pending.error.revealTxId, pending.sides);
   }
 
   /**
@@ -1258,6 +1411,9 @@ export class StartComponent {
 
   mintAnother() {
     this.orch.reset();
+    this.revealPending.set(null);
+    this.revealResendState.set('idle');
+    this.revealResendError.set(null);
     this.mintFormData.set(INITIAL_MINT_FORM);
     this.orch.setFeeRate(INITIAL_MINT_FORM.feeRate);
     this.checkoutOpen.set(false);

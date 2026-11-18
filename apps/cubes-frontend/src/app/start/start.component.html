@@ -197,7 +197,14 @@
       }
 
       @if (viableRows().length === 0 && mintState() === 'ready') {
-        @if (simulations().length === 0) {
+        <!-- Scanning first: the coins are read, what they carry is not. Saying
+             "send some BTC" there names a cause this wallet does not have, and
+             a reader who acts on it pays a transaction to fix nothing. -->
+        @if (fundingScanning()) {
+          <p class="text-muted" data-testid="mint-funding-scanning">
+            Checking what your coins carry…
+          </p>
+        } @else if (simulations().length === 0) {
           <p class="text-muted" data-testid="mint-no-utxos">
             Send some BTC to <code>{{ wallet.paymentAddress }}</code> to continue.
           </p>
@@ -309,15 +316,21 @@
             </div>
           }
 
-          <!-- NOTICE, not a warning: this wallet keeps its spending money on a
-               different address from its ordinals, so the coin is named and the
-               mint PROCEEDS. Placed above the confirm button on purpose, because
-               enabled is not permission to bury it: the reader has to be able to
-               see what the coin carries without scrolling to find it. -->
+          <!-- NOTICE, not a warning: the coin that will be spent carries named
+               assets and the mint PROCEEDS. Placed above the confirm button on
+               purpose, because enabled is not permission to bury it: the reader
+               has to be able to see what the coin carries without scrolling to
+               find it. Every sentence here describes the RESOLVED coin, so an
+               explicit pick is named rather than the coin we would have chosen. -->
           @if (fundingAssetNotice()) {
             <div class="alert alert-info py-2 px-3 small" role="alert" data-testid="mint-asset-notice">
-              <strong>Heads up:</strong> no coin of yours is verified clear of ordinal-bound
-              assets, so this mint will be funded by a coin that carries:
+              <strong>Heads up:</strong>
+              @if (pickHonoured()) {
+                the coin you picked funds this mint, and it carries:
+              } @else {
+                no coin of yours is verified clear of ordinal-bound
+                assets, so this mint will be funded by a coin that carries:
+              }
               <ul class="mb-1 mt-1 ps-3" data-testid="mint-asset-notice-list">
                 @for (row of noticeAssetRows(); track row.label) {
                   <li>
@@ -329,9 +342,18 @@
                   </li>
                 }
               </ul>
-              Spending it moves those to the miner's change, not to you. Your ordinals
-              address is separate, so nothing there is at risk. Pick a different coin
-              below if you would rather not.
+              Spending it moves those to the miner's change, not to you.
+              <!-- The reassurance holds only where the ordinals live on another
+                   address. On a one-address wallet it would be false, and a
+                   reader who believes it stops reading the list above. -->
+              @if (noticeOneAddress()) {
+                <span data-testid="mint-asset-notice-one-address">This wallet keeps your ordinals on the same
+                address as your spending money, so read that list before you continue.</span>
+              } @else {
+                <span data-testid="mint-asset-notice-separate-address">Your ordinals address is separate, so nothing
+                there is at risk.</span>
+              }
+              Pick a different coin below if you would rather not.
             </div>
           }
 
@@ -390,6 +412,18 @@
                       </span>
                       @if (effectiveFundingUtxo()?.txid === row.utxo.txid && effectiveFundingUtxo()?.vout === row.utxo.vout) {
                         <span class="badge bg-secondary ms-2">{{ pickHonoured() ? 'Selected' : 'Auto-picked' }}</span>
+                      } @else if (bestFitUnpicked()?.txid === row.utxo.txid && bestFitUnpicked()?.vout === row.utxo.vout) {
+                        <!-- Blocked mints resolve no coin, so without this the
+                             reader is told to choose with nothing to go on. The
+                             label says it is NOT picked, because the same badge
+                             in the Selected slot would read as the coin that
+                             gets spent. Subtle fill + emphasis text: the pairing
+                             already measured on this panel's ground. -->
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis ms-2"
+                              data-testid="mint-row-best-fit"
+                              title="The smallest coin that covers this mint, which is the choice ord itself would make for the amount. Nothing is picked for you here: see the reason above.">
+                          best fit, not picked
+                        </span>
                       }
                     </div>
                     <div class="text-nowrap">
@@ -442,7 +476,49 @@
 
       @if (mintState() === 'error' && mintError()) {
         <div class="alert alert-danger" role="alert" data-testid="mint-error">
-          <span data-testid="mint-error-message">❌ {{ mintError() }}</span>
+          <!-- The SDK writes every failure twice: once for the reader, once for
+               a bug report. The reader's line leads; the developer's stays, and
+               the regtest specs read their diagnosis out of it. -->
+          @if (mintUserMessage(); as userMessage) {
+            <p class="mb-1" data-testid="mint-error-user-message">❌ {{ userMessage }}</p>
+            <span class="small text-body-secondary d-block" data-testid="mint-error-message">{{ mintError() }}</span>
+          } @else {
+            <span data-testid="mint-error-message">❌ {{ mintError() }}</span>
+          }
+        </div>
+      }
+
+      <!-- The commit is out and paid for, the reveal is not, and only this
+           signed reveal creates the cube that commit paid for. Minting again
+           builds a fresh commit and abandons this one, so the resend is the
+           only action that does not cost a second commit. Keyed on the kept
+           reveal alone, never on the mint state: the state machine moves on
+           whenever the form is touched, and the one control that saves the
+           reader's money must not disappear with it. -->
+      @if (revealPending()) {
+        <div class="alert alert-warning" role="alert" data-testid="mint-reveal-resend">
+          @if (revealResendState() === 'sent') {
+            <p class="mb-0" data-testid="mint-reveal-resend-sent">
+              ✅ The inscription transaction is on its way. It shows up under
+              <strong>My cubes</strong> once a miner picks it up.
+            </p>
+          } @else {
+            <p class="mb-2">
+              Your payment went out, the inscription transaction did not. Send it
+              again: it is already signed, so this costs nothing more.
+            </p>
+            <button type="button" class="btn btn-sm btn-primary"
+                    data-testid="mint-reveal-resend-btn"
+                    [disabled]="revealResendState() === 'sending'"
+                    (click)="resendReveal()">
+              {{ revealResendState() === 'sending' ? 'Sending…' : 'Send the inscription again' }}
+            </button>
+            @if (revealResendError(); as reason) {
+              <p class="mb-0 mt-2 small" data-testid="mint-reveal-resend-error">
+                The node refused it: {{ reason }}. Keep this page open and try again.
+              </p>
+            }
+          }
         </div>
       }
       @if (mintGateError(); as msg) {

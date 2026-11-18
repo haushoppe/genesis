@@ -102,11 +102,16 @@ describe('fundingAssetRows', () => {
     });
   });
 
-  it('names a rare sat by its sat number, not only its rarity and block', () => {
+  it('names a rare sat by its sat number and links it to the sat page', () => {
     const rows = fundingAssetRows(withAssets({ rareSat: { sat: '1971987', block: 5, rarity: 'uncommon' } as never }));
-    // Two sats in one block share rarity and block, so the number is the identity.
+    // Two sats in one block share rarity and block, so the number is the
+    // identity, and the sat page is where a reader resolves it.
     expect(rows).toEqual([
-      { kind: 'rare-sat', label: 'rare sat: uncommon · sat 1971987 · block 5', href: null },
+      {
+        kind: 'rare-sat',
+        label: 'rare sat: uncommon · sat 1971987 · block 5',
+        href: 'https://cat21.space/sat/1971987',
+      },
     ]);
   });
 

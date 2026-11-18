@@ -1,11 +1,15 @@
 name: Build Genesis Frontend
 
-# Builds the standalone Angular genesis-frontend (apps/genesis-frontend/) and
-# pushes the dist/ artifact to `haushoppe/genesis-frontend-build@main`,
-# which Cloudflare Pages auto-deploys to genesis.haushoppe.art.
+# Publishes `apps/genesis-frontend/placeholder/` to
+# `haushoppe/genesis-frontend-build@main`, which Cloudflare Pages serves at
+# genesis.haushoppe.art.
 #
-# No more Nx — genesis-frontend has its own package.json with only the
-# Angular + NgRx + web3-onboard + Kendo deps it needs.
+# genesis.haushoppe.art serves a static placeholder: a single HTML file and a
+# logo, no scripts at all. The Angular ERC-721 app in `src/` is kept and is not
+# built or shipped here, so none of its dependency graph reaches a visitor.
+# Restoring it means restoring the install, license, test and build steps this
+# job had (`git log -- .github/workflows/build-genesis-frontend.yml`) and
+# pointing `--dir` back at `dist`.
 
 on:
   workflow_dispatch:
@@ -15,9 +19,9 @@ on:
       - 'apps/genesis-frontend/**'
       - '.github/workflows/build-genesis-frontend.yml'
 
-# Harden installs against transient registry blips like ECONNRESET: retry more
-# times over a longer backoff window than npm's default of 2. npm and pnpm both
-# read these npm_config_* values.
+# Harden the deploy tool's own fetch against transient registry blips like
+# ECONNRESET: retry more times over a longer backoff window than npm's default
+# of 2. npx reads these npm_config_* values too.
 env:
   npm_config_fetch_retries: "5"
   npm_config_fetch_retry_mintimeout: "20000"
@@ -33,31 +37,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 26
-        cache: 'npm'
-        cache-dependency-path: apps/genesis-frontend/package-lock.json
 
-    - run: npm ci
-    # Via npx: this inactive app's package-lock stays untouched rather than
-    # regenerated to add a devDep. Reads apps/genesis-frontend/.jscpd.json.
-    - name: Duplicate check (jscpd)
-      run: npx --yes jscpd@4.3.0
-    - run: npx kendo-ui-license activate
-      env:
-        KENDO_UI_LICENSE: ${{ secrets.KENDO_UI_LICENSE }}
-    - run: npm test --if-present
-    - run: npm run build
-
-    - name: Deploy to haushoppe/genesis-frontend-build@main
+    # `angular-cli-ghpages` force-pushes the directory as the whole branch, so
+    # the app's previous bundles stop being served rather than lingering beside
+    # the placeholder.
+    - name: Deploy placeholder to haushoppe/genesis-frontend-build@main
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         npx angular-cli-ghpages \
           --repo=https://github.com/haushoppe/genesis-frontend-build.git \
           --branch=main \
-          --dir=dist \
+          --dir=placeholder \
           --name="The Buildbot" \
           --email=noreply@haushoppe.art \
           --no-notfound \

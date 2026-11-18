@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Genesis by HAUS HOPPE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Genesis by HAUS HOPPE. The 3D cube gallery lives on Bitcoin at cubes.haushoppe.art.">
+    <meta name="color-scheme" content="dark light">
+    <link rel="icon" href="logo.svg">
+    <style>
+      :root {
+        color-scheme: dark light;
+        --ink: #f2f2f2;
+        --ground: #101014;
+        --muted: #a0a0ab;
+        --accent: #f7931a;
+      }
+      @media (prefers-color-scheme: light) {
+        :root { --ink: #101014; --ground: #fbfbfd; --muted: #585862; }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        background: var(--ground);
+        color: var(--ink);
+        font: 400 1rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main { max-width: 34rem; text-align: center; }
+      img { width: 72px; height: auto; margin-bottom: 1.5rem; }
+      h1 { margin: 0 0 1rem; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.01em; }
+      p { margin: 0 0 1.25rem; color: var(--muted); }
+      a { color: var(--accent); text-underline-offset: 3px; }
+      a:hover, a:focus-visible { color: var(--ink); }
+      .links { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="logo.svg" alt="HAUS HOPPE">
+      <h1>Genesis by HAUS HOPPE</h1>
+      <p>
+        This page is a placeholder. The cube gallery that grew out of Genesis
+        lives on Bitcoin, where every cube is an inscription.
+      </p>
+      <div class="links">
+        <a href="https://cubes.haushoppe.art/">Ordinal Cubes</a>
+        <a href="https://haushoppe.art/">HAUS HOPPE</a>
+      </div>
+    </main>
+  </body>
+</html>

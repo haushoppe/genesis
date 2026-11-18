@@ -88,10 +88,16 @@ cd contracts && npm run hardhat:test
 
 Why: both shipped as regressions once, green, and were fixed only after measurement.
 
+## RULE: Cube bytes come from our own instance
+
+- `/content`, `/preview` and the iframe base (`ordinalsExplorerIframe`, `ownPreviewIframe`, `src/_redirects`) point at `api.ordpool.space`, our own instance, which always runs.
+- Never point them at ordinals.com. It answers embedded requests with a Cloudflare challenge (403, `cross-origin-resource-policy: same-origin`), which a subresource cannot pass, so the gallery and the mint preview render empty.
+- `apps/cubes-frontend/src/app/app-content-host.vitest.ts` enforces this for both shipped mainnet environments.
+
 ## apps/genesis-frontend
 
-- Angular 16, ERC-721 mint flow, Kendo UI, `@web3-onboard/*`.
-- `webpack.config.js` supplies Node-builtin polyfills (`buffer`, `crypto-browserify`, `stream-*`) the web3 libraries need; `angular.json` uses `@angular-builders/custom-webpack:browser` for it.
+- genesis.haushoppe.art serves a static placeholder from `apps/genesis-frontend/placeholder/`: one HTML file and the logo, no scripts.
+- The Angular 16 ERC-721 app in `src/` (Kendo UI, `@web3-onboard/*`, Node-builtin polyfills via `webpack.config.js`) is kept but not built, tested or shipped, so none of its dependency graph reaches a visitor and CI checks no change there.
 
 ## CI/CD
 
@@ -99,8 +105,9 @@ Why: both shipped as regressions once, green, and were fixed only after measurem
 |---|---|---|
 | `build-backend.yml` | push to `apps/backend/**` | `npm ci && npm test && npm run build`, pushes `dist/` + `package.json` + `package-lock.json` to `haushoppe/backend-build@stage_prod`. happysrv's `haushoppe-backend-deploy.timer` polls that branch every minute, runs `npm ci --omit=dev`, restarts `haushoppe-backend.service`. Under 60s from CI to live. |
 | `build-cubes-frontend.yml` | push to `apps/cubes-frontend/**` | `npm ci`, jscpd, lint, `npm test`, `test:vitest`, `typecheck`, `npm run build`, pushes `dist/` to `haushoppe/cubes-frontend-build@main`; Cloudflare Pages auto-deploys to cubes.haushoppe.art. Every step gates the deploy, so a red lint or a failing spec keeps the live bundle. |
-| `build-genesis-frontend.yml` | push to `apps/genesis-frontend/**` | Same shape. Runs `npx kendo-ui-license activate` first. Pushes to `haushoppe/genesis-frontend-build@main`. |
+| `build-genesis-frontend.yml` | push to `apps/genesis-frontend/**` | Publishes `apps/genesis-frontend/placeholder/` to `haushoppe/genesis-frontend-build@main` as the whole branch; Cloudflare Pages serves it at genesis.haushoppe.art. No install, test or build. |
 | `e2e-cubes-regtest.yml` | push to `main` and PRs touching `apps/cubes-frontend/**`, markdown excluded | One matrix job per wallet, per funding scenario and per route check, each driving the real UI in headed Chromium against a real regtest stack. Runs beside the build and gates no deploy. |
+| `check-locktime-framing.yml` | every push to `main` and every PR, no path filter | `scripts/check-locktime-framing.sh`, the family's banned-phrase guard against claiming `nLockTime=21` is protocol on a non-mint transaction. The phrase list lives in the script. |
 
 Workflows run Node 26 with `npm ci`.
 

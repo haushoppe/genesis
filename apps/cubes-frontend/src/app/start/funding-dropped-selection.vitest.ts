@@ -362,12 +362,11 @@ describe('droppedSelection: a replaced funding pick is named, never shown as the
    * The path on which `contents-changed` actually arises here. The reader picks
    * a coin whose scan failed, so it was shown with unknown content, then
    * presses Retry scan, and the retry finds an inscription. The orchestrator
-   * reads scans only inside a recompute, so unless the retry re-reads the
-   * funding its recommendation still calls the coin "scan failed", the pin's
-   * shown content still matches it, and the next click signs the inscription
-   * away (reproduced against this harness before the re-read existed). With
-   * the re-read the SDK drops the pin as contents-changed, the panel says so,
-   * and the click is refused before anything is signed.
+   * reads scans only inside a recompute, so the retry calls `rescanFunding()`:
+   * the SDK drops the pin as contents-changed and the panel says so BEFORE the
+   * click. The drop is awaited without any click, so a retry that skips the
+   * call fails here even though the SDK's execute-time check would still
+   * refuse the click. The click is then refused before anything is signed.
    */
   it('a retried scan that finds an inscription on the pinned coin drops the pin and refuses the click', async () => {
     const outputs: Record<string, OutputFixture> = {

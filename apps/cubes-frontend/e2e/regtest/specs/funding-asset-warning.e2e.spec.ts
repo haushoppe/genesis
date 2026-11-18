@@ -22,6 +22,7 @@ import {
   RENDERABLE_SIDE_IDS,
 } from '../regtest-helpers';
 import {
+  getOrdInscription,
   makeWatchOnlyTestAccount,
   seedDirtyCoin,
   type DirtyCoinAsset,
@@ -150,16 +151,16 @@ for (const asset of ASSETS) {
   // What identifies a coin's contents differs BY CLASS, so assert what that
   // class actually shows rather than forcing one shape on all four.
   //
-  // A cat is the documented exception: `catIds` are inscription-id hex, not the
-  // cat NUMBER a holder knows, so the row shows the count and links to the sat
-  // page, which names and shows every cat on that sat. Asserting the raw id
-  // here would demand a row of opaque hex and argue against a decision that was
-  // made deliberately and is written down in funding-asset-rows.ts. This spec
-  // caught that difference by failing on it, which is the assertion working.
+  // A cat is named by its cat NUMBER, the one a holder knows, linked to its
+  // cat page. The number is read here from the regtest cat21-ord, the index
+  // the app's scan reads too, so the assertion names THIS cat rather than "a
+  // cat", without taking the expected value from the code under test. A fresh
+  // chain's first cat is #0, which also keeps the falsy-number trap in view.
   const picker = page.locator('[data-testid="mint-expert-details"]');
   if (asset === 'cat') {
-    await expect(picker).toContainText(/CAT-21 cat/);
-    await expect(picker.locator('a[href*="/sat/"]')).toHaveCount(1);
+    const { number } = await getOrdInscription(dirty.assetId);
+    await expect(picker).toContainText(`Cat #${number}`);
+    await expect(picker.locator(`a[href$="/cat/${number}"]`)).toHaveCount(1);
   } else if (asset === 'rune') {
     await expect(picker).toContainText(dirty.assetId);
   } else if (asset === 'rareSat') {

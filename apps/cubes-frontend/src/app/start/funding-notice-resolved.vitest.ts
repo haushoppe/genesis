@@ -57,6 +57,7 @@ import {
   ExpertRequiredCause,
   getDummyKeypair,
   inscribedOutputFixture,
+  InscribeMintOrchestrator,
   InscribeSnapshot,
   KnownOrdinalWalletType,
   LAST_CONNECTED_WALLET,
@@ -69,7 +70,8 @@ import {
   WalletService,
 } from 'ordpool-sdk';
 import { electrsConfirmedUtxoFixture, recommendedFeesFixture } from 'ordpool-sdk/testing';
-import { hex } from '@scure/base';
+import { base64, hex } from '@scure/base';
+import { Transaction } from '@scure/btc-signer';
 
 import { environment } from '../../environments/environment';
 import { bitcoinNetwork, cat21Config } from '../shared/sdk-tokens';
@@ -124,15 +126,18 @@ function json(body: unknown): Response {
  *
  * @param holdScan A promise the `/output` answers wait for, so a spec can hold
  *   the content scan in flight and read the state the page is in while it runs.
+ * @returns A handle whose `coins` the UTXO list serves, so a spec can let a
+ *   coin leave the wallet the way a competing spend does.
  */
 function stubNetwork(
   payment: string,
   content: { small: OutputFixture; big: OutputFixture },
   holdScan?: Promise<void>,
-): void {
+): { coins: TxnOutput[] } {
+  const wallet = { coins: [SMALL, BIG] };
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    if (url === `${environment.mempoolApiUrl}/api/address/${payment}/utxo`) return json([SMALL, BIG]);
+    if (url === `${environment.mempoolApiUrl}/api/address/${payment}/utxo`) return json(wallet.coins);
     if (url === `${environment.mempoolApiUrl}/api/v1/fees/recommended`) return json(recommendedFeesFixture());
     await holdScan;
     if (url === `${environment.ordApiUrl}/output/${outpoint(SMALL)}`) return json(content.small.ord);
@@ -141,6 +146,7 @@ function stubNetwork(
     if (url === `${environment.cat21OrdApiUrl}/output/${outpoint(BIG)}`) return json(content.big.cat21Ord);
     throw new Error(`unexpected request in spec: ${url}`);
   }));
+  return wallet;
 }
 
 /** In-memory `StorageLike` holding the watch-only identity WalletService restores. */
@@ -174,6 +180,11 @@ interface StartView {
   mintState(): string;
   simulations(): unknown[];
   viableRows(): unknown[];
+  orch: InscribeMintOrchestrator;
+  mint(): Promise<void>;
+  fundingReconfirm(): string | null;
+  droppedSelection(): { txid: string; vout: number; reason: string } | null;
+  selectedUtxo(): TxnOutput | null;
   pickUtxo(utxo: TxnOutput): void;
   mintFormData: { update(fn: (v: Record<string, unknown>) => Record<string, unknown>): void };
 }
@@ -383,6 +394,71 @@ describe('the funding notice describes the coin that will be spent', () => {
     await settled(spendable);
     expect(spendable.fundingRecommendation().status).toBe('auto');
     expect(spendable.effectiveFundingUtxo()).toMatchObject({ txid: SMALL.txid, vout: SMALL.vout });
+  });
+
+  /**
+   * The pinned coin leaves the wallet after it was picked, which is what a
+   * competing spend from another device looks like. The SDK refuses the click
+   * rather than quietly spending its own choice instead, and the page has to
+   * turn that refusal into a readable re-confirmation: say what happened, name
+   * the coin that would be spent now, and let the next click confirm it.
+   */
+  it('turns a refused click on a vanished pick into a re-confirmation of the new coin', async () => {
+    const wallet = stubNetwork(SEPARATE.payment, {
+      small: inscribedOutputFixture(SMALL_INSCRIPTION),
+      big: inscribedOutputFixture(BIG_INSCRIPTION),
+    });
+    const component = startComponent(SEPARATE);
+    await settled(component);
+
+    component.pickUtxo(BIG);
+    await vi.waitFor(() => {
+      TestBed.tick();
+      if (component.effectiveFundingUtxo()?.txid !== BIG.txid) throw new Error('pick not resolved yet');
+    }, { timeout: 5_000, interval: 25 });
+    expect(labels(component)).toEqual([BIG_INSCRIPTION]);
+
+    // The pinned coin is spent elsewhere, and the page catches up: the panel
+    // reports the dropped pick and resolves the other coin.
+    wallet.coins = [SMALL];
+    await component.orch.refreshUtxos();
+    await vi.waitFor(() => {
+      TestBed.tick();
+      if (!component.droppedSelection()) throw new Error('the drop has not landed yet');
+    }, { timeout: 5_000, interval: 25 });
+    expect(component.droppedSelection()).toMatchObject({ txid: BIG.txid, vout: BIG.vout, reason: 'gone' });
+
+    // The click the SDK refuses. Nothing is signed, and the message names the
+    // coin that was dropped.
+    await component.mint();
+    expect(component.fundingReconfirm()).toContain(`${BIG.txid}:${BIG.vout}`);
+    expect(component.fundingReconfirm()).toContain('Confirm a funding UTXO again');
+
+    // The stale pin is released, so the panel now describes the coin that
+    // would be spent, named with what it carries, before the next click.
+    // The UTXO re-read runs through `loading-utxos`, so the page is mintable
+    // again only once it settles: that is the state being waited for, and the
+    // wait failing is the test failing.
+    await vi.waitFor(() => {
+      TestBed.tick();
+      if (component.selectedUtxo() !== null) throw new Error('the pin is still set');
+      if (component.effectiveFundingUtxo()?.txid !== SMALL.txid) throw new Error('the new coin is not resolved yet');
+      if (!component.canMint()) throw new Error(`not mintable yet, state is ${component.mintState()}`);
+    }, { timeout: 5_000, interval: 25 });
+    expect(labels(component)).toEqual([SMALL_INSCRIPTION]);
+
+    // And the next attempt is no longer refused: it reaches the signature with
+    // the coin the panel named as the commit's only input.
+    const stop = new Error('the spec stops at the signature');
+    const prompted: string[] = [];
+    await expect(component.orch.mint(async ({ base64 }) => {
+      prompted.push(base64);
+      throw stop;
+    })).rejects.toBe(stop);
+    const commit = Transaction.fromPSBT(base64.decode(prompted[0]));
+    const input = commit.getInput(0);
+    expect(commit.inputsLength).toBe(1);
+    expect(input.txid && hex.encode(input.txid)).toBe(SMALL.txid);
   });
 
   it('reports the scan rather than an empty wallet while the coins are being checked', async () => {

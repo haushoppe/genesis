@@ -10,6 +10,7 @@ import {
   Cat21Service,
   InscribeMintOrchestrator,
   InscribeRevealPendingError,
+  isFundingSelectionChangedError,
   InscribeSnapshot,
   InscribeUtxoSimulation,
   InscribeWalletContext,
@@ -742,6 +743,21 @@ export class StartComponent {
   /** The node's reason for refusing the resend, shown with the retry. */
   protected readonly revealResendError = signal<string | null>(null);
 
+  // ---------- Dropped funding pin ----------
+
+  /**
+   * Set when the SDK refused the click because the coin the reader had picked
+   * is gone or no longer covers. Nothing was signed, and the SDK does not
+   * substitute its own choice, because that coin was never confirmed and can
+   * carry assets.
+   *
+   * Its own signal rather than the snapshot's error, which the UTXO re-read
+   * that follows clears: the reason has to stay readable while the panel
+   * behind it changes to the coin that would be spent now. Cleared by the next
+   * mint attempt, by a new pick, and by "craft another".
+   */
+  protected readonly fundingReconfirm = signal<string | null>(null);
+
 
   // ---------- Watch-only (xpub) export/paste signing bridge ----------
 
@@ -1287,6 +1303,7 @@ export class StartComponent {
     this.revealPending.set(null);
     this.revealResendState.set('idle');
     this.revealResendError.set(null);
+    this.fundingReconfirm.set(null);
 
     try {
       // The orchestrator's mint() is async and takes a Promise-returning prompt;
@@ -1300,6 +1317,21 @@ export class StartComponent {
       // exact reveal again instead of paying for a second commit.
       if (err instanceof InscribeRevealPendingError) {
         this.revealPending.set({ error: err, sides });
+      }
+      // The picked coin is gone or stopped covering, so the SDK refused the
+      // click instead of spending the coin it would have chosen instead.
+      // Nothing was signed.
+      //
+      // The stale pin is then released, because the SDK re-resolves it on
+      // every attempt and would refuse every one of them: keeping it leaves
+      // the reader pressing a button that cannot work. Releasing it puts the
+      // panel back on the coin that would be spent now, named with whatever it
+      // carries, and the next click confirms THAT coin. The sticky message
+      // below is what keeps the refusal readable while the panel changes.
+      if (isFundingSelectionChangedError(err)) {
+        this.fundingReconfirm.set(err.message);
+        this.orch.setSelectedUtxo(null);
+        void this.orch.refreshUtxos();
       }
 
       console.warn('[cubes] mint threw:', err);
@@ -1373,6 +1405,8 @@ export class StartComponent {
 
   /** Expert-mode manual funding pick from the picker. */
   pickUtxo(utxo: TxnOutput) {
+    // A new pick answers what the re-confirmation asked for.
+    this.fundingReconfirm.set(null);
     // A row the picker shows as unavailable must not be pickable by any route.
     // The template disables the control; this is the same rule where the
     // decision is made, so a future caller cannot bypass it.
@@ -1405,6 +1439,7 @@ export class StartComponent {
 
   mintAnother() {
     this.orch.reset();
+    this.fundingReconfirm.set(null);
     this.revealPending.set(null);
     this.revealResendState.set('idle');
     this.revealResendError.set(null);

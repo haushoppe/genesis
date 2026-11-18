@@ -262,6 +262,21 @@
             }
           </div>
 
+          <!-- The SDK refused the click because the picked coin is gone or no
+               longer covers, and nothing was signed. First in the panel, for
+               the same reason the dropped-selection note is above the
+               breakdown: the reader has to learn that their coin is not the one
+               being spent before they read a cost built from another one. The
+               notice and the warning below now describe whatever coin would be
+               spent instead, which is what the next click confirms. -->
+          @if (fundingReconfirm(); as reason) {
+            <div class="alert alert-warning py-2 px-3 small" role="alert" data-testid="mint-funding-reconfirm">
+              {{ reason }} Nothing was sent and nothing was signed. What is
+              listed below is what would be spent now; press Mint again to
+              confirm it, or pick another coin.
+            </div>
+          }
+
           <!-- Above the breakdown, outside it: when the SDK resolves no coin
                (expert-required, nothing covers) there is no breakdown, and the
                reader still has to learn that the coin they chose is not used. -->

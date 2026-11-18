@@ -1397,10 +1397,24 @@ export class StartComponent {
     }
   }
 
+  /**
+   * The picker's "Scan" / "Retry scan". A retried coin re-decides the funding
+   * once its scan answers: the recommendation, and the content shown on a pin,
+   * were taken while that coin's content was unknown, the orchestrator reads
+   * scans only inside a recompute, and a rescan through the scanner does not
+   * start one. Without the re-read, a pinned coin whose retry now finds an
+   * inscription is still the recommendation's "scan failed" coin, so the SDK's
+   * `contents-changed` check never sees the inscription and the next click
+   * spends it. Same wiring as ordpool.space's `scanRow`.
+   */
   scanUtxo(utxo: TxnOutput) {
-    this.scanner.scan(`${utxo.txid}:${utxo.vout}`)
+    const outpoint = `${utxo.txid}:${utxo.vout}`;
+    const retried = this.scanStates().get(outpoint)?.kind === 'scan-failed';
+    this.scanner.scan(outpoint)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe();
+      .subscribe({
+        complete: () => { if (retried) void this.orch.refreshUtxos(); },
+      });
   }
 
   /** Expert-mode manual funding pick from the picker. */

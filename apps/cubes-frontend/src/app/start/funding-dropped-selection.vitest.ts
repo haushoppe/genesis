@@ -57,9 +57,11 @@ import {
   InscribeMintOrchestrator,
   InscribeSnapshot,
   inscribedOutputFixture,
+  isFundingSelectionChangedError,
   KnownOrdinalWalletType,
   LAST_CONNECTED_WALLET,
   Network,
+  notIndexedOutputFixture,
   OutputFixture,
   toScureNetwork,
   TxnOutput,
@@ -142,6 +144,7 @@ interface StartView {
   effectiveFundingUtxo(): TxnOutput | null;
   canMint(): boolean;
   pickUtxo(utxo: TxnOutput): void;
+  scanUtxo(utxo: TxnOutput): void;
   setFeePreset(rate: number): void;
   mintFormData: { update(fn: (v: Record<string, unknown>) => Record<string, unknown>): void };
 }
@@ -353,6 +356,45 @@ describe('droppedSelection: a replaced funding pick is named, never shown as the
       `The funding coin you picked, ${short(SMALL)}, no longer covers this mint at this fee rate. ` +
       `Lower the fee rate or pick another coin below. No other coin is picked for you.`,
     );
+  });
+
+  /**
+   * The path on which `contents-changed` actually arises here. The reader picks
+   * a coin whose scan failed, so it was shown with unknown content, then
+   * presses Retry scan, and the retry finds an inscription. The orchestrator
+   * reads scans only inside a recompute, so unless the retry re-reads the
+   * funding its recommendation still calls the coin "scan failed", the pin's
+   * shown content still matches it, and the next click signs the inscription
+   * away (reproduced against this harness before the re-read existed). With
+   * the re-read the SDK drops the pin as contents-changed, the panel says so,
+   * and the click is refused before anything is signed.
+   */
+  it('a retried scan that finds an inscription on the pinned coin drops the pin and refuses the click', async () => {
+    const outputs: Record<string, OutputFixture> = {
+      [outpoint(SMALL)]: notIndexedOutputFixture(),
+      [outpoint(BIG)]: inscribedOutputFixture(),
+    };
+    stubNetwork(SEPARATE.payment, { coins: [SMALL, BIG] }, outputs);
+    const component = startComponent(SEPARATE);
+    await until(component, `both coins simulated at ${LOW_RATE} sat/vB`, settledAt(LOW_RATE));
+    component.pickUtxo(SMALL);
+    await until(component, 'the pick resolved', (snap) =>
+      snap.resolvedFundingUtxo !== null && outpoint(snap.resolvedFundingUtxo) === outpoint(SMALL));
+    expect(component.snap().selectedUtxo).toMatchObject({ txid: SMALL.txid, bucket: 'failed' });
+
+    // The retry answers: ord has caught up and the coin carries an inscription.
+    outputs[outpoint(SMALL)] = inscribedOutputFixture(`${'9'.repeat(64)}i0`);
+    component.scanUtxo(SMALL);
+    await until(component, 'the pin dropped as contents-changed', (snap) =>
+      snap.droppedSelection?.reason === 'contents-changed');
+    expect(component.droppedSelection()).toEqual({ txid: SMALL.txid, vout: SMALL.vout, reason: 'contents-changed' });
+    expect(collapsed(renderNotice(component.droppedSelection() as DroppedSelection, component.effectiveFundingUtxo())))
+      .toContain('now carries something that was not shown when you picked it');
+
+    const refusal = await component.orch.mint(async () => { throw new Error('the click reached the signature'); })
+      .then(() => null, (e: unknown) => e);
+    expect(isFundingSelectionChangedError(refusal)).toBe(true);
+    expect(refusal).toMatchObject({ droppedSelection: { txid: SMALL.txid, vout: SMALL.vout, reason: 'contents-changed' } });
   });
 
   /**

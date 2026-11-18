@@ -354,4 +354,22 @@ describe('droppedSelection: a replaced funding pick is named, never shown as the
       `Lower the fee rate or pick another coin below. No other coin is picked for you.`,
     );
   });
+
+  /**
+   * The third reason the SDK reports: the coin is still there and covers, but
+   * the scan now finds something on it that was not shown when it was picked.
+   * WHEN that arises is the SDK's to prove (its pinned-funding specs); this
+   * pins that the page says it in a full sentence. The wording table is typed
+   * over the SDK's reason union, so a reason missing from it fails the
+   * typecheck before it can render as a coin followed by nothing.
+   */
+  it('says a pick whose contents changed is not the reader\'s pick any more, in a full sentence', () => {
+    const dropped: DroppedSelection = { txid: BIG.txid, vout: BIG.vout, reason: 'contents-changed' };
+    const el = renderNotice(dropped, SMALL);
+    expect(el.querySelector('[data-testid="mint-dropped-selection"]')?.getAttribute('data-reason')).toBe('contents-changed');
+    expect(collapsed(el)).toBe(
+      `The funding coin you picked, ${short(BIG)}, now carries something that was not shown when you picked it. ` +
+      `Check what it carries below, or pick another coin. For now this mint is funded by ${short(SMALL)}.`,
+    );
+  });
 });

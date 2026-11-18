@@ -53,6 +53,7 @@ vi.mock('../../environments/environment', async () => {
 import {
   Cat21SdkConfig,
   Cat21Service,
+  catOutputFixture,
   cleanOutputFixture,
   ExpertRequiredCause,
   getDummyKeypair,
@@ -67,6 +68,7 @@ import {
   toScureNetwork,
   TxnOutput,
   UtxoContentScanner,
+  UtxoScanState,
   WalletService,
 } from 'ordpool-sdk';
 import { electrsConfirmedUtxoFixture, recommendedFeesFixture } from 'ordpool-sdk/testing';
@@ -133,6 +135,7 @@ function stubNetwork(
   payment: string,
   content: { small: OutputFixture; big: OutputFixture },
   holdScan?: Promise<void>,
+  catNumbers: Record<string, number | 'fail'> = {},
 ): { coins: TxnOutput[] } {
   const wallet = { coins: [SMALL, BIG] };
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -140,6 +143,15 @@ function stubNetwork(
     if (url === `${environment.mempoolApiUrl}/api/address/${payment}/utxo`) return json(wallet.coins);
     if (url === `${environment.mempoolApiUrl}/api/v1/fees/recommended`) return json(recommendedFeesFixture());
     await holdScan;
+    // cat21-ord's inscription endpoint, which the scanner asks for each cat's
+    // number. Its `number` is the cat number, because cat21-ord indexes cats only.
+    for (const [catId, answer] of Object.entries(catNumbers)) {
+      if (url === `${environment.cat21OrdApiUrl}/inscription/${catId}`) {
+        return answer === 'fail'
+          ? new Response('not found', { status: 404 })
+          : json({ id: catId, number: answer });
+      }
+    }
     if (url === `${environment.ordApiUrl}/output/${outpoint(SMALL)}`) return json(content.small.ord);
     if (url === `${environment.cat21OrdApiUrl}/output/${outpoint(SMALL)}`) return json(content.small.cat21Ord);
     if (url === `${environment.ordApiUrl}/output/${outpoint(BIG)}`) return json(content.big.ord);
@@ -185,6 +197,8 @@ interface StartView {
   fundingReconfirm(): string | null;
   droppedSelection(): { txid: string; vout: number; reason: string } | null;
   selectedUtxo(): TxnOutput | null;
+  pickerRows(): { utxo: TxnOutput; scan: UtxoScanState }[];
+  assetRows(row: { scan: UtxoScanState }): FundingAssetRow[];
   pickUtxo(utxo: TxnOutput): void;
   mintFormData: { update(fn: (v: Record<string, unknown>) => Record<string, unknown>): void };
 }
@@ -459,6 +473,63 @@ describe('the funding notice describes the coin that will be spent', () => {
     const input = commit.getInput(0);
     expect(commit.inputsLength).toBe(1);
     expect(input.txid && hex.encode(input.txid)).toBe(SMALL.txid);
+  });
+
+  /**
+   * The seam for cat numbers: the scan port is the SDK's own
+   * `UtxoContentScanner`, which asks cat21-ord for each cat's number, and the
+   * SDK carries that number onto both the scan state the picker reads and the
+   * annotated detail the notice reads. Both ends are asserted, with the number
+   * and without it, because a failed lookup must cost a label and never the
+   * fact that a cat is on the coin.
+   */
+  describe('cats are named by their number in the picker and the notice', () => {
+    const CAT_SMALL = `${'3'.repeat(64)}i0`;
+    const CAT_BIG = `${'4'.repeat(64)}i0`;
+    const pickerRowFor = (component: StartView, coin: TxnOutput) => {
+      const row = component.pickerRows().find((r) => r.utxo.txid === coin.txid && r.utxo.vout === coin.vout);
+      if (!row) throw new Error(`no picker row for ${coin.txid}`);
+      return component.assetRows(row);
+    };
+
+    it('with the number, both say "Cat #N" and link the cat page', async () => {
+      stubNetwork(SEPARATE.payment, {
+        small: catOutputFixture(CAT_SMALL),
+        big: catOutputFixture(CAT_BIG),
+      }, undefined, { [CAT_SMALL]: 4242, [CAT_BIG]: 0 });
+      const component = startComponent(SEPARATE);
+      await settled(component);
+
+      // No clean coin, a separate payment address: the cat coin is spent
+      // behind a notice, which is where the reader has to recognise the cat.
+      expect(component.fundingAssetNotice()).toBe(true);
+      expect(component.effectiveFundingUtxo()).toMatchObject({ txid: SMALL.txid, vout: SMALL.vout });
+      const catFour = { kind: 'cat', label: 'Cat #4242', href: 'https://cat21.space/cat/4242' };
+      expect(component.noticeAssetRows()).toEqual([catFour]);
+      expect(pickerRowFor(component, SMALL)).toEqual([catFour]);
+      // Cat #0 is a number too.
+      expect(pickerRowFor(component, BIG)).toEqual([{ kind: 'cat', label: 'Cat #0', href: 'https://cat21.space/cat/0' }]);
+    });
+
+    it('without it, the cat is still listed, the way it reads without a number', async () => {
+      stubNetwork(SEPARATE.payment, {
+        small: catOutputFixture(CAT_SMALL),
+        big: catOutputFixture(CAT_BIG),
+      }, undefined, { [CAT_SMALL]: 'fail', [CAT_BIG]: 'fail' });
+      const component = startComponent(SEPARATE);
+      await settled(component);
+
+      // The lookup failing does not fail the scan: the coin is still known to
+      // carry a cat, and still spent behind the notice rather than quietly.
+      expect(component.fundingAssetNotice()).toBe(true);
+      expect(component.noticeAssetRows()).toEqual([
+        { kind: 'cat', label: CAT_SMALL, href: `https://ordpool.space/tx/${'3'.repeat(64)}` },
+      ]);
+      // catOutputFixture's cats ride the first sat of its range.
+      expect(pickerRowFor(component, SMALL)).toEqual([
+        { kind: 'cat', label: '1 CAT-21 cat', href: 'https://cat21.space/sat/1002000000001' },
+      ]);
+    });
   });
 
   it('reports the scan rather than an empty wallet while the coins are being checked', async () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { UtxoScanState } from 'ordpool-sdk';
 
-import { fundingAssetRows, inscriptionTxid } from './funding-asset-rows';
+import { assetDetailRows, fundingAssetRows, inscriptionTxid } from './funding-asset-rows';
 
 const TXID = 'a'.repeat(64);
 const INSCRIPTION = `${TXID}i0`;
@@ -132,5 +132,72 @@ describe('fundingAssetRows', () => {
     expect(fundingAssetRows({ kind: 'scanning' })).toEqual([]);
     expect(fundingAssetRows({ kind: 'scan-failed', message: 'x' })).toEqual([]);
     expect(fundingAssetRows(undefined)).toEqual([]);
+  });
+});
+
+/**
+ * A cat is named by its cat number wherever the scan found one, and keeps the
+ * display that works without a number where it did not. Both functions are
+ * pinned, because the picker reads the scan state and the notice reads the
+ * SDK's annotated detail, and the two carry different fallbacks: the scan
+ * knows the sat the cats ride, the detail does not.
+ */
+describe('cats by number', () => {
+  const CAT_A = `${TXID}i0`;
+  const CAT_B = `${'b'.repeat(64)}i0`;
+
+  describe('in the picker (the scan state)', () => {
+    it('names each numbered cat and links its cat page', () => {
+      const rows = fundingAssetRows(withAssets({
+        catIds: [CAT_A, CAT_B],
+        cats: [{ id: CAT_A, number: 1234 }, { id: CAT_B, number: 0 }],
+        catSat: 5,
+      }));
+      // Cat #0 is the Genesis Cat: a falsy number is still a number.
+      expect(rows).toEqual([
+        { kind: 'cat', label: 'Cat #1234', href: 'https://cat21.space/cat/1234' },
+        { kind: 'cat', label: 'Cat #0', href: 'https://cat21.space/cat/0' },
+      ]);
+    });
+
+    it('counts the cats whose number the lookup did not return, on the sat link', () => {
+      const rows = fundingAssetRows(withAssets({
+        catIds: [CAT_A, CAT_B],
+        cats: [{ id: CAT_A, number: 1234 }, { id: CAT_B, number: null }],
+        catSat: 1971987,
+      }));
+      expect(rows).toEqual([
+        { kind: 'cat', label: 'Cat #1234', href: 'https://cat21.space/cat/1234' },
+        { kind: 'cat', label: '1 CAT-21 cat', href: 'https://cat21.space/sat/1971987' },
+      ]);
+    });
+
+    it('keeps the count on the sat link when the scan carries no numbers at all', () => {
+      expect(fundingAssetRows(withAssets({ catIds: [CAT_A], catSat: 1971987 }))).toEqual([
+        { kind: 'cat', label: '1 CAT-21 cat', href: 'https://cat21.space/sat/1971987' },
+      ]);
+    });
+  });
+
+  describe('in the notice (the annotated asset detail)', () => {
+    const detail = (cats?: { id: string; number: number | null }[]) => ({
+      inscriptionIds: [], runeNames: [], catIds: [CAT_A, CAT_B], rareSat: null, ...(cats ? { cats } : {}),
+    });
+
+    it('names each numbered cat and links its cat page', () => {
+      expect(assetDetailRows(detail([{ id: CAT_A, number: 1234 }, { id: CAT_B, number: 21 }]))).toEqual([
+        { kind: 'cat', label: 'Cat #1234', href: 'https://cat21.space/cat/1234' },
+        { kind: 'cat', label: 'Cat #21', href: 'https://cat21.space/cat/21' },
+      ]);
+    });
+
+    it('keeps an unnumbered cat as its inscription id on its mint transaction', () => {
+      // The detail names no sat, so the sat link is not available here.
+      expect(assetDetailRows(detail([{ id: CAT_A, number: null }, { id: CAT_B, number: 21 }]))).toEqual([
+        { kind: 'cat', label: CAT_A, href: `https://ordpool.space/tx/${TXID}` },
+        { kind: 'cat', label: 'Cat #21', href: 'https://cat21.space/cat/21' },
+      ]);
+      expect(assetDetailRows(detail()).map((r) => r.label)).toEqual([CAT_A, CAT_B]);
+    });
   });
 });

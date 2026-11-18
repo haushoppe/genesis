@@ -11,6 +11,13 @@ import { DroppedSelection, TxnOutput } from 'ordpool-sdk';
  *   another coin.
  * - `below-requirement`: the coin is still there and no longer covers the mint
  *   at the current fee rate, so a lower rate brings it back.
+ * - `contents-changed`: the coin is still there and covers, but a later scan
+ *   finds something on it that was not shown when it was picked, so the pick
+ *   no longer stands for what the reader agreed to.
+ *
+ * The wording is a `Record` over the SDK's reason type, so a reason the SDK
+ * adds is a compile error here rather than a sentence with a hole in it: a
+ * template `@switch` without that case renders the coin and then nothing.
  *
  * `replacement` is the coin the SDK resolved instead (`resolvedFundingUtxo`),
  * or null when it resolved none (`expert-required`, or nothing covers). Naming
@@ -24,14 +31,7 @@ import { DroppedSelection, TxnOutput } from 'ordpool-sdk';
          data-testid="mint-dropped-selection" [attr.data-reason]="dropped().reason">
       The funding coin you picked,
       <code data-testid="mint-dropped-selection-coin">{{ dropped().txid.slice(0, 12) }}…:{{ dropped().vout }}</code>,
-      @switch (dropped().reason) {
-        @case ('gone') {
-          is no longer available. Pick another coin below.
-        }
-        @case ('below-requirement') {
-          no longer covers this mint at this fee rate. Lower the fee rate or pick another coin below.
-        }
-      }
+      <span data-testid="mint-dropped-selection-reason">{{ reasonText[dropped().reason] }}</span>
       @if (replacement(); as coin) {
         For now this mint is funded by
         <code data-testid="mint-dropped-selection-replacement">{{ coin.txid.slice(0, 12) }}…:{{ coin.vout }}</code>.
@@ -44,4 +44,10 @@ import { DroppedSelection, TxnOutput } from 'ordpool-sdk';
 export class FundingDroppedSelection {
   readonly dropped = input.required<DroppedSelection>();
   readonly replacement = input.required<TxnOutput | null>();
+
+  protected readonly reasonText: Record<DroppedSelection['reason'], string> = {
+    'gone': 'is no longer available. Pick another coin below.',
+    'below-requirement': 'no longer covers this mint at this fee rate. Lower the fee rate or pick another coin below.',
+    'contents-changed': 'now carries something that was not shown when you picked it. Check what it carries below, or pick another coin.',
+  };
 }

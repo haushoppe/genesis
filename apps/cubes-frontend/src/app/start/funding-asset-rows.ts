@@ -13,9 +13,10 @@ import { CatOnOutpoint, formatRunePile, UtxoScanState } from 'ordpool-sdk';
  * transaction that created it. A rare sat is its sat number, because rarity
  * and block do not identify it: two sats in one block share both. A cat is its
  * cat NUMBER, the one a holder knows ("Cat #1234"), linked to its cat page.
- * The scan looks the number up per cat and can come back without one; such a
- * cat keeps the display that works without a number, so a failed lookup costs
- * the reader a nicer label, never the fact that a cat is on the coin.
+ * The scan looks the number up per cat and can come back without one; such
+ * cats are counted on one row linked to the sat they ride, on the picker and
+ * the notice alike, so a failed lookup costs the reader a nicer label, never
+ * the fact that a cat is on the coin.
  *
  * A rune is its balance rendered the way ord renders it, linked to the
  * transaction that etched it. The etching is not in the scan, so the caller
@@ -47,6 +48,35 @@ function catRow(number: number): FundingAssetRow {
 /** The number the scan found for this cat, or null when it has none. */
 function numberOf(cats: readonly CatOnOutpoint[] | undefined, id: string): number | null {
   return cats?.find((c) => c.id === id)?.number ?? null;
+}
+
+/**
+ * The cat rows for one coin. Each cat with a number is its own row. Those
+ * without one are counted on a single row linked to the sat page, which names
+ * every cat on that sat: CAT-21 pins a coin's cats to its first sat, so one
+ * link covers them all. With the sat unknown (`null`, or a scan port that does
+ * not report it) the count stays plain text.
+ */
+function catRows(
+  catIds: readonly string[],
+  cats: readonly CatOnOutpoint[] | undefined,
+  catSat: number | null | undefined,
+): FundingAssetRow[] {
+  const rows: FundingAssetRow[] = [];
+  let unnumbered = 0;
+  for (const id of catIds) {
+    const number = numberOf(cats, id);
+    if (number === null) unnumbered++;
+    else rows.push(catRow(number));
+  }
+  if (unnumbered > 0) {
+    rows.push({
+      kind: 'cat',
+      label: `${unnumbered} CAT-21 cat${unnumbered === 1 ? '' : 's'}`,
+      href: catSat === null || catSat === undefined ? null : SAT_BASE + catSat,
+    });
+  }
+  return rows;
 }
 
 /**
@@ -122,22 +152,7 @@ export function fundingAssetRows(
     });
   }
 
-  // Each cat with a number is its own row. Those without one are counted on
-  // a single row linked to the sat page, which names every cat on that sat:
-  // CAT-21 pins a coin's cats to its first sat, so one link covers them all.
-  let unnumbered = 0;
-  for (const id of catIds) {
-    const number = numberOf(cats, id);
-    if (number === null) unnumbered++;
-    else rows.push(catRow(number));
-  }
-  if (unnumbered > 0) {
-    rows.push({
-      kind: 'cat',
-      label: `${unnumbered} CAT-21 cat${unnumbered === 1 ? '' : 's'}`,
-      href: catSat === null ? null : SAT_BASE + catSat,
-    });
-  }
+  rows.push(...catRows(catIds, cats, catSat));
 
   if (rareSat) {
     // The sat NUMBER is what a holder looks up and trades on; rarity and block
@@ -165,6 +180,7 @@ export function assetDetailRows(
     runeNames: readonly string[];
     catIds: readonly string[];
     cats?: readonly CatOnOutpoint[];
+    catSat?: number | null;
     rareSat: { sat: string; block: number; rarity: string } | null;
   },
   runeEtchings?: ReadonlyMap<string, string>,
@@ -183,14 +199,7 @@ export function assetDetailRows(
     rows.push({ kind: 'rune', label: name, href: etching ? TX_BASE + etching : null });
   }
 
-  // The detail carries no sat for its cats, so a cat without a number keeps
-  // its inscription id, linked to the transaction that minted it.
-  for (const id of assets.catIds) {
-    const number = numberOf(assets.cats, id);
-    rows.push(number === null
-      ? { kind: 'cat', label: id, href: TX_BASE + inscriptionTxid(id) }
-      : catRow(number));
-  }
+  rows.push(...catRows(assets.catIds, assets.cats, assets.catSat));
 
   if (assets.rareSat) {
     rows.push({

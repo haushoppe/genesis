@@ -522,13 +522,11 @@ describe('the funding notice describes the coin that will be spent', () => {
       // The lookup failing does not fail the scan: the coin is still known to
       // carry a cat, and still spent behind the notice rather than quietly.
       expect(component.fundingAssetNotice()).toBe(true);
-      expect(component.noticeAssetRows()).toEqual([
-        { kind: 'cat', label: CAT_SMALL, href: `https://ordpool.space/tx/${'3'.repeat(64)}` },
-      ]);
-      // catOutputFixture's cats ride the first sat of its range.
-      expect(pickerRowFor(component, SMALL)).toEqual([
-        { kind: 'cat', label: '1 CAT-21 cat', href: 'https://cat21.space/sat/1002000000001' },
-      ]);
+      // catOutputFixture's cats ride the first sat of its range. The notice
+      // and the picker row read two sources and show the same link.
+      const counted = { kind: 'cat', label: '1 CAT-21 cat', href: 'https://cat21.space/sat/1002000000001' };
+      expect(component.noticeAssetRows()).toEqual([counted]);
+      expect(pickerRowFor(component, SMALL)).toEqual([counted]);
     });
   });
 

@@ -139,8 +139,8 @@ describe('fundingAssetRows', () => {
  * A cat is named by its cat number wherever the scan found one, and keeps the
  * display that works without a number where it did not. Both functions are
  * pinned, because the picker reads the scan state and the notice reads the
- * SDK's annotated detail, and the two carry different fallbacks: the scan
- * knows the sat the cats ride, the detail does not.
+ * SDK's annotated detail: two sources, one fallback, the count on the sat
+ * link, so a notice and the picker row show the same link.
  */
 describe('cats by number', () => {
   const CAT_A = `${TXID}i0`;
@@ -180,8 +180,9 @@ describe('cats by number', () => {
   });
 
   describe('in the notice (the annotated asset detail)', () => {
-    const detail = (cats?: { id: string; number: number | null }[]) => ({
-      inscriptionIds: [], runeNames: [], catIds: [CAT_A, CAT_B], rareSat: null, ...(cats ? { cats } : {}),
+    const detail = (cats?: { id: string; number: number | null }[], catSat?: number | null) => ({
+      inscriptionIds: [], runeNames: [], catIds: [CAT_A, CAT_B], rareSat: null,
+      ...(cats ? { cats } : {}), ...(catSat !== undefined ? { catSat } : {}),
     });
 
     it('names each numbered cat and links its cat page', () => {
@@ -191,13 +192,23 @@ describe('cats by number', () => {
       ]);
     });
 
-    it('keeps an unnumbered cat as its inscription id on its mint transaction', () => {
-      // The detail names no sat, so the sat link is not available here.
-      expect(assetDetailRows(detail([{ id: CAT_A, number: null }, { id: CAT_B, number: 21 }]))).toEqual([
-        { kind: 'cat', label: CAT_A, href: `https://ordpool.space/tx/${TXID}` },
+    it('counts the cats whose number the lookup did not return, on the sat link', () => {
+      expect(assetDetailRows(detail([{ id: CAT_A, number: null }, { id: CAT_B, number: 21 }], 1971987))).toEqual([
         { kind: 'cat', label: 'Cat #21', href: 'https://cat21.space/cat/21' },
+        { kind: 'cat', label: '1 CAT-21 cat', href: 'https://cat21.space/sat/1971987' },
       ]);
-      expect(assetDetailRows(detail()).map((r) => r.label)).toEqual([CAT_A, CAT_B]);
+      expect(assetDetailRows(detail(undefined, 1971987))).toEqual([
+        { kind: 'cat', label: '2 CAT-21 cats', href: 'https://cat21.space/sat/1971987' },
+      ]);
+    });
+
+    it('keeps the count as plain text when the detail names no sat', () => {
+      // null: no sat ranges. Absent: a scan port that does not report it.
+      for (const catSat of [null, undefined]) {
+        expect(assetDetailRows(detail([{ id: CAT_A, number: null }, { id: CAT_B, number: null }], catSat))).toEqual([
+          { kind: 'cat', label: '2 CAT-21 cats', href: null },
+        ]);
+      }
     });
   });
 });

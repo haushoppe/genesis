@@ -74,5 +74,14 @@
     "typescript": "6.0.3",
     "typescript-eslint": "^8.72.0",
     "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "@sats-connect/core": {
+      "axios": "1.20.0",
+      "valibot": "1.4.2"
+    },
+    "sats-connect": {
+      "valibot": "1.4.2"
+    }
   }
 }

@@ -31,7 +31,7 @@ import { DroppedSelection, TxnOutput } from 'ordpool-sdk';
          data-testid="mint-dropped-selection" [attr.data-reason]="dropped().reason">
       The funding coin you picked,
       <code data-testid="mint-dropped-selection-coin">{{ dropped().txid.slice(0, 12) }}…:{{ dropped().vout }}</code>,
-      <span data-testid="mint-dropped-selection-reason">{{ reasonText[dropped().reason] }}</span>
+      <span data-testid="mint-dropped-selection-reason">{{ reasonText[dropped().reason] ?? fallbackReason }}</span>
       @if (replacement(); as coin) {
         For now this mint is funded by
         <code data-testid="mint-dropped-selection-replacement">{{ coin.txid.slice(0, 12) }}…:{{ coin.vout }}</code>.
@@ -44,6 +44,13 @@ import { DroppedSelection, TxnOutput } from 'ordpool-sdk';
 export class FundingDroppedSelection {
   readonly dropped = input.required<DroppedSelection>();
   readonly replacement = input.required<TxnOutput | null>();
+
+  /**
+   * For a reason this build does not know, which the type rules out and only a
+   * version skew between this app and the SDK at runtime could produce. Says
+   * the one thing every reason means, so the sentence is never cut off.
+   */
+  protected readonly fallbackReason = 'is no longer the coin this mint spends. Pick a coin below.';
 
   protected readonly reasonText: Record<DroppedSelection['reason'], string> = {
     'gone': 'is no longer available. Pick another coin below.',

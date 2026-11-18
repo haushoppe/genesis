@@ -405,6 +405,16 @@ describe('droppedSelection: a replaced funding pick is named, never shown as the
    * over the SDK's reason union, so a reason missing from it fails the
    * typecheck before it can render as a coin followed by nothing.
    */
+  it('still says something whole for a reason this build does not know', () => {
+    // Only a runtime version skew with the SDK can produce this; the type
+    // rules it out, so the cast is the point of the test.
+    const dropped = { txid: BIG.txid, vout: BIG.vout, reason: 'a-reason-from-a-newer-sdk' } as unknown as DroppedSelection;
+    expect(collapsed(renderNotice(dropped, null))).toBe(
+      `The funding coin you picked, ${short(BIG)}, is no longer the coin this mint spends. Pick a coin below. ` +
+      `No other coin is picked for you.`,
+    );
+  });
+
   it('says a pick whose contents changed is not the reader\'s pick any more, in a full sentence', () => {
     const dropped: DroppedSelection = { txid: BIG.txid, vout: BIG.vout, reason: 'contents-changed' };
     const el = renderNotice(dropped, SMALL);
